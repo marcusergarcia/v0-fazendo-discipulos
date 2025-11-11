@@ -376,14 +376,16 @@ function StepCard({
   }
 
   const content = (
-    <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
-      <div className="flex justify-center mb-2">{getIcon()}</div>
-      <div className="text-lg font-bold mb-1">{number}</div>
-      <div className="text-sm font-medium">{title}</div>
-    </div>
+    <Card className={`transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
+      <CardContent className="p-4 text-center">
+        <div className="flex justify-center mb-2">{getIcon()}</div>
+        <div className="text-lg font-bold mb-1">{number}</div>
+        <div className="text-sm font-medium">{title}</div>
+      </CardContent>
+    </Card>
   )
 
-  if (href) {
+  if (href && status !== "locked") {
     return <Link href={href}>{content}</Link>
   }
 
