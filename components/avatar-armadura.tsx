@@ -34,11 +34,10 @@ export function AvatarArmadura({ nivel, size = "md", showLabels = false, genero,
   const getAvatarImage = () => {
     const isFeminino = genero === "feminino"
     const faixaEtaria = idade ? (idade < 35 ? "jovem" : idade < 60 ? "adulto" : "idoso") : "adulto"
-    const etniaStr = etnia || "parda"
 
-    // Caminho base da imagem: /images/avatar-{genero}-{etnia}-{faixaEtaria}-nivel-{nivel}.jpg
+    // Caminho base da imagem: /images/avatar-{genero}-{faixaEtaria}-nivel-{nivel}.jpg
     const generoStr = isFeminino ? "feminino" : "masculino"
-    const imagePath = `/images/avatar-${generoStr}-${etniaStr}-${faixaEtaria}-nivel-${nivel}.jpg`
+    const imagePath = `/images/avatar-${generoStr}-${faixaEtaria}-nivel-${nivel}.jpg`
 
     return imagePath
   }
