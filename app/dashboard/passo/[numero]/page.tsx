@@ -23,7 +23,7 @@ const PASSOS_CONTEUDO = {
         titulo: "O que significa ser criado à imagem de Deus?",
         canal: "Cristãos na Ciência",
         duracao: "9:33",
-        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y" ,
+        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y",
       },
       {
         id: "video-2",
@@ -69,8 +69,10 @@ const PASSOS_CONTEUDO = {
 }
 
 export default async function PassoPage({ params }: { params: { numero: string } }) {
+  console.log("[v0] PassoPage carregou, params:", params)
   const numeroParam = await Promise.resolve(params.numero)
   const numero = Number.parseInt(numeroParam)
+  console.log("[v0] Número do passo:", numero)
   const supabase = await createClient()
 
   const {
