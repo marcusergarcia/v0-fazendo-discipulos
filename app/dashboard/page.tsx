@@ -21,38 +21,59 @@ import {
   LogOut,
 } from "lucide-react"
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { error?: string }
+}) {
+  console.log("[v0] DashboardPage iniciada")
+
   const supabase = await createClient()
 
-  // Verificar autenticação
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
+
+  console.log("[v0] Auth check - User:", user?.id, "Error:", authError)
+
   if (authError || !user) {
+    console.log("[v0] Sem autenticação, redirecionando para login")
     redirect("/auth/login")
   }
 
   // Buscar perfil do usuário
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+
+  console.log("[v0] Profile check - Data:", profile?.id, "Error:", profileError)
 
   // Buscar dados do discípulo
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+  const { data: discipulo, error: discipuloError } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  console.log("[v0] Discipulo check - Data:", discipulo?.id, "Error:", discipuloError)
 
   // Buscar progresso dos passos
-  const { data: progressoFases } = await supabase
+  const { data: progressoFases, error: progressoError } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo?.id || "")
     .eq("fase_numero", discipulo?.fase_atual || 1)
     .order("passo_numero")
 
+  console.log("[v0] Progresso check - Count:", progressoFases?.length, "Error:", progressoError)
+
   // Buscar recompensas
-  const { data: recompensas } = await supabase
+  const { data: recompensas, error: recompensasError } = await supabase
     .from("recompensas")
     .select("*")
     .eq("discipulo_id", discipulo?.id || "")
     .order("conquistado_em", { ascending: false })
+
+  console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
   // Calcular XP para próximo nível baseado nos passos completados
   const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
@@ -81,8 +102,17 @@ export default async function DashboardPage() {
     totalSteps: totalPassos,
   }
 
+  console.log("[v0] UserData preparado:", userData)
+
   return (
     <div className="min-h-screen bg-background">
+      {searchParams.error === "passo-load-failed" && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mx-4 mt-4">
+          <p className="font-medium">Erro ao carregar passo</p>
+          <p className="text-sm">Ocorreu um problema ao carregar a página do passo. Por favor, tente novamente.</p>
+        </div>
+      )}
+
       {/* Header */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">

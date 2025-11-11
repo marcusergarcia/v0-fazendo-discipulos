@@ -23,7 +23,7 @@ const PASSOS_CONTEUDO = {
         titulo: "O que significa ser criado à imagem de Deus?",
         canal: "Cristãos na Ciência",
         duracao: "9:33",
-        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y" ,
+        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y",
       },
       {
         id: "video-2",
@@ -69,65 +69,100 @@ const PASSOS_CONTEUDO = {
 }
 
 export default async function PassoPage({ params }: { params: { numero: string } }) {
-  const numeroParam = await Promise.resolve(params.numero)
-  const numero = Number.parseInt(numeroParam)
-  const supabase = await createClient()
+  console.log("[v0] PassoPage iniciada")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect("/auth/login")
+  try {
+    const numeroParam = await Promise.resolve(params.numero)
+    const numero = Number.parseInt(numeroParam)
+    console.log("[v0] Número do passo:", numero)
 
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+    const supabase = await createClient()
+    console.log("[v0] Cliente Supabase criado")
 
-  if (!discipulo) redirect("/dashboard")
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-  const { data: progresso } = await supabase
-    .from("progresso_fases")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
-    .single()
+    console.log("[v0] Usuário obtido:", user?.id, "Erro:", userError)
 
-  const passo = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
-  if (!passo) redirect("/dashboard")
+    if (!user) {
+      console.log("[v0] Sem usuário, redirecionando para login")
+      redirect("/auth/login")
+    }
 
-  const { data: todosPassos } = await supabase
-    .from("progresso_fases")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
+    const { data: discipulo, error: discipuloError } = await supabase
+      .from("discipulos")
+      .select("*")
+      .eq("user_id", user.id)
+      .single()
 
-  const passosCompletados = todosPassos?.filter((p) => p.completado).length || 0
+    console.log("[v0] Discípulo obtido:", discipulo?.id, "Erro:", discipuloError)
 
-  let videosAssistidos: string[] = []
-  let artigosLidos: string[] = []
-  if (progresso?.videos_assistidos) {
-    videosAssistidos = progresso.videos_assistidos
+    if (!discipulo) {
+      console.log("[v0] Sem discípulo, redirecionando para dashboard")
+      redirect("/dashboard")
+    }
+
+    const { data: progresso, error: progressoError } = await supabase
+      .from("progresso_fases")
+      .select("*")
+      .eq("discipulo_id", discipulo.id)
+      .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
+      .single()
+
+    console.log("[v0] Progresso obtido:", progresso?.id, "Erro:", progressoError)
+
+    const passo = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
+    if (!passo) {
+      console.log("[v0] Passo não encontrado, redirecionando para dashboard")
+      redirect("/dashboard")
+    }
+
+    const { data: todosPassos, error: todosPassosError } = await supabase
+      .from("progresso_fases")
+      .select("*")
+      .eq("discipulo_id", discipulo.id)
+      .eq("fase_numero", 1)
+
+    console.log("[v0] Todos passos obtidos:", todosPassos?.length, "Erro:", todosPassosError)
+
+    const passosCompletados = todosPassos?.filter((p) => p.completado).length || 0
+
+    let videosAssistidos: string[] = []
+    let artigosLidos: string[] = []
+    if (progresso?.videos_assistidos) {
+      videosAssistidos = progresso.videos_assistidos
+    }
+    if (progresso?.artigos_lidos) {
+      artigosLidos = progresso.artigos_lidos
+    }
+
+    const getStatus = () => {
+      if (progresso?.completado) return "validado"
+      if (progresso?.enviado_para_validacao) return "aguardando"
+      return "pendente"
+    }
+
+    const status = getStatus()
+    console.log("[v0] Status do passo:", status)
+    console.log("[v0] Renderizando PassoClient")
+
+    return (
+      <PassoClient
+        numero={numero}
+        passo={passo}
+        discipulo={discipulo}
+        progresso={progresso}
+        passosCompletados={passosCompletados}
+        videosAssistidos={videosAssistidos}
+        artigosLidos={artigosLidos}
+        status={status}
+      />
+    )
+  } catch (error) {
+    console.error("[v0] Erro na PassoPage:", error)
+    redirect("/dashboard?error=passo-load-failed")
   }
-  if (progresso?.artigos_lidos) {
-    artigosLidos = progresso.artigos_lidos
-  }
-
-  const getStatus = () => {
-    if (progresso?.completado) return "validado"
-    if (progresso?.enviado_para_validacao) return "aguardando"
-    return "pendente"
-  }
-
-  const status = getStatus()
-
-  return (
-    <PassoClient
-      numero={numero}
-      passo={passo}
-      discipulo={discipulo}
-      progresso={progresso}
-      passosCompletados={passosCompletados}
-      videosAssistidos={videosAssistidos}
-      artigosLidos={artigosLidos}
-      status={status}
-    />
-  )
 }
