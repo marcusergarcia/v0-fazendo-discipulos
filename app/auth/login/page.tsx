@@ -34,12 +34,9 @@ export default function Page() {
 
       if (error) throw error
 
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      router.push("/dashboard")
-      router.refresh()
+      window.location.href = "/dashboard"
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Erro ao fazer login")
-    } finally {
       setIsLoading(false)
     }
   }
