@@ -1,7 +1,7 @@
-import { NextResponse, type NextRequest } from "next/server"
+import type { NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  // O Supabase vai gerenciar a sessão via cookies automaticamente
+export function middleware(request: NextRequest) {
   return NextResponse.next()
 }
 

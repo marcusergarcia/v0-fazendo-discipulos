@@ -18,9 +18,10 @@ export default async function ChatPage() {
 
   if (!discipulo) redirect("/dashboard")
 
+  // Buscar mensagens
   const { data: mensagens } = await supabase
     .from("mensagens")
-    .select("*")
+    .select("*, remetente:remetente_id(email)")
     .eq("discipulo_id", discipulo.id)
     .order("created_at", { ascending: true })
 

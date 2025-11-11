@@ -27,16 +27,15 @@ export default function Page() {
     setError(null)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-
       if (error) throw error
-
-      window.location.href = "/dashboard"
+      router.push("/dashboard")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Erro ao fazer login")
+    } finally {
       setIsLoading(false)
     }
   }
