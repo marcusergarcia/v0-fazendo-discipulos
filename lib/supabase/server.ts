@@ -8,5 +8,10 @@ export async function createClient() {
     auth: {
       flowType: "pkce",
     },
+    global: {
+      headers: {
+        cookie: cookieStore.toString(),
+      },
+    },
   })
 }
