@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import Link from "next/link"
 import {
   Trophy,
   Target,
@@ -178,10 +179,12 @@ export default async function DashboardPage() {
                   <span>Tempo estimado: 20-30 minutos</span>
                 </div>
 
-                <Button className="w-full mt-4" size="lg">
-                  Continuar Missão
-                  <Sparkles className="w-4 h-4 ml-2" />
-                </Button>
+                <Link href={`/dashboard/passo/${userData.currentStep}`}>
+                  <Button className="w-full mt-4" size="lg">
+                    Continuar Missão
+                    <Sparkles className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
@@ -247,6 +250,7 @@ export default async function DashboardPage() {
                     number={stepNumber}
                     title={getPassoNome(stepNumber)}
                     status={status as "completed" | "current" | "locked"}
+                    href={status === "locked" ? undefined : `/dashboard/passo/${stepNumber}`}
                   />
                 )
               })}
@@ -347,7 +351,8 @@ function StepCard({
   number,
   title,
   status,
-}: { number: number; title: string; status: "completed" | "current" | "locked" }) {
+  href,
+}: { number: number; title: string; status: "completed" | "current" | "locked"; href?: string }) {
   const getIcon = () => {
     switch (status) {
       case "completed":
@@ -370,11 +375,17 @@ function StepCard({
     }
   }
 
-  return (
-    <Card className={`p-4 text-center transition-all hover:shadow-md ${getStyles()}`}>
+  const content = (
+    <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
       <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>
-    </Card>
+    </div>
   )
+
+  if (href) {
+    return <Link href={href}>{content}</Link>
+  }
+
+  return content
 }
