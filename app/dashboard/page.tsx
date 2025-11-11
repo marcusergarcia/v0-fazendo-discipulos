@@ -117,39 +117,44 @@ export default async function DashboardPage({
       )}
 
       {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
+      <header className="border-b bg-card shadow-sm">
+        <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard">
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <Image
                   src="/logo-fazendo-discipulos.png"
                   alt="Ministério Fazendo Discípulos"
-                  width={200}
-                  height={75}
+                  width={120}
+                  height={45}
                   priority
-                  className="cursor-pointer"
+                  className="object-contain"
                 />
               </Link>
-              <h1 className="text-2xl font-bold">Fazendo Discípulos</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon">
-                <Users className="w-5 h-5" />
-              </Button>
+            <div className="flex items-center gap-2">
+              <Link href="/dashboard/chat">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Chat</span>
+                </Button>
+              </Link>
               <Link href="/dashboard/perfil">
-                <Avatar className="cursor-pointer hover:ring-2 ring-primary transition-all">
-                  {avatarUrl ? (
-                    <AvatarImage src={avatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
-                  ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {userData.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Avatar className="w-7 h-7">
+                    {avatarUrl ? (
+                      <AvatarImage src={avatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
+                    ) : (
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {userData.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <span className="hidden sm:inline">{userData.name}</span>
+                </Button>
               </Link>
               <form
                 action={async () => {
@@ -159,8 +164,9 @@ export default async function DashboardPage({
                   redirect("/auth/login")
                 }}
               >
-                <Button variant="ghost" size="icon" type="submit">
-                  <LogOut className="w-5 h-5" />
+                <Button variant="ghost" size="sm" type="submit" className="gap-2">
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sair</span>
                 </Button>
               </form>
             </div>

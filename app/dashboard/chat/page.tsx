@@ -18,12 +18,15 @@ export default async function ChatPage() {
 
   if (!discipulo) redirect("/dashboard")
 
-  // Buscar mensagens
   const { data: mensagens } = await supabase
     .from("mensagens")
-    .select("*, remetente:remetente_id(email)")
+    .select("*")
     .eq("discipulo_id", discipulo.id)
     .order("created_at", { ascending: true })
+
+  const { data: discipuladorInfo } = discipulo.discipulador_id
+    ? await supabase.from("profiles").select("nome_completo, email").eq("id", discipulo.discipulador_id).single()
+    : { data: null }
 
   const enviarMensagem = async (formData: FormData) => {
     "use server"
@@ -61,7 +64,11 @@ export default async function ChatPage() {
             </Link>
             <div className="flex-1">
               <h1 className="text-xl font-bold">Chat com Discipulador</h1>
-              <p className="text-sm text-muted-foreground">Converse sobre sua jornada</p>
+              <p className="text-sm text-muted-foreground">
+                {discipuladorInfo
+                  ? discipuladorInfo.nome_completo || discipuladorInfo.email
+                  : "Converse sobre sua jornada"}
+              </p>
             </div>
           </div>
         </div>
