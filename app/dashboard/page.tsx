@@ -20,6 +20,7 @@ import {
   Clock,
   Sparkles,
   LogOut,
+  GitBranch,
 } from "lucide-react"
 
 export default async function DashboardPage({
@@ -133,6 +134,12 @@ export default async function DashboardPage({
               </Link>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/dashboard/arvore">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <GitBranch className="w-4 h-4" />
+                  <span className="hidden sm:inline">Árvore</span>
+                </Button>
+              </Link>
               <Link href="/dashboard/chat">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <Users className="w-4 h-4" />
