@@ -4,256 +4,175 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Camera, Upload, Save, Trophy } from "lucide-react"
-import Link from "next/link"
-import { atualizarPerfil, uploadFotoPerfil } from "./actions"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AvatarArmadura } from "@/components/avatar-armadura"
+import { Upload, ArrowLeft, Shield } from "lucide-react"
+import { atualizarFotoPerfil } from "./actions"
 
-interface PerfilClientProps {
-  profile: any
-  discipulo: any
-  userId: string
-  userEmail: string
+interface PecaArmadura {
+  id: string
+  nome: string
+  desbloqueada: boolean
 }
 
-export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilClientProps) {
+interface PerfilClientProps {
+  user: any
+  profile: any
+  discipulo: any
+  pecasArmadura: PecaArmadura[]
+}
+
+export function PerfilClient({ user, profile, discipulo, pecasArmadura }: PerfilClientProps) {
   const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(profile?.foto_perfil_url || null)
+  const [uploading, setUploading] = useState(false)
 
-  const initialNome = profile?.nome_completo || ""
-  const initialTelefone = profile?.telefone || ""
-  const initialIgreja = profile?.igreja || ""
-  const initialBio = profile?.bio || ""
-
-  const nivelNome = discipulo?.nivel_atual || "Explorador"
-  const xpTotal = discipulo?.xp_total || 0
-
-  const getInitials = () => {
-    if (initialNome) {
-      return initialNome
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    }
-    return userEmail.slice(0, 2).toUpperCase()
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validar tipo e tamanho
-    if (!file.type.startsWith("image/")) {
-      alert("Por favor, selecione uma imagem válida")
-      return
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("A imagem deve ter no máximo 5MB")
-      return
-    }
-
-    setIsUploadingPhoto(true)
-
+    setUploading(true)
     try {
-      // Preview local
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setPreviewUrl(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
-
-      // Upload para Supabase Storage
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const result = await uploadFotoPerfil(formData)
-
-      if (result.success && result.url) {
-        setPreviewUrl(result.url)
-        router.refresh()
-      } else {
-        alert(result.error || "Erro ao fazer upload da foto")
-        setPreviewUrl(profile?.foto_perfil_url || null)
-      }
+      await atualizarFotoPerfil(file)
+      router.refresh()
     } catch (error) {
-      console.error("Erro ao processar foto:", error)
-      alert("Erro ao processar foto")
-      setPreviewUrl(profile?.foto_perfil_url || null)
+      console.error("Erro ao fazer upload:", error)
+      alert("Erro ao fazer upload da foto")
     } finally {
-      setIsUploadingPhoto(false)
+      setUploading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    const formData = new FormData(e.currentTarget)
-
-    try {
-      const result = await atualizarPerfil(formData)
-
-      if (result.success) {
-        alert("Perfil atualizado com sucesso!")
-        router.refresh()
-      } else {
-        alert(result.error || "Erro ao atualizar perfil")
-      }
-    } catch (error) {
-      console.error("Erro ao atualizar perfil:", error)
-      alert("Erro ao atualizar perfil")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const xpProximoNivel = discipulo?.level ? discipulo.level * 1000 : 1000
+  const pecasDesbloqueadas = pecasArmadura.filter((p) => p.desbloqueada).length
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold">Meu Perfil</h1>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Avatar Card */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Foto de Perfil</CardTitle>
-              <CardDescription>Clique na foto para alterar</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <Avatar
-                  className="w-32 h-32 cursor-pointer"
-                  onClick={() => document.getElementById("fileInput")?.click()}
-                >
-                  {previewUrl ? (
-                    <AvatarImage src={previewUrl || "/placeholder.svg"} alt="Foto de perfil" />
-                  ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-                      {getInitials()}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                <div
-                  className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  onClick={() => document.getElementById("fileInput")?.click()}
-                >
-                  <Camera className="w-8 h-8 text-white" />
-                </div>
-                <input
-                  id="fileInput"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileChange}
-                  disabled={isUploadingPhoto}
-                />
-              </div>
-
-              {isUploadingPhoto && <p className="text-sm text-muted-foreground animate-pulse">Fazendo upload...</p>}
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById("fileInput")?.click()}
-                disabled={isUploadingPhoto}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {isUploadingPhoto ? "Enviando..." : "Alterar Foto"}
-              </Button>
-
-              <div className="pt-4 w-full space-y-3 border-t">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Nível</span>
-                  <Badge>
-                    <Trophy className="w-3 h-3 mr-1" />
-                    {nivelNome}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">XP Total</span>
-                  <span className="font-semibold">{xpTotal}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Form Card */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Informações Pessoais</CardTitle>
-              <CardDescription>Atualize suas informações de perfil</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={userEmail} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="nome_completo">Nome Completo *</Label>
-                  <Input id="nome_completo" name="nome_completo" defaultValue={initialNome} required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
-                  <Input
-                    id="telefone"
-                    name="telefone"
-                    type="tel"
-                    placeholder="(00) 00000-0000"
-                    defaultValue={initialTelefone}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="igreja">Igreja</Label>
-                  <Input id="igreja" name="igreja" placeholder="Nome da sua igreja" defaultValue={initialIgreja} />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    name="bio"
-                    placeholder="Conte um pouco sobre você e sua jornada de fé..."
-                    rows={4}
-                    defaultValue={initialBio}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+    <div className="container max-w-4xl mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Meu Perfil</h1>
+          <p className="text-muted-foreground">Gerenciar informações e ver progresso na armadura</p>
         </div>
       </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Card do Avatar com Armadura */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              Guerreiro de Deus
+            </CardTitle>
+            <CardDescription>{discipulo?.level_name || "Explorador"}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AvatarArmadura
+              fotoUrl={profile?.avatar_url}
+              nome={profile?.name || user?.email || "Usuário"}
+              xp={discipulo?.xp || 0}
+              xpProximoNivel={xpProximoNivel}
+              nivel={discipulo?.level || 1}
+              pecasArmadura={pecasArmadura}
+              tamanho="lg"
+            />
+
+            <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Armadura de Deus
+              </h3>
+              <p className="text-sm text-muted-foreground mb-2">Efésios 6:10-18</p>
+              <div className="text-2xl font-bold text-primary">{pecasDesbloqueadas}/6 peças</div>
+              <p className="text-xs text-muted-foreground mt-1">Complete a Fase 2 para desbloquear todas as peças</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card de Informações */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Informações Pessoais</CardTitle>
+            <CardDescription>Atualize sua foto e informações</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={user?.email || ""} disabled className="bg-secondary" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome</Label>
+              <Input id="nome" type="text" value={profile?.name || ""} placeholder="Seu nome completo" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="foto">Foto de Perfil</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="foto"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleUploadFoto}
+                  disabled={uploading}
+                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Escolha uma foto do seu rosto (JPG, PNG - máx 2MB)</p>
+            </div>
+
+            {uploading && <div className="text-sm text-primary animate-pulse">Fazendo upload...</div>}
+
+            <Button className="w-full" disabled>
+              <Upload className="w-4 h-4 mr-2" />
+              Atualizar Informações
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Card de Progresso da Armadura */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Progresso na Armadura de Deus</CardTitle>
+          <CardDescription>Desbloqueie cada peça completando os passos da Fase 2</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {pecasArmadura.map((peca) => (
+              <div
+                key={peca.id}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  peca.desbloqueada
+                    ? "bg-green-500/10 border-green-500 shadow-lg"
+                    : "bg-gray-100 border-gray-300 opacity-60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      peca.desbloqueada ? "bg-green-500 text-white" : "bg-gray-300 text-gray-500"
+                    }`}
+                  >
+                    <Shield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-sm">{peca.nome}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {peca.desbloqueada ? "Conquistado!" : "Bloqueado"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
