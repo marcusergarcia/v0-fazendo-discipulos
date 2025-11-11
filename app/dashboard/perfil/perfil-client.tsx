@@ -202,6 +202,22 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
                 {isUploadingPhoto ? "Enviando..." : "Alterar Foto"}
               </Button>
 
+              <div className="pt-4 w-full border-t">
+                <h3 className="text-sm font-semibold text-center mb-3 flex items-center justify-center gap-2">
+                  <Shield className="w-4 h-4 text-primary" />
+                  Seu Avatar
+                </h3>
+                <div className="flex justify-center">
+                  <AvatarArmadura
+                    nivel={nivelNumero}
+                    size="md"
+                    showLabels={false}
+                    genero={profile?.genero}
+                    idade={idade}
+                  />
+                </div>
+              </div>
+
               <div className="pt-4 w-full space-y-3 border-t">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Nível</span>
