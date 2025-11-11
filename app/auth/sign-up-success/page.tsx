@@ -18,16 +18,19 @@ export default function Page() {
               <div className="flex justify-center mb-4">
                 <Mail className="h-16 w-16 text-yellow-400" />
               </div>
-              <CardTitle className="text-2xl text-white text-center">Verifique seu email!</CardTitle>
-              <CardDescription className="text-blue-200 text-center">Conta criada com sucesso</CardDescription>
+              <CardTitle className="text-2xl text-white text-center">Verifique seu email</CardTitle>
+              <CardDescription className="text-blue-200 text-center">Confirmação necessária</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-white/80 text-center">
-                Enviamos um link de confirmação para o seu email. Por favor, verifique sua caixa de entrada antes de
-                fazer login.
+                Enviamos um link de confirmação para o seu email. Por favor, verifique sua caixa de entrada e clique no
+                link para ativar sua conta.
+              </p>
+              <p className="text-xs text-white/60 text-center">
+                Não recebeu? Verifique a pasta de spam ou entre em contato com o suporte.
               </p>
               <Button asChild className="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-950">
-                <Link href="/auth/login">Ir para Login</Link>
+                <Link href="/auth/login">Voltar para Login</Link>
               </Button>
             </CardContent>
           </Card>

@@ -35,18 +35,25 @@ export default function Page() {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
           data: {
             nome_completo: nomeCompleto,
           },
+          emailRedirectTo:
+            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/callback`,
         },
       })
+
       if (error) throw error
-      router.push("/auth/sign-up-success")
+
+      if (data.user && data.session) {
+        router.push("/dashboard")
+      } else {
+        router.push("/auth/sign-up-success")
+      }
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Erro ao criar conta")
     } finally {
