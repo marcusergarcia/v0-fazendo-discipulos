@@ -23,7 +23,7 @@ const PASSOS_CONTEUDO = {
         titulo: "O que significa ser criado à imagem de Deus?",
         canal: "Cristãos na Ciência",
         duracao: "9:33",
-        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y",
+        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y" ,
       },
       {
         id: "video-2",
@@ -69,37 +69,18 @@ const PASSOS_CONTEUDO = {
 }
 
 export default async function PassoPage({ params }: { params: { numero: string } }) {
-  console.log("[v0] PassoPage: Iniciando carregamento", { params })
-
   const numeroParam = await Promise.resolve(params.numero)
   const numero = Number.parseInt(numeroParam)
-
-  console.log("[v0] PassoPage: Número do passo", { numero, numeroParam })
-
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-
-  console.log("[v0] PassoPage: User verificado", { hasUser: !!user, userEmail: user?.email })
-
-  if (!user) {
-    console.log("[v0] PassoPage: Redirecionando para login - sem usuário")
-    redirect("/auth/login")
-  }
+  if (!user) redirect("/auth/login")
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
-  console.log("[v0] PassoPage: Discipulo carregado", {
-    hasDiscipulo: !!discipulo,
-    discipuloId: discipulo?.id,
-  })
-
-  if (!discipulo) {
-    console.log("[v0] PassoPage: Redirecionando para dashboard - sem discípulo")
-    redirect("/dashboard")
-  }
+  if (!discipulo) redirect("/dashboard")
 
   const { data: progresso } = await supabase
     .from("progresso_fases")
@@ -109,20 +90,8 @@ export default async function PassoPage({ params }: { params: { numero: string }
     .eq("passo_numero", numero)
     .single()
 
-  console.log("[v0] PassoPage: Progresso carregado", {
-    hasProgresso: !!progresso,
-    completado: progresso?.completado,
-    enviado: progresso?.enviado_para_validacao,
-  })
-
   const passo = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
-
-  console.log("[v0] PassoPage: Passo encontrado", { hasPasso: !!passo, numero })
-
-  if (!passo) {
-    console.log("[v0] PassoPage: Redirecionando para dashboard - passo não encontrado")
-    redirect("/dashboard")
-  }
+  if (!passo) redirect("/dashboard")
 
   const { data: todosPassos } = await supabase
     .from("progresso_fases")
@@ -148,13 +117,6 @@ export default async function PassoPage({ params }: { params: { numero: string }
   }
 
   const status = getStatus()
-
-  console.log("[v0] PassoPage: Renderizando PassoClient", {
-    numero,
-    status,
-    videosAssistidos,
-    artigosLidos,
-  })
 
   return (
     <PassoClient

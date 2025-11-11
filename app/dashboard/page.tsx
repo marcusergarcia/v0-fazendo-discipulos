@@ -1,5 +1,3 @@
-"use client"
-
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type React from "react"
@@ -22,24 +20,26 @@ import {
   Sparkles,
   LogOut,
 } from "lucide-react"
-import { logoutAction } from "./actions"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
 
+  // Verificar autenticação
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
-
   if (authError || !user) {
     redirect("/auth/login")
   }
 
+  // Buscar perfil do usuário
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
+  // Buscar dados do discípulo
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
+  // Buscar progresso dos passos
   const { data: progressoFases } = await supabase
     .from("progresso_fases")
     .select("*")
@@ -47,20 +47,25 @@ export default async function DashboardPage() {
     .eq("fase_numero", discipulo?.fase_atual || 1)
     .order("passo_numero")
 
+  // Buscar recompensas
   const { data: recompensas } = await supabase
     .from("recompensas")
     .select("*")
     .eq("discipulo_id", discipulo?.id || "")
     .order("conquistado_em", { ascending: false })
 
+  // Calcular XP para próximo nível baseado nos passos completados
   const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
   const xpAtual = discipulo?.xp_total || 0
   const xpProximoNivel = 1000
 
+  // Nome do nível
   const nivelNome = discipulo?.nivel_atual || "Explorador"
 
+  // Fase atual
   const faseNome = `FASE ${discipulo?.fase_atual || 1}: ${getFaseNome(discipulo?.fase_atual || 1)}`
 
+  // Passo atual (primeiro não completado)
   const passoAtual = progressoFases?.find((p) => !p.completado)?.passo_numero || 1
   const totalPassos = 10
 
@@ -97,7 +102,14 @@ export default async function DashboardPage() {
                     .join("")}
                 </AvatarFallback>
               </Avatar>
-              <form action={logoutAction}>
+              <form
+                action={async () => {
+                  "use server"
+                  const supabase = await createClient()
+                  await supabase.auth.signOut()
+                  redirect("/auth/login")
+                }}
+              >
                 <Button variant="ghost" size="icon" type="submit">
                   <LogOut className="w-5 h-5" />
                 </Button>
@@ -364,14 +376,7 @@ function StepCard({
   }
 
   const content = (
-    <div
-      className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}
-      onClick={() => {
-        if (href) {
-          console.log("[v0] Dashboard: StepCard clicado", { number, title, status, href })
-        }
-      }}
-    >
+    <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
       <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>
