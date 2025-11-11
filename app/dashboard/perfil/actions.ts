@@ -58,20 +58,46 @@ export async function uploadFotoPerfil(formData: FormData) {
     return { success: false, error: "Nenhum arquivo enviado" }
   }
 
-  // Criar nome único para o arquivo
+  // Validar tamanho do arquivo (5MB max)
+  if (file.size > 5 * 1024 * 1024) {
+    return { success: false, error: "Arquivo muito grande. Máximo 5MB." }
+  }
+
+  // Validar tipo de arquivo
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/avif"]
+  if (!allowedTypes.includes(file.type)) {
+    return { success: false, error: "Tipo de arquivo não permitido. Use JPG, PNG, WEBP ou AVIF." }
+  }
+
   const fileExt = file.name.split(".").pop()
-  const fileName = `${user.id}-${Date.now()}.${fileExt}`
-  const filePath = `avatars/${fileName}`
+  const fileName = `${Date.now()}.${fileExt}`
+  const filePath = `user-${user.id}/${fileName}`
+
+  const { data: profileData } = await supabase.from("profiles").select("foto_perfil_url").eq("id", user.id).single()
+
+  if (profileData?.foto_perfil_url) {
+    // Extract file path from URL and delete
+    const oldPath = profileData.foto_perfil_url.split("/storage/v1/object/public/avatars/")[1]
+    if (oldPath) {
+      await supabase.storage.from("avatars").remove([oldPath])
+    }
+  }
 
   // Upload para Supabase Storage
   const { data: uploadData, error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
     cacheControl: "3600",
-    upsert: true,
+    upsert: false,
   })
 
   if (uploadError) {
     console.error("Erro ao fazer upload:", uploadError)
-    return { success: false, error: uploadError.message }
+    return {
+      success: false,
+      error:
+        uploadError.message === "Bucket not found"
+          ? "Configure o bucket 'avatars' no Supabase Storage primeiro"
+          : uploadError.message,
+    }
   }
 
   // Obter URL pública
