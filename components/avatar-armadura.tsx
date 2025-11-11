@@ -1,157 +1,244 @@
-"use client"
-import Image from "next/image"
+import { Shield } from "lucide-react"
 
-interface PecaArmadura {
-  id: string
+type ArmaduraPeca = {
   nome: string
-  desbloqueada: boolean
+  xpNecessario: number
+  descricao: string
 }
 
-interface AvatarArmaduraProps {
-  fotoUrl?: string | null
-  nome: string
-  xp: number
-  xpProximoNivel: number
-  nivel: number
-  pecasArmadura: PecaArmadura[]
-  tamanho?: "sm" | "md" | "lg"
-}
+const PECAS_ARMADURA: ArmaduraPeca[] = [
+  { nome: "Cinturão da Verdade", xpNecessario: 100, descricao: "Efésios 6:14" },
+  { nome: "Couraça da Justiça", xpNecessario: 300, descricao: "Efésios 6:14" },
+  { nome: "Calçado do Evangelho", xpNecessario: 500, descricao: "Efésios 6:15" },
+  { nome: "Escudo da Fé", xpNecessario: 700, descricao: "Efésios 6:16" },
+  { nome: "Capacete da Salvação", xpNecessario: 900, descricao: "Efésios 6:17" },
+  { nome: "Espada do Espírito", xpNecessario: 1000, descricao: "Efésios 6:17" },
+]
 
-export function AvatarArmadura({
-  fotoUrl,
-  nome,
-  xp,
-  xpProximoNivel,
-  nivel,
-  pecasArmadura,
-  tamanho = "md",
-}: AvatarArmaduraProps) {
-  const iniciais = nome
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .substring(0, 2)
-    .toUpperCase()
-
-  const porcentagemXP = (xp / xpProximoNivel) * 100
-
-  // Tamanhos
-  const tamanhos = {
-    sm: { container: "w-32", foto: 80, avatar: 80 },
-    md: { container: "w-48", foto: 120, avatar: 120 },
-    lg: { container: "w-64", foto: 160, avatar: 160 },
-  }
-
-  const config = tamanhos[tamanho]
-
-  // Verifica quais peças estão desbloqueadas
-  const capacete = pecasArmadura.find((p) => p.id === "capacete")?.desbloqueada
-  const couraca = pecasArmadura.find((p) => p.id === "couraca")?.desbloqueada
-  const cinto = pecasArmadura.find((p) => p.id === "cinto")?.desbloqueada
-  const calcado = pecasArmadura.find((p) => p.id === "calcado")?.desbloqueada
-  const escudo = pecasArmadura.find((p) => p.id === "escudo")?.desbloqueada
-  const espada = pecasArmadura.find((p) => p.id === "espada")?.desbloqueada
+export function AvatarArmadura({ xp, fotoUrl }: { xp: number; fotoUrl?: string | null }) {
+  const pecasDesbloqueadas = PECAS_ARMADURA.filter((peca) => xp >= peca.xpNecessario)
+  const proximaPeca = PECAS_ARMADURA.find((peca) => xp < peca.xpNecessario)
+  const progressoAtual = proximaPeca ? Math.min((xp / proximaPeca.xpNecessario) * 100, 100) : 100
 
   return (
-    <div className={`${config.container} mx-auto`}>
-      {/* Foto de Perfil */}
-      <div className="relative mx-auto mb-3" style={{ width: config.foto, height: config.foto }}>
-        {/* Avatar base */}
-        <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-primary shadow-lg">
+    <div className="flex flex-col items-center space-y-4">
+      {/* Foto do Perfil */}
+      <div className="relative">
+        <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary shadow-lg">
           {fotoUrl ? (
-            <Image src={fotoUrl || "/placeholder.svg"} alt={nome} fill className="object-cover" />
+            <img src={fotoUrl || "/placeholder.svg"} alt="Foto de perfil" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-              <span className="text-4xl font-bold text-primary">{iniciais}</span>
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+              <Shield className="w-16 h-16 text-primary" />
             </div>
           )}
         </div>
-
-        {/* Capacete da Salvação (no topo) */}
-        {capacete && (
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-16 h-16 text-yellow-500 animate-pulse">
-            <svg viewBox="0 0 64 64" fill="currentColor" className="drop-shadow-lg">
-              <path d="M32 4 C20 4 12 12 12 20 L12 32 L16 32 L16 20 C16 14 22 8 32 8 C42 8 48 14 48 20 L48 32 L52 32 L52 20 C52 12 44 4 32 4 Z M18 24 L18 36 L46 36 L46 24 Z M22 28 L42 28 C42 30 42 32 42 32 L22 32 C22 32 22 30 22 28 Z" />
-            </svg>
-          </div>
-        )}
-
-        {/* Couraça da Justiça (ao redor do peito) */}
-        {couraca && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 w-20 h-20 text-blue-500 opacity-80">
-            <svg viewBox="0 0 64 64" fill="currentColor" className="drop-shadow-lg">
-              <path d="M32 8 L16 16 L16 28 C16 40 24 48 32 56 C40 48 48 40 48 28 L48 16 Z M32 16 L40 20 L40 28 C40 34 36 40 32 44 C28 40 24 34 24 28 L24 20 Z" />
-            </svg>
-          </div>
-        )}
-
-        {/* Cinturão da Verdade (ao redor da cintura) */}
-        {cinto && (
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-4 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 rounded-full shadow-lg border-2 border-amber-700" />
-        )}
-
-        {/* Escudo da Fé (lado esquerdo) */}
-        {escudo && (
-          <div className="absolute top-1/3 -left-6 w-12 h-16 text-red-600 animate-pulse">
-            <svg viewBox="0 0 32 48" fill="currentColor" className="drop-shadow-lg">
-              <path d="M16 4 L4 8 L4 24 C4 32 10 40 16 44 C22 40 28 32 28 24 L28 8 Z M16 8 L24 12 L24 24 C24 28 20 34 16 38 C12 34 8 28 8 24 L8 12 Z" />
-              <path d="M12 16 L14 18 L18 14 L20 16 L14 22 L10 18 Z" fill="gold" />
-            </svg>
-          </div>
-        )}
-
-        {/* Espada do Espírito (lado direito) */}
-        {espada && (
-          <div className="absolute top-1/3 -right-6 w-8 h-20 text-gray-300 rotate-45">
-            <svg viewBox="0 0 32 80" fill="currentColor" className="drop-shadow-lg">
-              <rect x="14" y="4" width="4" height="60" fill="silver" />
-              <path d="M16 0 L10 8 L22 8 Z" fill="silver" />
-              <rect x="12" y="64" width="8" height="6" fill="gold" />
-              <circle cx="16" cy="70" r="4" fill="gold" />
-            </svg>
-          </div>
-        )}
-
-        {/* Calçado da Paz (embaixo) */}
-        {calcado && (
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
-            <div className="w-6 h-4 bg-gradient-to-b from-brown-700 to-brown-900 rounded-t-full shadow-lg" />
-            <div className="w-6 h-4 bg-gradient-to-b from-brown-700 to-brown-900 rounded-t-full shadow-lg" />
-          </div>
-        )}
-
-        {/* Badge de Nível */}
-        <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg shadow-lg border-2 border-white">
-          {nivel}
+        {/* Badge de XP */}
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+          {xp} XP
         </div>
       </div>
 
-      {/* Barra de XP */}
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>XP: {xp}</span>
-          <span>{xpProximoNivel}</span>
-        </div>
-        <div className="h-3 bg-secondary rounded-full overflow-hidden shadow-inner">
-          <div
-            className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-500 ease-out shadow-lg"
-            style={{ width: `${Math.min(porcentagemXP, 100)}%` }}
+      {/* Avatar com Armadura */}
+      <div className="relative w-full max-w-sm">
+        <svg viewBox="0 0 200 280" className="w-full h-auto">
+          {/* Corpo base (sempre visível) */}
+          <ellipse
+            cx="100"
+            cy="90"
+            rx="35"
+            ry="45"
+            fill="oklch(0.85 0.02 240)"
+            stroke="oklch(0.7 0.02 240)"
+            strokeWidth="2"
           />
-        </div>
+          <rect
+            x="75"
+            y="130"
+            width="50"
+            height="80"
+            rx="5"
+            fill="oklch(0.85 0.02 240)"
+            stroke="oklch(0.7 0.02 240)"
+            strokeWidth="2"
+          />
+          <rect
+            x="55"
+            y="140"
+            width="20"
+            height="60"
+            rx="5"
+            fill="oklch(0.85 0.02 240)"
+            stroke="oklch(0.7 0.02 240)"
+            strokeWidth="2"
+          />
+          <rect
+            x="125"
+            y="140"
+            width="20"
+            height="60"
+            rx="5"
+            fill="oklch(0.85 0.02 240)"
+            stroke="oklch(0.7 0.02 240)"
+            strokeWidth="2"
+          />
+          <rect
+            x="80"
+            y="210"
+            width="15"
+            height="50"
+            rx="3"
+            fill="oklch(0.85 0.02 240)"
+            stroke="oklch(0.7 0.02 240)"
+            strokeWidth="2"
+          />
+          <rect
+            x="105"
+            y="210"
+            width="15"
+            height="50"
+            rx="3"
+            fill="oklch(0.85 0.02 240)"
+            stroke="oklch(0.7 0.02 240)"
+            strokeWidth="2"
+          />
+
+          {/* Cinturão da Verdade - 100 XP */}
+          {pecasDesbloqueadas.some((p) => p.nome === "Cinturão da Verdade") && (
+            <g>
+              <rect
+                x="70"
+                y="125"
+                width="60"
+                height="12"
+                rx="2"
+                fill="oklch(0.65 0.15 40)"
+                stroke="oklch(0.5 0.15 40)"
+                strokeWidth="2"
+              />
+              <rect x="95" y="127" width="10" height="8" rx="1" fill="oklch(0.75 0.2 60)" />
+            </g>
+          )}
+
+          {/* Couraça da Justiça - 300 XP */}
+          {pecasDesbloqueadas.some((p) => p.nome === "Couraça da Justiça") && (
+            <g>
+              <path
+                d="M 75 135 L 75 180 Q 75 185 80 185 L 120 185 Q 125 185 125 180 L 125 135 Z"
+                fill="oklch(0.6 0.1 240)"
+                stroke="oklch(0.45 0.1 240)"
+                strokeWidth="2"
+              />
+              <line x1="100" y1="135" x2="100" y2="185" stroke="oklch(0.5 0.1 240)" strokeWidth="2" />
+              <line x1="85" y1="145" x2="115" y2="145" stroke="oklch(0.5 0.1 240)" strokeWidth="1" />
+              <line x1="85" y1="160" x2="115" y2="160" stroke="oklch(0.5 0.1 240)" strokeWidth="1" />
+            </g>
+          )}
+
+          {/* Calçado do Evangelho - 500 XP */}
+          {pecasDesbloqueadas.some((p) => p.nome === "Calçado do Evangelho") && (
+            <g>
+              <path
+                d="M 80 255 L 75 265 Q 75 268 78 268 L 92 268 Q 95 268 95 265 L 95 255 Z"
+                fill="oklch(0.4 0.1 40)"
+                stroke="oklch(0.3 0.1 40)"
+                strokeWidth="2"
+              />
+              <path
+                d="M 105 255 L 105 265 Q 105 268 108 268 L 122 268 Q 125 268 125 265 L 120 255 Z"
+                fill="oklch(0.4 0.1 40)"
+                stroke="oklch(0.3 0.1 40)"
+                strokeWidth="2"
+              />
+            </g>
+          )}
+
+          {/* Escudo da Fé - 700 XP */}
+          {pecasDesbloqueadas.some((p) => p.nome === "Escudo da Fé") && (
+            <g>
+              <path
+                d="M 40 150 L 40 180 Q 40 185 45 185 L 55 185 Q 58 185 60 182 L 65 172 L 60 162 Q 58 159 55 159 L 45 159 Q 40 159 40 164 Z"
+                fill="oklch(0.55 0.15 260)"
+                stroke="oklch(0.4 0.15 260)"
+                strokeWidth="2"
+              />
+              <path d="M 45 165 L 50 170 L 45 175" stroke="oklch(0.7 0.2 60)" strokeWidth="2" fill="none" />
+            </g>
+          )}
+
+          {/* Capacete da Salvação - 900 XP */}
+          {pecasDesbloqueadas.some((p) => p.nome === "Capacete da Salvação") && (
+            <g>
+              <path
+                d="M 70 85 Q 70 65 100 65 Q 130 65 130 85 L 130 95 Q 130 100 125 100 L 75 100 Q 70 100 70 95 Z"
+                fill="oklch(0.6 0.1 240)"
+                stroke="oklch(0.45 0.1 240)"
+                strokeWidth="2"
+              />
+              <ellipse cx="100" cy="65" rx="8" ry="6" fill="oklch(0.7 0.2 60)" />
+            </g>
+          )}
+
+          {/* Espada do Espírito - 1000 XP */}
+          {pecasDesbloqueadas.some((p) => p.nome === "Espada do Espírito") && (
+            <g>
+              <line x1="140" y1="150" x2="165" y2="125" stroke="oklch(0.5 0.1 240)" strokeWidth="4" />
+              <line x1="165" y1="125" x2="180" y2="110" stroke="oklch(0.75 0.2 60)" strokeWidth="3" />
+              <rect
+                x="137"
+                y="147"
+                width="12"
+                height="8"
+                rx="2"
+                fill="oklch(0.4 0.1 40)"
+                stroke="oklch(0.3 0.1 40)"
+                strokeWidth="1"
+              />
+            </g>
+          )}
+        </svg>
+
+        {/* Indicador de progresso para próxima peça */}
+        {proximaPeca && (
+          <div className="mt-4 space-y-2">
+            <div className="text-sm font-medium text-center">
+              Próxima peça: {proximaPeca.nome}
+              <span className="block text-xs text-muted-foreground">{proximaPeca.descricao}</span>
+            </div>
+            <div className="relative h-2 bg-secondary rounded-full overflow-hidden">
+              <div
+                className="absolute h-full bg-primary transition-all duration-500"
+                style={{ width: `${progressoAtual}%` }}
+              />
+            </div>
+            <div className="text-xs text-center text-muted-foreground">
+              {xp} / {proximaPeca.xpNecessario} XP
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Lista de Peças Desbloqueadas */}
-      <div className="mt-3 grid grid-cols-3 gap-1 text-xs">
-        {pecasArmadura.map((peca) => (
-          <div
-            key={peca.id}
-            className={`text-center p-1 rounded ${
-              peca.desbloqueada ? "bg-green-500/20 text-green-700 font-semibold" : "bg-gray-200 text-gray-400"
-            }`}
-          >
-            {peca.nome.split(" ")[0]}
-          </div>
-        ))}
+      {/* Lista de peças conquistadas */}
+      <div className="w-full space-y-2">
+        <h3 className="text-sm font-semibold text-center">Armadura de Deus</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {PECAS_ARMADURA.map((peca) => {
+            const desbloqueada = pecasDesbloqueadas.some((p) => p.nome === peca.nome)
+            return (
+              <div
+                key={peca.nome}
+                className={`text-xs p-2 rounded border ${
+                  desbloqueada
+                    ? "bg-primary/10 border-primary text-foreground"
+                    : "bg-muted border-muted-foreground/20 text-muted-foreground"
+                }`}
+              >
+                <div className="font-medium">{peca.nome}</div>
+                <div className="text-[10px] opacity-70">{peca.descricao}</div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
