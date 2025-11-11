@@ -22,6 +22,8 @@ import {
 } from "lucide-react"
 
 export default async function DashboardPage() {
+  console.log("[v0] Dashboard: Iniciando carregamento da página")
+
   const supabase = await createClient()
 
   // Verificar autenticação
@@ -29,15 +31,21 @@ export default async function DashboardPage() {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
+
+  console.log("[v0] Dashboard: Usuário autenticado?", !!user)
+
   if (authError || !user) {
+    console.log("[v0] Dashboard: Redirecionando para login - authError:", authError)
     redirect("/auth/login")
   }
 
   // Buscar perfil do usuário
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  console.log("[v0] Dashboard: Perfil carregado:", profile?.nome_completo)
 
   // Buscar dados do discípulo
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+  console.log("[v0] Dashboard: Discípulo carregado, fase atual:", discipulo?.fase_atual)
 
   // Buscar progresso dos passos
   const { data: progressoFases } = await supabase
@@ -80,6 +88,8 @@ export default async function DashboardPage() {
     currentStep: passoAtual,
     totalSteps: totalPassos,
   }
+
+  console.log("[v0] Dashboard: Dados do usuário preparados, passo atual:", userData.currentStep)
 
   return (
     <div className="min-h-screen bg-background">

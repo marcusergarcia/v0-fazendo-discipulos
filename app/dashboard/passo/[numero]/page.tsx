@@ -23,7 +23,7 @@ const PASSOS_CONTEUDO = {
         titulo: "O que significa ser criado à imagem de Deus?",
         canal: "Cristãos na Ciência",
         duracao: "9:33",
-        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y" ,
+        url: "https://www.youtube.com/watch?v=rr6k9AVyO1Y",
       },
       {
         id: "video-2",
@@ -71,16 +71,30 @@ const PASSOS_CONTEUDO = {
 export default async function PassoPage({ params }: { params: { numero: string } }) {
   const numeroParam = await Promise.resolve(params.numero)
   const numero = Number.parseInt(numeroParam)
+
+  console.log("[v0] PassoPage: Carregando passo", numero)
+
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) redirect("/auth/login")
+
+  console.log("[v0] PassoPage: Usuário autenticado?", !!user)
+
+  if (!user) {
+    console.log("[v0] PassoPage: Redirecionando para login")
+    redirect("/auth/login")
+  }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
-  if (!discipulo) redirect("/dashboard")
+  console.log("[v0] PassoPage: Discípulo encontrado?", !!discipulo)
+
+  if (!discipulo) {
+    console.log("[v0] PassoPage: Discípulo não encontrado, redirecionando para dashboard")
+    redirect("/dashboard")
+  }
 
   const { data: progresso } = await supabase
     .from("progresso_fases")
@@ -90,8 +104,13 @@ export default async function PassoPage({ params }: { params: { numero: string }
     .eq("passo_numero", numero)
     .single()
 
+  console.log("[v0] PassoPage: Progresso carregado, completado?", progresso?.completado)
+
   const passo = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
-  if (!passo) redirect("/dashboard")
+  if (!passo) {
+    console.log("[v0] PassoPage: Passo não encontrado no conteúdo, redirecionando")
+    redirect("/dashboard")
+  }
 
   const { data: todosPassos } = await supabase
     .from("progresso_fases")
@@ -117,6 +136,10 @@ export default async function PassoPage({ params }: { params: { numero: string }
   }
 
   const status = getStatus()
+
+  console.log("[v0] PassoPage: Status do passo:", status)
+  console.log("[v0] PassoPage: Vídeos assistidos:", videosAssistidos.length)
+  console.log("[v0] PassoPage: Artigos lidos:", artigosLidos.length)
 
   return (
     <PassoClient

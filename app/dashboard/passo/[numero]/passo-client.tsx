@@ -51,26 +51,35 @@ export default function PassoClient({
   artigosLidos,
   status,
 }: PassoClientProps) {
+  console.log("[v0] PassoClient: Componente montado para passo", numero)
+  console.log("[v0] PassoClient: Status:", status)
+
   const [respostaPergunta, setRespostaPergunta] = useState(progresso?.resposta_pergunta || "")
   const [respostaMissao, setRespostaMissao] = useState(
     progresso?.rascunho_resposta ? JSON.parse(progresso.rascunho_resposta).missao : "",
   )
 
   const handleSalvarRascunho = async () => {
+    console.log("[v0] PassoClient: Salvando rascunho...")
     const formData = new FormData()
     formData.append("resposta_pergunta", respostaPergunta)
     formData.append("resposta_missao", respostaMissao)
     await salvarRascunho(numero, formData)
+    console.log("[v0] PassoClient: Rascunho salvo com sucesso")
   }
 
   const handleEnviarValidacao = async () => {
+    console.log("[v0] PassoClient: Enviando para validação...")
     const formData = new FormData()
     formData.append("resposta_missao", respostaMissao)
     await enviarParaValidacao(numero, formData)
+    console.log("[v0] PassoClient: Enviado para validação com sucesso")
   }
 
   const handleResetarProgresso = async () => {
+    console.log("[v0] PassoClient: Resetando progresso...")
     await resetarProgresso(numero)
+    console.log("[v0] PassoClient: Progresso resetado com sucesso")
   }
 
   return (
