@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import {
   Trophy,
@@ -104,6 +104,8 @@ export default async function DashboardPage({
 
   console.log("[v0] UserData preparado:", userData)
 
+  const avatarUrl = profile?.foto_perfil_url || null
+
   return (
     <div className="min-h-screen bg-background">
       {searchParams.error === "passo-load-failed" && (
@@ -124,14 +126,20 @@ export default async function DashboardPage({
               <Button variant="ghost" size="icon">
                 <Users className="w-5 h-5" />
               </Button>
-              <Avatar>
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {userData.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
+              <Link href="/dashboard/perfil">
+                <Avatar className="cursor-pointer hover:ring-2 ring-primary transition-all">
+                  {avatarUrl ? (
+                    <AvatarImage src={avatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
+                  ) : (
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {userData.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+              </Link>
               <form
                 action={async () => {
                   "use server"
