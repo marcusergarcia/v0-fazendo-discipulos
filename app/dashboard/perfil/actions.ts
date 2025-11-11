@@ -20,6 +20,7 @@ export async function atualizarPerfil(formData: FormData) {
   const bio = formData.get("bio") as string
   const genero = formData.get("genero") as string
   const data_nascimento = formData.get("data_nascimento") as string
+  const etnia = formData.get("etnia") as string
 
   const { error } = await supabase
     .from("profiles")
@@ -30,6 +31,7 @@ export async function atualizarPerfil(formData: FormData) {
       bio,
       genero: genero || null,
       data_nascimento: data_nascimento || null,
+      etnia: etnia || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id)

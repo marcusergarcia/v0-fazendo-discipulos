@@ -7,9 +7,10 @@ interface AvatarArmaduraProps {
   showLabels?: boolean
   genero?: string | null
   idade?: number | null
+  etnia?: string | null
 }
 
-export function AvatarArmadura({ nivel, size = "md", showLabels = false, genero, idade }: AvatarArmaduraProps) {
+export function AvatarArmadura({ nivel, size = "md", showLabels = false, genero, idade, etnia }: AvatarArmaduraProps) {
   // Mapeamento: nível 1 = Explorador (sem armadura), nível 5 = Multiplicador (armadura completa)
   const pecasArmadura = {
     capacete: nivel >= 2, // Discípulo
@@ -33,10 +34,11 @@ export function AvatarArmadura({ nivel, size = "md", showLabels = false, genero,
   const getAvatarImage = () => {
     const isFeminino = genero === "feminino"
     const faixaEtaria = idade ? (idade < 35 ? "jovem" : idade < 60 ? "adulto" : "idoso") : "adulto"
+    const etniaStr = etnia || "parda"
 
-    // Caminho base da imagem: /images/avatar-{genero}-{faixaEtaria}-nivel-{nivel}.jpg
+    // Caminho base da imagem: /images/avatar-{genero}-{etnia}-{faixaEtaria}-nivel-{nivel}.jpg
     const generoStr = isFeminino ? "feminino" : "masculino"
-    const imagePath = `/images/avatar-${generoStr}-${faixaEtaria}-nivel-${nivel}.jpg`
+    const imagePath = `/images/avatar-${generoStr}-${etniaStr}-${faixaEtaria}-nivel-${nivel}.jpg`
 
     return imagePath
   }

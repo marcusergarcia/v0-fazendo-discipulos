@@ -35,6 +35,7 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
   const initialBio = profile?.bio || ""
   const initialGenero = profile?.genero || ""
   const initialDataNascimento = profile?.data_nascimento || ""
+  const initialEtnia = profile?.etnia || ""
 
   const nivelNome = discipulo?.nivel_atual || "Explorador"
   const xpTotal = discipulo?.xp_total || 0
@@ -214,6 +215,7 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
                     showLabels={false}
                     genero={profile?.genero}
                     idade={idade}
+                    etnia={profile?.etnia}
                   />
                 </div>
               </div>
@@ -282,6 +284,24 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="etnia">Etnia</Label>
+                  <select
+                    id="etnia"
+                    name="etnia"
+                    defaultValue={initialEtnia}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="branca">Branca</option>
+                    <option value="parda">Parda</option>
+                    <option value="negra">Negra</option>
+                    <option value="indigena">Indígena</option>
+                    <option value="asiatica">Asiática</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Usado para personalizar seu avatar 3D</p>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="telefone">Telefone</Label>
                   <Input
                     id="telefone"
@@ -327,7 +347,14 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
           </CardHeader>
           <CardContent>
             <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
-              <AvatarArmadura nivel={nivelNumero} size="lg" showLabels={false} genero={profile?.genero} idade={idade} />
+              <AvatarArmadura
+                nivel={nivelNumero}
+                size="lg"
+                showLabels={false}
+                genero={profile?.genero}
+                idade={idade}
+                etnia={profile?.etnia}
+              />
 
               <div className="space-y-3 w-full max-w-sm">
                 <h3 className="font-semibold text-lg mb-4">Peças Conquistadas</h3>
