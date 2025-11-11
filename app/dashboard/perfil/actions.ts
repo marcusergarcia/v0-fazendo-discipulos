@@ -58,63 +58,44 @@ export async function uploadFotoPerfil(formData: FormData) {
     return { success: false, error: "Nenhum arquivo enviado" }
   }
 
-  const bucketName = "avatars"
+  // Validar tamanho (máximo 5MB)
+  if (file.size > 5242880) {
+    return { success: false, error: "Arquivo muito grande. Máximo 5MB." }
+  }
 
-  // Verificar se o bucket existe
-  const { data: buckets } = await supabase.storage.listBuckets()
-  const bucketExists = buckets?.some((b) => b.name === bucketName)
+  // Validar tipo de arquivo
+  const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"]
+  if (!allowedTypes.includes(file.type)) {
+    return { success: false, error: "Tipo de arquivo não permitido. Use PNG, JPG, GIF ou WebP." }
+  }
 
-  if (!bucketExists) {
-    // Criar bucket público
-    const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
-      public: true,
-      fileSizeLimit: 5242880, // 5MB
-      allowedMimeTypes: ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"],
-    })
+  try {
+    // Converter para base64
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    const base64 = buffer.toString("base64")
+    const dataUrl = `data:${file.type};base64,${base64}`
 
-    if (createBucketError) {
-      console.error("Erro ao criar bucket:", createBucketError)
-      return { success: false, error: "Erro ao configurar armazenamento: " + createBucketError.message }
+    // Atualizar perfil com nova foto em base64
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        foto_perfil_url: dataUrl,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id)
+
+    if (updateError) {
+      console.error("Erro ao atualizar perfil:", updateError)
+      return { success: false, error: updateError.message }
     }
+
+    revalidatePath("/dashboard/perfil")
+    revalidatePath("/dashboard")
+
+    return { success: true, url: dataUrl }
+  } catch (error) {
+    console.error("Erro ao processar arquivo:", error)
+    return { success: false, error: "Erro ao processar arquivo" }
   }
-
-  // Criar nome único para o arquivo
-  const fileExt = file.name.split(".").pop()
-  const fileName = `${user.id}-${Date.now()}.${fileExt}`
-  const filePath = fileName // Simplificado, sem subpasta
-
-  // Upload para Supabase Storage
-  const { data: uploadData, error: uploadError } = await supabase.storage.from(bucketName).upload(filePath, file, {
-    cacheControl: "3600",
-    upsert: true,
-  })
-
-  if (uploadError) {
-    console.error("Erro ao fazer upload:", uploadError)
-    return { success: false, error: uploadError.message }
-  }
-
-  // Obter URL pública
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(bucketName).getPublicUrl(filePath)
-
-  // Atualizar perfil com nova URL
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update({
-      foto_perfil_url: publicUrl,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", user.id)
-
-  if (updateError) {
-    console.error("Erro ao atualizar perfil:", updateError)
-    return { success: false, error: updateError.message }
-  }
-
-  revalidatePath("/dashboard/perfil")
-  revalidatePath("/dashboard")
-
-  return { success: true, url: publicUrl }
 }
