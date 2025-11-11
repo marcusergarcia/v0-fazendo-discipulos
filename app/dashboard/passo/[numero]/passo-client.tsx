@@ -6,6 +6,14 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   ArrowLeft,
   BookOpen,
   Sparkles,
@@ -19,13 +27,14 @@ import {
   Play,
   ExternalLink,
   RotateCcw,
+  CheckCircle,
 } from "lucide-react"
 import Link from "next/link"
 import {
   salvarRascunho,
   enviarParaValidacao,
-  marcarVideoAssistido,
-  marcarArtigoLido,
+  concluirVideoComReflexao,
+  concluirArtigoComReflexao,
   resetarProgresso,
 } from "./actions"
 import { useState } from "react"
@@ -56,6 +65,12 @@ export default function PassoClient({
     progresso?.rascunho_resposta ? JSON.parse(progresso.rascunho_resposta).missao : "",
   )
 
+  const [modalAberto, setModalAberto] = useState(false)
+  const [tipoConteudo, setTipoConteudo] = useState<"video" | "artigo">("video")
+  const [conteudoAtual, setConteudoAtual] = useState<any>(null)
+  const [reflexao, setReflexao] = useState("")
+  const [enviandoReflexao, setEnviandoReflexao] = useState(false)
+
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
     formData.append("resposta_pergunta", respostaPergunta)
@@ -71,6 +86,35 @@ export default function PassoClient({
 
   const handleResetarProgresso = async () => {
     await resetarProgresso(numero)
+  }
+
+  const abrirModalMissaoCumprida = (tipo: "video" | "artigo", conteudo: any) => {
+    setTipoConteudo(tipo)
+    setConteudoAtual(conteudo)
+    setReflexao("")
+    setModalAberto(true)
+  }
+
+  const enviarReflexao = async () => {
+    if (!reflexao.trim() || reflexao.trim().length < 20) {
+      alert("Por favor, escreva uma reflexão de pelo menos 20 caracteres")
+      return
+    }
+
+    setEnviandoReflexao(true)
+    try {
+      if (tipoConteudo === "video") {
+        await concluirVideoComReflexao(numero, conteudoAtual.id, reflexao)
+      } else {
+        await concluirArtigoComReflexao(numero, conteudoAtual.id, reflexao)
+      }
+      setModalAberto(false)
+      setReflexao("")
+    } catch (error) {
+      console.error("Erro ao enviar reflexão:", error)
+    } finally {
+      setEnviandoReflexao(false)
+    }
   }
 
   return (
@@ -180,25 +224,33 @@ export default function PassoClient({
                         {video.canal} • {video.duracao}
                       </p>
                     </div>
-                    {assistido ? (
-                      <Badge className="bg-accent text-accent-foreground">
-                        <CheckCheck className="w-3 h-3 mr-1" />
-                        Assistido
-                      </Badge>
-                    ) : (
+                    <div className="flex items-center gap-2">
                       <Button
                         type="button"
                         size="sm"
-                        onClick={async () => {
-                          window.open(video.url, "_blank")
-                          await marcarVideoAssistido(numero, video.id)
-                        }}
-                        className="bg-primary"
+                        variant="outline"
+                        onClick={() => window.open(video.url, "_blank")}
                       >
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                    )}
+                      {assistido ? (
+                        <Badge className="bg-accent text-accent-foreground">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Concluído
+                        </Badge>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => abrirModalMissaoCumprida("video", video)}
+                          className="bg-primary"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Missão Cumprida
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )
               })}
@@ -210,21 +262,11 @@ export default function PassoClient({
         {passo.artigos && passo.artigos.length > 0 && (
           <Card className="mb-6 border-secondary/30">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-secondary" />
-                    Leia e Entenda
-                  </CardTitle>
-                  <CardDescription>Artigos e recursos para estudo complementar</CardDescription>
-                </div>
-                {(videosAssistidos.length > 0 || artigosLidos.length > 0) && (
-                  <Button type="button" variant="outline" size="sm" onClick={handleResetarProgresso}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Resetar Progresso
-                  </Button>
-                )}
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-secondary" />
+                Leia e Entenda
+              </CardTitle>
+              <CardDescription>Artigos e recursos para estudo complementar</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
@@ -240,25 +282,33 @@ export default function PassoClient({
                       <h4 className="font-semibold text-base mb-1">{artigo.titulo}</h4>
                       <p className="text-sm text-muted-foreground">{artigo.fonte}</p>
                     </div>
-                    {lido ? (
-                      <Badge className="bg-accent text-accent-foreground">
-                        <CheckCheck className="w-3 h-3 mr-1" />
-                        Lido
-                      </Badge>
-                    ) : (
+                    <div className="flex items-center gap-2">
                       <Button
                         type="button"
                         size="sm"
-                        variant="secondary"
-                        onClick={async () => {
-                          window.open(artigo.url, "_blank")
-                          await marcarArtigoLido(numero, artigo.id)
-                        }}
+                        variant="outline"
+                        onClick={() => window.open(artigo.url, "_blank")}
                       >
                         <ExternalLink className="w-4 h-4 mr-1" />
-                        Ler Agora
+                        Ler
                       </Button>
-                    )}
+                      {lido ? (
+                        <Badge className="bg-accent text-accent-foreground">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Concluído
+                        </Badge>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => abrirModalMissaoCumprida("artigo", artigo)}
+                        >
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Missão Cumprida
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )
               })}
@@ -368,8 +418,14 @@ export default function PassoClient({
                     disabled={status === "validado" || status === "aguardando"}
                     onClick={handleEnviarValidacao}
                   >
-                    <Send className="w-4 h-4 mr-2" />
-                    Enviar ao Discipulador
+                    {status === "aguardando" ? (
+                      <>Enviando...</>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Enviar ao Discipulador
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
@@ -419,6 +475,68 @@ export default function PassoClient({
           )}
         </div>
       </div>
+
+      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-6 h-6 text-primary" />
+              Missão Cumprida: {tipoConteudo === "video" ? "Vídeo" : "Artigo"}
+            </DialogTitle>
+            <DialogDescription>{conteudoAtual?.titulo}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-semibold mb-2 block">
+                Escreva sua reflexão sobre o que você aprendeu:
+              </label>
+              <Textarea
+                placeholder="Compartilhe suas principais descobertas, insights e como esse conteúdo impactou você..."
+                className="min-h-40 text-base"
+                value={reflexao}
+                onChange={(e) => setReflexao(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Mínimo de 20 caracteres • Sua reflexão será enviada ao discipulador
+              </p>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 border">
+              <p className="text-sm font-medium mb-2">Após enviar sua reflexão:</p>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>O conteúdo será marcado como concluído</li>
+                <li>Sua reflexão será enviada ao discipulador</li>
+                <li>Você poderá assistir/ler novamente quando quiser</li>
+                <li>Use "Resetar Progresso" para refazer as reflexões</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                window.open(conteudoAtual?.url, "_blank")
+              }}
+            >
+              {tipoConteudo === "video" ? <Play className="w-4 h-4 mr-2" /> : <ExternalLink className="w-4 h-4 mr-2" />}
+              {tipoConteudo === "video" ? "Assistir Novamente" : "Ler Novamente"}
+            </Button>
+            <Button type="button" onClick={enviarReflexao} disabled={enviandoReflexao || reflexao.trim().length < 20}>
+              {enviandoReflexao ? (
+                <>Enviando...</>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Enviar Reflexão
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
