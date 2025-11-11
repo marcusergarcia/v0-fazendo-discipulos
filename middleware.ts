@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
+  console.log("[v0] Middleware: URL solicitada:", request.nextUrl.pathname)
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -29,11 +31,14 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.log("[v0] Middleware: Usuário autenticado?", !!user, "Email:", user?.email)
+
   // Redirecionar para dashboard se já estiver logado tentando acessar auth
   if (
     user &&
     (request.nextUrl.pathname.startsWith("/auth/login") || request.nextUrl.pathname.startsWith("/auth/sign-up"))
   ) {
+    console.log("[v0] Middleware: Usuário logado tentando acessar auth, redirecionando para dashboard")
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard"
     return NextResponse.redirect(url)
@@ -41,11 +46,13 @@ export async function middleware(request: NextRequest) {
 
   // Redirecionar para login se não estiver logado tentando acessar dashboard
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    console.log("[v0] Middleware: Usuário não autenticado tentando acessar dashboard, redirecionando para login")
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
   }
 
+  console.log("[v0] Middleware: Permitindo acesso a", request.nextUrl.pathname)
   return supabaseResponse
 }
 

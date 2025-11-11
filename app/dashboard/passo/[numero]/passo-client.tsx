@@ -28,7 +28,7 @@ import {
   marcarArtigoLido,
   resetarProgresso,
 } from "./actions"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 type PassoClientProps = {
   numero: number
@@ -51,36 +51,64 @@ export default function PassoClient({
   artigosLidos,
   status,
 }: PassoClientProps) {
-  console.log("[v0] PassoClient: Componente montado para passo", numero)
+  console.log("[v0] PassoClient: ========= RENDERIZAÇÃO ==========")
+  console.log("[v0] PassoClient: Componente renderizado para passo", numero)
   console.log("[v0] PassoClient: Status:", status)
+  console.log("[v0] PassoClient: Passo título:", passo?.titulo)
+  console.log("[v0] PassoClient: Discípulo ID:", discipulo?.id)
+  console.log("[v0] PassoClient: Progresso completado?", progresso?.completado)
+  console.log("[v0] PassoClient: Videos assistidos:", videosAssistidos?.length || 0)
+  console.log("[v0] PassoClient: Artigos lidos:", artigosLidos?.length || 0)
 
   const [respostaPergunta, setRespostaPergunta] = useState(progresso?.resposta_pergunta || "")
   const [respostaMissao, setRespostaMissao] = useState(
     progresso?.rascunho_resposta ? JSON.parse(progresso.rascunho_resposta).missao : "",
   )
 
+  useEffect(() => {
+    console.log("[v0] PassoClient: ✅ COMPONENTE MONTADO COM SUCESSO!")
+    console.log("[v0] PassoClient: useEffect executado")
+
+    return () => {
+      console.log("[v0] PassoClient: ⚠️ COMPONENTE DESMONTADO")
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log("[v0] PassoClient: Estado respostaPergunta atualizado:", respostaPergunta?.substring(0, 50))
+  }, [respostaPergunta])
+
+  useEffect(() => {
+    console.log("[v0] PassoClient: Estado respostaMissao atualizado:", respostaMissao?.substring(0, 50))
+  }, [respostaMissao])
+
   const handleSalvarRascunho = async () => {
     console.log("[v0] PassoClient: Salvando rascunho...")
+    console.log("[v0] PassoClient: Resposta pergunta:", respostaPergunta?.substring(0, 50))
+    console.log("[v0] PassoClient: Resposta missão:", respostaMissao?.substring(0, 50))
     const formData = new FormData()
     formData.append("resposta_pergunta", respostaPergunta)
     formData.append("resposta_missao", respostaMissao)
     await salvarRascunho(numero, formData)
-    console.log("[v0] PassoClient: Rascunho salvo com sucesso")
+    console.log("[v0] PassoClient: ✅ Rascunho salvo com sucesso")
   }
 
   const handleEnviarValidacao = async () => {
     console.log("[v0] PassoClient: Enviando para validação...")
+    console.log("[v0] PassoClient: Resposta missão:", respostaMissao?.substring(0, 50))
     const formData = new FormData()
     formData.append("resposta_missao", respostaMissao)
     await enviarParaValidacao(numero, formData)
-    console.log("[v0] PassoClient: Enviado para validação com sucesso")
+    console.log("[v0] PassoClient: ✅ Enviado para validação com sucesso")
   }
 
   const handleResetarProgresso = async () => {
     console.log("[v0] PassoClient: Resetando progresso...")
     await resetarProgresso(numero)
-    console.log("[v0] PassoClient: Progresso resetado com sucesso")
+    console.log("[v0] PassoClient: ✅ Progresso resetado com sucesso")
   }
+
+  console.log("[v0] PassoClient: Iniciando renderização do JSX...")
 
   return (
     <div className="min-h-screen bg-background">
