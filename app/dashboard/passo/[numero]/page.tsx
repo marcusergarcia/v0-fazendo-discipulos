@@ -4,11 +4,15 @@ import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 
-export default async function PassoPage({ params }: { params: { numero: string } }) {
-  const numeroParam = await Promise.resolve(params.numero)
+export default async function PassoPage({ params }: { params: Promise<{ numero: string }> }) {
+  const { numero: numeroParam } = await params
   const numero = Number.parseInt(numeroParam)
 
-  const passo = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
+  if (isNaN(numero) || numero < 1 || numero > 10) {
+    notFound()
+  }
+
+  const passo = PASSOS_CONTEUDO[numero]
   if (!passo) {
     notFound()
   }
