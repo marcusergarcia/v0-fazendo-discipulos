@@ -1,3 +1,5 @@
+"use client"
+
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type React from "react"
@@ -22,7 +24,7 @@ import {
 } from "lucide-react"
 
 export default async function DashboardPage() {
-  console.log("[v0] Dashboard: Iniciando carregamento da página")
+  console.log("[v0] Dashboard: Iniciando carregamento do dashboard")
 
   const supabase = await createClient()
 
@@ -32,20 +34,28 @@ export default async function DashboardPage() {
     error: authError,
   } = await supabase.auth.getUser()
 
-  console.log("[v0] Dashboard: Usuário autenticado?", !!user)
+  console.log("[v0] Dashboard: User auth status", {
+    hasUser: !!user,
+    userEmail: user?.email,
+    authError: authError?.message,
+  })
 
   if (authError || !user) {
-    console.log("[v0] Dashboard: Redirecionando para login - authError:", authError)
+    console.log("[v0] Dashboard: Redirecionando para login - não autenticado")
     redirect("/auth/login")
   }
 
   // Buscar perfil do usuário
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-  console.log("[v0] Dashboard: Perfil carregado:", profile?.nome_completo)
+  console.log("[v0] Dashboard: Profile carregado", { hasProfile: !!profile, profileId: profile?.id })
 
   // Buscar dados do discípulo
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  console.log("[v0] Dashboard: Discípulo carregado, fase atual:", discipulo?.fase_atual)
+  console.log("[v0] Dashboard: Discipulo carregado", {
+    hasDiscipulo: !!discipulo,
+    discipuloId: discipulo?.id,
+    faseAtual: discipulo?.fase_atual,
+  })
 
   // Buscar progresso dos passos
   const { data: progressoFases } = await supabase
@@ -55,12 +65,19 @@ export default async function DashboardPage() {
     .eq("fase_numero", discipulo?.fase_atual || 1)
     .order("passo_numero")
 
+  console.log("[v0] Dashboard: Progresso carregado", {
+    totalPassos: progressoFases?.length,
+    passosCompletados: progressoFases?.filter((p) => p.completado).length,
+  })
+
   // Buscar recompensas
   const { data: recompensas } = await supabase
     .from("recompensas")
     .select("*")
     .eq("discipulo_id", discipulo?.id || "")
     .order("conquistado_em", { ascending: false })
+
+  console.log("[v0] Dashboard: Recompensas carregadas", { totalRecompensas: recompensas?.length })
 
   // Calcular XP para próximo nível baseado nos passos completados
   const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
@@ -77,6 +94,8 @@ export default async function DashboardPage() {
   const passoAtual = progressoFases?.find((p) => !p.completado)?.passo_numero || 1
   const totalPassos = 10
 
+  console.log("[v0] Dashboard: Passo atual calculado", { passoAtual, totalPassos })
+
   const userData = {
     name: profile?.nome_completo || user.email?.split("@")[0] || "Discípulo",
     email: user.email || "",
@@ -89,7 +108,7 @@ export default async function DashboardPage() {
     totalSteps: totalPassos,
   }
 
-  console.log("[v0] Dashboard: Dados do usuário preparados, passo atual:", userData.currentStep)
+  console.log("[v0] Dashboard: userData montado", userData)
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,7 +209,16 @@ export default async function DashboardPage() {
                 </div>
 
                 <Link href={`/dashboard/passo/${userData.currentStep}`}>
-                  <Button className="w-full mt-4" size="lg">
+                  <Button
+                    className="w-full mt-4"
+                    size="lg"
+                    onClick={() => {
+                      console.log("[v0] Dashboard: Botão 'Continuar Missão' clicado", {
+                        targetUrl: `/dashboard/passo/${userData.currentStep}`,
+                        currentStep: userData.currentStep,
+                      })
+                    }}
+                  >
                     Continuar Missão
                     <Sparkles className="w-4 h-4 ml-2" />
                   </Button>
@@ -386,7 +414,14 @@ function StepCard({
   }
 
   const content = (
-    <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
+    <div
+      className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}
+      onClick={() => {
+        if (href) {
+          console.log("[v0] Dashboard: StepCard clicado", { number, title, status, href })
+        }
+      }}
+    >
       <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>

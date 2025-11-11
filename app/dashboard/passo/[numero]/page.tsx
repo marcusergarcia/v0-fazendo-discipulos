@@ -69,51 +69,39 @@ const PASSOS_CONTEUDO = {
 }
 
 export default async function PassoPage({ params }: { params: { numero: string } }) {
+  console.log("[v0] PassoPage: Iniciando carregamento", { params })
+
   const numeroParam = await Promise.resolve(params.numero)
   const numero = Number.parseInt(numeroParam)
 
-  console.log("[v0] PassoPage: ========= INÍCIO ==========")
-  console.log("[v0] PassoPage: Carregando passo número:", numero)
-  console.log("[v0] PassoPage: URL params:", params)
+  console.log("[v0] PassoPage: Número do passo", { numero, numeroParam })
 
   const supabase = await createClient()
 
-  console.log("[v0] PassoPage: Cliente Supabase criado")
-
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser()
 
-  console.log("[v0] PassoPage: Usuário autenticado?", !!user)
-  console.log("[v0] PassoPage: Email do usuário:", user?.email)
-  console.log("[v0] PassoPage: Erro de autenticação?", authError)
+  console.log("[v0] PassoPage: User verificado", { hasUser: !!user, userEmail: user?.email })
 
   if (!user) {
-    console.log("[v0] PassoPage: ❌ SEM USUÁRIO - Redirecionando para login")
+    console.log("[v0] PassoPage: Redirecionando para login - sem usuário")
     redirect("/auth/login")
   }
 
-  console.log("[v0] PassoPage: Buscando dados do discípulo para user_id:", user.id)
+  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
-  const { data: discipulo, error: discipuloError } = await supabase
-    .from("discipulos")
-    .select("*")
-    .eq("user_id", user.id)
-    .single()
-
-  console.log("[v0] PassoPage: Discípulo encontrado?", !!discipulo)
-  console.log("[v0] PassoPage: Erro ao buscar discípulo?", discipuloError)
+  console.log("[v0] PassoPage: Discipulo carregado", {
+    hasDiscipulo: !!discipulo,
+    discipuloId: discipulo?.id,
+  })
 
   if (!discipulo) {
-    console.log("[v0] PassoPage: ❌ DISCÍPULO NÃO ENCONTRADO - Redirecionando para dashboard")
+    console.log("[v0] PassoPage: Redirecionando para dashboard - sem discípulo")
     redirect("/dashboard")
   }
 
-  console.log("[v0] PassoPage: Discípulo ID:", discipulo.id)
-  console.log("[v0] PassoPage: Buscando progresso do passo")
-
-  const { data: progresso, error: progressoError } = await supabase
+  const { data: progresso } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
@@ -121,17 +109,20 @@ export default async function PassoPage({ params }: { params: { numero: string }
     .eq("passo_numero", numero)
     .single()
 
-  console.log("[v0] PassoPage: Progresso encontrado?", !!progresso)
-  console.log("[v0] PassoPage: Progresso completado?", progresso?.completado)
-  console.log("[v0] PassoPage: Erro ao buscar progresso?", progressoError)
+  console.log("[v0] PassoPage: Progresso carregado", {
+    hasProgresso: !!progresso,
+    completado: progresso?.completado,
+    enviado: progresso?.enviado_para_validacao,
+  })
 
   const passo = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
+
+  console.log("[v0] PassoPage: Passo encontrado", { hasPasso: !!passo, numero })
+
   if (!passo) {
-    console.log("[v0] PassoPage: ❌ PASSO NÃO ENCONTRADO NO CONTEÚDO - Redirecionando")
+    console.log("[v0] PassoPage: Redirecionando para dashboard - passo não encontrado")
     redirect("/dashboard")
   }
-
-  console.log("[v0] PassoPage: Passo encontrado:", passo.titulo)
 
   const { data: todosPassos } = await supabase
     .from("progresso_fases")
@@ -140,8 +131,6 @@ export default async function PassoPage({ params }: { params: { numero: string }
     .eq("fase_numero", 1)
 
   const passosCompletados = todosPassos?.filter((p) => p.completado).length || 0
-
-  console.log("[v0] PassoPage: Total de passos completados:", passosCompletados)
 
   let videosAssistidos: string[] = []
   let artigosLidos: string[] = []
@@ -160,10 +149,12 @@ export default async function PassoPage({ params }: { params: { numero: string }
 
   const status = getStatus()
 
-  console.log("[v0] PassoPage: Status do passo:", status)
-  console.log("[v0] PassoPage: Vídeos assistidos:", videosAssistidos.length)
-  console.log("[v0] PassoPage: Artigos lidos:", artigosLidos.length)
-  console.log("[v0] PassoPage: ✅ RENDERIZANDO COMPONENTE CLIENTE")
+  console.log("[v0] PassoPage: Renderizando PassoClient", {
+    numero,
+    status,
+    videosAssistidos,
+    artigosLidos,
+  })
 
   return (
     <PassoClient
