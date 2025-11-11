@@ -1,5 +1,3 @@
-"use client"
-
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type React from "react"
@@ -182,11 +180,7 @@ export default async function DashboardPage() {
                 </div>
 
                 <Link href={`/dashboard/passo/${userData.currentStep}`}>
-                  <Button
-                    className="w-full mt-4"
-                    size="lg"
-                    onClick={() => console.log("[v0] Navegando para passo:", userData.currentStep)}
-                  >
+                  <Button className="w-full mt-4" size="lg">
                     Continuar Missão
                     <Sparkles className="w-4 h-4 ml-2" />
                   </Button>
