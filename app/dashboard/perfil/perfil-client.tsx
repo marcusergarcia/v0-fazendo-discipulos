@@ -66,6 +66,7 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
     setIsUploadingPhoto(true)
 
     try {
+      // Preview local
       const reader = new FileReader()
       reader.onload = (e) => {
         setPreviewUrl(e.target?.result as string)
@@ -80,7 +81,6 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
 
       if (result.success && result.url) {
         setPreviewUrl(result.url)
-        alert("Foto atualizada com sucesso!")
         router.refresh()
       } else {
         alert(result.error || "Erro ao fazer upload da foto")

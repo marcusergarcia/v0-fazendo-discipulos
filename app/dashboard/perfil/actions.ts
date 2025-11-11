@@ -58,44 +58,43 @@ export async function uploadFotoPerfil(formData: FormData) {
     return { success: false, error: "Nenhum arquivo enviado" }
   }
 
-  // Validar tamanho (máximo 5MB)
-  if (file.size > 5242880) {
-    return { success: false, error: "Arquivo muito grande. Máximo 5MB." }
+  // Criar nome único para o arquivo
+  const fileExt = file.name.split(".").pop()
+  const fileName = `${user.id}-${Date.now()}.${fileExt}`
+  const filePath = `avatars/${fileName}`
+
+  // Upload para Supabase Storage
+  const { data: uploadData, error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+    cacheControl: "3600",
+    upsert: true,
+  })
+
+  if (uploadError) {
+    console.error("Erro ao fazer upload:", uploadError)
+    return { success: false, error: uploadError.message }
   }
 
-  // Validar tipo de arquivo
-  const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"]
-  if (!allowedTypes.includes(file.type)) {
-    return { success: false, error: "Tipo de arquivo não permitido. Use PNG, JPG, GIF ou WebP." }
+  // Obter URL pública
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("avatars").getPublicUrl(filePath)
+
+  // Atualizar perfil com nova URL
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({
+      foto_perfil_url: publicUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", user.id)
+
+  if (updateError) {
+    console.error("Erro ao atualizar perfil:", updateError)
+    return { success: false, error: updateError.message }
   }
 
-  try {
-    // Converter para base64
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-    const base64 = buffer.toString("base64")
-    const dataUrl = `data:${file.type};base64,${base64}`
+  revalidatePath("/dashboard/perfil")
+  revalidatePath("/dashboard")
 
-    // Atualizar perfil com nova foto em base64
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        foto_perfil_url: dataUrl,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id)
-
-    if (updateError) {
-      console.error("Erro ao atualizar perfil:", updateError)
-      return { success: false, error: updateError.message }
-    }
-
-    revalidatePath("/dashboard/perfil")
-    revalidatePath("/dashboard")
-
-    return { success: true, url: dataUrl }
-  } catch (error) {
-    console.error("Erro ao processar arquivo:", error)
-    return { success: false, error: "Erro ao processar arquivo" }
-  }
+  return { success: true, url: publicUrl }
 }

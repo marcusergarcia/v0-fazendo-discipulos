@@ -20,7 +20,6 @@ import {
   Sparkles,
   LogOut,
 } from "lucide-react"
-import { AvatarArmadura } from "@/components/avatar-armadura"
 
 export default async function DashboardPage({
   searchParams,
@@ -187,16 +186,6 @@ export default async function DashboardPage({
         </Card>
 
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
-          {/* Avatar with Armadura Evolutiva */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="text-center">Seu Progresso</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AvatarArmadura xp={xpAtual} fotoUrl={avatarUrl} />
-            </CardContent>
-          </Card>
-
           {/* Current Quest */}
           <Card className="lg:col-span-2">
             <CardHeader>
