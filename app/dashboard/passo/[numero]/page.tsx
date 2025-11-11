@@ -28,16 +28,16 @@ const PASSOS_CONTEUDO = {
       {
         id: "video-2",
         titulo: "Gênesis 1 - A Criação",
-        canal: "A Bíblia em Vídeo",
-        duracao: "3:05",
-        url: "https://www.youtube.com/watch?v=_ng5vKEv3Cg",
+        canal: "Luciano Subirá",
+        duracao: "30:05",
+        url: "https://www.youtube.com/watch?v=ha-SeFsM3KQ",
       },
       {
         id: "video-3",
         titulo: "Por que Deus nos Criou?",
         canal: "Ministério Fiel",
-        duracao: "6:18",
-        url: "https://www.youtube.com/watch?v=eAvYmE2YYIU",
+        duracao: "3:25",
+        url: "https://www.youtube.com/watch?v=2Vo0t3ZOkYI",
       },
     ],
     artigos: [
