@@ -26,14 +26,23 @@ export default function Page() {
     setIsLoading(true)
     setError(null)
 
+    console.log("[v0] Login attempt started for:", email)
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
+
+      console.log("[v0] Login response:", { data, error })
+
       if (error) throw error
+
+      console.log("[v0] Login successful, redirecting to dashboard")
       router.push("/dashboard")
+      router.refresh()
     } catch (error: unknown) {
+      console.error("[v0] Login error:", error)
       setError(error instanceof Error ? error.message : "Erro ao fazer login")
     } finally {
       setIsLoading(false)
