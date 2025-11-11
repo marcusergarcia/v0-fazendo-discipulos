@@ -1,5 +1,6 @@
 import type React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +21,15 @@ export default async function LandingPage() {
 
         <div className="relative container mx-auto px-4 py-20 sm:py-32">
           <div className="flex flex-col items-center text-center space-y-8">
+            <Image
+              src="/logo-fazendo-discipulos.png"
+              alt="Ministério Fazendo Discípulos"
+              width={400}
+              height={150}
+              priority
+              className="mb-4"
+            />
+
             <Badge className="px-4 py-2 text-sm font-semibold bg-secondary text-secondary-foreground">
               <Sparkles className="w-4 h-4 mr-2 inline" />
               Jornada de Fé Interativa

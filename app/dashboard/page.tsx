@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
+import Image from "next/image"
 import {
   Trophy,
   Target,
@@ -120,6 +121,16 @@ export default async function DashboardPage({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              <Link href="/dashboard">
+                <Image
+                  src="/logo-fazendo-discipulos.png"
+                  alt="Ministério Fazendo Discípulos"
+                  width={200}
+                  height={75}
+                  priority
+                  className="cursor-pointer"
+                />
+              </Link>
               <h1 className="text-2xl font-bold">Fazendo Discípulos</h1>
             </div>
             <div className="flex items-center gap-4">
