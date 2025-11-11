@@ -58,13 +58,33 @@ export async function uploadFotoPerfil(formData: FormData) {
     return { success: false, error: "Nenhum arquivo enviado" }
   }
 
+  const bucketName = "avatars"
+
+  // Verificar se o bucket existe
+  const { data: buckets } = await supabase.storage.listBuckets()
+  const bucketExists = buckets?.some((b) => b.name === bucketName)
+
+  if (!bucketExists) {
+    // Criar bucket público
+    const { error: createBucketError } = await supabase.storage.createBucket(bucketName, {
+      public: true,
+      fileSizeLimit: 5242880, // 5MB
+      allowedMimeTypes: ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp"],
+    })
+
+    if (createBucketError) {
+      console.error("Erro ao criar bucket:", createBucketError)
+      return { success: false, error: "Erro ao configurar armazenamento: " + createBucketError.message }
+    }
+  }
+
   // Criar nome único para o arquivo
   const fileExt = file.name.split(".").pop()
   const fileName = `${user.id}-${Date.now()}.${fileExt}`
-  const filePath = `avatars/${fileName}`
+  const filePath = fileName // Simplificado, sem subpasta
 
   // Upload para Supabase Storage
-  const { data: uploadData, error: uploadError } = await supabase.storage.from("avatars").upload(filePath, file, {
+  const { data: uploadData, error: uploadError } = await supabase.storage.from(bucketName).upload(filePath, file, {
     cacheControl: "3600",
     upsert: true,
   })
@@ -77,7 +97,7 @@ export async function uploadFotoPerfil(formData: FormData) {
   // Obter URL pública
   const {
     data: { publicUrl },
-  } = supabase.storage.from("avatars").getPublicUrl(filePath)
+  } = supabase.storage.from(bucketName).getPublicUrl(filePath)
 
   // Atualizar perfil com nova URL
   const { error: updateError } = await supabase
