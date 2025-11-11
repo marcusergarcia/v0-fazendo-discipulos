@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Camera, Upload, Save, Trophy } from "lucide-react"
+import { ArrowLeft, Camera, Upload, Save, Trophy, Shield, Award } from "lucide-react"
 import Link from "next/link"
 import { atualizarPerfil, uploadFotoPerfil } from "./actions"
+import { AvatarArmadura } from "@/components/avatar-armadura"
 
 interface PerfilClientProps {
   profile: any
@@ -35,6 +36,8 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
 
   const nivelNome = discipulo?.nivel_atual || "Explorador"
   const xpTotal = discipulo?.xp_total || 0
+
+  const nivelNumero = getLevelNumber(nivelNome)
 
   const getInitials = () => {
     if (initialNome) {
@@ -252,6 +255,101 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
               </form>
             </CardContent>
           </Card>
+        </div>
+
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-primary" />
+              Armadura de Deus
+            </CardTitle>
+            <CardDescription>A armadura cresce conforme você avança nos níveis (Efésios 6:10-18)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
+              <AvatarArmadura nivel={nivelNumero} size="lg" showLabels={false} />
+
+              <div className="space-y-3 w-full max-w-sm">
+                <h3 className="font-semibold text-lg mb-4">Peças Conquistadas</h3>
+
+                <div className="space-y-2">
+                  <ArmorPiece
+                    name="Capacete da Salvação"
+                    unlocked={nivelNumero >= 2}
+                    level={2}
+                    description="Desbloqueado no Nível 2: Discípulo"
+                  />
+                  <ArmorPiece
+                    name="Couraça da Justiça"
+                    unlocked={nivelNumero >= 3}
+                    level={3}
+                    description="Desbloqueado no Nível 3: Guerreiro"
+                  />
+                  <ArmorPiece
+                    name="Escudo da Fé"
+                    unlocked={nivelNumero >= 4}
+                    level={4}
+                    description="Desbloqueado no Nível 4: Servo Mestre"
+                  />
+                  <ArmorPiece
+                    name="Espada do Espírito"
+                    unlocked={nivelNumero >= 5}
+                    level={5}
+                    description="Desbloqueado no Nível 5: Multiplicador"
+                  />
+                </div>
+
+                {nivelNumero < 5 && (
+                  <div className="mt-6 p-4 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Continue sua jornada para desbloquear todas as peças da armadura!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function getLevelNumber(levelName: string): number {
+  const levels: Record<string, number> = {
+    Explorador: 1,
+    Discípulo: 2,
+    Guerreiro: 3,
+    "Servo Mestre": 4,
+    Multiplicador: 5,
+  }
+  return levels[levelName] || 1
+}
+
+function ArmorPiece({
+  name,
+  unlocked,
+  level,
+  description,
+}: {
+  name: string
+  unlocked: boolean
+  level: number
+  description: string
+}) {
+  return (
+    <div
+      className={`p-3 rounded-lg border ${unlocked ? "bg-accent/10 border-accent" : "bg-muted border-muted-foreground/20"}`}
+    >
+      <div className="flex items-center gap-3">
+        {unlocked ? (
+          <Award className="w-5 h-5 text-accent flex-shrink-0" />
+        ) : (
+          <div className="w-5 h-5 rounded-full bg-muted-foreground/20 flex-shrink-0" />
+        )}
+        <div className="flex-1">
+          <p className={`font-medium text-sm ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>{name}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
     </div>
