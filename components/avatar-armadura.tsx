@@ -32,7 +32,7 @@ export function AvatarArmadura({ nivel, size = "md", showLabels = false, genero,
 
   const getAvatarImage = () => {
     const isFeminino = genero === "feminino"
-    const faixaEtaria = idade ? (idade < 30 ? "jovem" : idade < 50 ? "adulto" : "idoso") : "adulto"
+    const faixaEtaria = idade ? (idade < 35 ? "jovem" : idade < 60 ? "adulto" : "idoso") : "adulto"
 
     // Caminho base da imagem: /images/avatar-{genero}-{faixaEtaria}-nivel-{nivel}.jpg
     const generoStr = isFeminino ? "feminino" : "masculino"
