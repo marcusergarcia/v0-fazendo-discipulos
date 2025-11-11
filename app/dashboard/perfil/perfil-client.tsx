@@ -33,6 +33,8 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
   const initialTelefone = profile?.telefone || ""
   const initialIgreja = profile?.igreja || ""
   const initialBio = profile?.bio || ""
+  const initialGenero = profile?.genero || ""
+  const initialDataNascimento = profile?.data_nascimento || ""
 
   const nivelNome = discipulo?.nivel_atual || "Explorador"
   const xpTotal = discipulo?.xp_total || 0
@@ -120,6 +122,20 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
       setIsSubmitting(false)
     }
   }
+
+  const calcularIdade = () => {
+    if (!profile?.data_nascimento) return null
+    const hoje = new Date()
+    const nascimento = new Date(profile.data_nascimento)
+    let idade = hoje.getFullYear() - nascimento.getFullYear()
+    const mes = hoje.getMonth() - nascimento.getMonth()
+    if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--
+    }
+    return idade
+  }
+
+  const idade = calcularIdade()
 
   return (
     <div className="min-h-screen bg-background">
@@ -221,6 +237,34 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
                   <Input id="nome_completo" name="nome_completo" defaultValue={initialNome} required />
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="genero">Gênero</Label>
+                    <select
+                      id="genero"
+                      name="genero"
+                      defaultValue={initialGenero}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="masculino">Masculino</option>
+                      <option value="feminino">Feminino</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                    <Input
+                      id="data_nascimento"
+                      name="data_nascimento"
+                      type="date"
+                      defaultValue={initialDataNascimento}
+                      max={new Date().toISOString().split("T")[0]}
+                    />
+                    {idade && <p className="text-xs text-muted-foreground">{idade} anos</p>}
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="telefone">Telefone</Label>
                   <Input
@@ -267,7 +311,7 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
           </CardHeader>
           <CardContent>
             <div className="flex flex-col lg:flex-row items-center justify-center gap-8">
-              <AvatarArmadura nivel={nivelNumero} size="lg" showLabels={false} />
+              <AvatarArmadura nivel={nivelNumero} size="lg" showLabels={false} genero={profile?.genero} idade={idade} />
 
               <div className="space-y-3 w-full max-w-sm">
                 <h3 className="font-semibold text-lg mb-4">Peças Conquistadas</h3>

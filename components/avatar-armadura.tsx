@@ -5,9 +5,11 @@ interface AvatarArmaduraProps {
   nivel: number
   size?: "sm" | "md" | "lg"
   showLabels?: boolean
+  genero?: string | null
+  idade?: number | null
 }
 
-export function AvatarArmadura({ nivel, size = "md", showLabels = false }: AvatarArmaduraProps) {
+export function AvatarArmadura({ nivel, size = "md", showLabels = false, genero, idade }: AvatarArmaduraProps) {
   // Mapeamento: nível 1 = Explorador (sem armadura), nível 5 = Multiplicador (armadura completa)
   const pecasArmadura = {
     capacete: nivel >= 2, // Discípulo
@@ -28,16 +30,42 @@ export function AvatarArmadura({ nivel, size = "md", showLabels = false }: Avata
     lg: "w-6 h-6",
   }
 
-  // Determina qual imagem 3D mostrar baseado no nível
+  // Determina qual imagem 3D mostrar baseado no nível, gênero e idade
   const getAvatarImage = () => {
-    const images = {
-      1: "/images/avatar-nivel-1.jpg", // Explorador - sem armadura
-      2: "/images/avatar-nivel-2.jpg", // Discípulo - com capacete
-      3: "/images/avatar-nivel-3.jpg", // Guerreiro - capacete + couraça
-      4: "/images/avatar-nivel-4.jpg", // Servo Mestre - capacete + couraça + escudo
-      5: "/images/avatar-nivel-5.jpg", // Multiplicador - armadura completa
+    const isFeminino = genero === "feminino"
+    const isJovem = idade && idade < 30
+    const isMeiaIdade = idade && idade >= 30 && idade < 50
+    const isIdoso = idade && idade >= 50
+
+    // Gerar query para imagem baseada nos parâmetros
+    let query = `christian warrior level ${nivel}`
+
+    if (isFeminino) {
+      query += " female woman"
+    } else {
+      query += " male man"
     }
-    return images[nivel as keyof typeof images] || images[1]
+
+    if (isJovem) {
+      query += " young 20s"
+    } else if (isMeiaIdade) {
+      query += " middle-aged 40s"
+    } else if (isIdoso) {
+      query += " elderly senior"
+    }
+
+    query += " armor of god 3D realistic"
+
+    // Mapear query para imagens específicas por nível
+    const baseImages = {
+      1: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(query + " no armor simple tunic")}`,
+      2: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(query + " helmet salvation")}`,
+      3: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(query + " helmet breastplate righteousness")}`,
+      4: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(query + " helmet breastplate shield faith")}`,
+      5: `/placeholder.svg?height=400&width=300&query=${encodeURIComponent(query + " full armor sword spirit")}`,
+    }
+
+    return baseImages[nivel as keyof typeof baseImages] || baseImages[1]
   }
 
   return (

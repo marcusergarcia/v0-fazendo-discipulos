@@ -18,6 +18,8 @@ export async function atualizarPerfil(formData: FormData) {
   const telefone = formData.get("telefone") as string
   const igreja = formData.get("igreja") as string
   const bio = formData.get("bio") as string
+  const genero = formData.get("genero") as string
+  const data_nascimento = formData.get("data_nascimento") as string
 
   const { error } = await supabase
     .from("profiles")
@@ -26,6 +28,8 @@ export async function atualizarPerfil(formData: FormData) {
       telefone,
       igreja,
       bio,
+      genero: genero || null,
+      data_nascimento: data_nascimento || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id)
