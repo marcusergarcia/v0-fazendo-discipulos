@@ -24,66 +24,28 @@ import {
 export default async function DashboardPage() {
   const supabase = await createClient()
 
-  console.log("[v0] Dashboard: verificando autenticação")
-
   // Verificar autenticação
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser()
-
-  console.log("[v0] Dashboard: user =", user?.id, "error =", authError)
-
   if (authError || !user) {
-    console.log("[v0] Dashboard: redirecionando para login")
     redirect("/auth/login")
   }
 
-  console.log("[v0] Dashboard: buscando perfil")
   // Buscar perfil do usuário
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-  console.log("[v0] Dashboard: profile =", profile, "error =", profileError)
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
-  console.log("[v0] Dashboard: buscando discípulo")
   // Buscar dados do discípulo
-  const { data: discipulo, error: discipuloError } = await supabase
-    .from("discipulos")
-    .select("*")
-    .eq("user_id", user.id)
-    .single()
-  console.log("[v0] Dashboard: discipulo =", discipulo, "error =", discipuloError)
+  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
-  if (!discipulo) {
-    console.log("[v0] Dashboard: discípulo não encontrado, criando registro inicial")
-    const { data: novoDiscipulo, error: createError } = await supabase
-      .from("discipulos")
-      .insert({
-        user_id: user.id,
-        nivel_atual: "Explorador",
-        fase_atual: 1,
-        xp_total: 0,
-      })
-      .select()
-      .single()
-
-    console.log("[v0] Dashboard: novo discípulo criado =", novoDiscipulo, "error =", createError)
-
-    if (createError || !novoDiscipulo) {
-      console.error("[v0] Dashboard: erro ao criar discípulo", createError)
-      return <div className="p-8 text-center">Erro ao carregar dados. Tente novamente.</div>
-    }
-  }
-
-  console.log("[v0] Dashboard: buscando progresso das fases")
   // Buscar progresso dos passos
-  const { data: progressoFases, error: progressoError } = await supabase
+  const { data: progressoFases } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo?.id || "")
     .eq("fase_numero", discipulo?.fase_atual || 1)
     .order("passo_numero")
-
-  console.log("[v0] Dashboard: progressoFases =", progressoFases?.length, "error =", progressoError)
 
   // Buscar recompensas
   const { data: recompensas } = await supabase
