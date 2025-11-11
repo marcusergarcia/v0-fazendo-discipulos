@@ -9,8 +9,15 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Removendo IF NOT EXISTS das policies (não suportado no Supabase)
+-- Deletar policies existentes antes de criar novas
+DROP POLICY IF EXISTS "Usuários podem fazer upload de seus avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Avatars são publicamente acessíveis" ON storage.objects;
+DROP POLICY IF EXISTS "Usuários podem deletar seus próprios avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Usuários podem atualizar seus próprios avatars" ON storage.objects;
+
 -- Política para permitir usuários autenticados fazer upload de suas próprias fotos
-CREATE POLICY IF NOT EXISTS "Usuários podem fazer upload de seus avatars"
+CREATE POLICY "Usuários podem fazer upload de seus avatars"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (
@@ -19,13 +26,13 @@ WITH CHECK (
 );
 
 -- Política para permitir leitura pública dos avatars
-CREATE POLICY IF NOT EXISTS "Avatars são publicamente acessíveis"
+CREATE POLICY "Avatars são publicamente acessíveis"
 ON storage.objects FOR SELECT
 TO public
 USING (bucket_id = 'avatars');
 
 -- Política para permitir usuários deletarem seus próprios avatars
-CREATE POLICY IF NOT EXISTS "Usuários podem deletar seus próprios avatars"
+CREATE POLICY "Usuários podem deletar seus próprios avatars"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (
@@ -34,7 +41,7 @@ USING (
 );
 
 -- Política para permitir usuários atualizarem seus próprios avatars
-CREATE POLICY IF NOT EXISTS "Usuários podem atualizar seus próprios avatars"
+CREATE POLICY "Usuários podem atualizar seus próprios avatars"
 ON storage.objects FOR UPDATE
 TO authenticated
 USING (
