@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { cadastrarDiscipuloPorConvite } from "./actions"
 import { useState, useMemo, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -156,26 +156,10 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
     try {
       console.log("[v0] Iniciando cadastro...")
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
-        },
-      })
-
-      if (authError) {
-        console.error("[v0] Erro auth:", authError)
-        throw authError
-      }
-      if (!authData.user) throw new Error("Erro ao criar usuário")
-
-      console.log("[v0] Usuário criado:", authData.user.id)
-
       let fotoUrl = null
       if (foto) {
         const fileExt = foto.name.split(".").pop()
-        const fileName = `${authData.user.id}-${Date.now()}.${fileExt}`
+        const fileName = `${Date.now()}.${fileExt}`
         const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, foto)
 
         if (!uploadError) {
@@ -184,63 +168,30 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         }
       }
 
-      console.log("[v0] Foto URL:", fotoUrl)
-
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: authData.user.id,
+      const resultado = await cadastrarDiscipuloPorConvite({
         email,
-        nome_completo: nomeCompleto,
+        password,
+        nomeCompleto,
         telefone,
         igreja,
         genero,
         etnia,
-        data_nascimento: dataNascimento,
-        foto_perfil_url: fotoUrl,
+        dataNascimento,
+        fotoUrl,
+        discipuladorId: convite.discipulador_id,
+        codigoConvite: convite.codigo_convite,
+        aceitouLGPD,
+        aceitouCompromisso,
+        localizacao,
+        latitude,
+        longitude,
+        dataCadastro,
+        horaCadastro,
+        semanaCadastro,
       })
 
-      if (profileError) {
-        console.error("[v0] Erro ao criar profile:", profileError)
-        throw new Error(`Erro ao criar perfil: ${profileError.message}`)
-      }
-
-      console.log("[v0] Profile criado com sucesso")
-
-      const { error: discipuloError } = await supabase.from("discipulos").insert({
-        user_id: authData.user.id,
-        discipulador_id: convite.discipulador_id,
-        nivel_atual: "Novo",
-        xp_total: 0,
-        fase_atual: 1,
-        passo_atual: 1,
-        aceitou_lgpd: aceitouLGPD,
-        aceitou_compromisso: aceitouCompromisso,
-        data_aceite_termos: new Date().toISOString(),
-        localizacao_cadastro: localizacao,
-        latitude_cadastro: latitude,
-        longitude_cadastro: longitude,
-        data_cadastro: dataCadastro,
-        hora_cadastro: horaCadastro,
-        semana_cadastro: semanaCadastro,
-      })
-
-      if (discipuloError) {
-        console.error("[v0] Erro ao criar discípulo:", discipuloError)
-        throw new Error(`Erro ao criar registro de discípulo: ${discipuloError.message}`)
-      }
-
-      console.log("[v0] Discípulo criado com sucesso")
-
-      const { error: conviteError } = await supabase
-        .from("convites")
-        .update({
-          usado: true,
-          usado_por: authData.user.id,
-          data_uso: new Date().toISOString(),
-        })
-        .eq("codigo_convite", convite.codigo_convite)
-
-      if (conviteError) {
-        console.error("[v0] Erro ao atualizar convite:", conviteError)
+      if (!resultado.success) {
+        throw new Error(resultado.error)
       }
 
       console.log("[v0] Convite marcado como usado")
@@ -250,7 +201,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         tipo: "aprovacao_discipulo",
         titulo: "Novo Discípulo Aguardando Aprovação",
         mensagem: `${nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
-        link: `/discipulador/aprovar/${authData.user.id}`,
+        link: `/discipulador/aprovar/${resultado.userId}`,
       })
 
       console.log("[v0] Notificação criada, redirecionando...")
