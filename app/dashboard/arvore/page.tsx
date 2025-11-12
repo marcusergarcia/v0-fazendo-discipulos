@@ -33,10 +33,29 @@ export default async function ArvoreDiscipuladoPage() {
   // Buscar dados do usuário atual
   const { data: discipuloAtual } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
+  console.log("[v0] Árvore - Dados completos:", {
+    totalDiscipulos: todosDiscipulos?.length,
+    totalPerfis: perfis?.length,
+    discipulos: todosDiscipulos?.map((d) => ({
+      userId: d.user_id,
+      discipuladorId: d.discipulador_id,
+      aprovado: d.aprovado_discipulador,
+    })),
+  })
+
   // Construir estrutura de árvore
   const arvoreData = todosDiscipulos?.map((d) => {
     const perfil = perfisMap.get(d.user_id)
     const discipuladorPerfil = d.discipulador_id ? perfisMap.get(d.discipulador_id) : null
+
+    console.log("[v0] Processando discípulo:", {
+      userId: d.user_id,
+      discipuladorId: d.discipulador_id,
+      perfilEncontrado: !!perfil,
+      discipuladorPerfilEncontrado: !!discipuladorPerfil,
+      nomePerfil: perfil?.nome_completo,
+      nomeDiscipulador: discipuladorPerfil?.nome_completo,
+    })
 
     return {
       id: d.id,
@@ -52,6 +71,8 @@ export default async function ArvoreDiscipuladoPage() {
       aprovadoDiscipulador: d.aprovado_discipulador,
     }
   })
+
+  console.log("[v0] Árvore montada:", arvoreData)
 
   return (
     <div className="min-h-screen bg-background">

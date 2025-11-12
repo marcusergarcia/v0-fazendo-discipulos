@@ -58,22 +58,32 @@ export async function middleware(request: NextRequest) {
       .single()
 
     console.log("[v0] Middleware - Verificando aprovação:", {
-      discipulo,
-      error: discipuloError,
       userId: user.id,
       path: request.nextUrl.pathname,
+      discipulo,
+      error: discipuloError,
+      hasDiscipulo: !!discipulo,
+      hasDiscipulador: discipulo?.discipulador_id !== null,
+      isApproved: discipulo?.aprovado_discipulador,
     })
 
-    if (discipulo && discipulo.discipulador_id !== null && discipulo.aprovado_discipulador === false) {
+    if (discipulo && discipulo.discipulador_id !== null && discipulo.aprovado_discipulador !== true) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
-      console.log("[v0] Bloqueando acesso - usuário não aprovado, discipulador_id:", discipulo.discipulador_id)
+      console.log("[v0] BLOQUEANDO ACESSO:", {
+        userId: user.id,
+        discipuladorId: discipulo.discipulador_id,
+        aprovado: discipulo.aprovado_discipulador,
+        redirectTo: url.pathname,
+      })
       return NextResponse.redirect(url)
     }
 
-    if (!discipulo && !discipuloError) {
-      console.log("[v0] Usuário sem registro em discipulos - permitindo acesso")
-    }
+    console.log("[v0] PERMITINDO ACESSO:", {
+      userId: user.id,
+      isMaster: discipulo?.discipulador_id === null,
+      isApproved: discipulo?.aprovado_discipulador === true,
+    })
   }
 
   if (
