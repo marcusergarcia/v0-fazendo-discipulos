@@ -59,11 +59,12 @@ export async function middleware(request: NextRequest) {
   if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
     const { data: discipulo } = await supabase
       .from("discipulos")
-      .select("aprovado_discipulador")
+      .select("aprovado_discipulador, discipulador_id")
       .eq("user_id", user.id)
       .single()
 
-    if (discipulo && discipulo.aprovado_discipulador === false) {
+    // Se tem discipulador (não é master) e não está aprovado, redireciona
+    if (discipulo && discipulo.discipulador_id !== null && discipulo.aprovado_discipulador === false) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
       return NextResponse.redirect(url)
