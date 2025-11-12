@@ -95,3 +95,10 @@ COMMENT ON COLUMN public.progresso_fases.alertado_tempo_excessivo IS 'Se discipu
 COMMENT ON COLUMN public.profiles.localizacao_cadastro IS 'Localização geográfica no momento do cadastro';
 COMMENT ON COLUMN public.profiles.latitude_cadastro IS 'Latitude da localização do cadastro';
 COMMENT ON COLUMN public.profiles.longitude_cadastro IS 'Longitude da localização do cadastro';
+COMMENT ON COLUMN public.profiles.aprovado_discipulador IS 'Se o cadastro foi aprovado pelo discipulador';
+COMMENT ON COLUMN public.profiles.data_aprovacao_discipulador IS 'Data de aprovação do cadastro pelo discipulador';
+
+-- Adicionar campo de aprovação do discipulador no final do arquivo
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS aprovado_discipulador BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS data_aprovacao_discipulador TIMESTAMPTZ;

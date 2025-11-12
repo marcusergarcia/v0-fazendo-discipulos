@@ -10,7 +10,19 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Shield, UserPlus, Upload, MapPin, Calendar, Clock } from "lucide-react"
+import {
+  Shield,
+  UserPlus,
+  Upload,
+  MapPin,
+  Calendar,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  BookOpen,
+  Scale,
+  CheckCircle2,
+} from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
@@ -18,6 +30,7 @@ interface ConviteClientProps {
   convite: {
     id: string
     codigo_convite: string
+    discipulador_id: string
     discipulador: {
       nome_completo: string
       email: string
@@ -28,6 +41,8 @@ interface ConviteClientProps {
 export default function CadastroConviteClient({ convite }: ConviteClientProps) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+
+  const [etapa, setEtapa] = useState(1)
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -50,6 +65,8 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
 
   const [aceitouLGPD, setAceitouLGPD] = useState(false)
   const [aceitouCompromisso, setAceitouCompromisso] = useState(false)
+  const [leuTermoCompleto, setLeuTermoCompleto] = useState(false)
+  const [leuLGPDCompleto, setLeuLGPDCompleto] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -156,9 +173,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         const fileName = `${authData.user.id}-${Date.now()}.${fileExt}`
         const { error: uploadError } = await supabase.storage.from("avatars").upload(fileName, foto)
 
-        if (uploadError) {
-          console.error("Erro ao fazer upload da foto:", uploadError)
-        } else {
+        if (!uploadError) {
           const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName)
           fotoUrl = urlData.publicUrl
         }
@@ -174,6 +189,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         etnia,
         data_nascimento: dataNascimento,
         foto_perfil_url: fotoUrl,
+        discipulador_id: convite.discipulador_id,
         aceitou_lgpd: aceitouLGPD,
         aceitou_compromisso: aceitouCompromisso,
         data_aceite_termos: new Date().toISOString(),
@@ -183,6 +199,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         data_cadastro: dataCadastro,
         hora_cadastro: horaCadastro,
         semana_cadastro: semanaCadastro,
+        aprovado_discipulador: false,
       })
 
       if (profileError) throw profileError
@@ -199,15 +216,15 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
 
       if (conviteError) throw conviteError
 
-      // Criar registro de discípulo com o discipulador do convite
-      const { error: discipuloError } = await supabase.from("discipulos").insert({
-        user_id: authData.user.id,
-        discipulador_id: convite.discipulador_id,
+      await supabase.from("notificacoes").insert({
+        user_id: convite.discipulador_id,
+        tipo: "aprovacao_discipulo",
+        titulo: "Novo Discípulo Aguardando Aprovação",
+        mensagem: `${nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
+        link: `/discipulador/aprovar/${authData.user.id}`,
       })
 
-      if (discipuloError) throw discipuloError
-
-      router.push("/auth/sign-up-success")
+      router.push("/convite/aguardando-aprovacao")
     } catch (error) {
       console.error("Erro no cadastro:", error)
       setError(error instanceof Error ? error.message : "Erro ao criar conta")
@@ -218,26 +235,357 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-blue-950 p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <Shield className="h-12 w-12 text-yellow-400" />
-            <h1 className="text-3xl font-bold text-white">Bem-vindo ao Fazendo Discípulos!</h1>
-            <p className="text-sm text-blue-200">
-              Você foi convidado por{" "}
-              <span className="font-semibold text-yellow-400">{convite.discipulador.nome_completo}</span>
-            </p>
-          </div>
+      <div className="max-w-4xl mx-auto">
+        {/* Etapa 1: Boas-vindas e Explicação */}
+        {etapa === 1 && (
+          <Card className="bg-white/10 backdrop-blur border-white/20">
+            <CardHeader className="text-center">
+              <Image
+                src="/logo-fazendo-discipulos.png"
+                alt="Fazendo Discípulos"
+                width={200}
+                height={75}
+                className="mx-auto mb-4"
+              />
+              <CardTitle className="text-3xl text-white flex items-center justify-center gap-2">
+                <BookOpen className="h-8 w-8 text-yellow-400" />
+                Bem-vindo ao Fazendo Discípulos!
+              </CardTitle>
+              <CardDescription className="text-blue-200 text-lg">
+                Você foi convidado por{" "}
+                <span className="font-semibold text-yellow-400">{convite.discipulador.nome_completo}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 text-white">
+              <div className="space-y-4">
+                <h3 className="text-2xl font-semibold text-yellow-400">O que é Fazendo Discípulos?</h3>
+                <p className="text-lg leading-relaxed">
+                  Um sistema completo e interativo de discipulado cristão, estruturado em fases progressivas para seu
+                  crescimento espiritual. Nossa missão é formar discípulos maduros e multiplicadores da fé em Cristo.
+                </p>
+              </div>
 
+              <div className="space-y-4">
+                <h3 className="text-2xl font-semibold text-yellow-400">Como Funciona?</h3>
+                <div className="space-y-3 pl-4 border-l-4 border-yellow-400">
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">📖 Fase 1: O Evangelho (10 passos)</h4>
+                    <p className="text-blue-100">
+                      Compreenda os fundamentos da fé cristã e torne-se discípulo de Cristo
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">🛡️ Fase 2: Armadura de Deus (6 passos)</h4>
+                    <p className="text-blue-100">
+                      Aprenda sobre cada peça da armadura espiritual através de missões práticas
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">⛰️ Fase 3: Sermão da Montanha</h4>
+                    <p className="text-blue-100">Treinamento completo em Mateus 5-7 para se tornar discipulador</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-2xl font-semibold text-yellow-400">Sistema Gamificado</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">🎯 Missões e Recompensas</h4>
+                    <p className="text-sm text-blue-100">
+                      Ganhe XP, suba de nível e conquiste insígnias digitais e medalhas físicas
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">👥 Conexão Real</h4>
+                    <p className="text-sm text-blue-100">
+                      Interação obrigatória com seu discipulador em cada passo da jornada
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">📚 Conteúdo Rico</h4>
+                    <p className="text-sm text-blue-100">
+                      Vídeos, artigos, reflexões e missões práticas para aplicar o que aprendeu
+                    </p>
+                  </div>
+                  <div className="bg-white/5 p-4 rounded-lg">
+                    <h4 className="font-semibold mb-2">🌱 Multiplicação</h4>
+                    <p className="text-sm text-blue-100">Torne-se discipulador e ajude outros a crescer na fé</p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setEtapa(2)}
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold text-lg py-6"
+              >
+                Entendi! Continuar
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Etapa 2: Termo de Compromisso */}
+        {etapa === 2 && (
+          <Card className="bg-white/10 backdrop-blur border-white/20">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl text-white flex items-center justify-center gap-2">
+                <Shield className="h-8 w-8 text-yellow-400" />
+                Termo de Compromisso
+              </CardTitle>
+              <CardDescription className="text-blue-200">
+                Leia atentamente cada ponto antes de prosseguir
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 text-white">
+              <div className="bg-white/5 p-6 rounded-lg space-y-4 max-h-96 overflow-y-auto">
+                <h3 className="text-xl font-semibold text-yellow-400">COMPROMISSO DE DISCIPULADO</h3>
+
+                <div className="space-y-3 text-blue-100">
+                  <p className="font-semibold text-white">Ao aceitar este compromisso, eu declaro que:</p>
+
+                  <div className="space-y-2 pl-4">
+                    <p>
+                      <strong>1. DEDICAÇÃO DE TEMPO:</strong> Comprometo-me a dedicar tempo regular para o estudo,
+                      reflexão e prática dos ensinamentos de cada passo do discipulado.
+                    </p>
+
+                    <p>
+                      <strong>2. PRAZO RECOMENDADO:</strong> Esforçar-me-ei para completar cada passo na média de 3 a 7
+                      dias, entendendo que este ritmo é ideal para absorção e aplicação do conteúdo.
+                    </p>
+
+                    <p>
+                      <strong>3. CUMPRIMENTO DE MISSÕES:</strong> Realizarei todas as missões práticas propostas,
+                      colocando em prática o que aprendi e testemunhando minha fé através de ações concretas.
+                    </p>
+
+                    <p>
+                      <strong>4. COMUNICAÇÃO REGULAR:</strong> Manterei contato regular com meu discipulador,
+                      compartilhando minhas reflexões, dúvidas e experiências ao longo da jornada.
+                    </p>
+
+                    <p>
+                      <strong>5. HONESTIDADE E TRANSPARÊNCIA:</strong> Serei honesto(a) em minhas respostas e reflexões,
+                      buscando crescimento espiritual genuíno e não apenas progresso no sistema.
+                    </p>
+
+                    <p>
+                      <strong>6. LEITURA COMPLETA:</strong> Assistirei a todos os vídeos e lerei todos os artigos antes
+                      de enviar minhas reflexões, garantindo compreensão adequada do conteúdo.
+                    </p>
+
+                    <p>
+                      <strong>7. RESPEITO AO PROCESSO:</strong> Reconheço que o discipulado é um processo de
+                      transformação e não uma corrida, respeitando meu próprio ritmo enquanto mantenho disciplina.
+                    </p>
+
+                    <p>
+                      <strong>8. COMPROMISSO COM A MULTIPLICAÇÃO:</strong> Ao concluir minha jornada, comprometo-me a
+                      considerar seriamente tornar-me discipulador(a) de outros, multiplicando o que aprendi.
+                    </p>
+
+                    <p>
+                      <strong>9. RESPEITO AO DISCIPULADOR:</strong> Valorizarei o tempo e dedicação do meu discipulador,
+                      respondendo prontamente suas mensagens e seguindo suas orientações.
+                    </p>
+
+                    <p>
+                      <strong>10. PERSEVERANÇA:</strong> Comprometo-me a não desistir diante das dificuldades, buscando
+                      força em Deus e apoio do meu discipulador quando necessário.
+                    </p>
+                  </div>
+
+                  <p className="pt-4 font-semibold text-white">
+                    Entendo que este compromisso é uma declaração de intenção séria para meu crescimento espiritual e
+                    que meu discipulador conta comigo para cumprir esta jornada com dedicação e integridade.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3 bg-white/5 p-4 rounded-lg">
+                  <Checkbox
+                    id="leu-termo"
+                    checked={leuTermoCompleto}
+                    onCheckedChange={(checked) => setLeuTermoCompleto(checked as boolean)}
+                    className="mt-1"
+                  />
+                  <label htmlFor="leu-termo" className="text-sm cursor-pointer">
+                    <strong>Confirmo que li e compreendi todos os 10 pontos do Termo de Compromisso acima</strong>
+                  </label>
+                </div>
+
+                <div className="flex items-start space-x-3 bg-yellow-500/10 p-4 rounded-lg border-2 border-yellow-500/30">
+                  <Checkbox
+                    id="aceito-compromisso"
+                    checked={aceitouCompromisso}
+                    onCheckedChange={(checked) => setAceitouCompromisso(checked as boolean)}
+                    disabled={!leuTermoCompleto}
+                    className="mt-1"
+                  />
+                  <label htmlFor="aceito-compromisso" className="text-sm cursor-pointer font-semibold">
+                    <strong className="text-yellow-400">ACEITO</strong> este Termo de Compromisso e declaro estar
+                    pronto(a) para iniciar minha jornada de discipulado com dedicação e seriedade
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => setEtapa(1)}
+                  variant="outline"
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Voltar
+                </Button>
+                <Button
+                  onClick={() => setEtapa(3)}
+                  disabled={!aceitouCompromisso}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold"
+                >
+                  Continuar
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Etapa 3: Termo LGPD */}
+        {etapa === 3 && (
+          <Card className="bg-white/10 backdrop-blur border-white/20">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl text-white flex items-center justify-center gap-2">
+                <Scale className="h-8 w-8 text-yellow-400" />
+                Termo de Privacidade (LGPD)
+              </CardTitle>
+              <CardDescription className="text-blue-200">
+                Proteção de dados pessoais conforme a Lei Geral de Proteção de Dados
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6 text-white">
+              <div className="bg-white/5 p-6 rounded-lg space-y-4 max-h-96 overflow-y-auto">
+                <h3 className="text-xl font-semibold text-yellow-400">POLÍTICA DE PRIVACIDADE E PROTEÇÃO DE DADOS</h3>
+
+                <div className="space-y-3 text-blue-100">
+                  <p className="font-semibold text-white">COLETA E USO DE DADOS:</p>
+
+                  <div className="space-y-2 pl-4">
+                    <p>
+                      <strong>Dados Coletados:</strong> Nome completo, e-mail, telefone, data de nascimento, gênero,
+                      etnia, foto de perfil, localização geográfica, igreja, informações de progresso no discipulado,
+                      reflexões e missões completadas.
+                    </p>
+
+                    <p>
+                      <strong>Finalidade:</strong> Os dados são coletados exclusivamente para fins de acompanhamento do
+                      seu processo de discipulado, comunicação com seu discipulador, registro de progresso espiritual e
+                      geração de estatísticas agregadas para melhoria do sistema.
+                    </p>
+
+                    <p>
+                      <strong>Compartilhamento:</strong> Seus dados pessoais serão compartilhados apenas com seu
+                      discipulador designado e administradores do sistema. Não vendemos, alugamos ou compartilhamos seus
+                      dados com terceiros para fins comerciais.
+                    </p>
+
+                    <p>
+                      <strong>Armazenamento:</strong> Todos os dados são armazenados de forma segura em servidores
+                      protegidos, com acesso restrito e criptografia adequada.
+                    </p>
+
+                    <p>
+                      <strong>Seus Direitos:</strong> Você tem direito a acessar, corrigir, deletar ou exportar seus
+                      dados pessoais a qualquer momento. Para exercer esses direitos, entre em contato com seu
+                      discipulador ou administrador do sistema.
+                    </p>
+
+                    <p>
+                      <strong>Retenção de Dados:</strong> Seus dados serão mantidos enquanto você estiver ativo no
+                      programa. Após solicitação de exclusão, seus dados serão removidos permanentemente em até 30 dias.
+                    </p>
+
+                    <p>
+                      <strong>Cookies e Rastreamento:</strong> Utilizamos cookies essenciais para funcionamento do
+                      sistema. Não utilizamos cookies de rastreamento para publicidade.
+                    </p>
+
+                    <p>
+                      <strong>Contato:</strong> Para questões relacionadas à privacidade e proteção de dados, entre em
+                      contato através do e-mail do seu discipulador ou administrador do sistema.
+                    </p>
+                  </div>
+
+                  <p className="pt-4 font-semibold text-white">
+                    Esta política está em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei 13.709/2018) do
+                    Brasil.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3 bg-white/5 p-4 rounded-lg">
+                  <Checkbox
+                    id="leu-lgpd"
+                    checked={leuLGPDCompleto}
+                    onCheckedChange={(checked) => setLeuLGPDCompleto(checked as boolean)}
+                    className="mt-1"
+                  />
+                  <label htmlFor="leu-lgpd" className="text-sm cursor-pointer">
+                    <strong>Confirmo que li e compreendi toda a Política de Privacidade e Proteção de Dados</strong>
+                  </label>
+                </div>
+
+                <div className="flex items-start space-x-3 bg-yellow-500/10 p-4 rounded-lg border-2 border-yellow-500/30">
+                  <Checkbox
+                    id="aceito-lgpd"
+                    checked={aceitouLGPD}
+                    onCheckedChange={(checked) => setAceitouLGPD(checked as boolean)}
+                    disabled={!leuLGPDCompleto}
+                    className="mt-1"
+                  />
+                  <label htmlFor="aceito-lgpd" className="text-sm cursor-pointer font-semibold">
+                    <strong className="text-yellow-400">ACEITO</strong> que meus dados pessoais sejam coletados e
+                    utilizados conforme descrito acima, exclusivamente para fins de acompanhamento do meu processo de
+                    discipulado
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button
+                  onClick={() => setEtapa(2)}
+                  variant="outline"
+                  className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Voltar
+                </Button>
+                <Button
+                  onClick={() => setEtapa(4)}
+                  disabled={!aceitouLGPD}
+                  className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold"
+                >
+                  Continuar para Cadastro
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Etapa 4: Formulário de Cadastro */}
+        {etapa === 4 && (
           <Card className="bg-white/10 backdrop-blur border-white/20">
             <CardHeader>
               <CardTitle className="text-2xl text-white flex items-center gap-2">
                 <UserPlus className="h-6 w-6" />
                 Complete seu Cadastro
               </CardTitle>
-              <CardDescription className="text-blue-200">
-                Preencha seus dados para começar sua jornada de fé
-              </CardDescription>
+              <CardDescription className="text-blue-200">Preencha seus dados para finalizar</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSignUp}>
@@ -438,50 +786,44 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
                     </div>
                   </div>
 
-                  {/* Termos */}
-                  <div className="space-y-4 p-4 bg-white/5 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="lgpd"
-                        checked={aceitouLGPD}
-                        onCheckedChange={(checked) => setAceitouLGPD(checked as boolean)}
-                        className="mt-1"
-                      />
-                      <label htmlFor="lgpd" className="text-sm text-white leading-relaxed cursor-pointer">
-                        Aceito que meus dados pessoais sejam coletados e utilizados conforme a Lei Geral de Proteção de
-                        Dados (LGPD), exclusivamente para fins de acompanhamento do meu processo de discipulado.
-                      </label>
+                  <div className="p-4 bg-green-500/10 rounded-lg border-2 border-green-500/30">
+                    <div className="flex items-center gap-2 text-white mb-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-400" />
+                      <span className="font-semibold">Seu Discipulador</span>
                     </div>
-
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="compromisso"
-                        checked={aceitouCompromisso}
-                        onCheckedChange={(checked) => setAceitouCompromisso(checked as boolean)}
-                        className="mt-1"
-                      />
-                      <label htmlFor="compromisso" className="text-sm text-white leading-relaxed cursor-pointer">
-                        Comprometo-me a seguir os passos do discipulado com dedicação, completando cada etapa no prazo
-                        recomendado de 3 a 7 dias, mantendo contato regular com meu discipulador e buscando crescimento
-                        espiritual contínuo.
-                      </label>
-                    </div>
+                    <p className="text-sm text-blue-100">
+                      <strong className="text-white">{convite.discipulador.nome_completo}</strong> será seu discipulador
+                      nesta jornada. Após completar o cadastro, ele receberá uma notificação para aprovar seu ingresso
+                      no programa.
+                    </p>
                   </div>
 
                   {error && <p className="text-sm text-red-300 bg-red-500/20 p-2 rounded">{error}</p>}
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold"
-                    disabled={isLoading || !aceitouLGPD || !aceitouCompromisso}
-                  >
-                    {isLoading ? "Criando conta..." : "Começar Jornada de Fé"}
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button
+                      type="button"
+                      onClick={() => setEtapa(3)}
+                      variant="outline"
+                      className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      Voltar
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-blue-950 font-semibold"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Enviando..." : "Finalizar Cadastro"}
+                      <CheckCircle2 className="w-5 h-5 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               </form>
             </CardContent>
           </Card>
-        </div>
+        )}
       </div>
     </div>
   )
