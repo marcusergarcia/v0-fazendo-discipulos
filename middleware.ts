@@ -48,27 +48,32 @@ export async function middleware(request: NextRequest) {
   }
 
   if (
-    !user &&
+    user &&
     (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
   ) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
-    return NextResponse.redirect(url)
-  }
-
-  if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
     const { data: discipulo } = await supabase
       .from("discipulos")
       .select("aprovado_discipulador, discipulador_id")
       .eq("user_id", user.id)
       .single()
 
-    // Se tem discipulador (não é master) e não está aprovado, redireciona
+    console.log("[v0] Verificando aprovação:", { discipulo, userId: user.id, path: request.nextUrl.pathname })
+
     if (discipulo && discipulo.discipulador_id !== null && discipulo.aprovado_discipulador === false) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
+      console.log("[v0] Bloqueando acesso - usuário não aprovado")
       return NextResponse.redirect(url)
     }
+  }
+
+  if (
+    !user &&
+    (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
