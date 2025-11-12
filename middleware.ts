@@ -25,11 +25,18 @@ export async function middleware(request: NextRequest) {
     },
   )
 
+  if (
+    request.nextUrl.pathname.startsWith("/convite/") ||
+    request.nextUrl.pathname.startsWith("/auth/") ||
+    request.nextUrl.pathname === "/"
+  ) {
+    return supabaseResponse
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Redirecionar para dashboard se já estiver logado tentando acessar auth
   if (
     user &&
     (request.nextUrl.pathname.startsWith("/auth/login") || request.nextUrl.pathname.startsWith("/auth/sign-up"))
@@ -39,8 +46,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirecionar para login se não estiver logado tentando acessar dashboard
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (
+    !user &&
+    (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
+  ) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
