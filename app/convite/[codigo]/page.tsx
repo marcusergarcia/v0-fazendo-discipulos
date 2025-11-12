@@ -35,5 +35,9 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     .eq("id", convite.discipulador_id)
     .single()
 
-  return <CadastroConviteClient convite={{ ...convite, discipulador }} />
+  return (
+    <CadastroConviteClient
+      convite={{ ...convite, discipulador: discipulador || { nome_completo: "Desconhecido", email: "" } }}
+    />
+  )
 }
