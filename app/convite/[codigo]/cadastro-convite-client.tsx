@@ -240,13 +240,15 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         {etapa === 1 && (
           <Card className="bg-white/10 backdrop-blur border-white/20">
             <CardHeader className="text-center">
-              <Image
-                src="/logo-fazendo-discipulos.png"
-                alt="Fazendo Discípulos"
-                width={200}
-                height={75}
-                className="mx-auto mb-4"
-              />
+              <div className="bg-white rounded-lg p-4 inline-block mx-auto mb-4">
+                <Image
+                  src="/logo-fazendo-discipulos.png"
+                  alt="Fazendo Discípulos"
+                  width={200}
+                  height={75}
+                  className="mx-auto"
+                />
+              </div>
               <CardTitle className="text-3xl text-white flex items-center justify-center gap-2">
                 <BookOpen className="h-8 w-8 text-yellow-400" />
                 Bem-vindo ao Fazendo Discípulos!
