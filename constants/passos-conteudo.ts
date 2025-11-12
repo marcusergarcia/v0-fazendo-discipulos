@@ -24,9 +24,9 @@ export const PASSOS_CONTEUDO = {
       {
         id: "video-2",
         titulo: "Gênesis 1 - A Criação",
-        canal: "Luciano Subirá",
-        duracao: "30:05",
-        url: "https://www.youtube.com/watch?v=ha-SeFsM3KQ",
+        canal: "Israel da Costa Homem",
+        duracao: "7:14",
+        url: "https://www.youtube.com/watch?v=uwjM5q6H3Vo&list=RDuwjM5q6H3Vo&start_radio=1",
       },
       {
         id: "video-3",
