@@ -28,6 +28,7 @@ export async function middleware(request: NextRequest) {
   if (
     request.nextUrl.pathname.startsWith("/convite/") ||
     request.nextUrl.pathname.startsWith("/auth/") ||
+    request.nextUrl.pathname.startsWith("/aguardando-aprovacao") ||
     request.nextUrl.pathname === "/"
   ) {
     return supabaseResponse
@@ -53,6 +54,20 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
+  }
+
+  if (user && request.nextUrl.pathname.startsWith("/dashboard")) {
+    const { data: discipulo } = await supabase
+      .from("discipulos")
+      .select("aprovado_discipulador")
+      .eq("user_id", user.id)
+      .single()
+
+    if (discipulo && discipulo.aprovado_discipulador === false) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/aguardando-aprovacao"
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

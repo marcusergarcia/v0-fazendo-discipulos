@@ -59,7 +59,6 @@ export async function cadastrarDiscipuloPorConvite(dados: {
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
 
-    // Inserir no discipulos
     const { error: discipuloError } = await supabaseAdmin.from("discipulos").insert({
       user_id: authData.user.id,
       discipulador_id: dados.discipuladorId,
@@ -67,18 +66,26 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       xp_total: 0,
       fase_atual: 1,
       passo_atual: 1,
-      aceitou_lgpd: dados.aceitouLGPD,
-      aceitou_compromisso: dados.aceitouCompromisso,
-      data_aceite_termos: new Date().toISOString(),
-      localizacao_cadastro: dados.localizacao,
-      latitude_cadastro: dados.latitude,
-      longitude_cadastro: dados.longitude,
-      data_cadastro: dados.dataCadastro,
-      hora_cadastro: dados.horaCadastro,
-      semana_cadastro: dados.semanaCadastro,
     })
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)
+
+    const { error: updateProfileError } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        aceitou_lgpd: dados.aceitouLGPD,
+        aceitou_compromisso: dados.aceitouCompromisso,
+        data_aceite_termos: new Date().toISOString(),
+        localizacao_cadastro: dados.localizacao,
+        latitude_cadastro: dados.latitude,
+        longitude_cadastro: dados.longitude,
+        data_cadastro: dados.dataCadastro,
+        hora_cadastro: dados.horaCadastro,
+        semana_cadastro: dados.semanaCadastro,
+      })
+      .eq("id", authData.user.id)
+
+    if (updateProfileError) console.error("[v0] Erro ao atualizar profile:", updateProfileError)
 
     // Marcar convite como usado
     await supabaseAdmin
