@@ -156,7 +156,6 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
     try {
       console.log("[v0] Iniciando cadastro...")
 
-      // Criar conta
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -173,7 +172,6 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
 
       console.log("[v0] Usuário criado:", authData.user.id)
 
-      // Upload da foto se houver
       let fotoUrl = null
       if (foto) {
         const fileExt = foto.name.split(".").pop()
@@ -201,11 +199,11 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
       })
 
       if (profileError) {
-        console.error("[v0] Erro profile:", profileError)
-        throw profileError
+        console.error("[v0] Erro ao criar profile:", profileError)
+        throw new Error(`Erro ao criar perfil: ${profileError.message}`)
       }
 
-      console.log("[v0] Profile criado")
+      console.log("[v0] Profile criado com sucesso")
 
       const { error: discipuloError } = await supabase.from("discipulos").insert({
         user_id: authData.user.id,
@@ -214,7 +212,6 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         xp_total: 0,
         fase_atual: 1,
         passo_atual: 1,
-        aprovado_discipulador: false,
         aceitou_lgpd: aceitouLGPD,
         aceitou_compromisso: aceitouCompromisso,
         data_aceite_termos: new Date().toISOString(),
@@ -227,13 +224,12 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
       })
 
       if (discipuloError) {
-        console.error("[v0] Erro discipulo:", discipuloError)
-        throw discipuloError
+        console.error("[v0] Erro ao criar discípulo:", discipuloError)
+        throw new Error(`Erro ao criar registro de discípulo: ${discipuloError.message}`)
       }
 
-      console.log("[v0] Discípulo criado")
+      console.log("[v0] Discípulo criado com sucesso")
 
-      // Marcar convite como usado
       const { error: conviteError } = await supabase
         .from("convites")
         .update({
@@ -244,8 +240,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         .eq("codigo_convite", convite.codigo_convite)
 
       if (conviteError) {
-        console.error("[v0] Erro convite:", conviteError)
-        throw conviteError
+        console.error("[v0] Erro ao atualizar convite:", conviteError)
       }
 
       console.log("[v0] Convite marcado como usado")
