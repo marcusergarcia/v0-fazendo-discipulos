@@ -17,12 +17,24 @@ export default async function PerfilPage() {
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
+  let nomeDiscipulador = null
+  if (discipulo?.discipulador_id) {
+    const { data: discipuladorProfile } = await supabase
+      .from("profiles")
+      .select("nome_completo")
+      .eq("id", discipulo.discipulador_id)
+      .single()
+
+    nomeDiscipulador = discipuladorProfile?.nome_completo || "Carregando..."
+  }
+
   return (
     <PerfilClient
       profile={profile || null}
       discipulo={discipulo || null}
       userId={user.id}
       userEmail={user.email || ""}
+      nomeDiscipulador={nomeDiscipulador}
     />
   )
 }

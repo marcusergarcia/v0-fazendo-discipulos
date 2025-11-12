@@ -21,9 +21,10 @@ interface PerfilClientProps {
   discipulo: any
   userId: string
   userEmail: string
+  nomeDiscipulador: string | null
 }
 
-export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilClientProps) {
+export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscipulador }: PerfilClientProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
@@ -249,6 +250,16 @@ export function PerfilClient({ profile, discipulo, userId, userEmail }: PerfilCl
                   <Input id="email" type="email" value={userEmail} disabled className="bg-muted" />
                   <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
                 </div>
+
+                {nomeDiscipulador && (
+                  <div className="space-y-2">
+                    <Label htmlFor="discipulador">Seu Discipulador</Label>
+                    <Input id="discipulador" type="text" value={nomeDiscipulador} disabled className="bg-muted" />
+                    <p className="text-xs text-muted-foreground">
+                      Seu discipulador é responsável por acompanhar sua jornada
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="nome_completo">Nome Completo *</Label>

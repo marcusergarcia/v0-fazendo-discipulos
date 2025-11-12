@@ -60,21 +60,53 @@ CREATE INDEX IF NOT EXISTS idx_progresso_dias ON public.progresso_fases(discipul
 -- RLS para convites
 ALTER TABLE public.convites ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Discipuladores podem ver seus convites"
-  ON public.convites FOR SELECT
-  USING (auth.uid() = discipulador_id);
+-- Políticas RLS agora usam DO $$ para verificar existência antes de criar
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public'
+    AND tablename = 'convites' 
+    AND policyname = 'Discipuladores podem ver seus convites'
+  ) THEN
+    CREATE POLICY "Discipuladores podem ver seus convites"
+      ON public.convites FOR SELECT
+      USING (auth.uid() = discipulador_id);
+  END IF;
 
-CREATE POLICY "Discipuladores podem criar convites"
-  ON public.convites FOR INSERT
-  WITH CHECK (auth.uid() = discipulador_id);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public'
+    AND tablename = 'convites' 
+    AND policyname = 'Discipuladores podem criar convites'
+  ) THEN
+    CREATE POLICY "Discipuladores podem criar convites"
+      ON public.convites FOR INSERT
+      WITH CHECK (auth.uid() = discipulador_id);
+  END IF;
 
-CREATE POLICY "Qualquer um pode ver convite por código"
-  ON public.convites FOR SELECT
-  USING (TRUE);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public'
+    AND tablename = 'convites' 
+    AND policyname = 'Qualquer um pode ver convite por código'
+  ) THEN
+    CREATE POLICY "Qualquer um pode ver convite por código"
+      ON public.convites FOR SELECT
+      USING (TRUE);
+  END IF;
 
-CREATE POLICY "Sistema pode atualizar convite ao ser usado"
-  ON public.convites FOR UPDATE
-  USING (TRUE);
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE schemaname = 'public'
+    AND tablename = 'convites' 
+    AND policyname = 'Sistema pode atualizar convite ao ser usado'
+  ) THEN
+    CREATE POLICY "Sistema pode atualizar convite ao ser usado"
+      ON public.convites FOR UPDATE
+      USING (TRUE);
+  END IF;
+END $$;
 
 -- Função para gerar código de convite único
 CREATE OR REPLACE FUNCTION gerar_codigo_convite()
@@ -95,10 +127,5 @@ COMMENT ON COLUMN public.progresso_fases.alertado_tempo_excessivo IS 'Se discipu
 COMMENT ON COLUMN public.profiles.localizacao_cadastro IS 'Localização geográfica no momento do cadastro';
 COMMENT ON COLUMN public.profiles.latitude_cadastro IS 'Latitude da localização do cadastro';
 COMMENT ON COLUMN public.profiles.longitude_cadastro IS 'Longitude da localização do cadastro';
-COMMENT ON COLUMN public.profiles.aprovado_discipulador IS 'Se o cadastro foi aprovado pelo discipulador';
-COMMENT ON COLUMN public.profiles.data_aprovacao_discipulador IS 'Data de aprovação do cadastro pelo discipulador';
 
--- Adicionar campo de aprovação do discipulador no final do arquivo
-ALTER TABLE public.profiles
-ADD COLUMN IF NOT EXISTS aprovado_discipulador BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS data_aprovacao_discipulador TIMESTAMPTZ;
+-- Removidas as linhas que adicionavam aprovado_discipulador em profiles, pois agora usamos o campo 'status'
