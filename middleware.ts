@@ -51,30 +51,30 @@ export async function middleware(request: NextRequest) {
     user &&
     (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
   ) {
-    const { data: discipulo, error: discipuloError } = await supabase
+    const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single()
+
+    const { data: discipulo } = await supabase
       .from("discipulos")
-      .select("aprovado_discipulador, discipulador_id, user_id")
+      .select("status, aprovado_discipulador, discipulador_id")
       .eq("user_id", user.id)
       .single()
 
-    console.log("[v0] Middleware - Verificando aprovação:", {
+    console.log("[v0] Middleware - Verificando status:", {
       userId: user.id,
       path: request.nextUrl.pathname,
-      discipulo,
-      error: discipuloError,
-      hasDiscipulo: !!discipulo,
+      profileStatus: profile?.status,
+      discipuloStatus: discipulo?.status,
+      aprovado: discipulo?.aprovado_discipulador,
       hasDiscipulador: discipulo?.discipulador_id !== null,
-      isApproved: discipulo?.aprovado_discipulador,
     })
 
-    if (discipulo && discipulo.discipulador_id !== null && discipulo.aprovado_discipulador !== true) {
+    if (discipulo?.discipulador_id !== null && (profile?.status === "inativo" || discipulo?.status === "inativo")) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
-      console.log("[v0] BLOQUEANDO ACESSO:", {
+      console.log("[v0] BLOQUEANDO - Status inativo:", {
         userId: user.id,
-        discipuladorId: discipulo.discipulador_id,
-        aprovado: discipulo.aprovado_discipulador,
-        redirectTo: url.pathname,
+        profileStatus: profile?.status,
+        discipuloStatus: discipulo?.status,
       })
       return NextResponse.redirect(url)
     }
@@ -82,7 +82,8 @@ export async function middleware(request: NextRequest) {
     console.log("[v0] PERMITINDO ACESSO:", {
       userId: user.id,
       isMaster: discipulo?.discipulador_id === null,
-      isApproved: discipulo?.aprovado_discipulador === true,
+      profileStatus: profile?.status,
+      discipuloStatus: discipulo?.status,
     })
   }
 

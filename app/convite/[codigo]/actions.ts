@@ -42,13 +42,8 @@ export async function cadastrarDiscipuloPorConvite(dados: {
     if (userExists) {
       console.log("[v0] Usuário já existe, deletando para recriar:", userExists.id)
 
-      // Deletar de discipulos primeiro
       await supabaseAdmin.from("discipulos").delete().eq("user_id", userExists.id)
-
-      // Deletar de profiles
       await supabaseAdmin.from("profiles").delete().eq("id", userExists.id)
-
-      // Deletar do auth
       await supabaseAdmin.auth.admin.deleteUser(userExists.id)
     }
 
@@ -63,7 +58,6 @@ export async function cadastrarDiscipuloPorConvite(dados: {
 
     userId = authData.user.id
 
-    // Inserir no profiles
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       id: userId,
       email: dados.email,
@@ -83,6 +77,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       data_cadastro: dados.dataCadastro,
       hora_cadastro: dados.horaCadastro,
       semana_cadastro: dados.semanaCadastro,
+      status: "inativo", // Começar como inativo
     })
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
@@ -94,20 +89,21 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       xp_total: 0,
       fase_atual: 1,
       passo_atual: 1,
-      aprovado_discipulador: false,
+      aprovado_discipulador: false, // Explicitamente FALSE
       data_aprovacao_discipulador: null,
+      status: "inativo", // Começar como inativo
     })
 
     console.log("[v0] Inserindo discípulo:", {
       userId,
       discipuladorId: dados.discipuladorId,
       aprovado: false,
+      status: "inativo",
       error: discipuloError,
     })
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)
 
-    // Marcar convite como usado
     await supabaseAdmin
       .from("convites")
       .update({
@@ -117,16 +113,16 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       })
       .eq("codigo_convite", dados.codigoConvite)
 
-    // Criar notificação para o discipulador
     await supabaseAdmin.from("notificacoes").insert({
       user_id: dados.discipuladorId,
       tipo: "aprovacao_discipulo",
       titulo: "Novo Discípulo Aguardando Aprovação",
       mensagem: `${dados.nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
       link: `/discipulador/aprovar/${userId}`,
+      lida: false,
     })
 
-    console.log("[v0] Cadastro concluído com sucesso para:", dados.email)
+    console.log("[v0] Cadastro concluído - usuário INATIVO aguardando aprovação:", dados.email)
     return { success: true, userId }
   } catch (error) {
     console.error("[v0] Erro no cadastro:", error)

@@ -28,9 +28,14 @@ interface AprovarDiscipuloClientProps {
     aceitou_compromisso: boolean
     data_aceite_termos: string | null
   }
+  discipuloData: {
+    id: string
+    user_id: string
+    discipulador_id: string
+  }
 }
 
-export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloClientProps) {
+export default function AprovarDiscipuloClient({ discipulo, discipuloData }: AprovarDiscipuloClientProps) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [isLoading, setIsLoading] = useState(false)
@@ -41,36 +46,56 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
     setError(null)
 
     try {
-      // Aprovar o discípulo
-      const { error: updateError } = await supabase
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          aprovado_discipulador: true,
-          data_aprovacao_discipulador: new Date().toISOString(),
+          status: "ativo",
         })
         .eq("id", discipulo.id)
 
-      if (updateError) throw updateError
+      if (profileError) throw profileError
 
-      // Criar progresso inicial (Passo 1)
-      const { error: progressoError } = await supabase.from("progresso_fases").insert({
-        user_id: discipulo.id,
-        passo_numero: 1,
-        completado: false,
-      })
+      const { error: discipuloError } = await supabase
+        .from("discipulos")
+        .update({
+          status: "ativo",
+          aprovado_discipulador: true,
+          data_aprovacao_discipulador: new Date().toISOString(),
+        })
+        .eq("user_id", discipulo.id)
 
-      if (progressoError) throw progressoError
+      if (discipuloError) throw discipuloError
 
-      // Enviar notificação para o discípulo
+      const { data: progressoExistente } = await supabase
+        .from("progresso_fases")
+        .select("id")
+        .eq("discipulo_id", discipuloData.id)
+        .eq("passo_numero", 1)
+        .single()
+
+      if (!progressoExistente) {
+        const { error: progressoError } = await supabase.from("progresso_fases").insert({
+          discipulo_id: discipuloData.id,
+          fase_numero: 1,
+          passo_numero: 1,
+          completado: false,
+        })
+
+        if (progressoError) throw progressoError
+      }
+
       await supabase.from("notificacoes").insert({
         user_id: discipulo.id,
         tipo: "aprovacao_aceita",
         titulo: "Cadastro Aprovado!",
         mensagem: "Seu discipulador aprovou seu cadastro. Bem-vindo à jornada de fé!",
         link: "/dashboard",
+        lida: false,
       })
 
+      console.log("[v0] Discípulo aprovado com sucesso:", discipulo.id)
       router.push("/discipulador?aprovacao=sucesso")
+      router.refresh()
     } catch (error) {
       console.error("Erro ao aprovar:", error)
       setError(error instanceof Error ? error.message : "Erro ao aprovar discípulo")
@@ -80,18 +105,23 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
   }
 
   const handleRejeitar = async () => {
-    if (!confirm("Tem certeza que deseja rejeitar este cadastro?")) return
+    if (!confirm("Tem certeza que deseja rejeitar este cadastro? O usuário será excluído do sistema.")) return
 
     setIsLoading(true)
     setError(null)
 
     try {
-      // Deletar perfil (em produção, considere apenas marcar como rejeitado)
-      const { error: deleteError } = await supabase.from("profiles").delete().eq("id", discipulo.id)
+      const { error: discipuloDeleteError } = await supabase.from("discipulos").delete().eq("user_id", discipulo.id)
 
-      if (deleteError) throw deleteError
+      if (discipuloDeleteError) throw discipuloDeleteError
 
+      const { error: profileDeleteError } = await supabase.from("profiles").delete().eq("id", discipulo.id)
+
+      if (profileDeleteError) throw profileDeleteError
+
+      console.log("[v0] Discípulo rejeitado e removido:", discipulo.id)
       router.push("/discipulador?rejeicao=sucesso")
+      router.refresh()
     } catch (error) {
       console.error("Erro ao rejeitar:", error)
       setError(error instanceof Error ? error.message : "Erro ao rejeitar discípulo")
