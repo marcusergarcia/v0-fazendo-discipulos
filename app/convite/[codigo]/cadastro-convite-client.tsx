@@ -154,6 +154,8 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
     }
 
     try {
+      console.log("[v0] Iniciando cadastro...")
+
       // Criar conta
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -163,8 +165,13 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         },
       })
 
-      if (authError) throw authError
+      if (authError) {
+        console.error("[v0] Erro auth:", authError)
+        throw authError
+      }
       if (!authData.user) throw new Error("Erro ao criar usuário")
+
+      console.log("[v0] Usuário criado:", authData.user.id)
 
       // Upload da foto se houver
       let fotoUrl = null
@@ -179,6 +186,8 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         }
       }
 
+      console.log("[v0] Foto URL:", fotoUrl)
+
       const { error: profileError } = await supabase.from("profiles").insert({
         id: authData.user.id,
         email,
@@ -189,7 +198,23 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         etnia,
         data_nascimento: dataNascimento,
         foto_perfil_url: fotoUrl,
+      })
+
+      if (profileError) {
+        console.error("[v0] Erro profile:", profileError)
+        throw profileError
+      }
+
+      console.log("[v0] Profile criado")
+
+      const { error: discipuloError } = await supabase.from("discipulos").insert({
+        user_id: authData.user.id,
         discipulador_id: convite.discipulador_id,
+        nivel_atual: "Novo",
+        xp_total: 0,
+        fase_atual: 1,
+        passo_atual: 1,
+        aprovado_discipulador: false,
         aceitou_lgpd: aceitouLGPD,
         aceitou_compromisso: aceitouCompromisso,
         data_aceite_termos: new Date().toISOString(),
@@ -199,10 +224,14 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         data_cadastro: dataCadastro,
         hora_cadastro: horaCadastro,
         semana_cadastro: semanaCadastro,
-        aprovado_discipulador: false,
       })
 
-      if (profileError) throw profileError
+      if (discipuloError) {
+        console.error("[v0] Erro discipulo:", discipuloError)
+        throw discipuloError
+      }
+
+      console.log("[v0] Discípulo criado")
 
       // Marcar convite como usado
       const { error: conviteError } = await supabase
@@ -214,7 +243,12 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         })
         .eq("codigo_convite", convite.codigo_convite)
 
-      if (conviteError) throw conviteError
+      if (conviteError) {
+        console.error("[v0] Erro convite:", conviteError)
+        throw conviteError
+      }
+
+      console.log("[v0] Convite marcado como usado")
 
       await supabase.from("notificacoes").insert({
         user_id: convite.discipulador_id,
@@ -224,10 +258,13 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         link: `/discipulador/aprovar/${authData.user.id}`,
       })
 
+      console.log("[v0] Notificação criada, redirecionando...")
+
       router.push("/convite/aguardando-aprovacao")
     } catch (error) {
-      console.error("Erro no cadastro:", error)
-      setError(error instanceof Error ? error.message : "Erro ao criar conta")
+      console.error("[v0] Erro no cadastro:", error)
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido ao criar conta"
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }

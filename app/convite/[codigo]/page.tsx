@@ -6,6 +6,8 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   const supabase = await createClient()
 
+  console.log("[v0] Buscando convite com código:", codigo)
+
   const { data: convite, error } = await supabase
     .from("convites")
     .select("*")
@@ -13,6 +15,8 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     .eq("usado", false)
     .gt("expira_em", new Date().toISOString())
     .single()
+
+  console.log("[v0] Resultado busca convite:", convite, error)
 
   // Se convite inválido, mostrar mensagem de erro
   if (error || !convite) {
@@ -29,15 +33,29 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     )
   }
 
+  const { data: discipuladorData } = await supabase
+    .from("discipulos")
+    .select("user_id")
+    .eq("user_id", convite.discipulador_id)
+    .single()
+
+  console.log("[v0] Resultado busca discipulador na tabela discipulos:", discipuladorData)
+
+  // Buscar profile do discipulador
   const { data: discipulador } = await supabase
     .from("profiles")
     .select("nome_completo, email")
     .eq("id", convite.discipulador_id)
     .single()
 
+  console.log("[v0] Resultado busca profile do discipulador:", discipulador)
+
   return (
     <CadastroConviteClient
-      convite={{ ...convite, discipulador: discipulador || { nome_completo: "Desconhecido", email: "" } }}
+      convite={{
+        ...convite,
+        discipulador: discipulador || { nome_completo: "Desconhecido", email: "" },
+      }}
     />
   )
 }
