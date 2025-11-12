@@ -94,8 +94,15 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       xp_total: 0,
       fase_atual: 1,
       passo_atual: 1,
-      aprovado_discipulador: false, // Novo discípulo precisa de aprovação
+      aprovado_discipulador: false,
       data_aprovacao_discipulador: null,
+    })
+
+    console.log("[v0] Inserindo discípulo:", {
+      userId,
+      discipuladorId: dados.discipuladorId,
+      aprovado: false,
+      error: discipuloError,
     })
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)

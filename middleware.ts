@@ -51,19 +51,28 @@ export async function middleware(request: NextRequest) {
     user &&
     (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
   ) {
-    const { data: discipulo } = await supabase
+    const { data: discipulo, error: discipuloError } = await supabase
       .from("discipulos")
-      .select("aprovado_discipulador, discipulador_id")
+      .select("aprovado_discipulador, discipulador_id, user_id")
       .eq("user_id", user.id)
       .single()
 
-    console.log("[v0] Verificando aprovação:", { discipulo, userId: user.id, path: request.nextUrl.pathname })
+    console.log("[v0] Middleware - Verificando aprovação:", {
+      discipulo,
+      error: discipuloError,
+      userId: user.id,
+      path: request.nextUrl.pathname,
+    })
 
     if (discipulo && discipulo.discipulador_id !== null && discipulo.aprovado_discipulador === false) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
-      console.log("[v0] Bloqueando acesso - usuário não aprovado")
+      console.log("[v0] Bloqueando acesso - usuário não aprovado, discipulador_id:", discipulo.discipulador_id)
       return NextResponse.redirect(url)
+    }
+
+    if (!discipulo && !discipuloError) {
+      console.log("[v0] Usuário sem registro em discipulos - permitindo acesso")
     }
   }
 

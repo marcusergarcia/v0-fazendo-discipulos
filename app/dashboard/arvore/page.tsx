@@ -17,22 +17,12 @@ export default async function ArvoreDiscipuladoPage() {
     redirect("/auth/login")
   }
 
-  // Buscar todos os discípulos e seus discipuladores para montar a árvore
-  const { data: todosDiscipulos } = await supabase
+  const { data: todosDiscipulos, error: discipulosError } = await supabase
     .from("discipulos")
-    .select(
-      `
-      id,
-      user_id,
-      discipulador_id,
-      nivel_atual,
-      fase_atual,
-      xp_total,
-      user:user_id(id),
-      discipulador:discipulador_id(id)
-    `,
-    )
+    .select("id, user_id, discipulador_id, nivel_atual, fase_atual, xp_total, aprovado_discipulador, created_at")
     .order("created_at")
+
+  console.log("[v0] Discípulos encontrados:", todosDiscipulos?.length, "Erro:", discipulosError)
 
   // Buscar perfis de todos os usuários
   const { data: perfis } = await supabase.from("profiles").select("id, nome_completo, foto_perfil_url, email")
@@ -59,6 +49,7 @@ export default async function ArvoreDiscipuladoPage() {
       xp: d.xp_total || 0,
       discipuladorNome: discipuladorPerfil?.nome_completo || discipuladorPerfil?.email || null,
       isCurrentUser: d.user_id === user.id,
+      aprovadoDiscipulador: d.aprovado_discipulador,
     }
   })
 
