@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Shield, UserPlus, Upload } from "lucide-react"
+import { Shield, UserPlus, Upload, MapPin, Calendar, Clock } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
@@ -41,11 +41,71 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
   const [foto, setFoto] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string>("")
 
+  const [localizacao, setLocalizacao] = useState<string>("")
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
+  const [dataCadastro, setDataCadastro] = useState<string>("")
+  const [horaCadastro, setHoraCadastro] = useState<string>("")
+  const [semanaCadastro, setSemanaCadastro] = useState<string>("")
+
   const [aceitouLGPD, setAceitouLGPD] = useState(false)
   const [aceitouCompromisso, setAceitouCompromisso] = useState(false)
 
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [carregandoLocalizacao, setCarregandoLocalizacao] = useState(false)
+
+  useEffect(() => {
+    const agora = new Date()
+    setDataCadastro(agora.toLocaleDateString("pt-BR"))
+    setHoraCadastro(agora.toLocaleTimeString("pt-BR"))
+
+    // Calcular semana do ano
+    const primeiroDiaAno = new Date(agora.getFullYear(), 0, 1)
+    const diasPassados = Math.floor((agora.getTime() - primeiroDiaAno.getTime()) / (24 * 60 * 60 * 1000))
+    const semanaAno = Math.ceil((diasPassados + primeiroDiaAno.getDay() + 1) / 7)
+    setSemanaCadastro(`Semana ${semanaAno} de ${agora.getFullYear()}`)
+  }, [])
+
+  const obterLocalizacao = () => {
+    setCarregandoLocalizacao(true)
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude
+          const lon = position.coords.longitude
+          setLatitude(lat)
+          setLongitude(lon)
+
+          // Tentar obter nome da localização via API de geocoding reverso
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+            )
+            const data = await response.json()
+            const cidade = data.address?.city || data.address?.town || data.address?.village || ""
+            const estado = data.address?.state || ""
+            const pais = data.address?.country || ""
+            setLocalizacao(`${cidade}, ${estado}, ${pais}`)
+          } catch (err) {
+            console.error("Erro ao obter nome da localização:", err)
+            setLocalizacao(`Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`)
+          }
+
+          setCarregandoLocalizacao(false)
+        },
+        (error) => {
+          console.error("Erro ao obter localização:", error)
+          setError("Não foi possível obter sua localização. Por favor, permita o acesso.")
+          setCarregandoLocalizacao(false)
+        },
+      )
+    } else {
+      setError("Geolocalização não é suportada pelo seu navegador")
+      setCarregandoLocalizacao(false)
+    }
+  }
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -104,7 +164,6 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         }
       }
 
-      // Criar perfil
       const { error: profileError } = await supabase.from("profiles").insert({
         id: authData.user.id,
         email,
@@ -118,6 +177,12 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
         aceitou_lgpd: aceitouLGPD,
         aceitou_compromisso: aceitouCompromisso,
         data_aceite_termos: new Date().toISOString(),
+        localizacao_cadastro: localizacao,
+        latitude_cadastro: latitude,
+        longitude_cadastro: longitude,
+        data_cadastro: dataCadastro,
+        hora_cadastro: horaCadastro,
+        semana_cadastro: semanaCadastro,
       })
 
       if (profileError) throw profileError
@@ -177,6 +242,36 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
             <CardContent>
               <form onSubmit={handleSignUp}>
                 <div className="flex flex-col gap-4">
+                  <div className="p-4 bg-white/5 rounded-lg space-y-2">
+                    <div className="flex items-center gap-2 text-white text-sm">
+                      <Calendar className="w-4 h-4 text-yellow-400" />
+                      <span>Data: {dataCadastro}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white text-sm">
+                      <Clock className="w-4 h-4 text-yellow-400" />
+                      <span>Hora: {horaCadastro}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white text-sm">
+                      <Calendar className="w-4 h-4 text-yellow-400" />
+                      <span>{semanaCadastro}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-white text-sm">
+                      <MapPin className="w-4 h-4 text-yellow-400" />
+                      <span>{localizacao || "Localização não capturada"}</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={obterLocalizacao}
+                      disabled={carregandoLocalizacao}
+                      className="w-full mt-2 bg-white/10 hover:bg-white/20 text-white border-white/30"
+                    >
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {carregandoLocalizacao ? "Obtendo localização..." : "Capturar Localização"}
+                    </Button>
+                  </div>
+
                   {/* Foto de Perfil */}
                   <div className="flex flex-col items-center gap-2">
                     <Label className="text-white">Foto de Perfil (Opcional)</Label>

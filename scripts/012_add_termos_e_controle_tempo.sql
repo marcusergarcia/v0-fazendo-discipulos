@@ -4,16 +4,40 @@ ADD COLUMN IF NOT EXISTS aceitou_lgpd BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS aceitou_compromisso BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS data_aceite_termos TIMESTAMPTZ;
 
--- Adicionar controle de tempo nos passos
+-- Adicionando campos de geolocalização e informações de cadastro
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS localizacao_cadastro TEXT,
+ADD COLUMN IF NOT EXISTS latitude_cadastro DECIMAL(10, 8),
+ADD COLUMN IF NOT EXISTS longitude_cadastro DECIMAL(11, 8),
+ADD COLUMN IF NOT EXISTS data_cadastro TEXT,
+ADD COLUMN IF NOT EXISTS hora_cadastro TEXT,
+ADD COLUMN IF NOT EXISTS semana_cadastro TEXT;
+
+-- Removendo coluna GENERATED e adicionando coluna normal para dias_no_passo
 ALTER TABLE public.progresso_fases
 ADD COLUMN IF NOT EXISTS data_inicio TIMESTAMPTZ DEFAULT NOW(),
-ADD COLUMN IF NOT EXISTS dias_no_passo INTEGER GENERATED ALWAYS AS (
-  CASE 
-    WHEN completado THEN EXTRACT(DAY FROM (data_completado - data_inicio))
-    ELSE EXTRACT(DAY FROM (NOW() - data_inicio))
-  END
-) STORED,
+ADD COLUMN IF NOT EXISTS dias_no_passo INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS alertado_tempo_excessivo BOOLEAN DEFAULT FALSE;
+
+-- Criar função para atualizar dias_no_passo
+CREATE OR REPLACE FUNCTION atualizar_dias_no_passo()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.completado THEN
+    NEW.dias_no_passo := EXTRACT(DAY FROM (NEW.data_completado - NEW.data_inicio));
+  ELSE
+    NEW.dias_no_passo := EXTRACT(DAY FROM (NOW() - NEW.data_inicio));
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Criar trigger para calcular dias_no_passo automaticamente
+DROP TRIGGER IF EXISTS trigger_atualizar_dias_no_passo ON public.progresso_fases;
+CREATE TRIGGER trigger_atualizar_dias_no_passo
+  BEFORE INSERT OR UPDATE ON public.progresso_fases
+  FOR EACH ROW
+  EXECUTE FUNCTION atualizar_dias_no_passo();
 
 -- Criar tabela de convites
 CREATE TABLE IF NOT EXISTS public.convites (
@@ -66,5 +90,8 @@ $$ LANGUAGE plpgsql;
 -- Comentários
 COMMENT ON TABLE public.convites IS 'Convites de discipuladores para novos discípulos';
 COMMENT ON COLUMN public.progresso_fases.data_inicio IS 'Data de início do passo';
-COMMENT ON COLUMN public.progresso_fases.dias_no_passo IS 'Dias no passo atual (calculado automaticamente)';
+COMMENT ON COLUMN public.progresso_fases.dias_no_passo IS 'Dias no passo atual (calculado automaticamente via trigger)';
 COMMENT ON COLUMN public.progresso_fases.alertado_tempo_excessivo IS 'Se discipulador foi alertado sobre tempo excessivo';
+COMMENT ON COLUMN public.profiles.localizacao_cadastro IS 'Localização geográfica no momento do cadastro';
+COMMENT ON COLUMN public.profiles.latitude_cadastro IS 'Latitude da localização do cadastro';
+COMMENT ON COLUMN public.profiles.longitude_cadastro IS 'Longitude da localização do cadastro';
