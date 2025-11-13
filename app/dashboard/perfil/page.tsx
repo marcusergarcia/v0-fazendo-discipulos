@@ -27,12 +27,20 @@ export default async function PerfilPage() {
       .from("profiles")
       .select("nome_completo")
       .eq("id", discipulo.discipulador_id)
-      .single()
+      .maybeSingle() // Usa maybeSingle para não dar erro se não encontrar
 
     console.log("[v0] Discipulador Profile:", discipuladorProfile)
     console.log("[v0] Discipulador Error:", error)
 
-    nomeDiscipulador = discipuladorProfile?.nome_completo || "Carregando..."
+    if (error) {
+      console.error("[v0] Erro ao buscar discipulador:", error)
+      nomeDiscipulador = "Erro ao carregar"
+    } else if (discipuladorProfile) {
+      nomeDiscipulador = discipuladorProfile.nome_completo
+    } else {
+      console.warn("[v0] Discipulador não encontrado para ID:", discipulo.discipulador_id)
+      nomeDiscipulador = "Não encontrado"
+    }
   }
 
   console.log("[v0] Nome do Discipulador final:", nomeDiscipulador)
