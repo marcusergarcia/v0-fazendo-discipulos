@@ -1,10 +1,11 @@
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp } from "lucide-react"
+import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft } from 'lucide-react'
 import Link from "next/link"
 
 export default async function DiscipuladorPage() {
@@ -50,8 +51,21 @@ export default async function DiscipuladorPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold">Painel do Discipulador</h1>
-          <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Painel do Discipulador</h1>
+              <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <NotificacoesDropdown userId={user.id} />
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -324,12 +338,6 @@ export default async function DiscipuladorPage() {
             )}
           </TabsContent>
         </Tabs>
-
-        <div className="mt-8 text-center">
-          <Link href="/dashboard">
-            <Button variant="outline">Voltar ao Dashboard</Button>
-          </Link>
-        </div>
       </div>
     </div>
   )

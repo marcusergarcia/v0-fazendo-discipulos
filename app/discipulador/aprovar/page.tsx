@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Mail, MapPin, Calendar, Phone, Church } from 'lucide-react'
+import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
+import { Clock, Mail, MapPin, Calendar, Phone, Church, ArrowLeft } from 'lucide-react'
 import Link from "next/link"
 
 export default async function AprovarDiscipulosPage() {
@@ -23,21 +24,34 @@ export default async function AprovarDiscipulosPage() {
     .select("*")
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", false)
-    .is("user_id", null) // Apenas os que ainda não têm usuário criado
+    .is("user_id", null)
     .order("created_at", { ascending: false })
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <Link href="/dashboard">
-            <Button variant="ghost">← Voltar ao Dashboard</Button>
-          </Link>
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Aprovar Novos Discípulos</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <NotificacoesDropdown userId={user.id} />
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
+      </header>
 
+      <div className="container mx-auto px-4 py-8">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Aprovar Novos Discípulos</CardTitle>
+            <CardTitle className="text-2xl">Candidatos Aguardando Aprovação</CardTitle>
             <CardDescription>
               Revise as informações dos candidatos e aprove ou rejeite seus acessos ao sistema
             </CardDescription>

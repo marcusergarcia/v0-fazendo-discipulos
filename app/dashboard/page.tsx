@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import { createClient } from "@/lib/supabase/server"
 import type React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,21 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
-import {
-  Trophy,
-  Target,
-  Users,
-  BookOpen,
-  Shield,
-  Award,
-  Lock,
-  CheckCircle2,
-  Clock,
-  Sparkles,
-  LogOut,
-  GitBranch,
-  UserPlus,
-} from "lucide-react"
+import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
+import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus } from 'lucide-react'
 
 export default async function DashboardPage({
   searchParams,
@@ -135,6 +122,7 @@ export default async function DashboardPage({
               </Link>
             </div>
             <div className="flex items-center gap-2">
+              <NotificacoesDropdown userId={user.id} />
               <Link href="/discipulador/convites">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <UserPlus className="w-4 h-4" />
