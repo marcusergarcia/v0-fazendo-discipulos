@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
-import { randomUUID } from "crypto"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -37,43 +36,48 @@ export async function cadastrarDiscipuloPorConvite(dados: {
 
     const { data: existingProfile } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, status")
+      .select("id, email")
       .eq("email", dados.email)
       .single()
 
     if (existingProfile) {
-      console.log("[v0] Perfil existente encontrado:", existingProfile)
+      console.log("[v0] Perfil existente encontrado, deletando:", existingProfile.id)
 
-      // Se já tem usuário no auth, deletar tudo
-      const { data: authUser } = await supabaseAdmin.auth.admin.listUsers()
-      const userExists = authUser?.users.find((u) => u.email === dados.email)
+      // Deletar todos os registros relacionados
+      await supabaseAdmin.from("notificacoes").delete().eq("user_id", existingProfile.id)
+      await supabaseAdmin.from("progresso_fases").delete().eq("discipulo_id", existingProfile.id)
+      await supabaseAdmin.from("recompensas").delete().eq("discipulo_id", existingProfile.id)
+      await supabaseAdmin.from("reflexoes_conteudo").delete().eq("discipulo_id", existingProfile.id)
+      await supabaseAdmin.from("mensagens").delete().eq("discipulo_id", existingProfile.id)
+      await supabaseAdmin.from("mensagens").delete().eq("remetente_id", existingProfile.id)
+      await supabaseAdmin.from("discipulos").delete().eq("user_id", existingProfile.id)
+      await supabaseAdmin.from("profiles").delete().eq("id", existingProfile.id)
 
-      if (userExists) {
-        console.log("[v0] Deletando usuário completo para recriar:", userExists.id)
-        await supabaseAdmin.from("notificacoes").delete().eq("user_id", userExists.id)
-        await supabaseAdmin.from("progresso_fases").delete().eq("discipulo_id", userExists.id)
-        await supabaseAdmin.from("recompensas").delete().eq("discipulo_id", userExists.id)
-        await supabaseAdmin.from("reflexoes_conteudo").delete().eq("discipulo_id", userExists.id)
-        await supabaseAdmin.from("mensagens").delete().eq("discipulo_id", userExists.id)
-        await supabaseAdmin.from("mensagens").delete().eq("remetente_id", userExists.id)
-        await supabaseAdmin.from("discipulos").delete().eq("user_id", userExists.id)
-        await supabaseAdmin.from("profiles").delete().eq("id", userExists.id)
-        await supabaseAdmin.auth.admin.deleteUser(userExists.id)
-      } else {
-        // Apenas deletar de profiles e discipulos se não tem usuário no auth
-        await supabaseAdmin.from("discipulos").delete().eq("user_id", existingProfile.id)
-        await supabaseAdmin.from("profiles").delete().eq("id", existingProfile.id)
-      }
-
-      console.log("[v0] Registros anteriores removidos")
+      // Deletar do auth.users
+      await supabaseAdmin.auth.admin.deleteUser(existingProfile.id)
+      console.log("[v0] Usuário anterior deletado completamente")
     }
 
-    const tempUserId = randomUUID()
+    console.log("[v0] Criando usuário no auth.users com status INATIVO...")
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: dados.email,
+      password: dados.password,
+      email_confirm: false, // Email não confirmado = não pode fazer login ainda
+      user_metadata: {
+        nome_completo: dados.nomeCompleto,
+        aguardando_aprovacao: true,
+      },
+    })
 
-    console.log("[v0] Criando perfil INATIVO (sem usuário auth ainda):", tempUserId)
+    if (authError || !authData.user) {
+      throw new Error(`Erro ao criar usuário: ${authError?.message}`)
+    }
+
+    const userId = authData.user.id
+    console.log("[v0] Usuário criado no auth.users:", userId)
 
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
-      id: tempUserId,
+      id: userId,
       email: dados.email,
       nome_completo: dados.nomeCompleto,
       telefone: dados.telefone,
@@ -91,34 +95,32 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       data_cadastro: dados.dataCadastro,
       hora_cadastro: dados.horaCadastro,
       semana_cadastro: dados.semanaCadastro,
-      status: "inativo",
+      status: "inativo", // Status INATIVO até aprovação
     })
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
-    console.log("[v0] Profile criado com status INATIVO (sem auth)")
+    console.log("[v0] Perfil criado com status INATIVO")
 
     const { error: discipuloError } = await supabaseAdmin.from("discipulos").insert({
-      user_id: tempUserId,
+      user_id: userId,
       discipulador_id: dados.discipuladorId,
       nivel_atual: "Novo",
       xp_total: 0,
       fase_atual: 1,
       passo_atual: 1,
       aprovado_discipulador: false,
-      data_aprovacao_discipulador: null,
-      status: "inativo",
-      senha_temporaria: dados.password, // Guardar senha para criar auth depois
+      status: "inativo", // Status INATIVO até aprovação
     })
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)
-    console.log("[v0] Discípulo criado com status INATIVO (aguardando aprovação)")
+    console.log("[v0] Discípulo criado com status INATIVO")
 
     // Atualizar convite
     await supabaseAdmin
       .from("convites")
       .update({
         usado: true,
-        usado_por: tempUserId,
+        usado_por: userId,
         data_uso: new Date().toISOString(),
       })
       .eq("codigo_convite", dados.codigoConvite)
@@ -128,18 +130,18 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       tipo: "aprovacao_discipulo",
       titulo: "Novo Discípulo Aguardando Aprovação",
       mensagem: `${dados.nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
-      link: `/discipulador/aprovar/${tempUserId}`,
+      link: `/discipulador/aprovar/${userId}`,
       lida: false,
     })
 
     if (notifError) {
       console.error("[v0] ERRO ao criar notificação:", notifError)
     } else {
-      console.log("[v0] Notificação enviada ao discipulador:", dados.discipuladorId)
+      console.log("[v0] ✅ Notificação enviada ao discipulador:", dados.discipuladorId)
     }
 
-    console.log("[v0] ✅ Cadastro concluído - INATIVO aguardando aprovação (SEM usuário auth)")
-    return { success: true, userId: tempUserId }
+    console.log("[v0] ✅ Cadastro concluído - Usuário INATIVO aguardando aprovação")
+    return { success: true, userId }
   } catch (error) {
     console.error("[v0] ❌ Erro no cadastro:", error)
     return {
