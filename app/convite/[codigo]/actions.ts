@@ -40,11 +40,32 @@ export async function cadastrarDiscipuloPorConvite(dados: {
     let userId: string
 
     if (userExists) {
-      console.log("[v0] Usuário já existe, deletando para recriar:", userExists.id)
+      console.log("[v0] Usuário já existe, deletando completamente:", userExists.id)
 
-      await supabaseAdmin.from("discipulos").delete().eq("user_id", userExists.id)
-      await supabaseAdmin.from("profiles").delete().eq("id", userExists.id)
-      await supabaseAdmin.auth.admin.deleteUser(userExists.id)
+      // Deletar na ordem correta: discipulos -> profiles -> auth
+      const { error: delDiscipuloError } = await supabaseAdmin.from("discipulos").delete().eq("user_id", userExists.id)
+
+      if (delDiscipuloError) {
+        console.error("[v0] Erro ao deletar discipulo:", delDiscipuloError)
+      }
+
+      const { error: delProfileError } = await supabaseAdmin.from("profiles").delete().eq("id", userExists.id)
+
+      if (delProfileError) {
+        console.error("[v0] Erro ao deletar profile:", delProfileError)
+      }
+
+      const { error: delAuthError } = await supabaseAdmin.auth.admin.deleteUser(userExists.id)
+
+      if (delAuthError) {
+        console.error("[v0] Erro ao deletar auth user:", delAuthError)
+        throw new Error(`Não foi possível remover usuário existente: ${delAuthError.message}`)
+      }
+
+      // Aguardar um pouco para garantir que a deleção foi processada
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      console.log("[v0] Usuário deletado completamente, prosseguindo com criação")
     }
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -53,10 +74,11 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       email_confirm: true,
     })
 
-    if (authError) throw authError
+    if (authError) throw new Error(`Erro ao criar usuário: ${authError.message}`)
     if (!authData.user) throw new Error("Erro ao criar usuário")
 
     userId = authData.user.id
+    console.log("[v0] Usuário criado com ID:", userId)
 
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       id: userId,
@@ -81,6 +103,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
     })
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
+    console.log("[v0] Perfil criado com sucesso")
 
     const { error: discipuloError } = await supabaseAdmin.from("discipulos").insert({
       user_id: userId,
@@ -91,18 +114,11 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       passo_atual: 1,
       aprovado_discipulador: false, // Explicitamente FALSE
       data_aprovacao_discipulador: null,
-      status: "inativo", // Começar como inativo
-    })
-
-    console.log("[v0] Inserindo discípulo:", {
-      userId,
-      discipuladorId: dados.discipuladorId,
-      aprovado: false,
-      status: "inativo",
-      error: discipuloError,
+      status: "inativo", // Começar como inativo aguardando aprovação
     })
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)
+    console.log("[v0] Discípulo criado - Status: INATIVO, Aguardando aprovação do discipulador")
 
     await supabaseAdmin
       .from("convites")
@@ -122,10 +138,14 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       lida: false,
     })
 
-    console.log("[v0] Cadastro concluído - usuário INATIVO aguardando aprovação:", dados.email)
+    console.log("[v0] ✅ Cadastro concluído com sucesso!")
+    console.log("[v0] - Usuário:", dados.email)
+    console.log("[v0] - Status: INATIVO (aguardando aprovação)")
+    console.log("[v0] - Discipulador notificado:", dados.discipuladorId)
+
     return { success: true, userId }
   } catch (error) {
-    console.error("[v0] Erro no cadastro:", error)
+    console.error("[v0] ❌ Erro no cadastro:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro desconhecido ao criar conta",
