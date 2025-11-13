@@ -2,8 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.notificacoes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  -- Adicionado 'aprovacao_discipulo' aos tipos de notificação
-  tipo TEXT NOT NULL CHECK (tipo IN ('reflexao', 'missao', 'mensagem', 'validacao', 'aprovacao_discipulo')),
+  tipo TEXT NOT NULL CHECK (tipo IN ('reflexao', 'missao', 'mensagem', 'validacao')),
   titulo TEXT NOT NULL,
   mensagem TEXT NOT NULL,
   link TEXT,
@@ -13,14 +12,6 @@ CREATE TABLE IF NOT EXISTS public.notificacoes (
 
 -- Habilitar RLS
 ALTER TABLE public.notificacoes ENABLE ROW LEVEL SECURITY;
-
--- Drop policies if they exist and recreate
-DO $$ 
-BEGIN
-  DROP POLICY IF EXISTS "Ver próprias notificações" ON public.notificacoes;
-  DROP POLICY IF EXISTS "Sistema cria notificações" ON public.notificacoes;
-  DROP POLICY IF EXISTS "Marcar próprias notificações como lida" ON public.notificacoes;
-END $$;
 
 -- Policy para ver próprias notificações
 CREATE POLICY "Ver próprias notificações"

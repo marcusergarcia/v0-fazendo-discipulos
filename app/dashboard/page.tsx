@@ -78,15 +78,6 @@ export default async function DashboardPage({
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
-  const { data: discipulosPendentes } = await supabase
-    .from("discipulos")
-    .select("id, user_id")
-    .eq("discipulador_id", user.id)
-    .eq("status", "inativo")
-    .eq("aprovado_discipulador", false)
-
-  const temDiscipulosPendentes = discipulosPendentes && discipulosPendentes.length > 0
-
   // Calcular XP para próximo nível baseado nos passos completados
   const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
   const xpAtual = discipulo?.xp_total || 0
@@ -124,28 +115,6 @@ export default async function DashboardPage({
         <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mx-4 mt-4">
           <p className="font-medium">Erro ao carregar passo</p>
           <p className="text-sm">Ocorreu um problema ao carregar a página do passo. Por favor, tente novamente.</p>
-        </div>
-      )}
-
-      {temDiscipulosPendentes && (
-        <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-3 mx-4 mt-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">
-                {discipulosPendentes.length}{" "}
-                {discipulosPendentes.length === 1 ? "discípulo aguardando" : "discípulos aguardando"} sua aprovação
-              </p>
-              <p className="text-sm opacity-90">
-                {discipulosPendentes.length === 1 ? "Um novo discípulo completou" : "Novos discípulos completaram"} o
-                cadastro e aguarda{discipulosPendentes.length === 1 ? "" : "m"} sua aprovação.
-              </p>
-            </div>
-            <Link href="/discipulador/aprovar">
-              <Button variant="default" size="sm">
-                Ver Pendentes
-              </Button>
-            </Link>
-          </div>
         </div>
       )}
 
@@ -306,11 +275,7 @@ export default async function DashboardPage({
                   label="Passos Completos"
                   value={`${passosCompletados}/${userData.totalSteps}`}
                 />
-                <StatItem
-                  icon={<Users />}
-                  label="Discipulador"
-                  value={temDiscipulosPendentes ? "Pendentes" : "Aguardando"}
-                />
+                <StatItem icon={<Users />} label="Discipulador" value="Aguardando" />
               </CardContent>
             </Card>
 

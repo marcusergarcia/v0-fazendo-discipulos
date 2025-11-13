@@ -68,10 +68,10 @@ export async function middleware(request: NextRequest) {
       hasDiscipulador: discipulo?.discipulador_id !== null,
     })
 
-    if (discipulo?.discipulador_id !== null && profile?.status === "inativo" && discipulo?.status === "inativo") {
+    if (discipulo?.discipulador_id !== null && (profile?.status === "inativo" || discipulo?.status === "inativo")) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
-      console.log("[v0] 🚫 BLOQUEANDO - Discípulo INATIVO aguardando aprovação:", {
+      console.log("[v0] BLOQUEANDO - Status inativo:", {
         userId: user.id,
         profileStatus: profile?.status,
         discipuloStatus: discipulo?.status,
@@ -79,7 +79,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    console.log("[v0] ✅ PERMITINDO ACESSO:", {
+    console.log("[v0] PERMITINDO ACESSO:", {
       userId: user.id,
       isMaster: discipulo?.discipulador_id === null,
       profileStatus: profile?.status,

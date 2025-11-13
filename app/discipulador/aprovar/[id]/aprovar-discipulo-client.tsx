@@ -46,41 +46,42 @@ export default function AprovarDiscipuloClient({ discipulo, discipuloData }: Apr
     setError(null)
 
     try {
-      console.log("[v0] Ativando usuário e confirmando email:", discipulo.id)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          status: "ativo",
+        })
+        .eq("id", discipulo.id)
 
-      const response = await fetch("/api/aprovar-discipulo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: discipulo.id,
-          email: discipulo.email,
-        }),
-      })
+      if (profileError) throw profileError
 
-      const result = await response.json()
+      const { error: discipuloError } = await supabase
+        .from("discipulos")
+        .update({
+          status: "ativo",
+          aprovado_discipulador: true,
+          data_aprovacao_discipulador: new Date().toISOString(),
+        })
+        .eq("user_id", discipulo.id)
 
-      if (!response.ok) {
-        throw new Error(result.error || "Erro ao aprovar discípulo")
-      }
-
-      console.log("[v0] ✅ Usuário aprovado e ativado")
+      if (discipuloError) throw discipuloError
 
       const { data: progressoExistente } = await supabase
         .from("progresso_fases")
         .select("id")
-        .eq("discipulo_id", discipulo.id)
-        .eq("fase_numero", 1)
+        .eq("discipulo_id", discipuloData.id)
         .eq("passo_numero", 1)
         .single()
 
       if (!progressoExistente) {
-        await supabase.from("progresso_fases").insert({
-          discipulo_id: discipulo.id,
+        const { error: progressoError } = await supabase.from("progresso_fases").insert({
+          discipulo_id: discipuloData.id,
           fase_numero: 1,
           passo_numero: 1,
           completado: false,
         })
-        console.log("[v0] Progresso inicial criado")
+
+        if (progressoError) throw progressoError
       }
 
       await supabase.from("notificacoes").insert({
@@ -92,11 +93,11 @@ export default function AprovarDiscipuloClient({ discipulo, discipuloData }: Apr
         lida: false,
       })
 
-      console.log("[v0] ✅ Discípulo aprovado com sucesso!")
+      console.log("[v0] Discípulo aprovado com sucesso:", discipulo.id)
       router.push("/discipulador?aprovacao=sucesso")
       router.refresh()
     } catch (error) {
-      console.error("[v0] ❌ Erro ao aprovar:", error)
+      console.error("Erro ao aprovar:", error)
       setError(error instanceof Error ? error.message : "Erro ao aprovar discípulo")
     } finally {
       setIsLoading(false)
@@ -110,24 +111,19 @@ export default function AprovarDiscipuloClient({ discipulo, discipuloData }: Apr
     setError(null)
 
     try {
-      console.log("[v0] Rejeitando e deletando discípulo:", discipulo.id)
+      const { error: discipuloDeleteError } = await supabase.from("discipulos").delete().eq("user_id", discipulo.id)
 
-      const response = await fetch("/api/rejeitar-discipulo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: discipulo.id }),
-      })
+      if (discipuloDeleteError) throw discipuloDeleteError
 
-      if (!response.ok) {
-        const result = await response.json()
-        throw new Error(result.error || "Erro ao rejeitar discípulo")
-      }
+      const { error: profileDeleteError } = await supabase.from("profiles").delete().eq("id", discipulo.id)
 
-      console.log("[v0] ✅ Discípulo rejeitado e removido")
+      if (profileDeleteError) throw profileDeleteError
+
+      console.log("[v0] Discípulo rejeitado e removido:", discipulo.id)
       router.push("/discipulador?rejeicao=sucesso")
       router.refresh()
     } catch (error) {
-      console.error("[v0] ❌ Erro ao rejeitar:", error)
+      console.error("Erro ao rejeitar:", error)
       setError(error instanceof Error ? error.message : "Erro ao rejeitar discípulo")
     } finally {
       setIsLoading(false)
