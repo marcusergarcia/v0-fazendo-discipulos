@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { cadastrarDiscipuloPorConvite } from "./actions"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,21 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Shield,
-  UserPlus,
-  Upload,
-  MapPin,
-  Calendar,
-  Clock,
-  ArrowRight,
-  ArrowLeft,
-  BookOpen,
-  Scale,
-  CheckCircle2,
-} from "lucide-react"
+import { Shield, UserPlus, Upload, MapPin, Calendar, Clock, ArrowRight, ArrowLeft, BookOpen, Scale, CheckCircle2 } from 'lucide-react'
 import Image from "next/image"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 
 interface ConviteClientProps {
   convite: {
@@ -68,6 +56,9 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
   const [leuTermoCompleto, setLeuTermoCompleto] = useState(false)
   const [leuLGPDCompleto, setLeuLGPDCompleto] = useState(false)
 
+  const termoScrollRef = useRef<HTMLDivElement>(null)
+  const lgpdScrollRef = useRef<HTMLDivElement>(null)
+
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [carregandoLocalizacao, setCarregandoLocalizacao] = useState(false)
@@ -83,6 +74,52 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
     const semanaAno = Math.ceil((diasPassados + primeiroDiaAno.getDay() + 1) / 7)
     setSemanaCadastro(`Semana ${semanaAno} de ${agora.getFullYear()}`)
   }, [])
+
+  useEffect(() => {
+    if (etapa === 4 && !localizacao && !carregandoLocalizacao) {
+      obterLocalizacao()
+    }
+  }, [etapa])
+
+  useEffect(() => {
+    const handleTermoScroll = () => {
+      if (termoScrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = termoScrollRef.current
+        // Considera "lido" quando está a 20px do fim
+        if (scrollHeight - scrollTop - clientHeight < 20) {
+          setLeuTermoCompleto(true)
+        }
+      }
+    }
+
+    const termoElement = termoScrollRef.current
+    if (termoElement) {
+      termoElement.addEventListener("scroll", handleTermoScroll)
+      // Verificar se já está no final (caso o conteúdo seja pequeno)
+      handleTermoScroll()
+      return () => termoElement.removeEventListener("scroll", handleTermoScroll)
+    }
+  }, [etapa])
+
+  useEffect(() => {
+    const handleLGPDScroll = () => {
+      if (lgpdScrollRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = lgpdScrollRef.current
+        // Considera "lido" quando está a 20px do fim
+        if (scrollHeight - scrollTop - clientHeight < 20) {
+          setLeuLGPDCompleto(true)
+        }
+      }
+    }
+
+    const lgpdElement = lgpdScrollRef.current
+    if (lgpdElement) {
+      lgpdElement.addEventListener("scroll", handleLGPDScroll)
+      // Verificar se já está no final (caso o conteúdo seja pequeno)
+      handleLGPDScroll()
+      return () => lgpdElement.removeEventListener("scroll", handleLGPDScroll)
+    }
+  }, [etapa])
 
   const obterLocalizacao = () => {
     setCarregandoLocalizacao(true)
@@ -324,7 +361,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 text-white">
-              <div className="bg-white/5 p-6 rounded-lg space-y-4 max-h-96 overflow-y-auto">
+              <div ref={termoScrollRef} className="bg-white/5 p-6 rounded-lg space-y-4 max-h-96 overflow-y-auto">
                 <h3 className="text-xl font-semibold text-yellow-400">COMPROMISSO DE DISCIPULADO</h3>
 
                 <div className="space-y-3 text-blue-100">
@@ -396,9 +433,15 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
                     checked={leuTermoCompleto}
                     onCheckedChange={(checked) => setLeuTermoCompleto(checked as boolean)}
                     className="mt-1"
+                    disabled={!leuTermoCompleto}
                   />
                   <label htmlFor="leu-termo" className="text-sm cursor-pointer">
                     <strong>Confirmo que li e compreendi todos os 10 pontos do Termo de Compromisso acima</strong>
+                    {!leuTermoCompleto && (
+                      <span className="block text-xs text-yellow-400 mt-1">
+                        Role até o final do texto para habilitar
+                      </span>
+                    )}
                   </label>
                 </div>
 
@@ -452,7 +495,7 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 text-white">
-              <div className="bg-white/5 p-6 rounded-lg space-y-4 max-h-96 overflow-y-auto">
+              <div ref={lgpdScrollRef} className="bg-white/5 p-6 rounded-lg space-y-4 max-h-96 overflow-y-auto">
                 <h3 className="text-xl font-semibold text-yellow-400">POLÍTICA DE PRIVACIDADE E PROTEÇÃO DE DADOS</h3>
 
                 <div className="space-y-3 text-blue-100">
@@ -518,9 +561,15 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
                     checked={leuLGPDCompleto}
                     onCheckedChange={(checked) => setLeuLGPDCompleto(checked as boolean)}
                     className="mt-1"
+                    disabled={!leuLGPDCompleto}
                   />
                   <label htmlFor="leu-lgpd" className="text-sm cursor-pointer">
                     <strong>Confirmo que li e compreendi toda a Política de Privacidade e Proteção de Dados</strong>
+                    {!leuLGPDCompleto && (
+                      <span className="block text-xs text-yellow-400 mt-1">
+                        Role até o final do texto para habilitar
+                      </span>
+                    )}
                   </label>
                 </div>
 

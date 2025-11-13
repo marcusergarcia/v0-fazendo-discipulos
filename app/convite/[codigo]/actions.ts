@@ -49,7 +49,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       .from("discipulos")
       .insert({
         discipulador_id: dados.discipuladorId,
-        nivel_atual: "Novo",
+        nivel_atual: "Explorador",
         xp_total: 0,
         fase_atual: 1,
         passo_atual: 1,
