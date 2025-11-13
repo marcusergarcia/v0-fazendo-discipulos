@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@supabase/supabase-js"
+import { randomUUID } from "crypto"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -67,7 +68,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       console.log("[v0] Registros anteriores removidos")
     }
 
-    const tempUserId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+    const tempUserId = randomUUID()
 
     console.log("[v0] Criando perfil INATIVO (sem usuário auth ainda):", tempUserId)
 
