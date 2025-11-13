@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowLeft, Users } from "lucide-react"
+import { ArrowLeft, Users } from 'lucide-react'
 import { ArvoreDiscipulado } from "@/components/arvore-discipulado"
 
 export default async function ArvoreDiscipuladoPage() {
@@ -20,6 +20,8 @@ export default async function ArvoreDiscipuladoPage() {
   const { data: todosDiscipulos, error: discipulosError } = await supabase
     .from("discipulos")
     .select("id, user_id, discipulador_id, nivel_atual, fase_atual, xp_total, aprovado_discipulador, created_at")
+    .eq("aprovado_discipulador", true) // Apenas discípulos aprovados
+    .not("user_id", "is", null) // Apenas os que têm usuário criado
     .order("created_at")
 
   console.log("[v0] Discípulos encontrados:", todosDiscipulos?.length, "Erro:", discipulosError)

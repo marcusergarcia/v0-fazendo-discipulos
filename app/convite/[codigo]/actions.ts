@@ -34,73 +34,49 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       },
     })
 
-    const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
-    const userExists = existingUser?.users.find((u) => u.email === dados.email)
+    const { data: discipuloExistente } = await supabaseAdmin
+      .from("discipulos")
+      .select("*")
+      .eq("email_temporario", dados.email)
+      .maybeSingle()
 
-    let userId: string
-
-    if (userExists) {
-      console.log("[v0] Usuário já existe, deletando para recriar:", userExists.id)
-
-      await supabaseAdmin.from("discipulos").delete().eq("user_id", userExists.id)
-      await supabaseAdmin.from("profiles").delete().eq("id", userExists.id)
-      await supabaseAdmin.auth.admin.deleteUser(userExists.id)
+    if (discipuloExistente) {
+      // Deletar cadastro temporário anterior
+      await supabaseAdmin.from("discipulos").delete().eq("id", discipuloExistente.id)
     }
 
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: dados.email,
-      password: dados.password,
-      email_confirm: true,
-    })
-
-    if (authError) throw authError
-    if (!authData.user) throw new Error("Erro ao criar usuário")
-
-    userId = authData.user.id
-
-    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
-      id: userId,
-      email: dados.email,
-      nome_completo: dados.nomeCompleto,
-      telefone: dados.telefone,
-      igreja: dados.igreja,
-      genero: dados.genero,
-      etnia: dados.etnia,
-      data_nascimento: dados.dataNascimento,
-      foto_perfil_url: dados.fotoUrl,
-      aceitou_lgpd: dados.aceitouLGPD,
-      aceitou_compromisso: dados.aceitouCompromisso,
-      data_aceite_termos: new Date().toISOString(),
-      localizacao_cadastro: dados.localizacao,
-      latitude_cadastro: dados.latitude,
-      longitude_cadastro: dados.longitude,
-      data_cadastro: dados.dataCadastro,
-      hora_cadastro: dados.horaCadastro,
-      semana_cadastro: dados.semanaCadastro,
-      status: "inativo", // Começar como inativo
-    })
-
-    if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
-
-    const { error: discipuloError } = await supabaseAdmin.from("discipulos").insert({
-      user_id: userId,
-      discipulador_id: dados.discipuladorId,
-      nivel_atual: "Novo",
-      xp_total: 0,
-      fase_atual: 1,
-      passo_atual: 1,
-      aprovado_discipulador: false, // Explicitamente FALSE
-      data_aprovacao_discipulador: null,
-      status: "inativo", // Começar como inativo
-    })
-
-    console.log("[v0] Inserindo discípulo:", {
-      userId,
-      discipuladorId: dados.discipuladorId,
-      aprovado: false,
-      status: "inativo",
-      error: discipuloError,
-    })
+    const { data: discipuloData, error: discipuloError } = await supabaseAdmin
+      .from("discipulos")
+      .insert({
+        discipulador_id: dados.discipuladorId,
+        nivel_atual: "Novo",
+        xp_total: 0,
+        fase_atual: 1,
+        passo_atual: 1,
+        aprovado_discipulador: false,
+        status: "aguardando_aprovacao",
+        // Dados temporários até aprovação
+        email_temporario: dados.email,
+        senha_temporaria: dados.password, // Será usado na aprovação
+        nome_completo_temp: dados.nomeCompleto,
+        telefone_temp: dados.telefone,
+        igreja_temp: dados.igreja,
+        genero_temp: dados.genero,
+        etnia_temp: dados.etnia,
+        data_nascimento_temp: dados.dataNascimento,
+        foto_perfil_url_temp: dados.fotoUrl,
+        aceitou_lgpd: dados.aceitouLGPD,
+        aceitou_compromisso: dados.aceitouCompromisso,
+        data_aceite_termos: new Date().toISOString(),
+        localizacao_cadastro: dados.localizacao,
+        latitude_cadastro: dados.latitude,
+        longitude_cadastro: dados.longitude,
+        data_cadastro: dados.dataCadastro,
+        hora_cadastro: dados.horaCadastro,
+        semana_cadastro: dados.semanaCadastro,
+      })
+      .select()
+      .single()
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)
 
@@ -108,7 +84,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       .from("convites")
       .update({
         usado: true,
-        usado_por: userId,
+        usado_por: discipuloData.id, // Usar o ID do registro discipulos
         data_uso: new Date().toISOString(),
       })
       .eq("codigo_convite", dados.codigoConvite)
@@ -118,12 +94,12 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       tipo: "aprovacao_discipulo",
       titulo: "Novo Discípulo Aguardando Aprovação",
       mensagem: `${dados.nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
-      link: `/discipulador/aprovar/${userId}`,
+      link: `/discipulador/aprovar/${discipuloData.id}`,
       lida: false,
     })
 
-    console.log("[v0] Cadastro concluído - usuário INATIVO aguardando aprovação:", dados.email)
-    return { success: true, userId }
+    console.log("[v0] Cadastro temporário concluído - aguardando aprovação:", dados.email)
+    return { success: true, discipuloId: discipuloData.id }
   } catch (error) {
     console.error("[v0] Erro no cadastro:", error)
     return {

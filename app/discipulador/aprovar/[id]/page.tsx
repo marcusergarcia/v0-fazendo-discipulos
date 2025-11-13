@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import AprovarDiscipuloClient from "./aprovar-discipulo-client"
 
 export default async function AprovarDiscipuloPage({ params }: { params: Promise<{ id: string }> }) {
@@ -14,17 +14,17 @@ export default async function AprovarDiscipuloPage({ params }: { params: Promise
     redirect("/auth/login")
   }
 
-  // Buscar dados do discípulo aguardando aprovação
   const { data: discipulo, error } = await supabase
-    .from("profiles")
+    .from("discipulos")
     .select("*")
     .eq("id", id)
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", false)
+    .is("user_id", null) // Apenas os que ainda não foram aprovados
     .single()
 
   if (error || !discipulo) {
-    redirect("/discipulador")
+    redirect("/discipulador/aprovar")
   }
 
   return <AprovarDiscipuloClient discipulo={discipulo} />

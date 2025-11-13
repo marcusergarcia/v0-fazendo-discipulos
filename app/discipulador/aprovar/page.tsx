@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Mail, MapPin, Calendar, Phone, Church } from "lucide-react"
+import { Clock, Mail, MapPin, Calendar, Phone, Church } from 'lucide-react'
 import Link from "next/link"
 
 export default async function AprovarDiscipulosPage() {
@@ -18,29 +18,12 @@ export default async function AprovarDiscipulosPage() {
     redirect("/auth/login")
   }
 
-  // Buscar discípulos aguardando aprovação
   const { data: discipulosPendentes } = await supabase
     .from("discipulos")
-    .select(
-      `
-      *,
-      profile:user_id (
-        nome_completo,
-        email,
-        telefone,
-        igreja,
-        genero,
-        etnia,
-        data_nascimento,
-        foto_perfil_url,
-        localizacao_cadastro,
-        data_cadastro,
-        hora_cadastro
-      )
-    `,
-    )
+    .select("*")
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", false)
+    .is("user_id", null) // Apenas os que ainda não têm usuário criado
     .order("created_at", { ascending: false })
 
   return (
@@ -73,20 +56,19 @@ export default async function AprovarDiscipulosPage() {
             ) : (
               <div className="space-y-4">
                 {discipulosPendentes.map((discipulo) => {
-                  const profile = discipulo.profile as any
                   return (
                     <Card key={discipulo.id} className="border-primary/20">
                       <CardContent className="pt-6">
                         <div className="flex items-start gap-4">
                           <Avatar className="w-16 h-16">
-                            {profile?.foto_perfil_url ? (
+                            {discipulo.foto_perfil_url_temp ? (
                               <AvatarImage
-                                src={profile.foto_perfil_url || "/placeholder.svg"}
-                                alt={profile?.nome_completo}
+                                src={discipulo.foto_perfil_url_temp || "/placeholder.svg"}
+                                alt={discipulo.nome_completo_temp || ""}
                               />
                             ) : (
                               <AvatarFallback className="bg-primary text-primary-foreground text-lg">
-                                {profile?.nome_completo
+                                {discipulo.nome_completo_temp
                                   ?.split(" ")
                                   .map((n: string) => n[0])
                                   .join("")}
@@ -97,7 +79,7 @@ export default async function AprovarDiscipulosPage() {
                           <div className="flex-1">
                             <div className="flex items-start justify-between mb-3">
                               <div>
-                                <h3 className="text-xl font-semibold">{profile?.nome_completo}</h3>
+                                <h3 className="text-xl font-semibold">{discipulo.nome_completo_temp}</h3>
                                 <Badge variant="secondary" className="mt-1">
                                   Aguardando aprovação
                                 </Badge>
@@ -107,38 +89,38 @@ export default async function AprovarDiscipulosPage() {
                             <div className="grid sm:grid-cols-2 gap-3 text-sm">
                               <div className="flex items-center gap-2">
                                 <Mail className="w-4 h-4 text-muted-foreground" />
-                                <span>{profile?.email}</span>
+                                <span>{discipulo.email_temporario}</span>
                               </div>
-                              {profile?.telefone && (
+                              {discipulo.telefone_temp && (
                                 <div className="flex items-center gap-2">
                                   <Phone className="w-4 h-4 text-muted-foreground" />
-                                  <span>{profile.telefone}</span>
+                                  <span>{discipulo.telefone_temp}</span>
                                 </div>
                               )}
-                              {profile?.igreja && (
+                              {discipulo.igreja_temp && (
                                 <div className="flex items-center gap-2">
                                   <Church className="w-4 h-4 text-muted-foreground" />
-                                  <span>{profile.igreja}</span>
+                                  <span>{discipulo.igreja_temp}</span>
                                 </div>
                               )}
-                              {profile?.localizacao_cadastro && (
+                              {discipulo.localizacao_cadastro && (
                                 <div className="flex items-center gap-2">
                                   <MapPin className="w-4 h-4 text-muted-foreground" />
-                                  <span>{profile.localizacao_cadastro}</span>
+                                  <span>{discipulo.localizacao_cadastro}</span>
                                 </div>
                               )}
-                              {profile?.data_cadastro && (
+                              {discipulo.data_cadastro && (
                                 <div className="flex items-center gap-2">
                                   <Calendar className="w-4 h-4 text-muted-foreground" />
                                   <span>
-                                    Cadastro: {profile.data_cadastro} às {profile.hora_cadastro}
+                                    Cadastro: {discipulo.data_cadastro} às {discipulo.hora_cadastro}
                                   </span>
                                 </div>
                               )}
                             </div>
 
                             <div className="flex gap-2 mt-4">
-                              <Link href={`/discipulador/aprovar/${discipulo.user_id}`} className="flex-1">
+                              <Link href={`/discipulador/aprovar/${discipulo.id}`} className="flex-1">
                                 <Button className="w-full">Revisar e Aprovar</Button>
                               </Link>
                             </div>
