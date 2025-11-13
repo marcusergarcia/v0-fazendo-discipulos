@@ -54,8 +54,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
         fase_atual: 1,
         passo_atual: 1,
         aprovado_discipulador: false,
-        status: "aguardando_aprovacao",
-        // Dados temporários até aprovação
+        status: "inativo",
         email_temporario: dados.email,
         senha_temporaria: dados.password, // Será usado na aprovação
         nome_completo_temp: dados.nomeCompleto,
