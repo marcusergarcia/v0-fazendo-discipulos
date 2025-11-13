@@ -31,9 +31,9 @@ export const PASSOS_CONTEUDO = {
       {
         id: "video-3",
         titulo: "Por que Deus nos Criou?",
-        canal: "Ministério Fiel",
-        duracao: "3:25",
-        url: "https://www.youtube.com/watch?v=2Vo0t3ZOkYI",
+        canal: "Primo Cast",
+        duracao: "6:29",
+        url: "https://www.youtube.com/watch?v=476WjoLrND0",
       },
     ],
     artigos: [
