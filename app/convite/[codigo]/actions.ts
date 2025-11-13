@@ -60,7 +60,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
         data_nascimento_temp: dados.dataNascimento,
         foto_perfil_url_temp: dados.fotoUrl,
         discipulador_id: dados.discipuladorId,
-        nivel_atual: "Novo",
+        nivel_atual: "Explorador", // Usando 'Explorador' ao invés de 'Novo' para atender o check constraint
         xp_total: 0,
         fase_atual: 1,
         passo_atual: 1,
