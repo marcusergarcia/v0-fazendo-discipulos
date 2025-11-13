@@ -19,7 +19,11 @@ export default async function ArvoreDiscipuladoPage() {
 
   const { data: todosDiscipulos, error: discipulosError } = await supabase
     .from("discipulos")
-    .select("id, user_id, discipulador_id, nivel_atual, fase_atual, xp_total, aprovado_discipulador, created_at")
+    .select(
+      "id, user_id, discipulador_id, nivel_atual, fase_atual, xp_total, aprovado_discipulador, status, created_at",
+    )
+    .eq("status", "ativo")
+    .eq("aprovado_discipulador", true)
     .order("created_at")
 
   console.log("[v0] Discípulos encontrados:", todosDiscipulos?.length, "Erro:", discipulosError)

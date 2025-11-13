@@ -14,9 +14,20 @@ export default async function AprovarDiscipuloPage({ params }: { params: Promise
     redirect("/auth/login")
   }
 
-  const { data: discipulo } = await supabase.from("profiles").select("*").eq("id", id).eq("status", "inativo").single()
+  const { data: perfil, error: perfilError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", id)
+    .eq("status", "inativo")
+    .single()
 
-  const { data: discipuloData } = await supabase
+  if (perfilError || !perfil) {
+    console.error("[v0] Perfil não encontrado ou já aprovado:", id)
+    redirect("/discipulador/aprovar")
+  }
+
+  // Buscar dados do discípulo
+  const { data: discipuloData, error: discipuloError } = await supabase
     .from("discipulos")
     .select("*")
     .eq("user_id", id)
@@ -24,9 +35,10 @@ export default async function AprovarDiscipuloPage({ params }: { params: Promise
     .eq("status", "inativo")
     .single()
 
-  if (!discipulo || !discipuloData) {
-    redirect("/discipulador")
+  if (discipuloError || !discipuloData) {
+    console.error("[v0] Discípulo não encontrado ou não pertence a este discipulador:", id)
+    redirect("/discipulador/aprovar")
   }
 
-  return <AprovarDiscipuloClient discipulo={discipulo} discipuloData={discipuloData} />
+  return <AprovarDiscipuloClient discipulo={perfil} discipuloData={discipuloData} />
 }

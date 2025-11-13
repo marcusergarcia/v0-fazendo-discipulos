@@ -8,19 +8,18 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, XCircle, User, Mail, Phone, Church, Calendar, MapPin, Clock } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { aprovarDiscipulo, rejeitarDiscipulo } from "./actions"
 
 interface AprovarDiscipuloClientProps {
   discipulo: {
     id: string
-    nome_completo_temp: string
-    email_temporario: string
-    telefone_temp: string | null
-    igreja_temp: string | null
-    genero_temp: string | null
-    etnia_temp: string | null
-    data_nascimento_temp: string | null
-    foto_perfil_url_temp: string | null
+    nome_completo: string
+    email: string
+    telefone: string | null
+    igreja: string | null
+    genero: string | null
+    etnia: string | null
+    data_nascimento: string | null
+    foto_perfil_url: string | null
     localizacao_cadastro: string | null
     data_cadastro: string | null
     hora_cadastro: string | null
@@ -28,11 +27,15 @@ interface AprovarDiscipuloClientProps {
     aceitou_lgpd: boolean
     aceitou_compromisso: boolean
     data_aceite_termos: string | null
+  }
+  discipuloData: {
+    id: string
+    user_id: string
     discipulador_id: string
   }
 }
 
-export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloClientProps) {
+export default function AprovarDiscipuloClient({ discipulo, discipuloData }: AprovarDiscipuloClientProps) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [isLoading, setIsLoading] = useState(false)
@@ -43,17 +46,58 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
     setError(null)
 
     try {
-      const result = await aprovarDiscipulo(discipulo.id)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          status: "ativo",
+        })
+        .eq("id", discipulo.id)
 
-      if (!result.success) {
-        throw new Error(result.error)
+      if (profileError) throw profileError
+
+      const { error: discipuloError } = await supabase
+        .from("discipulos")
+        .update({
+          status: "ativo",
+          aprovado_discipulador: true,
+          data_aprovacao_discipulador: new Date().toISOString(),
+        })
+        .eq("user_id", discipulo.id)
+
+      if (discipuloError) throw discipuloError
+
+      const { data: progressoExistente } = await supabase
+        .from("progresso_fases")
+        .select("id")
+        .eq("discipulo_id", discipuloData.id)
+        .eq("passo_numero", 1)
+        .single()
+
+      if (!progressoExistente) {
+        const { error: progressoError } = await supabase.from("progresso_fases").insert({
+          discipulo_id: discipuloData.id,
+          fase_numero: 1,
+          passo_numero: 1,
+          completado: false,
+        })
+
+        if (progressoError) throw progressoError
       }
 
-      console.log("[v0] Discípulo aprovado e usuário criado:", result.userId)
-      router.push("/discipulador/aprovar?aprovacao=sucesso")
+      await supabase.from("notificacoes").insert({
+        user_id: discipulo.id,
+        tipo: "aprovacao_aceita",
+        titulo: "Cadastro Aprovado!",
+        mensagem: "Seu discipulador aprovou seu cadastro. Bem-vindo à jornada de fé!",
+        link: "/dashboard",
+        lida: false,
+      })
+
+      console.log("[v0] Discípulo aprovado com sucesso:", discipulo.id)
+      router.push("/discipulador?aprovacao=sucesso")
       router.refresh()
     } catch (error) {
-      console.error("[v0] Erro ao aprovar:", error)
+      console.error("Erro ao aprovar:", error)
       setError(error instanceof Error ? error.message : "Erro ao aprovar discípulo")
     } finally {
       setIsLoading(false)
@@ -61,23 +105,25 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
   }
 
   const handleRejeitar = async () => {
-    if (!confirm("Tem certeza que deseja rejeitar este cadastro? O registro será excluído permanentemente.")) return
+    if (!confirm("Tem certeza que deseja rejeitar este cadastro? O usuário será excluído do sistema.")) return
 
     setIsLoading(true)
     setError(null)
 
     try {
-      const result = await rejeitarDiscipulo(discipulo.id)
+      const { error: discipuloDeleteError } = await supabase.from("discipulos").delete().eq("user_id", discipulo.id)
 
-      if (!result.success) {
-        throw new Error(result.error)
-      }
+      if (discipuloDeleteError) throw discipuloDeleteError
+
+      const { error: profileDeleteError } = await supabase.from("profiles").delete().eq("id", discipulo.id)
+
+      if (profileDeleteError) throw profileDeleteError
 
       console.log("[v0] Discípulo rejeitado e removido:", discipulo.id)
-      router.push("/discipulador/aprovar?rejeicao=sucesso")
+      router.push("/discipulador?rejeicao=sucesso")
       router.refresh()
     } catch (error) {
-      console.error("[v0] Erro ao rejeitar:", error)
+      console.error("Erro ao rejeitar:", error)
       setError(error instanceof Error ? error.message : "Erro ao rejeitar discípulo")
     } finally {
       setIsLoading(false)
@@ -94,16 +140,16 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
               Aprovar Novo Discípulo
             </CardTitle>
             <CardDescription className="text-blue-200">
-              Revise as informações antes de aprovar o cadastro. Após aprovação, o usuário poderá fazer login.
+              Revise as informações antes de aprovar o cadastro
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Foto e Dados Básicos */}
             <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-              {discipulo.foto_perfil_url_temp ? (
+              {discipulo.foto_perfil_url ? (
                 <Image
-                  src={discipulo.foto_perfil_url_temp || "/placeholder.svg"}
-                  alt={discipulo.nome_completo_temp}
+                  src={discipulo.foto_perfil_url || "/placeholder.svg"}
+                  alt={discipulo.nome_completo}
                   width={150}
                   height={150}
                   className="rounded-full object-cover"
@@ -115,35 +161,35 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
               )}
 
               <div className="flex-1 space-y-3 text-white">
-                <h2 className="text-2xl font-bold">{discipulo.nome_completo_temp}</h2>
+                <h2 className="text-2xl font-bold">{discipulo.nome_completo}</h2>
 
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-blue-300" />
-                    <span>{discipulo.email_temporario}</span>
+                    <span>{discipulo.email}</span>
                   </div>
 
-                  {discipulo.telefone_temp && (
+                  {discipulo.telefone && (
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-blue-300" />
-                      <span>{discipulo.telefone_temp}</span>
+                      <span>{discipulo.telefone}</span>
                     </div>
                   )}
 
-                  {discipulo.igreja_temp && (
+                  {discipulo.igreja && (
                     <div className="flex items-center gap-2">
                       <Church className="w-4 h-4 text-blue-300" />
-                      <span>{discipulo.igreja_temp}</span>
+                      <span>{discipulo.igreja}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {discipulo.genero_temp && <Badge variant="secondary">{discipulo.genero_temp}</Badge>}
-                  {discipulo.etnia_temp && <Badge variant="secondary">{discipulo.etnia_temp}</Badge>}
-                  {discipulo.data_nascimento_temp && (
+                  {discipulo.genero && <Badge variant="secondary">{discipulo.genero}</Badge>}
+                  {discipulo.etnia && <Badge variant="secondary">{discipulo.etnia}</Badge>}
+                  {discipulo.data_nascimento && (
                     <Badge variant="secondary">
-                      {new Date().getFullYear() - new Date(discipulo.data_nascimento_temp).getFullYear()} anos
+                      {new Date().getFullYear() - new Date(discipulo.data_nascimento).getFullYear()} anos
                     </Badge>
                   )}
                 </div>
@@ -223,7 +269,7 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
 
               <Button onClick={handleAprovar} className="flex-1 bg-green-600 hover:bg-green-700" disabled={isLoading}>
                 <CheckCircle2 className="w-5 h-5 mr-2" />
-                {isLoading ? "Aprovando..." : "Aprovar e Criar Conta"}
+                {isLoading ? "Aprovando..." : "Aprovar Discípulo"}
               </Button>
             </div>
           </CardContent>
