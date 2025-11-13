@@ -22,6 +22,7 @@ import {
   LogOut,
   GitBranch,
   UserPlus,
+  Bell,
 } from "lucide-react"
 
 export default async function DashboardPage({
@@ -45,7 +46,23 @@ export default async function DashboardPage({
     redirect("/auth/login")
   }
 
-  // Buscar perfil do usuário
+  const { data: notificacoes } = await supabase
+    .from("notificacoes")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("lida", false)
+    .order("criado_em", { ascending: false })
+    .limit(5)
+
+  const { data: discipulosPendentes } = await supabase
+    .from("discipulos")
+    .select("id, user_id, created_at")
+    .eq("discipulador_id", user.id)
+    .eq("status", "inativo")
+    .eq("aprovado_discipulador", false)
+
+  const temPendentes = (discipulosPendentes?.length || 0) > 0
+
   const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
   console.log("[v0] Profile check - Data:", profile?.id, "Error:", profileError)
@@ -147,6 +164,17 @@ export default async function DashboardPage({
                   <span className="hidden sm:inline">Árvore</span>
                 </Button>
               </Link>
+              <Link href="/discipulador/aprovar">
+                <Button variant="ghost" size="sm" className="gap-2 relative">
+                  <Bell className="w-4 h-4" />
+                  {temPendentes && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500">
+                      {discipulosPendentes?.length}
+                    </Badge>
+                  )}
+                  <span className="hidden sm:inline">Aprovações</span>
+                </Button>
+              </Link>
               <Link href="/dashboard/chat">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <Users className="w-4 h-4" />
@@ -189,6 +217,29 @@ export default async function DashboardPage({
       </header>
 
       <div className="container mx-auto px-4 py-8">
+        {temPendentes && (
+          <Card className="mb-6 border-yellow-500/50 bg-yellow-500/5">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-yellow-600 dark:text-yellow-500">
+                <Bell className="w-5 h-5" />
+                Discípulos Aguardando Aprovação
+              </CardTitle>
+              <CardDescription>
+                Você tem {discipulosPendentes?.length} {discipulosPendentes?.length === 1 ? "discípulo" : "discípulos"}{" "}
+                aguardando sua aprovação
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/discipulador/aprovar">
+                <Button className="w-full sm:w-auto">
+                  Revisar Cadastros Pendentes
+                  <Badge className="ml-2 bg-white text-primary">{discipulosPendentes?.length}</Badge>
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Profile Section */}
         <Card className="mb-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
           <CardHeader>

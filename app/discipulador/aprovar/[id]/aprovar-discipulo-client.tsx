@@ -93,11 +93,11 @@ export default function AprovarDiscipuloClient({ discipulo, discipuloData }: Apr
         lida: false,
       })
 
-      console.log("[v0] Discípulo aprovado com sucesso:", discipulo.id)
+      console.log("[v0] Discípulo aprovado e ativado com sucesso:", discipulo.id)
       router.push("/discipulador?aprovacao=sucesso")
       router.refresh()
     } catch (error) {
-      console.error("Erro ao aprovar:", error)
+      console.error("[v0] Erro ao aprovar:", error)
       setError(error instanceof Error ? error.message : "Erro ao aprovar discípulo")
     } finally {
       setIsLoading(false)
@@ -123,7 +123,7 @@ export default function AprovarDiscipuloClient({ discipulo, discipuloData }: Apr
       router.push("/discipulador?rejeicao=sucesso")
       router.refresh()
     } catch (error) {
-      console.error("Erro ao rejeitar:", error)
+      console.error("[v0] Erro ao rejeitar:", error)
       setError(error instanceof Error ? error.message : "Erro ao rejeitar discípulo")
     } finally {
       setIsLoading(false)
