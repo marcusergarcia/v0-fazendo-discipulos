@@ -256,7 +256,14 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
                   <Input
                     id="discipulador"
                     type="text"
-                    value={nomeDiscipulador || "Não encontrado"}
+                    value={
+                      nomeDiscipulador
+                        ? nomeDiscipulador
+                            .split(" ")
+                            .map((n: string) => n[0].toUpperCase() + n.slice(1))
+                            .join(" ")
+                        : "Não encontrado"
+                    }
                     disabled
                     className="bg-muted"
                   />
