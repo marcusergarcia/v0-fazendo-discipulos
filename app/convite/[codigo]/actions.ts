@@ -88,14 +88,24 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       })
       .eq("codigo_convite", dados.codigoConvite)
 
-    await supabaseAdmin.from("notificacoes").insert({
-      user_id: dados.discipuladorId,
-      tipo: "aprovacao_discipulo",
-      titulo: "Novo Discípulo Aguardando Aprovação",
-      mensagem: `${dados.nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
-      link: `/discipulador/aprovar/${discipuloData.id}`,
-      lida: false,
-    })
+    console.log("[v0] Tentando criar notificação para discipulador:", dados.discipuladorId)
+    const { data: notificacaoData, error: notificacaoError } = await supabaseAdmin
+      .from("notificacoes")
+      .insert({
+        user_id: dados.discipuladorId,
+        tipo: "aprovacao_discipulo",
+        titulo: "Novo Discípulo Aguardando Aprovação",
+        mensagem: `${dados.nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
+        link: `/discipulador/aprovar/${discipuloData.id}`,
+        lida: false,
+      })
+      .select()
+
+    if (notificacaoError) {
+      console.error("[v0] ERRO ao criar notificação:", notificacaoError)
+    } else {
+      console.log("[v0] Notificação criada com sucesso:", notificacaoData)
+    }
 
     console.log("[v0] Cadastro temporário concluído - aguardando aprovação:", dados.email)
     return { success: true, discipuloId: discipuloData.id }
