@@ -17,13 +17,19 @@ export default async function PerfilPage() {
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
+  console.log("[v0] discipulo:", discipulo)
+  console.log("[v0] discipulador_id:", discipulo?.discipulador_id)
+
   let nomeDiscipulador = null
   if (discipulo?.discipulador_id) {
-    const { data: discipuladorProfile } = await supabase
+    const { data: discipuladorProfile, error } = await supabase
       .from("profiles")
       .select("nome_completo")
       .eq("id", discipulo.discipulador_id)
       .maybeSingle()
+
+    console.log("[v0] discipuladorProfile:", discipuladorProfile)
+    console.log("[v0] error:", error)
 
     nomeDiscipulador = discipuladorProfile?.nome_completo || "Não encontrado"
   }
