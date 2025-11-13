@@ -40,11 +40,20 @@ export async function cadastrarDiscipuloPorConvite(dados: {
     let userId: string
 
     if (userExists) {
-      console.log("[v0] Usuário já existe, deletando para recriar:", userExists.id)
+      console.log("[v0] Usuário já existe, deletando TUDO para recriar:", userExists.id)
 
+      // Deletar na ordem correta para evitar constraint violations
+      await supabaseAdmin.from("notificacoes").delete().eq("user_id", userExists.id)
+      await supabaseAdmin.from("progresso_fases").delete().eq("discipulo_id", userExists.id)
+      await supabaseAdmin.from("recompensas").delete().eq("discipulo_id", userExists.id)
+      await supabaseAdmin.from("reflexoes_conteudo").delete().eq("discipulo_id", userExists.id)
+      await supabaseAdmin.from("mensagens").delete().eq("discipulo_id", userExists.id)
+      await supabaseAdmin.from("mensagens").delete().eq("remetente_id", userExists.id)
       await supabaseAdmin.from("discipulos").delete().eq("user_id", userExists.id)
       await supabaseAdmin.from("profiles").delete().eq("id", userExists.id)
       await supabaseAdmin.auth.admin.deleteUser(userExists.id)
+
+      console.log("[v0] Usuário anterior completamente removido")
     }
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -57,6 +66,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
     if (!authData.user) throw new Error("Erro ao criar usuário")
 
     userId = authData.user.id
+    console.log("[v0] Usuário criado no Auth:", userId)
 
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       id: userId,
@@ -77,10 +87,11 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       data_cadastro: dados.dataCadastro,
       hora_cadastro: dados.horaCadastro,
       semana_cadastro: dados.semanaCadastro,
-      status: "inativo", // Começar como inativo
+      status: "inativo",
     })
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
+    console.log("[v0] Profile criado com status INATIVO")
 
     const { error: discipuloError } = await supabaseAdmin.from("discipulos").insert({
       user_id: userId,
@@ -89,20 +100,13 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       xp_total: 0,
       fase_atual: 1,
       passo_atual: 1,
-      aprovado_discipulador: false, // Explicitamente FALSE
+      aprovado_discipulador: false,
       data_aprovacao_discipulador: null,
-      status: "inativo", // Começar como inativo
-    })
-
-    console.log("[v0] Inserindo discípulo:", {
-      userId,
-      discipuladorId: dados.discipuladorId,
-      aprovado: false,
       status: "inativo",
-      error: discipuloError,
     })
 
     if (discipuloError) throw new Error(`Erro ao criar discípulo: ${discipuloError.message}`)
+    console.log("[v0] Discípulo criado com status INATIVO e não aprovado")
 
     await supabaseAdmin
       .from("convites")
@@ -113,7 +117,7 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       })
       .eq("codigo_convite", dados.codigoConvite)
 
-    await supabaseAdmin.from("notificacoes").insert({
+    const { error: notifError } = await supabaseAdmin.from("notificacoes").insert({
       user_id: dados.discipuladorId,
       tipo: "aprovacao_discipulo",
       titulo: "Novo Discípulo Aguardando Aprovação",
@@ -122,10 +126,16 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       lida: false,
     })
 
-    console.log("[v0] Cadastro concluído - usuário INATIVO aguardando aprovação:", dados.email)
+    if (notifError) {
+      console.error("[v0] ERRO ao criar notificação:", notifError)
+    } else {
+      console.log("[v0] Notificação enviada ao discipulador:", dados.discipuladorId)
+    }
+
+    console.log("[v0] ✅ Cadastro concluído - usuário INATIVO aguardando aprovação")
     return { success: true, userId }
   } catch (error) {
-    console.error("[v0] Erro no cadastro:", error)
+    console.error("[v0] ❌ Erro no cadastro:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro desconhecido ao criar conta",
