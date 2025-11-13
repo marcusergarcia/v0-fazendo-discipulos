@@ -5,6 +5,7 @@ DO $$
 DECLARE
   v_apostolos_user_id UUID;
   v_marcus_user_id UUID;
+  v_exists BOOLEAN;
 BEGIN
   -- Buscar o user_id do Marcus
   SELECT id INTO v_marcus_user_id
@@ -12,43 +13,50 @@ BEGIN
   WHERE email = 'marcus.macintel@terra.com.br'
   LIMIT 1;
 
-  -- Criar usuário "12 apostolos" no auth (se não existir)
-  INSERT INTO auth.users (
-    id,
-    email,
-    encrypted_password,
-    email_confirmed_at,
-    created_at,
-    updated_at,
-    raw_app_meta_data,
-    raw_user_meta_data,
-    is_super_admin,
-    role
-  )
-  VALUES (
-    gen_random_uuid(),
-    '12apostolos@fazendodiscipulos.com.br',
-    crypt('SenhaSegura123!', gen_salt('bf')), -- Senha: SenhaSegura123!
-    NOW(),
-    NOW(),
-    NOW(),
-    '{"provider":"email","providers":["email"]}',
-    '{}',
-    false,
-    'authenticated'
-  )
-  ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
-  RETURNING id INTO v_apostolos_user_id;
+  -- Verificar se usuário "12 apostolos" já existe antes de criar
+  SELECT id INTO v_apostolos_user_id
+  FROM auth.users
+  WHERE email = '12apostolos@fazendodiscipulos.com.br'
+  LIMIT 1;
 
-  -- Se já existia, pegar o ID
+  -- Se não existir, criar usuário "12 apostolos" no auth
   IF v_apostolos_user_id IS NULL THEN
-    SELECT id INTO v_apostolos_user_id
-    FROM auth.users
-    WHERE email = '12apostolos@fazendodiscipulos.com.br'
-    LIMIT 1;
+    INSERT INTO auth.users (
+      id,
+      instance_id,
+      email,
+      encrypted_password,
+      email_confirmed_at,
+      created_at,
+      updated_at,
+      raw_app_meta_data,
+      raw_user_meta_data,
+      is_super_admin,
+      role,
+      aud,
+      confirmation_token,
+      recovery_token
+    )
+    VALUES (
+      gen_random_uuid(),
+      '00000000-0000-0000-0000-000000000000',
+      '12apostolos@fazendodiscipulos.com.br',
+      crypt('SenhaSegura123!', gen_salt('bf')),
+      NOW(),
+      NOW(),
+      NOW(),
+      '{"provider":"email","providers":["email"]}',
+      '{"name":"12 Apóstolos"}',
+      false,
+      'authenticated',
+      'authenticated',
+      '',
+      ''
+    )
+    RETURNING id INTO v_apostolos_user_id;
   END IF;
 
-  -- Criar perfil para "12 apostolos"
+  -- Criar ou atualizar perfil para "12 apostolos"
   INSERT INTO public.profiles (
     id,
     nome_completo,
@@ -69,8 +77,8 @@ BEGIN
     '12apostolos@fazendodiscipulos.com.br',
     '(00) 00000-0000',
     '0001-01-01',
-    'Masculino',
-    'Não informada',
+    'masculino', -- Corrigido de 'Masculino' para 'masculino' (valor válido na constraint)
+    NULL,
     'Igreja Primitiva',
     'Grupo de referência dos 12 apóstolos de Jesus Cristo - fundamento da fé cristã',
     'ativo',
@@ -81,7 +89,7 @@ BEGIN
     nome_completo = EXCLUDED.nome_completo,
     status = 'ativo';
 
-  -- Criar registro em discipulos para "12 apostolos" (sem discipulador acima)
+  -- Criar ou atualizar registro em discipulos para "12 apostolos"
   INSERT INTO public.discipulos (
     user_id,
     discipulador_id,
@@ -97,9 +105,9 @@ BEGIN
   )
   VALUES (
     v_apostolos_user_id,
-    NULL, -- Sem discipulador acima
-    'Multiplicador', -- Nível máximo
-    10000, -- Total de pontos
+    NULL,
+    'Multiplicador',
+    10000,
     1,
     1,
     'ativo',
@@ -128,6 +136,3 @@ BEGIN
   END IF;
 
 END $$;
-
--- Comentário
-COMMENT ON SCRIPT IS 'Cria o discipulador de referência "12 Apóstolos" e o associa ao Marcus';
