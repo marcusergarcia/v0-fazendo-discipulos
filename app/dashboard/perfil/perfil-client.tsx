@@ -251,15 +251,19 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
                   <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
                 </div>
 
-                {nomeDiscipulador && (
-                  <div className="space-y-2">
-                    <Label htmlFor="discipulador">Seu Discipulador</Label>
-                    <Input id="discipulador" type="text" value={nomeDiscipulador} disabled className="bg-muted" />
-                    <p className="text-xs text-muted-foreground">
-                      Seu discipulador é responsável por acompanhar sua jornada
-                    </p>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="discipulador">Seu Discipulador</Label>
+                  <Input
+                    id="discipulador"
+                    type="text"
+                    value={nomeDiscipulador || "Não encontrado"}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Seu discipulador é responsável por acompanhar sua jornada
+                  </p>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="nome_completo">Nome Completo *</Label>
