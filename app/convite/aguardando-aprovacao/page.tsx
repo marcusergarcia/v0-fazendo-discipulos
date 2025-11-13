@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Clock, CheckCircle2, Mail } from "lucide-react"
+import { Clock, CheckCircle2, Mail } from 'lucide-react'
 import Link from "next/link"
 import Image from "next/image"
 
@@ -45,17 +45,16 @@ export default function AguardandoAprovacaoPage() {
               <div>
                 <h3 className="font-semibold text-lg mb-1">Próximos Passos</h3>
                 <p className="text-blue-100">
-                  Assim que seu discipulador aprovar seu cadastro, você receberá um e-mail de confirmação e poderá
-                  acessar sua conta para começar a jornada de fé.
+                  Assim que seu discipulador aprovar seu cadastro, você receberá um e-mail com suas credenciais de acesso e poderá
+                  entrar na plataforma para começar sua jornada de fé.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-yellow-500/10 p-4 rounded-lg border-2 border-yellow-500/30">
+          <div className="bg-blue-500/10 p-4 rounded-lg border-2 border-blue-500/30">
             <p className="text-sm text-center">
-              <strong className="text-yellow-400">Importante:</strong> Verifique sua caixa de entrada e spam para não
-              perder a confirmação!
+              <strong className="text-blue-400">Aguarde:</strong> Seu discipulador foi notificado e analisará seu cadastro em breve. Você receberá um e-mail assim que for aprovado!
             </p>
           </div>
 
