@@ -13,22 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  ArrowLeft,
-  BookOpen,
-  Sparkles,
-  Award,
-  Target,
-  Send,
-  Save,
-  MessageCircle,
-  Clock,
-  CheckCheck,
-  Play,
-  ExternalLink,
-  RotateCcw,
-  CheckCircle,
-} from "lucide-react"
+import { ArrowLeft, BookOpen, Sparkles, Award, Target, Send, Save, MessageCircle, Clock, CheckCheck, Play, ExternalLink, RotateCcw, CheckCircle } from 'lucide-react'
 import Link from "next/link"
 import {
   salvarRascunho,
@@ -234,12 +219,7 @@ export default function PassoClient({
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                      {assistido ? (
-                        <Badge className="bg-accent text-accent-foreground">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Concluído
-                        </Badge>
-                      ) : (
+                      {!assistido && (
                         <Button
                           type="button"
                           size="sm"
@@ -247,8 +227,14 @@ export default function PassoClient({
                           className="bg-primary"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Missão Cumprida
+                          Marcar como Concluído
                         </Button>
+                      )}
+                      {assistido && (
+                        <Badge className="bg-accent text-accent-foreground">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Reflexão Enviada
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -292,12 +278,7 @@ export default function PassoClient({
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
-                      {lido ? (
-                        <Badge className="bg-accent text-accent-foreground">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Concluído
-                        </Badge>
-                      ) : (
+                      {!lido && (
                         <Button
                           type="button"
                           size="sm"
@@ -305,8 +286,14 @@ export default function PassoClient({
                           onClick={() => abrirModalMissaoCumprida("artigo", artigo)}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Missão Cumprida
+                          Marcar como Concluído
                         </Button>
+                      )}
+                      {lido && (
+                        <Badge className="bg-accent text-accent-foreground">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Reflexão Enviada
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -481,7 +468,7 @@ export default function PassoClient({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-6 h-6 text-primary" />
-              Missão Cumprida: {tipoConteudo === "video" ? "Vídeo" : "Artigo"}
+              Enviar Reflexão ao Discipulador
             </DialogTitle>
             <DialogDescription>{conteudoAtual?.titulo}</DialogDescription>
           </DialogHeader>
@@ -503,11 +490,11 @@ export default function PassoClient({
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 border">
-              <p className="text-sm font-medium mb-2">Após enviar sua reflexão:</p>
+              <p className="text-sm font-medium mb-2">O que acontece ao enviar:</p>
               <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Sua reflexão será enviada ao discipulador para análise</li>
                 <li>O conteúdo será marcado como concluído</li>
-                <li>Sua reflexão será enviada ao discipulador</li>
-                <li>Você poderá assistir/ler novamente quando quiser</li>
+                <li>Você só verá "Missão Cumprida" após enviar a reflexão</li>
                 <li>Use "Resetar Progresso" para refazer as reflexões</li>
               </ul>
             </div>
