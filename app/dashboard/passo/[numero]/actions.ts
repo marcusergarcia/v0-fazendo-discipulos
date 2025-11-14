@@ -188,6 +188,10 @@ export async function resetarProgresso(numero: number) {
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return
 
+  console.log("[v0] Reset - Discípulo ID:", discipulo.id)
+  console.log("[v0] Reset - Discipulador ID:", discipulo.discipulador_id)
+  console.log("[v0] Reset - Passo:", numero)
+
   await supabase
     .from("progresso_fases")
     .update({
@@ -208,30 +212,44 @@ export async function resetarProgresso(numero: number) {
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
 
-  await supabase
+  const { data: reflexoesDeleted, error: reflexoesError } = await supabase
     .from("reflexoes_conteudo")
     .delete()
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
+    .select()
+
+  console.log("[v0] Reset - Reflexões deletadas:", reflexoesDeleted?.length || 0, reflexoesError)
 
   if (discipulo.discipulador_id) {
-    await supabase
+    const { data: mensagensDeleted, error: mensagensError } = await supabase
       .from("mensagens")
       .delete()
       .eq("discipulo_id", discipulo.id)
+      .select()
 
-    await supabase
+    console.log("[v0] Reset - Mensagens deletadas:", mensagensDeleted?.length || 0, mensagensError)
+
+    const { data: notifReflexao, error: errorReflexao } = await supabase
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
       .eq("tipo", "reflexao")
+      .like("mensagem", `%Passo ${numero}%`)
+      .select()
 
-    await supabase
+    console.log("[v0] Reset - Notificações reflexao deletadas:", notifReflexao?.length || 0, errorReflexao)
+
+    const { data: notifMissao, error: errorMissao } = await supabase
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
       .eq("tipo", "missao")
+      .like("mensagem", `%Passo ${numero}%`)
+      .select()
+
+    console.log("[v0] Reset - Notificações missao deletadas:", notifMissao?.length || 0, errorMissao)
   }
 
   redirect(`/dashboard/passo/${numero}?reset=true`)
