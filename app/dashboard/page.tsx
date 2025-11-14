@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
-import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
 import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound } from 'lucide-react'
 
 export default async function DashboardPage({
@@ -127,7 +126,6 @@ export default async function DashboardPage({
               </Link>
             </div>
             <div className="flex items-center gap-2">
-              <NotificacoesDropdown userId={user.id} />
               <Link href="/discipulador">
                 <Button variant="ghost" size="sm" className="gap-2 relative">
                   <UsersRound className="w-4 h-4" />
