@@ -47,10 +47,12 @@ export default async function DiscipuladorPage() {
   // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
   const discipulosAprovados = discipulosComPerfil?.filter(d => d.aprovado_discipulador) || []
 
+  console.log("[v0] Discipulos aprovados IDs:", discipulosAprovados.map(d => d.id))
+
   // Filtrar pendentes de aprovação inicial
   const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
 
-  const { data: reflexoesPendentes } = await supabase
+  const { data: reflexoesPendentes, error: errorReflexoes } = await supabase
     .from("reflexoes_conteudo")
     .select(`
       *,
@@ -59,7 +61,11 @@ export default async function DiscipuladorPage() {
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id).filter(Boolean) || [])
     .order("data_criacao", { ascending: false })
 
-  const { data: progressoPendente } = await supabase
+  console.log("[v0] Query reflexoes - discipulo_ids:", discipulosAprovados?.map((d) => d.id).filter(Boolean))
+  console.log("[v0] Reflexoes pendentes retornadas:", JSON.stringify(reflexoesPendentes, null, 2))
+  console.log("[v0] Error reflexoes:", errorReflexoes)
+
+  const { data: progressoPendente, error: errorProgresso } = await supabase
     .from("progresso_fases")
     .select(`
       *,
@@ -68,6 +74,9 @@ export default async function DiscipuladorPage() {
     .eq("status_validacao", "pendente")
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id).filter(Boolean) || [])
     .order("created_at", { ascending: false })
+
+  console.log("[v0] Progresso pendente retornado:", JSON.stringify(progressoPendente, null, 2))
+  console.log("[v0] Error progresso:", errorProgresso)
 
   const tarefasPorDiscipulo = discipulosAprovados?.map((discipulo) => {
     const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
