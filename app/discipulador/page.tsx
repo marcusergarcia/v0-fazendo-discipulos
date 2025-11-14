@@ -17,11 +17,6 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  await supabase
-    .from("notificacoes")
-    .delete()
-    .eq("user_id", user.id)
-
   const { data: todosDiscipulos, error: errorDiscipulos } = await supabase
     .from("discipulos")
     .select("*")
@@ -108,7 +103,6 @@ export default async function DiscipuladorPage() {
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
             <div className="flex items-center gap-2">
-              <NotificacoesDropdown userId={user.id} />
               <Link href="/dashboard">
                 <Button variant="outline" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
