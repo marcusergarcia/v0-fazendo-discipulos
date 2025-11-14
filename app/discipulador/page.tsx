@@ -390,7 +390,7 @@ export default async function DiscipuladorPage() {
                               Sem tarefas
                             </Badge>
                           )}
-                          <Link href={`/discipulador/chat/${discipulo.id}`}>
+                          <Link href={`/discipulador/chat/${discipulo.user_id}`}>
                             <Button size="sm" variant="outline">
                               <MessageCircle className="w-4 h-4" />
                             </Button>
@@ -416,7 +416,7 @@ export default async function DiscipuladorPage() {
           <TabsContent value="chat" className="space-y-4">
             {discipulosAprovados && discipulosAprovados.length > 0 ? (
               discipulosAprovados.map((discipulo) => (
-                <Link key={discipulo.id} href={`/discipulador/chat/${discipulo.id}`}>
+                <Link key={discipulo.id} href={`/discipulador/chat/${discipulo.user_id}`}>
                   <Card className="hover:border-primary transition-colors cursor-pointer">
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">

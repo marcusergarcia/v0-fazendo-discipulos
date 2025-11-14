@@ -193,10 +193,32 @@ export async function resetarProgresso(numero: number) {
     .update({
       videos_assistidos: [],
       artigos_lidos: [],
+      resposta_pergunta: null,
+      resposta_missao: null,
+      rascunho_resposta: null,
+      status_validacao: null,
+      enviado_para_validacao: false,
+      data_envio_validacao: null,
+      completado: false,
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
+
+  await supabase
+    .from("reflexoes_conteudo")
+    .delete()
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+
+  if (discipulo.discipulador_id) {
+    await supabase
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .or(`link.ilike.%/passo/${numero}%,link.ilike.%validar-passo%${numero}%`)
+  }
 
   redirect(`/dashboard/passo/${numero}?reset=true`)
 }
