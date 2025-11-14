@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft } from 'lucide-react'
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye } from 'lucide-react'
 import Link from "next/link"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -16,36 +17,59 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  // Buscar discípulos sob sua responsabilidade
   const { data: discipulos } = await supabase
     .from("discipulos")
     .select(`
       *,
-      profile:user_id(nome_completo, email)
+      profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
     `)
     .eq("discipulador_id", user.id)
+    .eq("aprovado_discipulador", true)
 
-  // Buscar reflexões pendentes de validação
   const { data: reflexoesPendentes } = await supabase
-    .from("reflexoes")
+    .from("reflexoes_conteudo")
     .select(`
       *,
-      discipulo:discipulo_id(id, nivel_atual, profile:user_id(nome_completo, email))
+      discipulo:discipulo_id(
+        id, 
+        nivel_atual, 
+        nome_completo_temp,
+        email_temporario,
+        foto_perfil_url_temp,
+        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+      )
     `)
-    .is("validado", null)
     .in("discipulo_id", discipulos?.map((d) => d.id) || [])
-    .order("created_at", { ascending: false })
+    .order("data_criacao", { ascending: false })
 
   // Buscar progresso pendente de validação
   const { data: progressoPendente } = await supabase
     .from("progresso_fases")
     .select(`
       *,
-      discipulo:discipulo_id(id, nivel_atual, profile:user_id(nome_completo, email))
+      discipulo:discipulo_id(
+        id, 
+        nivel_atual,
+        nome_completo_temp,
+        email_temporario,
+        foto_perfil_url_temp,
+        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+      )
     `)
     .eq("status_validacao", "pendente")
     .in("discipulo_id", discipulos?.map((d) => d.id) || [])
     .order("created_at", { ascending: false })
+
+  const tarefasPorDiscipulo = discipulos?.map((discipulo) => {
+    const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
+    const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
+    return {
+      discipulo,
+      tarefasPendentes: reflexoes.length + progressos.length,
+      reflexoes,
+      progressos,
+    }
+  }) || []
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,49 +272,71 @@ export default async function DiscipuladorPage() {
 
           {/* Tab: Meus Discípulos */}
           <TabsContent value="discipulos" className="space-y-4">
-            {discipulos && discipulos.length > 0 ? (
-              discipulos.map((discipulo) => (
-                <Card key={discipulo.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle>{discipulo.profile?.nome_completo || discipulo.profile?.email}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">{discipulo.profile?.email}</p>
+            {tarefasPorDiscipulo && tarefasPorDiscipulo.length > 0 ? (
+              tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, reflexoes, progressos }) => {
+                const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
+                const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
+                const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
+
+                return (
+                  <Card key={discipulo.id}>
+                    <CardContent className="py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Avatar className="w-16 h-16">
+                            <AvatarImage src={foto || undefined} alt={nome} />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                              {iniciais}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="absolute -bottom-1 -right-1 bg-background border-2 border-background rounded-full px-2 py-0.5">
+                            <p className="text-xs font-bold">P{discipulo.passo_atual}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{nome}</h3>
+                            <Badge variant="outline" className="text-xs">
+                              {discipulo.nivel_atual}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>Fase {discipulo.fase_atual}</span>
+                            <span>Passo {discipulo.passo_atual}/10</span>
+                            <span>{discipulo.xp_total} XP</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {tarefasPendentes > 0 ? (
+                            <>
+                              <Badge variant="destructive" className="text-sm px-3 py-1">
+                                {tarefasPendentes} {tarefasPendentes === 1 ? "Tarefa" : "Tarefas"}
+                              </Badge>
+                              <Link href={`/discipulador/tarefas/${discipulo.id}`}>
+                                <Button size="sm" variant="default">
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Ver Tarefas
+                                </Button>
+                              </Link>
+                            </>
+                          ) : (
+                            <Badge variant="outline" className="text-sm px-3 py-1 text-muted-foreground">
+                              Sem tarefas
+                            </Badge>
+                          )}
+                          <Link href={`/discipulador/chat/${discipulo.id}`}>
+                            <Button size="sm" variant="outline">
+                              <MessageCircle className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
-                      <Badge>{discipulo.nivel_atual}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Fase Atual</p>
-                        <p className="text-lg font-semibold">{discipulo.fase_atual}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Passo Atual</p>
-                        <p className="text-lg font-semibold">{discipulo.passo_atual}/10</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">XP Total</p>
-                        <p className="text-lg font-semibold">{discipulo.xp_total}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Link href={`/discipulador/discipulo/${discipulo.id}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full bg-transparent">
-                          Ver Progresso Detalhado
-                        </Button>
-                      </Link>
-                      <Link href={`/discipulador/chat/${discipulo.id}`}>
-                        <Button size="sm">
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          Chat
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                )
+              })
             ) : (
               <Card>
                 <CardContent className="py-12 text-center">

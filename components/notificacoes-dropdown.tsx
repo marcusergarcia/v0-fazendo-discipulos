@@ -75,9 +75,11 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
   }
 
   async function marcarComoLida(notificacao: Notificacao) {
-    if (!notificacao.lida) {
-      await supabase.from("notificacoes").update({ lida: true }).eq("id", notificacao.id)
-    }
+    // Excluir a notificação do banco
+    await supabase.from("notificacoes").delete().eq("id", notificacao.id)
+
+    // Atualizar a lista localmente
+    setNotificacoes((prev) => prev.filter((n) => n.id !== notificacao.id))
 
     if (notificacao.link) {
       router.push(notificacao.link)
@@ -85,7 +87,7 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
   }
 
   async function marcarTodasComoLidas() {
-    await supabase.from("notificacoes").update({ lida: true }).eq("user_id", userId).eq("lida", false)
+    await supabase.from("notificacoes").delete().eq("user_id", userId)
 
     carregarNotificacoes()
   }
@@ -107,7 +109,7 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
           <DropdownMenuLabel>Notificações</DropdownMenuLabel>
           {naoLidas > 0 && (
             <Button variant="ghost" size="sm" onClick={marcarTodasComoLidas} className="text-xs h-auto py-1">
-              Marcar todas como lidas
+              Limpar todas
             </Button>
           )}
         </div>
