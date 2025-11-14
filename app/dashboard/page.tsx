@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
 import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound } from 'lucide-react'
+import { DiscipuladorButton } from "@/components/discipulador-button"
 
 export default async function DashboardPage({
   searchParams,
@@ -102,14 +103,13 @@ export default async function DashboardPage({
 
   const isDiscipulador = (discipulosCount || 0) > 0
 
-  // Buscar notificações apenas se for discipulador
   const notificationCount = isDiscipulador
     ? (
         await supabase
           .from("notificacoes")
           .select("*", { count: "exact", head: true })
           .eq("user_id", user.id)
-      ).count
+      ).count || 0
     : 0
 
   return (
@@ -139,17 +139,7 @@ export default async function DashboardPage({
             </div>
             <div className="flex items-center gap-2">
               {isDiscipulador && (
-                <Link href="/discipulador">
-                  <Button variant="ghost" size="sm" className="gap-2 relative">
-                    <UsersRound className="w-4 h-4" />
-                    <span className="hidden sm:inline">Discipulador</span>
-                    {notificationCount && notificationCount > 0 && (
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                        {notificationCount > 9 ? "9+" : notificationCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
+                <DiscipuladorButton userId={user.id} initialCount={notificationCount} />
               )}
               <Link href="/discipulador/convites">
                 <Button variant="ghost" size="sm" className="gap-2">
