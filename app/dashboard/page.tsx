@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
 import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus } from 'lucide-react'
+import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound } from 'lucide-react'
 
 export default async function DashboardPage({
   searchParams,
@@ -96,6 +96,11 @@ export default async function DashboardPage({
 
   const avatarUrl = profile?.foto_perfil_url || null
 
+  const { count: notificationCount } = await supabase
+    .from("notificacoes")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+
   return (
     <div className="min-h-screen bg-background">
       {searchParams.error === "passo-load-failed" && (
@@ -123,6 +128,17 @@ export default async function DashboardPage({
             </div>
             <div className="flex items-center gap-2">
               <NotificacoesDropdown userId={user.id} />
+              <Link href="/discipulador">
+                <Button variant="ghost" size="sm" className="gap-2 relative">
+                  <UsersRound className="w-4 h-4" />
+                  <span className="hidden sm:inline">Discipulador</span>
+                  {notificationCount && notificationCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                      {notificationCount > 9 ? "9+" : notificationCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
               <Link href="/discipulador/convites">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <UserPlus className="w-4 h-4" />

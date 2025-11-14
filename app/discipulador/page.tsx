@@ -17,6 +17,11 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
+  await supabase
+    .from("notificacoes")
+    .delete()
+    .eq("user_id", user.id)
+
   const { data: discipulos } = await supabase
     .from("discipulos")
     .select(`
