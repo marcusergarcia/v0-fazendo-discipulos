@@ -23,7 +23,7 @@ export default async function DiscipuladorPage() {
     .from("discipulos")
     .select(`
       *,
-      profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+      profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
     `)
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
@@ -46,13 +46,14 @@ export default async function DiscipuladorPage() {
     .from("reflexoes_conteudo")
     .select(`
       *,
-      discipulo:discipulo_id(
+      discipulos!reflexoes_conteudo_discipulo_id_fkey(
         id, 
         nivel_atual, 
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+        user_id,
+        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .in("discipulo_id", discipulos?.map((d) => d.id) || [])
@@ -63,13 +64,14 @@ export default async function DiscipuladorPage() {
     .from("progresso_fases")
     .select(`
       *,
-      discipulo:discipulo_id(
+      discipulos!progresso_fases_discipulo_id_fkey(
         id, 
         nivel_atual,
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+        user_id,
+        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .eq("status_validacao", "pendente")
@@ -226,13 +228,13 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {reflexao.discipulo?.profile?.nome_completo || reflexao.discipulo?.profile?.email}
+                            {reflexao.discipulos?.profiles?.nome_completo || reflexao.discipulos?.profiles?.email}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             {reflexao.tipo === "video" ? "Vídeo" : "Artigo"}: {reflexao.titulo}
                           </p>
                         </div>
-                        <Badge variant="outline">{reflexao.discipulo?.nivel_atual}</Badge>
+                        <Badge variant="outline">{reflexao.discipulos?.nivel_atual}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -248,7 +250,7 @@ export default async function DiscipuladorPage() {
                               Validar Reflexão
                             </Button>
                           </Link>
-                          <Link href={`/discipulador/chat/${reflexao.discipulo_id}`}>
+                          <Link href={`/discipulador/chat/${reflexao.discipulos_id}`}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
@@ -271,13 +273,13 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {progresso.discipulo?.profile?.nome_completo || progresso.discipulo?.profile?.email}
+                            {progresso.discipulos?.profiles?.nome_completo || progresso.discipulos?.profiles?.email}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             Fase {progresso.fase_numero} - Passo {progresso.passo_numero}
                           </p>
                         </div>
-                        <Badge variant="outline">{progresso.discipulo?.nivel_atual}</Badge>
+                        <Badge variant="outline">{progresso.discipulos?.nivel_atual}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -288,7 +290,7 @@ export default async function DiscipuladorPage() {
                         </div>
                         <div className="flex gap-2">
                           <Link
-                            href={`/discipulador/validar-passo/${progresso.discipulo_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
+                            href={`/discipulador/validar-passo/${progresso.discipulos_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
                             className="flex-1"
                           >
                             <Button className="w-full" size="sm">
@@ -296,7 +298,7 @@ export default async function DiscipuladorPage() {
                               Validar Missão
                             </Button>
                           </Link>
-                          <Link href={`/discipulador/chat/${progresso.discipulo_id}`}>
+                          <Link href={`/discipulador/chat/${progresso.discipulos_id}`}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
@@ -327,8 +329,8 @@ export default async function DiscipuladorPage() {
           <TabsContent value="discipulos" className="space-y-4">
             {tarefasPorDiscipulo && tarefasPorDiscipulo.length > 0 ? (
               tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, reflexoes, progressos }) => {
-                const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
-                const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
+                const nome = discipulo.profiles?.nome_completo || discipulo.nome_completo_temp || discipulo.profiles?.email || discipulo.email_temporario
+                const foto = discipulo.profiles?.foto_perfil_url || discipulo.profiles?.avatar_url || discipulo.foto_perfil_url_temp
                 const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
 
                 return (
@@ -415,7 +417,7 @@ export default async function DiscipuladorPage() {
                           </div>
                           <div>
                             <p className="font-medium">
-                              {discipulo.profile?.nome_completo || discipulo.profile?.email}
+                              {discipulo.profiles?.nome_completo || discipulo.profiles?.email}
                             </p>
                             <p className="text-sm text-muted-foreground">{discipulo.nivel_atual}</p>
                           </div>
