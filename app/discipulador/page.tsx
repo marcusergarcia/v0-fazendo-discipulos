@@ -22,23 +22,38 @@ export default async function DiscipuladorPage() {
     .delete()
     .eq("user_id", user.id)
 
-  const { data: todosDiscipulos } = await supabase
+  const { data: todosDiscipulos, error: errorDiscipulos } = await supabase
     .from("discipulos")
-    .select(`
-      *,
-      profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
-    `)
+    .select("*")
     .eq("discipulador_id", user.id)
 
   console.log("[v0] Discipulador ID:", user.id)
+  console.log("[v0] Error:", errorDiscipulos)
   console.log("[v0] Todos Discipulos retornados:", JSON.stringify(todosDiscipulos, null, 2))
   console.log("[v0] Quantidade de discipulos:", todosDiscipulos?.length || 0)
 
+  // Se temos discípulos, buscar os perfis separadamente
+  const discipulosComPerfil = todosDiscipulos ? await Promise.all(
+    todosDiscipulos.map(async (discipulo) => {
+      if (discipulo.user_id) {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("nome_completo, email, foto_perfil_url, avatar_url")
+          .eq("id", discipulo.user_id)
+          .single()
+        return { ...discipulo, profiles: perfil }
+      }
+      return { ...discipulo, profiles: null }
+    })
+  ) : []
+
+  console.log("[v0] Discipulos com perfil:", JSON.stringify(discipulosComPerfil, null, 2))
+
   // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
-  const discipulosAprovados = todosDiscipulos?.filter(d => d.aprovado_discipulador) || []
-  
+  const discipulosAprovados = discipulosComPerfil?.filter(d => d.aprovado_discipulador) || []
+
   // Filtrar pendentes de aprovação inicial
-  const discipulosPendentesAprovacao = todosDiscipulos?.filter(d => !d.aprovado_discipulador) || []
+  const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
 
   const { data: reflexoesPendentes } = await supabase
     .from("reflexoes_conteudo")
@@ -49,8 +64,7 @@ export default async function DiscipuladorPage() {
         nivel_atual, 
         nome_completo_temp,
         email_temporario,
-        foto_perfil_url_temp,
-        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
+        foto_perfil_url_temp
       )
     `)
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
@@ -66,8 +80,7 @@ export default async function DiscipuladorPage() {
         nivel_atual,
         nome_completo_temp,
         email_temporario,
-        foto_perfil_url_temp,
-        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
+        foto_perfil_url_temp
       )
     `)
     .eq("status_validacao", "pendente")
