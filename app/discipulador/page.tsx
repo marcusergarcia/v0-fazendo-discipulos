@@ -56,7 +56,7 @@ export default async function DiscipuladorPage() {
       *,
       discipulos!inner(id, user_id, nivel_atual, nome_completo_temp, email_temporario, foto_perfil_url_temp)
     `)
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
+    .in("discipulo_id", discipulosAprovados?.map((d) => d.id).filter(Boolean) || [])
     .order("data_criacao", { ascending: false })
 
   const { data: progressoPendente } = await supabase
@@ -66,7 +66,7 @@ export default async function DiscipuladorPage() {
       discipulos!inner(id, user_id, nivel_atual, nome_completo_temp, email_temporario, foto_perfil_url_temp)
     `)
     .eq("status_validacao", "pendente")
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
+    .in("discipulo_id", discipulosAprovados?.map((d) => d.id).filter(Boolean) || [])
     .order("created_at", { ascending: false })
 
   const tarefasPorDiscipulo = discipulosAprovados?.map((discipulo) => {

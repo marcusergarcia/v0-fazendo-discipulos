@@ -64,6 +64,7 @@ export default function PassoClient({
   )
 
   const [modalAberto, setModalAberto] = useState(false)
+  const [modalResetAberto, setModalResetAberto] = useState(false)
   const [tipoConteudo, setTipoConteudo] = useState<"video" | "artigo">("video")
   const [conteudoAtual, setConteudoAtual] = useState<any>(null)
   const [reflexao, setReflexao] = useState("")
@@ -84,6 +85,7 @@ export default function PassoClient({
 
   const handleResetarProgresso = async () => {
     await resetarProgresso(numero)
+    setModalResetAberto(false)
   }
 
   const abrirModalMissaoCumprida = (tipo: "video" | "artigo", conteudo: any) => {
@@ -205,8 +207,13 @@ export default function PassoClient({
                   </CardTitle>
                   <CardDescription>Vídeos curtos para aprofundar seu entendimento</CardDescription>
                 </div>
-                {(videosAssistidos.length > 0 || artigosLidos.length > 0) && (
-                  <Button type="button" variant="outline" size="sm" onClick={handleResetarProgresso}>
+                {(videosAssistidos.length > 0 || artigosLidos.length > 0) && status === "pendente" && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setModalResetAberto(true)}
+                  >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Resetar Progresso
                   </Button>
@@ -538,6 +545,58 @@ export default function PassoClient({
                   Enviar ao Discipulador
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação de reset */}
+      <Dialog open={modalResetAberto} onOpenChange={setModalResetAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RotateCcw className="w-6 h-6 text-destructive" />
+              Confirmar Reset de Progresso
+            </DialogTitle>
+            <DialogDescription>
+              Atenção! Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm font-medium mb-3">
+                Ao resetar o progresso deste passo, você irá perder:
+              </p>
+              <ul className="text-sm space-y-2 list-disc list-inside text-muted-foreground">
+                <li>Todos os vídeos marcados como assistidos</li>
+                <li>Todos os artigos marcados como lidos</li>
+                <li>Todas as reflexões enviadas</li>
+                <li>Respostas salvas das perguntas</li>
+                <li>Progresso da missão prática</li>
+              </ul>
+            </div>
+
+            <p className="text-sm text-muted-foreground mt-4">
+              Você poderá recomeçar o passo do zero após o reset.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalResetAberto(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleResetarProgresso}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Confirmar Reset
             </Button>
           </DialogFooter>
         </DialogContent>
