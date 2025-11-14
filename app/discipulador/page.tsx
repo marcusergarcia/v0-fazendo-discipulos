@@ -30,8 +30,13 @@ export default async function DiscipuladorPage() {
     `)
     .eq("discipulador_id", user.id)
 
+  console.log('[v0] Total de discípulos retornados:', todosDiscipulos?.length)
+  console.log('[v0] Dados dos discípulos:', JSON.stringify(todosDiscipulos, null, 2))
+
   // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
   const discipulosAprovados = todosDiscipulos?.filter(d => d.aprovado_discipulador) || []
+  
+  console.log('[v0] Discípulos aprovados:', discipulosAprovados.length)
   
   // Filtrar pendentes de aprovação inicial
   const discipulosPendentesAprovacao = todosDiscipulos?.filter(d => !d.aprovado_discipulador) || []
