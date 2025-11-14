@@ -225,7 +225,13 @@ export async function resetarProgresso(numero: number) {
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
-      .or(`mensagem.ilike.%Passo ${numero}%,mensagem.ilike.%missão%,tipo.eq.reflexao,tipo.eq.missao`)
+      .eq("tipo", "reflexao")
+
+    await supabase
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("tipo", "missao")
   }
 
   redirect(`/dashboard/passo/${numero}?reset=true`)
