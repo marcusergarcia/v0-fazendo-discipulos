@@ -6,7 +6,8 @@ SELECT
   p.id as profile_id,
   p.nome_completo
 FROM auth.users au
-LEFT JOIN profile p ON p.id = au.id
+-- Corrigindo nome da tabela para profiles (plural)
+LEFT JOIN profiles p ON p.id = au.id
 WHERE au.email = 'marcus.macintel@terra.com.br'
 
 UNION ALL

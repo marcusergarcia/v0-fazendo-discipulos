@@ -26,7 +26,7 @@ export default async function DiscipuladorPage() {
     .from("discipulos")
     .select(`
       *,
-      profiles:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+      profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
     `)
     .eq("discipulador_id", user.id)
 
@@ -46,7 +46,7 @@ export default async function DiscipuladorPage() {
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        profiles:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
@@ -63,7 +63,7 @@ export default async function DiscipuladorPage() {
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        profiles:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .eq("status_validacao", "pendente")
