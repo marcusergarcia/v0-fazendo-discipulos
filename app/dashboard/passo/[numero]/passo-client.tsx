@@ -219,7 +219,12 @@ export default function PassoClient({
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                      {!assistido && (
+                      {assistido ? (
+                        <Badge className="bg-accent text-accent-foreground">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Missão Cumprida
+                        </Badge>
+                      ) : (
                         <Button
                           type="button"
                           size="sm"
@@ -227,14 +232,8 @@ export default function PassoClient({
                           className="bg-primary"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Marcar como Concluído
+                          Realizar Missão
                         </Button>
-                      )}
-                      {assistido && (
-                        <Badge className="bg-accent text-accent-foreground">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Reflexão Enviada
-                        </Badge>
                       )}
                     </div>
                   </div>
@@ -278,7 +277,12 @@ export default function PassoClient({
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
-                      {!lido && (
+                      {lido ? (
+                        <Badge className="bg-accent text-accent-foreground">
+                          <CheckCheck className="w-3 h-3 mr-1" />
+                          Missão Cumprida
+                        </Badge>
+                      ) : (
                         <Button
                           type="button"
                           size="sm"
@@ -286,14 +290,8 @@ export default function PassoClient({
                           onClick={() => abrirModalMissaoCumprida("artigo", artigo)}
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
-                          Marcar como Concluído
+                          Realizar Missão
                         </Button>
-                      )}
-                      {lido && (
-                        <Badge className="bg-accent text-accent-foreground">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Reflexão Enviada
-                        </Badge>
                       )}
                     </div>
                   </div>
@@ -468,7 +466,7 @@ export default function PassoClient({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-6 h-6 text-primary" />
-              Enviar Reflexão ao Discipulador
+              Realizar Missão: {tipoConteudo === "video" ? "Vídeo" : "Artigo"}
             </DialogTitle>
             <DialogDescription>{conteudoAtual?.titulo}</DialogDescription>
           </DialogHeader>
@@ -490,12 +488,12 @@ export default function PassoClient({
             </div>
 
             <div className="bg-muted/50 rounded-lg p-4 border">
-              <p className="text-sm font-medium mb-2">O que acontece ao enviar:</p>
+              <p className="text-sm font-medium mb-2">Após enviar sua reflexão:</p>
               <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>Sua reflexão será enviada ao discipulador para análise</li>
+                <li>Sua reflexão será enviada ao discipulador para validação</li>
                 <li>O conteúdo será marcado como concluído</li>
-                <li>Você só verá "Missão Cumprida" após enviar a reflexão</li>
-                <li>Use "Resetar Progresso" para refazer as reflexões</li>
+                <li>O discipulador poderá conversar com você sobre sua reflexão</li>
+                <li>Você poderá assistir/ler novamente quando quiser</li>
               </ul>
             </div>
           </div>
@@ -517,7 +515,7 @@ export default function PassoClient({
               ) : (
                 <>
                   <Send className="w-4 h-4 mr-2" />
-                  Enviar Reflexão
+                  Enviar ao Discipulador
                 </>
               )}
             </Button>
