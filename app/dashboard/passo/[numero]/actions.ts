@@ -47,37 +47,68 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
 
   if (!discipulo) return
 
-  await supabase
-    .from("progresso_fases")
-    .update({
-      resposta_pergunta: respostaPergunta,
-      resposta_missao: respostaMissao,
-      status_validacao: "pendente",
-      enviado_para_validacao: true,
-      data_envio_validacao: new Date().toISOString(),
-    })
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
+  const isMultiplicador = discipulo.nivel_atual === "Multiplicador"
+  
+  if (isMultiplicador) {
+    // Multiplicadores têm suas missões auto-aprovadas
+    await supabase
+      .from("progresso_fases")
+      .update({
+        resposta_pergunta: respostaPergunta,
+        resposta_missao: respostaMissao,
+        status_validacao: "aprovado",
+        enviado_para_validacao: true,
+        data_envio_validacao: new Date().toISOString(),
+        data_validacao: new Date().toISOString(),
+        completado: true,
+        feedback_discipulador: "Missão auto-aprovada para Multiplicador. Continue sua jornada!",
+        xp_ganho: 50,
+      })
+      .eq("discipulo_id", discipulo.id)
+      .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
 
-  if (discipulo.discipulador_id) {
-    await supabase.from("notificacoes").insert({
-      user_id: discipulo.discipulador_id,
-      tipo: "missao",
-      titulo: "Nova missão para validar",
-      mensagem: `Seu discípulo enviou a missão do Passo ${numero} para validação.`,
-      link: `/discipulador/validar-passo/${discipulo.id}/1/${numero}`,
-    })
+    // Adicionar XP
+    await supabase
+      .from("discipulos")
+      .update({ xp_total: (discipulo.xp_total || 0) + 50 })
+      .eq("id", discipulo.id)
 
-    // Enviar mensagem automática no chat
-    await supabase.from("mensagens").insert({
-      discipulo_id: discipulo.id,
-      remetente_id: user.id,
-      mensagem: `📝 Enviei a missão do Passo ${numero} para você validar!\n\n**Resposta da Pergunta:**\n${respostaPergunta}\n\n**Missão:**\n${respostaMissao}`,
-    })
+    redirect(`/dashboard/passo/${numero}?approved=true`)
+  } else {
+    // Para outros níveis, enviar para validação do discipulador
+    await supabase
+      .from("progresso_fases")
+      .update({
+        resposta_pergunta: respostaPergunta,
+        resposta_missao: respostaMissao,
+        status_validacao: "pendente",
+        enviado_para_validacao: true,
+        data_envio_validacao: new Date().toISOString(),
+      })
+      .eq("discipulo_id", discipulo.id)
+      .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
+
+    if (discipulo.discipulador_id) {
+      await supabase.from("notificacoes").insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "missao",
+        titulo: "Nova missão para validar",
+        mensagem: `Seu discípulo enviou a missão do Passo ${numero} para validação.`,
+        link: `/discipulador/validar-passo/${discipulo.id}/1/${numero}`,
+      })
+
+      // Enviar mensagem automática no chat
+      await supabase.from("mensagens").insert({
+        discipulo_id: discipulo.id,
+        remetente_id: user.id,
+        mensagem: `📝 Enviei a missão do Passo ${numero} para você validar!\n\n**Resposta da Pergunta:**\n${respostaPergunta}\n\n**Missão:**\n${respostaMissao}`,
+      })
+    }
+
+    redirect(`/dashboard/passo/${numero}?sent=true`)
   }
-
-  redirect(`/dashboard/passo/${numero}?sent=true`)
 }
 
 export async function marcarVideoAssistido(numero: number, videoId: string) {
