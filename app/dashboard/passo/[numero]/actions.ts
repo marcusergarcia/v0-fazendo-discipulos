@@ -189,7 +189,7 @@ export async function resetarProgresso(numero: number) {
   if (!discipulo) return
 
   console.log("[v0] Reset - Discípulo ID:", discipulo.id)
-  console.log("[v0] Reset - Discipulador ID:", discipulo.discipulador_id)
+  console.log("[v0] Reset - User ID:", user.id)
   console.log("[v0] Reset - Passo:", numero)
 
   await supabase
@@ -216,7 +216,6 @@ export async function resetarProgresso(numero: number) {
     .from("reflexoes_conteudo")
     .delete()
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .select()
 
@@ -231,25 +230,24 @@ export async function resetarProgresso(numero: number) {
 
     console.log("[v0] Reset - Mensagens deletadas:", mensagensDeleted?.length || 0, mensagensError)
 
-    const { data: notifReflexao, error: errorReflexao } = await supabase
+    // Buscar pelo link que contém o ID do discípulo ou mensagens que mencionam reflexões
+    const { data: notifReflexaoDeleted, error: errorReflexao } = await supabase
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
       .eq("tipo", "reflexao")
-      .like("mensagem", `%Passo ${numero}%`)
       .select()
 
-    console.log("[v0] Reset - Notificações reflexao deletadas:", notifReflexao?.length || 0, errorReflexao)
+    console.log("[v0] Reset - Notificações reflexão deletadas:", notifReflexaoDeleted?.length || 0, errorReflexao)
 
-    const { data: notifMissao, error: errorMissao } = await supabase
+    const { data: notifMissaoDeleted, error: errorMissao } = await supabase
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
       .eq("tipo", "missao")
-      .like("mensagem", `%Passo ${numero}%`)
       .select()
 
-    console.log("[v0] Reset - Notificações missao deletadas:", notifMissao?.length || 0, errorMissao)
+    console.log("[v0] Reset - Notificações missão deletadas:", notifMissaoDeleted?.length || 0, errorMissao)
   }
 
   redirect(`/dashboard/passo/${numero}?reset=true`)
