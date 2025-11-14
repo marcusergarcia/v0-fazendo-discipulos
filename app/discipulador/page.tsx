@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye, UserPlus } from 'lucide-react'
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye } from 'lucide-react'
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -17,43 +17,31 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  console.log("[v0] Marcus user.id:", user.id)
+  await supabase
+    .from("notificacoes")
+    .delete()
+    .eq("user_id", user.id)
 
-  const { data: discipulos, error: discipulosError } = await supabase
+  const { data: discipulos } = await supabase
     .from("discipulos")
     .select(`
       *,
-      profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
+      profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
     `)
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
-    .not("user_id", "is", null)
-
-  console.log("[v0] Discípulos encontrados:", discipulos?.length || 0)
-  console.log("[v0] Discípulos data:", JSON.stringify(discipulos, null, 2))
-  console.log("[v0] Erro ao buscar discípulos:", discipulosError)
-
-  const { data: discipulosPendentes } = await supabase
-    .from("discipulos")
-    .select("*")
-    .eq("discipulador_id", user.id)
-    .eq("aprovado_discipulador", false)
-    .is("user_id", null)
-
-  const totalDiscipulos = (discipulos?.length || 0) + (discipulosPendentes?.length || 0)
 
   const { data: reflexoesPendentes } = await supabase
     .from("reflexoes_conteudo")
     .select(`
       *,
-      discipulos!reflexoes_conteudo_discipulo_id_fkey(
+      discipulo:discipulo_id(
         id, 
         nivel_atual, 
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        user_id,
-        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
+        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .in("discipulo_id", discipulos?.map((d) => d.id) || [])
@@ -64,14 +52,13 @@ export default async function DiscipuladorPage() {
     .from("progresso_fases")
     .select(`
       *,
-      discipulos!progresso_fases_discipulo_id_fkey(
+      discipulo:discipulo_id(
         id, 
         nivel_atual,
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        user_id,
-        profiles!discipulos_user_id_fkey(nome_completo, email, foto_perfil_url, avatar_url)
+        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .eq("status_validacao", "pendente")
@@ -119,7 +106,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <Users className="w-8 h-8 text-primary" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{totalDiscipulos}</p>
+                  <p className="text-2xl font-bold">{discipulos?.length || 0}</p>
                   <p className="text-sm text-muted-foreground">Discípulos</p>
                 </div>
               </div>
@@ -132,7 +119,7 @@ export default async function DiscipuladorPage() {
                 <Clock className="w-8 h-8 text-warning" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) + (discipulosPendentes?.length || 0)}
+                    {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">Pendentes</p>
                 </div>
@@ -171,9 +158,9 @@ export default async function DiscipuladorPage() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pendentes">
               Pendentes de Validação
-              {((reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) + (discipulosPendentes?.length || 0)) > 0 && (
+              {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) + (discipulosPendentes?.length || 0)}
+                  {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
                 </Badge>
               )}
             </TabsTrigger>
@@ -183,42 +170,6 @@ export default async function DiscipuladorPage() {
 
           {/* Tab: Pendentes de Validação */}
           <TabsContent value="pendentes" className="space-y-4">
-            {discipulosPendentes && discipulosPendentes.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Discípulos Aguardando Aprovação</h3>
-                {discipulosPendentes.map((discipulo) => (
-                  <Card key={discipulo.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">
-                            {discipulo.nome_completo_temp}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {discipulo.email_temporario}
-                          </p>
-                        </div>
-                        <Badge variant="secondary">
-                          <UserPlus className="w-3 h-3 mr-1" />
-                          Novo
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex gap-2">
-                        <Link href={`/discipulador/aprovar/${discipulo.id}`} className="flex-1">
-                          <Button className="w-full" size="sm">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Aprovar Cadastro
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
             {reflexoesPendentes && reflexoesPendentes.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Reflexões sobre Vídeos/Artigos</h3>
@@ -228,13 +179,13 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {reflexao.discipulos?.profiles?.nome_completo || reflexao.discipulos?.profiles?.email}
+                            {reflexao.discipulo?.profile?.nome_completo || reflexao.discipulo?.profile?.email}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             {reflexao.tipo === "video" ? "Vídeo" : "Artigo"}: {reflexao.titulo}
                           </p>
                         </div>
-                        <Badge variant="outline">{reflexao.discipulos?.nivel_atual}</Badge>
+                        <Badge variant="outline">{reflexao.discipulo?.nivel_atual}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -250,7 +201,7 @@ export default async function DiscipuladorPage() {
                               Validar Reflexão
                             </Button>
                           </Link>
-                          <Link href={`/discipulador/chat/${reflexao.discipulos_id}`}>
+                          <Link href={`/discipulador/chat/${reflexao.discipulo_id}`}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
@@ -273,13 +224,13 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {progresso.discipulos?.profiles?.nome_completo || progresso.discipulos?.profiles?.email}
+                            {progresso.discipulo?.profile?.nome_completo || progresso.discipulo?.profile?.email}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             Fase {progresso.fase_numero} - Passo {progresso.passo_numero}
                           </p>
                         </div>
-                        <Badge variant="outline">{progresso.discipulos?.nivel_atual}</Badge>
+                        <Badge variant="outline">{progresso.discipulo?.nivel_atual}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -290,7 +241,7 @@ export default async function DiscipuladorPage() {
                         </div>
                         <div className="flex gap-2">
                           <Link
-                            href={`/discipulador/validar-passo/${progresso.discipulos_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
+                            href={`/discipulador/validar-passo/${progresso.discipulo_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
                             className="flex-1"
                           >
                             <Button className="w-full" size="sm">
@@ -298,7 +249,7 @@ export default async function DiscipuladorPage() {
                               Validar Missão
                             </Button>
                           </Link>
-                          <Link href={`/discipulador/chat/${progresso.discipulos_id}`}>
+                          <Link href={`/discipulador/chat/${progresso.discipulo_id}`}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
@@ -313,8 +264,7 @@ export default async function DiscipuladorPage() {
             )}
 
             {(!reflexoesPendentes || reflexoesPendentes.length === 0) &&
-              (!progressoPendente || progressoPendente.length === 0) &&
-              (!discipulosPendentes || discipulosPendentes.length === 0) && (
+              (!progressoPendente || progressoPendente.length === 0) && (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <CheckCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
@@ -329,8 +279,8 @@ export default async function DiscipuladorPage() {
           <TabsContent value="discipulos" className="space-y-4">
             {tarefasPorDiscipulo && tarefasPorDiscipulo.length > 0 ? (
               tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, reflexoes, progressos }) => {
-                const nome = discipulo.profiles?.nome_completo || discipulo.nome_completo_temp || discipulo.profiles?.email || discipulo.email_temporario
-                const foto = discipulo.profiles?.foto_perfil_url || discipulo.profiles?.avatar_url || discipulo.foto_perfil_url_temp
+                const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
+                const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
                 const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
 
                 return (
@@ -417,7 +367,7 @@ export default async function DiscipuladorPage() {
                           </div>
                           <div>
                             <p className="font-medium">
-                              {discipulo.profiles?.nome_completo || discipulo.profiles?.email}
+                              {discipulo.profile?.nome_completo || discipulo.profile?.email}
                             </p>
                             <p className="text-sm text-muted-foreground">{discipulo.nivel_atual}</p>
                           </div>

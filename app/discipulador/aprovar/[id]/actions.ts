@@ -83,16 +83,9 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     if (updateError) throw new Error(`Erro ao atualizar discípulo: ${updateError.message}`)
 
-    await supabaseAdmin
-      .from("notificacoes")
-      .delete()
-      .eq("user_id", discipulo.discipulador_id)
-      .ilike("mensagem", `%${discipulo.nome_completo_temp}%`)
-
-    // Criar notificação de boas-vindas para o novo discípulo
     await supabaseAdmin.from("notificacoes").insert({
       user_id: userId,
-      tipo: "mensagem",
+      tipo: "aprovacao_aceita",
       titulo: "Cadastro Aprovado!",
       mensagem: `Seu cadastro foi aprovado! Bem-vindo ao Fazendo Discípulos. Você já pode fazer login e começar sua jornada.`,
       link: "/dashboard",
@@ -127,12 +120,6 @@ export async function rejeitarDiscipulo(discipuloId: string, motivo?: string) {
       throw new Error("Discípulo não encontrado")
     }
 
-    await supabaseAdmin
-      .from("notificacoes")
-      .delete()
-      .eq("user_id", discipulo.discipulador_id)
-      .ilike("mensagem", `%${discipulo.nome_completo_temp}%`)
-
     const { error: deleteError } = await supabaseAdmin.from("discipulos").delete().eq("id", discipuloId)
 
     if (deleteError) throw new Error(`Erro ao rejeitar discípulo: ${deleteError.message}`)
@@ -140,7 +127,7 @@ export async function rejeitarDiscipulo(discipuloId: string, motivo?: string) {
     // Notificar o discipulador da rejeição
     await supabaseAdmin.from("notificacoes").insert({
       user_id: discipulo.discipulador_id,
-      tipo: "mensagem",
+      tipo: "discipulo_rejeitado",
       titulo: "Discípulo Rejeitado",
       mensagem: `Você rejeitou o cadastro de ${discipulo.nome_completo_temp}. ${motivo ? `Motivo: ${motivo}` : ""}`,
       lida: false,
