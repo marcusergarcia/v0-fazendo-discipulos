@@ -261,21 +261,13 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) {
-    console.log("[v0] concluirVideoComReflexao - Erro: Usuário não autenticado")
-    return
-  }
+  if (!user) return
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) {
-    console.log("[v0] concluirVideoComReflexao - Erro: Discípulo não encontrado")
-    return
-  }
-
-  console.log("[v0] concluirVideoComReflexao - Discípulo encontrado:", discipulo.id)
+  if (!discipulo) return
 
   // Salvar reflexão
-  const { data: reflexaoData, error: reflexaoError } = await supabase.from("reflexoes_conteudo").upsert({
+  await supabase.from("reflexoes_conteudo").upsert({
     discipulo_id: discipulo.id,
     fase_numero: 1,
     passo_numero: numero,
@@ -283,9 +275,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     conteudo_id: videoId,
     titulo: titulo,
     reflexao: reflexao,
-  }).select()
-
-  console.log("[v0] concluirVideoComReflexao - Reflexão salva:", reflexaoData, "Erro:", reflexaoError)
+  })
 
   // Marcar vídeo como assistido
   const { data: progresso } = await supabase
@@ -308,24 +298,20 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   }
 
   if (discipulo.discipulador_id) {
-    const { data: notifData, error: notifError } = await supabase.from("notificacoes").insert({
+    await supabase.from("notificacoes").insert({
       user_id: discipulo.discipulador_id,
       tipo: "reflexao",
       titulo: "Nova reflexão de vídeo",
       mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão.`,
       link: `/discipulador`,
-    }).select()
-
-    console.log("[v0] concluirVideoComReflexao - Notificação criada:", notifData, "Erro:", notifError)
+    })
 
     // Enviar no chat
-    const { data: msgData, error: msgError } = await supabase.from("mensagens").insert({
+    await supabase.from("mensagens").insert({
       discipulo_id: discipulo.id,
       remetente_id: user.id,
       mensagem: `🎥 Assisti o vídeo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
-    }).select()
-
-    console.log("[v0] concluirVideoComReflexao - Mensagem criada:", msgData, "Erro:", msgError)
+    })
   }
 
   redirect(`/dashboard/passo/${numero}?video=${videoId}`)
@@ -339,21 +325,13 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) {
-    console.log("[v0] concluirArtigoComReflexao - Erro: Usuário não autenticado")
-    return
-  }
+  if (!user) return
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) {
-    console.log("[v0] concluirArtigoComReflexao - Erro: Discípulo não encontrado")
-    return
-  }
-
-  console.log("[v0] concluirArtigoComReflexao - Discípulo encontrado:", discipulo.id)
+  if (!discipulo) return
 
   // Salvar reflexão
-  const { data: reflexaoData, error: reflexaoError } = await supabase.from("reflexoes_conteudo").upsert({
+  await supabase.from("reflexoes_conteudo").upsert({
     discipulo_id: discipulo.id,
     fase_numero: 1,
     passo_numero: numero,
@@ -361,9 +339,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     conteudo_id: artigoId,
     titulo: titulo,
     reflexao: reflexao,
-  }).select()
-
-  console.log("[v0] concluirArtigoComReflexao - Reflexão salva:", reflexaoData, "Erro:", reflexaoError)
+  })
 
   // Marcar artigo como lido
   const { data: progresso } = await supabase
@@ -386,24 +362,20 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   }
 
   if (discipulo.discipulador_id) {
-    const { data: notifData, error: notifError } = await supabase.from("notificacoes").insert({
+    await supabase.from("notificacoes").insert({
       user_id: discipulo.discipulador_id,
       tipo: "reflexao",
       titulo: "Nova reflexão de artigo",
       mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão.`,
       link: `/discipulador`,
-    }).select()
-
-    console.log("[v0] concluirArtigoComReflexao - Notificação criada:", notifData, "Erro:", notifError)
+    })
 
     // Enviar no chat
-    const { data: msgData, error: msgError } = await supabase.from("mensagens").insert({
+    await supabase.from("mensagens").insert({
       discipulo_id: discipulo.id,
       remetente_id: user.id,
       mensagem: `📖 Li o artigo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
-    }).select()
-
-    console.log("[v0] concluirArtigoComReflexao - Mensagem criada:", msgData, "Erro:", msgError)
+    })
   }
 
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)

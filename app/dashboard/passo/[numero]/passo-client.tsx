@@ -108,30 +108,15 @@ export default function PassoClient({
 
     setEnviandoReflexao(true)
     try {
-      console.log("[v0] ANTES de chamar função de reflexão:", {
-        tipo: tipoConteudo,
-        numero,
-        conteudoId: conteudoAtual.id,
-        titulo: conteudoAtual.titulo,
-        reflexaoLength: reflexao.length
-      })
-      
       if (tipoConteudo === "video") {
-        console.log("[v0] Chamando concluirVideoComReflexao...")
         await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
-        console.log("[v0] concluirVideoComReflexao CONCLUÍDO")
       } else {
-        console.log("[v0] Chamando concluirArtigoComReflexao...")
         await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
-        console.log("[v0] concluirArtigoComReflexao CONCLUÍDO")
       }
-      
-      console.log("[v0] Reflexão enviada com sucesso, fechando modal")
       setModalAberto(false)
       setReflexao("")
     } catch (error) {
-      console.error("[v0] Erro ao enviar reflexão:", error)
-      alert("Erro ao enviar reflexão: " + error)
+      console.error("Erro ao enviar reflexão:", error)
     } finally {
       setEnviandoReflexao(false)
     }
