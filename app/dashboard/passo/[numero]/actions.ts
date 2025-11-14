@@ -199,7 +199,10 @@ export async function resetarProgresso(numero: number) {
       status_validacao: null,
       enviado_para_validacao: false,
       data_envio_validacao: null,
+      data_validacao: null,
       completado: false,
+      feedback_discipulador: null,
+      xp_ganho: null,
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
@@ -214,10 +217,16 @@ export async function resetarProgresso(numero: number) {
 
   if (discipulo.discipulador_id) {
     await supabase
+      .from("mensagens")
+      .delete()
+      .eq("discipulo_id", discipulo.id)
+      .ilike("mensagem", `%Passo ${numero}%`)
+
+    await supabase
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
-      .or(`link.ilike.%/passo/${numero}%,link.ilike.%validar-passo%${numero}%`)
+      .ilike("mensagem", `%Passo ${numero}%`)
   }
 
   redirect(`/dashboard/passo/${numero}?reset=true`)

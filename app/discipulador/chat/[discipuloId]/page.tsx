@@ -19,11 +19,11 @@ export default async function ChatDiscipuladorPage({
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  // Buscar informações do discípulo
+  // Buscar informações do discípulo pelo user_id ao invés de id
   const { data: discipulo } = await supabase
     .from("discipulos")
     .select("*, profiles:user_id(*)")
-    .eq("id", discipuloId)
+    .eq("user_id", discipuloId)
     .eq("discipulador_id", user.id)
     .single()
 
