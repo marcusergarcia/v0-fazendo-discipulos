@@ -45,9 +45,22 @@ export default function PassoClient({
   artigosLidos,
   status,
 }: PassoClientProps) {
-  const [respostaPergunta, setRespostaPergunta] = useState(progresso?.resposta_pergunta || "")
+  const getRascunho = () => {
+    if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
+    try {
+      return JSON.parse(progresso.rascunho_resposta)
+    } catch {
+      return { pergunta: "", missao: "" }
+    }
+  }
+
+  const rascunho = getRascunho()
+  
+  const [respostaPergunta, setRespostaPergunta] = useState(
+    progresso?.resposta_pergunta || rascunho.pergunta || ""
+  )
   const [respostaMissao, setRespostaMissao] = useState(
-    progresso?.rascunho_resposta ? JSON.parse(progresso.rascunho_resposta).missao : "",
+    progresso?.resposta_missao || rascunho.missao || ""
   )
 
   const [modalAberto, setModalAberto] = useState(false)
