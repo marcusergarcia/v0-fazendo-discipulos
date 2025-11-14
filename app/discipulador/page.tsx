@@ -54,37 +54,24 @@ export default async function DiscipuladorPage() {
     .from("reflexoes_conteudo")
     .select(`
       *,
-      discipulo:discipulo_id(
-        id, 
-        nivel_atual, 
-        nome_completo_temp,
-        email_temporario,
-        foto_perfil_url_temp
-      )
+      discipulos!inner(id, user_id, nivel_atual, nome_completo_temp, email_temporario, foto_perfil_url_temp)
     `)
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
+    .in("user_id", discipulosAprovados?.map((d) => d.user_id).filter(Boolean) || [])
     .order("data_criacao", { ascending: false })
 
-  // Buscar progresso pendente de validação
   const { data: progressoPendente } = await supabase
     .from("progresso_fases")
     .select(`
       *,
-      discipulo:discipulo_id(
-        id, 
-        nivel_atual,
-        nome_completo_temp,
-        email_temporario,
-        foto_perfil_url_temp
-      )
+      discipulos!inner(id, user_id, nivel_atual, nome_completo_temp, email_temporario, foto_perfil_url_temp)
     `)
     .eq("status_validacao", "pendente")
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
+    .in("user_id", discipulosAprovados?.map((d) => d.user_id).filter(Boolean) || [])
     .order("created_at", { ascending: false })
 
   const tarefasPorDiscipulo = discipulosAprovados?.map((discipulo) => {
-    const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
-    const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
+    const reflexoes = reflexoesPendentes?.filter((r) => r.user_id === discipulo.user_id) || []
+    const progressos = progressoPendente?.filter((p) => p.user_id === discipulo.user_id) || []
     return {
       discipulo,
       tarefasPendentes: reflexoes.length + progressos.length,
@@ -250,13 +237,13 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {reflexao.discipulo?.profiles?.nome_completo || reflexao.discipulo?.profiles?.email}
+                            {reflexao.discipulos?.nome_completo_temp || reflexao.discipulos?.email_temporario}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             {reflexao.tipo === "video" ? "Vídeo" : "Artigo"}: {reflexao.titulo}
                           </p>
                         </div>
-                        <Badge variant="outline">{reflexao.discipulo?.nivel_atual}</Badge>
+                        <Badge variant="outline">{reflexao.discipulos?.nivel_atual}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -272,7 +259,7 @@ export default async function DiscipuladorPage() {
                               Validar Reflexão
                             </Button>
                           </Link>
-                          <Link href={`/discipulador/chat/${reflexao.discipulo_id}`}>
+                          <Link href={`/discipulador/chat/${reflexao.discipulos?.user_id}`}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
@@ -295,13 +282,13 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {progresso.discipulo?.profiles?.nome_completo || progresso.discipulo?.profiles?.email}
+                            {progresso.discipulos?.nome_completo_temp || progresso.discipulos?.email_temporario}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             Fase {progresso.fase_numero} - Passo {progresso.passo_numero}
                           </p>
                         </div>
-                        <Badge variant="outline">{progresso.discipulo?.nivel_atual}</Badge>
+                        <Badge variant="outline">{progresso.discipulos?.nivel_atual}</Badge>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -312,7 +299,7 @@ export default async function DiscipuladorPage() {
                         </div>
                         <div className="flex gap-2">
                           <Link
-                            href={`/discipulador/validar-passo/${progresso.discipulo_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
+                            href={`/discipulador/validar-passo/${progresso.discipulos?.user_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
                             className="flex-1"
                           >
                             <Button className="w-full" size="sm">
@@ -320,7 +307,7 @@ export default async function DiscipuladorPage() {
                               Validar Missão
                             </Button>
                           </Link>
-                          <Link href={`/discipulador/chat/${progresso.discipulo_id}`}>
+                          <Link href={`/discipulador/chat/${progresso.discipulos?.user_id}`}>
                             <Button variant="outline" size="sm">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
