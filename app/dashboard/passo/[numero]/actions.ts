@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 
 export async function salvarRascunho(numero: number, formData: FormData) {
   const supabase = await createClient()
@@ -173,6 +173,8 @@ export async function resetarProgresso(numero: number) {
 export async function concluirVideoComReflexao(numero: number, videoId: string, titulo: string, reflexao: string) {
   const supabase = await createClient()
 
+  console.log("[v0] concluirVideoComReflexao recebeu:", { numero, videoId, titulo, reflexao: reflexao?.substring(0, 50) })
+
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -234,6 +236,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
 
 export async function concluirArtigoComReflexao(numero: number, artigoId: string, titulo: string, reflexao: string) {
   const supabase = await createClient()
+
+  console.log("[v0] concluirArtigoComReflexao recebeu:", { numero, artigoId, titulo, reflexao: reflexao?.substring(0, 50) })
 
   const {
     data: { user },
