@@ -26,7 +26,7 @@ export default async function DiscipuladorPage() {
     .from("discipulos")
     .select(`
       *,
-      profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+      profiles:user_id(nome_completo, email, foto_perfil_url, avatar_url)
     `)
     .eq("discipulador_id", user.id)
 
@@ -46,7 +46,7 @@ export default async function DiscipuladorPage() {
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+        profiles:user_id(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
@@ -63,7 +63,7 @@ export default async function DiscipuladorPage() {
         nome_completo_temp,
         email_temporario,
         foto_perfil_url_temp,
-        profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
+        profiles:user_id(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
     .eq("status_validacao", "pendente")
@@ -198,19 +198,23 @@ export default async function DiscipuladorPage() {
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-muted-foreground">Data de Nascimento</p>
-                            <p className="font-medium">{new Date(discipulo.data_nascimento).toLocaleDateString('pt-BR')}</p>
+                            <p className="font-medium">
+                              {discipulo.data_nascimento_temp 
+                                ? new Date(discipulo.data_nascimento_temp).toLocaleDateString('pt-BR')
+                                : 'Não informado'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Gênero</p>
-                            <p className="font-medium">{discipulo.genero}</p>
+                            <p className="font-medium">{discipulo.genero_temp || 'Não informado'}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Telefone</p>
-                            <p className="font-medium">{discipulo.telefone || 'Não informado'}</p>
+                            <p className="font-medium">{discipulo.telefone_temp || 'Não informado'}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground">Igreja</p>
-                            <p className="font-medium">{discipulo.igreja || 'Não informado'}</p>
+                            <p className="font-medium">{discipulo.igreja_temp || 'Não informado'}</p>
                           </div>
                         </div>
                         <Link href={`/discipulador/aprovar/${discipulo.id}`} className="block">
@@ -235,7 +239,7 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {reflexao.discipulo?.profile?.nome_completo || reflexao.discipulo?.profile?.email}
+                            {reflexao.discipulo?.profiles?.nome_completo || reflexao.discipulo?.profiles?.email}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             {reflexao.tipo === "video" ? "Vídeo" : "Artigo"}: {reflexao.titulo}
@@ -280,7 +284,7 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-base">
-                            {progresso.discipulo?.profile?.nome_completo || progresso.discipulo?.profile?.email}
+                            {progresso.discipulo?.profiles?.nome_completo || progresso.discipulo?.profiles?.email}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground mt-1">
                             Fase {progresso.fase_numero} - Passo {progresso.passo_numero}
@@ -336,8 +340,8 @@ export default async function DiscipuladorPage() {
           <TabsContent value="discipulos" className="space-y-4">
             {tarefasPorDiscipulo && tarefasPorDiscipulo.length > 0 ? (
               tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, reflexoes, progressos }) => {
-                const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
-                const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
+                const nome = discipulo.profiles?.nome_completo || discipulo.nome_completo_temp || discipulo.profiles?.email || discipulo.email_temporario
+                const foto = discipulo.profiles?.foto_perfil_url || discipulo.profiles?.avatar_url || discipulo.foto_perfil_url_temp
                 const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
 
                 return (
@@ -424,7 +428,7 @@ export default async function DiscipuladorPage() {
                           </div>
                           <div>
                             <p className="font-medium">
-                              {discipulo.profile?.nome_completo || discipulo.profile?.email}
+                              {discipulo.profiles?.nome_completo || discipulo.profiles?.email}
                             </p>
                             <p className="text-sm text-muted-foreground">{discipulo.nivel_atual}</p>
                           </div>
