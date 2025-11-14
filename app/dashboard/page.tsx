@@ -95,22 +95,10 @@ export default async function DashboardPage({
 
   const avatarUrl = profile?.foto_perfil_url || null
 
-  const { count: discipulosCount } = await supabase
-    .from("discipulos")
+  const { count: notificationCount } = await supabase
+    .from("notificacoes")
     .select("*", { count: "exact", head: true })
-    .eq("discipulador_id", user.id)
-
-  const isDiscipulador = (discipulosCount || 0) > 0
-
-  // Buscar notificações apenas se for discipulador
-  const notificationCount = isDiscipulador
-    ? (
-        await supabase
-          .from("notificacoes")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id)
-      ).count
-    : 0
+    .eq("user_id", user.id)
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,19 +126,17 @@ export default async function DashboardPage({
               </Link>
             </div>
             <div className="flex items-center gap-2">
-              {isDiscipulador && (
-                <Link href="/discipulador">
-                  <Button variant="ghost" size="sm" className="gap-2 relative">
-                    <UsersRound className="w-4 h-4" />
-                    <span className="hidden sm:inline">Discipulador</span>
-                    {notificationCount && notificationCount > 0 && (
-                      <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                        {notificationCount > 9 ? "9+" : notificationCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </Link>
-              )}
+              <Link href="/discipulador">
+                <Button variant="ghost" size="sm" className="gap-2 relative">
+                  <UsersRound className="w-4 h-4" />
+                  <span className="hidden sm:inline">Discipulador</span>
+                  {notificationCount && notificationCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                      {notificationCount > 9 ? "9+" : notificationCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
               <Link href="/discipulador/convites">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <UserPlus className="w-4 h-4" />
@@ -291,7 +277,7 @@ export default async function DashboardPage({
                   label="Passos Completos"
                   value={`${passosCompletados}/${userData.totalSteps}`}
                 />
-                <StatItem icon={<Users />} label="Discipulador" value={isDiscipulador ? "Sim" : "Não"} />
+                <StatItem icon={<Users />} label="Discipulador" value="Aguardando" />
               </CardContent>
             </Card>
 
