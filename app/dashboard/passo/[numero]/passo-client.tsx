@@ -99,6 +99,13 @@ export default function PassoClient({
       return
     }
 
+    console.log("[v0] Enviando reflexão para:", {
+      tipo: tipoConteudo,
+      conteudoId: conteudoAtual?.id,
+      titulo: conteudoAtual?.titulo,
+      conteudoCompleto: conteudoAtual
+    })
+
     setEnviandoReflexao(true)
     try {
       if (tipoConteudo === "video") {
