@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye } from 'lucide-react'
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye, UserPlus } from 'lucide-react'
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
@@ -17,11 +17,6 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  await supabase
-    .from("notificacoes")
-    .delete()
-    .eq("user_id", user.id)
-
   const { data: discipulos } = await supabase
     .from("discipulos")
     .select(`
@@ -30,6 +25,16 @@ export default async function DiscipuladorPage() {
     `)
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
+    .not("user_id", "is", null)
+
+  const { data: discipulosPendentes } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("discipulador_id", user.id)
+    .eq("aprovado_discipulador", false)
+    .is("user_id", null)
+
+  const totalDiscipulos = (discipulos?.length || 0) + (discipulosPendentes?.length || 0)
 
   const { data: reflexoesPendentes } = await supabase
     .from("reflexoes_conteudo")
@@ -106,7 +111,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <Users className="w-8 h-8 text-primary" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{discipulos?.length || 0}</p>
+                  <p className="text-2xl font-bold">{totalDiscipulos}</p>
                   <p className="text-sm text-muted-foreground">Discípulos</p>
                 </div>
               </div>
@@ -119,7 +124,7 @@ export default async function DiscipuladorPage() {
                 <Clock className="w-8 h-8 text-warning" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
+                    {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) + (discipulosPendentes?.length || 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">Pendentes</p>
                 </div>
@@ -158,9 +163,9 @@ export default async function DiscipuladorPage() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pendentes">
               Pendentes de Validação
-              {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) > 0 && (
+              {((reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) + (discipulosPendentes?.length || 0)) > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
+                  {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) + (discipulosPendentes?.length || 0)}
                 </Badge>
               )}
             </TabsTrigger>
@@ -170,6 +175,42 @@ export default async function DiscipuladorPage() {
 
           {/* Tab: Pendentes de Validação */}
           <TabsContent value="pendentes" className="space-y-4">
+            {discipulosPendentes && discipulosPendentes.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Discípulos Aguardando Aprovação</h3>
+                {discipulosPendentes.map((discipulo) => (
+                  <Card key={discipulo.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-base">
+                            {discipulo.nome_completo_temp}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {discipulo.email_temporario}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">
+                          <UserPlus className="w-3 h-3 mr-1" />
+                          Novo
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2">
+                        <Link href={`/discipulador/aprovar/${discipulo.id}`} className="flex-1">
+                          <Button className="w-full" size="sm">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Aprovar Cadastro
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
             {reflexoesPendentes && reflexoesPendentes.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Reflexões sobre Vídeos/Artigos</h3>
@@ -264,7 +305,8 @@ export default async function DiscipuladorPage() {
             )}
 
             {(!reflexoesPendentes || reflexoesPendentes.length === 0) &&
-              (!progressoPendente || progressoPendente.length === 0) && (
+              (!progressoPendente || progressoPendente.length === 0) &&
+              (!discipulosPendentes || discipulosPendentes.length === 0) && (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <CheckCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
