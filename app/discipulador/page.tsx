@@ -17,7 +17,9 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const { data: discipulos } = await supabase
+  console.log("[v0] Marcus user.id:", user.id)
+
+  const { data: discipulos, error: discipulosError } = await supabase
     .from("discipulos")
     .select(`
       *,
@@ -26,6 +28,10 @@ export default async function DiscipuladorPage() {
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
     .not("user_id", "is", null)
+
+  console.log("[v0] Discípulos encontrados:", discipulos?.length || 0)
+  console.log("[v0] Discípulos data:", JSON.stringify(discipulos, null, 2))
+  console.log("[v0] Erro ao buscar discípulos:", discipulosError)
 
   const { data: discipulosPendentes } = await supabase
     .from("discipulos")
