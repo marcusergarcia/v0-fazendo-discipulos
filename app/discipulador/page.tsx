@@ -22,14 +22,19 @@ export default async function DiscipuladorPage() {
     .delete()
     .eq("user_id", user.id)
 
-  const { data: discipulos } = await supabase
+  const { data: todosDiscipulos } = await supabase
     .from("discipulos")
     .select(`
       *,
       profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
     `)
     .eq("discipulador_id", user.id)
-    .eq("aprovado_discipulador", true)
+
+  // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
+  const discipulosAprovados = todosDiscipulos?.filter(d => d.aprovado_discipulador) || []
+  
+  // Filtrar pendentes de aprovação inicial
+  const discipulosPendentesAprovacao = todosDiscipulos?.filter(d => !d.aprovado_discipulador) || []
 
   const { data: reflexoesPendentes } = await supabase
     .from("reflexoes_conteudo")
@@ -44,7 +49,7 @@ export default async function DiscipuladorPage() {
         profile:user_id(nome_completo, email, foto_perfil_url, avatar_url)
       )
     `)
-    .in("discipulo_id", discipulos?.map((d) => d.id) || [])
+    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
     .order("data_criacao", { ascending: false })
 
   // Buscar progresso pendente de validação
@@ -62,10 +67,10 @@ export default async function DiscipuladorPage() {
       )
     `)
     .eq("status_validacao", "pendente")
-    .in("discipulo_id", discipulos?.map((d) => d.id) || [])
+    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
     .order("created_at", { ascending: false })
 
-  const tarefasPorDiscipulo = discipulos?.map((discipulo) => {
+  const tarefasPorDiscipulo = discipulosAprovados?.map((discipulo) => {
     const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
     const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
     return {
@@ -106,7 +111,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <Users className="w-8 h-8 text-primary" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{discipulos?.length || 0}</p>
+                  <p className="text-2xl font-bold">{todosDiscipulos?.length || 0}</p>
                   <p className="text-sm text-muted-foreground">Discípulos</p>
                 </div>
               </div>
@@ -119,7 +124,7 @@ export default async function DiscipuladorPage() {
                 <Clock className="w-8 h-8 text-warning" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
+                    {discipulosPendentesAprovacao.length + (reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">Pendentes</p>
                 </div>
@@ -132,7 +137,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <CheckCircle className="w-8 h-8 text-success" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{discipulos?.filter((d) => d.passo_atual > 1).length || 0}</p>
+                  <p className="text-2xl font-bold">{discipulosAprovados?.filter((d) => d.passo_atual >= 1).length || 0}</p>
                   <p className="text-sm text-muted-foreground">Ativos</p>
                 </div>
               </div>
@@ -145,7 +150,7 @@ export default async function DiscipuladorPage() {
                 <TrendingUp className="w-8 h-8 text-info" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {discipulos?.filter((d) => d.nivel_atual !== "Explorador").length || 0}
+                    {discipulosAprovados?.filter((d) => d.nivel_atual !== "Explorador").length || 0}
                   </p>
                   <p className="text-sm text-muted-foreground">Avançados</p>
                 </div>
@@ -158,9 +163,9 @@ export default async function DiscipuladorPage() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pendentes">
               Pendentes de Validação
-              {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0) > 0 && (
+              {(discipulosPendentesAprovacao.length + (reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)) > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {(reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
+                  {discipulosPendentesAprovacao.length + (reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
                 </Badge>
               )}
             </TabsTrigger>
@@ -170,6 +175,57 @@ export default async function DiscipuladorPage() {
 
           {/* Tab: Pendentes de Validação */}
           <TabsContent value="pendentes" className="space-y-4">
+            {discipulosPendentesAprovacao.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Aguardando Aprovação</h3>
+                {discipulosPendentesAprovacao.map((discipulo) => (
+                  <Card key={discipulo.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-base">
+                            {discipulo.nome_completo_temp}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {discipulo.email_temporario}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">Novo Discípulo</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Data de Nascimento</p>
+                            <p className="font-medium">{new Date(discipulo.data_nascimento).toLocaleDateString('pt-BR')}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Gênero</p>
+                            <p className="font-medium">{discipulo.genero}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Telefone</p>
+                            <p className="font-medium">{discipulo.telefone || 'Não informado'}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Igreja</p>
+                            <p className="font-medium">{discipulo.igreja || 'Não informado'}</p>
+                          </div>
+                        </div>
+                        <Link href={`/discipulador/aprovar/${discipulo.id}`} className="block">
+                          <Button className="w-full" size="sm">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Revisar e Aprovar Cadastro
+                          </Button>
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
             {reflexoesPendentes && reflexoesPendentes.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Reflexões sobre Vídeos/Artigos</h3>
@@ -263,7 +319,8 @@ export default async function DiscipuladorPage() {
               </div>
             )}
 
-            {(!reflexoesPendentes || reflexoesPendentes.length === 0) &&
+            {discipulosPendentesAprovacao.length === 0 &&
+              (!reflexoesPendentes || reflexoesPendentes.length === 0) &&
               (!progressoPendente || progressoPendente.length === 0) && (
                 <Card>
                   <CardContent className="py-12 text-center">
@@ -346,8 +403,8 @@ export default async function DiscipuladorPage() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">Nenhum discípulo ainda</p>
-                  <p className="text-muted-foreground">Quando você tiver discípulos, eles aparecerão aqui.</p>
+                  <p className="text-lg font-medium">Nenhum discípulo aprovado ainda</p>
+                  <p className="text-muted-foreground">Aprove os cadastros pendentes para começar o discipulado.</p>
                 </CardContent>
               </Card>
             )}
@@ -355,8 +412,8 @@ export default async function DiscipuladorPage() {
 
           {/* Tab: Conversas */}
           <TabsContent value="chat" className="space-y-4">
-            {discipulos && discipulos.length > 0 ? (
-              discipulos.map((discipulo) => (
+            {discipulosAprovados && discipulosAprovados.length > 0 ? (
+              discipulosAprovados.map((discipulo) => (
                 <Link key={discipulo.id} href={`/discipulador/chat/${discipulo.id}`}>
                   <Card className="hover:border-primary transition-colors cursor-pointer">
                     <CardContent className="py-4">
@@ -383,7 +440,7 @@ export default async function DiscipuladorPage() {
                 <CardContent className="py-12 text-center">
                   <MessageCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                   <p className="text-lg font-medium">Nenhuma conversa</p>
-                  <p className="text-muted-foreground">Comece discipulando alguém para iniciar conversas.</p>
+                  <p className="text-muted-foreground">Aprove discípulos para iniciar conversas.</p>
                 </CardContent>
               </Card>
             )}
