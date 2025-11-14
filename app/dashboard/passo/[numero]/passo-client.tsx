@@ -89,9 +89,9 @@ export default function PassoClient({
     setEnviandoReflexao(true)
     try {
       if (tipoConteudo === "video") {
-        await concluirVideoComReflexao(numero, conteudoAtual.id, reflexao)
+        await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       } else {
-        await concluirArtigoComReflexao(numero, conteudoAtual.id, reflexao)
+        await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       }
       setModalAberto(false)
       setReflexao("")
