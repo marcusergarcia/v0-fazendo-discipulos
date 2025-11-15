@@ -215,6 +215,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       passo_numero: numero,
       tipo: "video",
       conteudo_id: videoId,
+      titulo: titulo,
       reflexao: reflexao,
     })
     
@@ -345,6 +346,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       passo_numero: numero,
       tipo: "artigo",
       conteudo_id: artigoId,
+      titulo: titulo,
       reflexao: reflexao,
     })
     
