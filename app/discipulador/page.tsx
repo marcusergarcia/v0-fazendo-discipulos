@@ -41,17 +41,30 @@ export default async function DiscipuladorPage() {
 
   const discipuloIds = discipulos?.map(d => d.id) || []
   
-  const { data: todasReflexoes } = await supabase
+  console.log("[v0] IDs dos discípulos para buscar reflexões:", discipuloIds)
+  
+  const { data: todasReflexoes, error: reflexoesError } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
     .in("discipulo_id", discipuloIds)
-    .order("data_criacao", { ascending: false })
 
+  console.log("[v0] Query de reflexões - Error:", reflexoesError)
   console.log("[v0] Total de reflexões encontradas:", todasReflexoes?.length || 0)
+  
+  if (todasReflexoes && todasReflexoes.length > 0) {
+    console.log("[v0] Primeira reflexão encontrada:", {
+      id: todasReflexoes[0].id,
+      discipulo_id: todasReflexoes[0].discipulo_id,
+      conteudo_id: todasReflexoes[0].conteudo_id,
+      tipo: todasReflexoes[0].tipo
+    })
+  }
+  
   console.log("[v0] Reflexões por discípulo:")
   discipuloIds.forEach(id => {
-    const count = todasReflexoes?.filter(r => r.discipulo_id === id).length || 0
-    console.log(`  - ${id}: ${count} reflexões`)
+    const reflexoes = todasReflexoes?.filter(r => r.discipulo_id === id) || []
+    console.log(`  - Discípulo ${id}:`, reflexoes.length, "reflexões")
+    console.log(`    IDs das reflexões:`, reflexoes.map(r => r.id))
   })
 
   const { data: progressosPendentes } = await supabase
