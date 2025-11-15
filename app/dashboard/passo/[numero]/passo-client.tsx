@@ -111,21 +111,25 @@ export default function PassoClient({
     setEnviandoReflexao(true)
     try {
       console.log("[v0] Chamando action...")
+      let result
       if (tipoConteudo === "video") {
         console.log("[v0] Concluindo vídeo com reflexão...")
-        await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
+        result = await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       } else {
         console.log("[v0] Concluindo artigo com reflexão...")
-        await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
+        result = await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       }
-      console.log("[v0] Action executada com sucesso!")
-      // O redirect é feito automaticamente pela server action
+      console.log("[v0] Action executada com sucesso! Resultado:", result)
+      
+      setModalAberto(false)
+      setReflexao("")
+      window.location.reload()
     } catch (error) {
       console.error("[v0] ERRO ao enviar reflexão:", error)
       console.error("[v0] Detalhes do erro:", JSON.stringify(error, null, 2))
       alert("Erro ao enviar reflexão. Tente novamente.")
+    } finally {
       setEnviandoReflexao(false)
-      setModalAberto(false)
     }
   }
 

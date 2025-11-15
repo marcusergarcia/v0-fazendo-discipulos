@@ -297,7 +297,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   }
 
   console.log("[v0] SERVER: Redirecionando...")
-  redirect(`/dashboard/passo/${numero}?video=${videoId}`)
+  return { success: true, videoId }
 }
 
 export async function concluirArtigoComReflexao(numero: number, artigoId: string, titulo: string, reflexao: string) {
@@ -427,5 +427,5 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   }
 
   console.log("[v0] SERVER: Redirecionando...")
-  redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
+  return { success: true, artigoId }
 }
