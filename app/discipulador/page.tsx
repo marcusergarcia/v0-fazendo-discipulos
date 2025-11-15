@@ -1,14 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye, Video, FileText, Sparkles } from 'lucide-react'
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText } from 'lucide-react'
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
+import { ValidarReflexaoModal } from "@/components/validar-reflexao-modal"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -18,148 +18,95 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const { data: todosDiscipulos, error: errorDiscipulos } = await supabase
+  const { data: discipulos } = await supabase
     .from("discipulos")
     .select("*")
     .eq("discipulador_id", user.id)
+    .eq("aprovado_discipulador", true)
 
-  console.log("[v0] Discipulador ID:", user.id)
-  console.log("[v0] Error:", errorDiscipulos)
-  console.log("[v0] Quantidade de discipulos:", todosDiscipulos?.length || 0)
+  console.log("[v0] Total de discípulos aprovados:", discipulos?.length || 0)
 
-  // Se temos discípulos, buscar os perfis separadamente
-  const discipulosComPerfil = todosDiscipulos ? await Promise.all(
-    todosDiscipulos.map(async (discipulo) => {
-      if (discipulo.user_id) {
-        const { data: perfil } = await supabase
-          .from("profiles")
-          .select("nome_completo, email, foto_perfil_url, avatar_url")
-          .eq("id", discipulo.user_id)
-          .single()
-        return { ...discipulo, profiles: perfil }
-      }
-      return { ...discipulo, profiles: null }
+  // Buscar profiles de cada discípulo
+  const discipulosComPerfil = await Promise.all(
+    (discipulos || []).map(async (disc) => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("nome_completo, email, foto_perfil_url, avatar_url")
+        .eq("id", disc.user_id)
+        .maybeSingle()
+
+      return { ...disc, profile }
     })
-  ) : []
+  )
 
-  console.log("[v0] Discipulos com perfil:", discipulosComPerfil.length)
-
-  // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
-  const discipulosAprovados = discipulosComPerfil?.filter(d => d.aprovado_discipulador) || []
-
-  // Filtrar pendentes de aprovação inicial
-  const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
-
-  const { data: reflexoesPendentes } = await supabase
+  const discipuloIds = discipulos?.map(d => d.id) || []
+  
+  const { data: todasReflexoes } = await supabase
     .from("reflexoes_conteudo")
-    .select(`
-      *,
-      discipulo:discipulo_id(
-        id, 
-        nivel_atual, 
-        nome_completo_temp,
-        email_temporario,
-        foto_perfil_url_temp,
-        user_id
-      )
-    `)
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
+    .select("*")
+    .in("discipulo_id", discipuloIds)
     .order("data_criacao", { ascending: false })
 
-  const reflexoesComPerfil = reflexoesPendentes ? await Promise.all(
-    reflexoesPendentes.map(async (reflexao) => {
-      if (reflexao.discipulo?.user_id) {
-        const { data: perfil } = await supabase
-          .from("profiles")
-          .select("nome_completo, email, foto_perfil_url, avatar_url")
-          .eq("id", reflexao.discipulo.user_id)
-          .single()
-        return { ...reflexao, discipulo: { ...reflexao.discipulo, profiles: perfil } }
-      }
-      return reflexao
-    })
-  ) : []
+  console.log("[v0] Total de reflexões encontradas:", todasReflexoes?.length || 0)
+  console.log("[v0] Reflexões por discípulo:")
+  discipuloIds.forEach(id => {
+    const count = todasReflexoes?.filter(r => r.discipulo_id === id).length || 0
+    console.log(`  - ${id}: ${count} reflexões`)
+  })
 
-  // Buscar progresso pendente de validação
-  const { data: progressoPendente } = await supabase
+  const { data: progressosPendentes } = await supabase
     .from("progresso_fases")
-    .select(`
-      *,
-      discipulo:discipulo_id(
-        id, 
-        nivel_atual,
-        nome_completo_temp,
-        email_temporario,
-        foto_perfil_url_temp
-      )
-    `)
+    .select("*")
+    .in("discipulo_id", discipuloIds)
     .eq("status_validacao", "pendente")
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
-    .order("created_at", { ascending: false })
 
-  const tarefasPorDiscipulo = await Promise.all(
-    discipulosAprovados?.map(async (discipulo) => {
-      console.log("[v0] ===== Processando discípulo =====")
-      console.log("[v0] Discípulo ID:", discipulo.id)
-      console.log("[v0] Nome:", discipulo.profiles?.nome_completo || discipulo.nome_completo_temp)
-      
-      const reflexoes = reflexoesComPerfil?.filter((r) => r.discipulo_id === discipulo.id) || []
-      const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
-      
-      console.log("[v0] Reflexões deste discípulo:", reflexoes.length)
-      console.log("[v0] IDs das reflexões:", reflexoes.map(r => r.id))
-      console.log("[v0] Conteúdos das reflexões:", reflexoes.map(r => r.conteudo_id))
-      
-      // Buscar progresso do passo atual
+  const dadosPorDiscipulo = await Promise.all(
+    discipulosComPerfil.map(async (discipulo) => {
+      const reflexoesDiscipulo = todasReflexoes?.filter(r => r.discipulo_id === discipulo.id) || []
+      const progressosDiscipulo = progressosPendentes?.filter(p => p.discipulo_id === discipulo.id) || []
+
+      // Buscar progresso atual
       const { data: progressoAtual } = await supabase
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipulo.id)
         .eq("passo_numero", discipulo.passo_atual)
-        .single()
+        .maybeSingle()
 
-      console.log("[v0] Passo atual:", discipulo.passo_atual)
-      console.log("[v0] Progresso atual encontrado:", progressoAtual ? "SIM" : "NÃO")
-      if (progressoAtual) {
-        console.log("[v0] Vídeos assistidos:", progressoAtual.videos_assistidos)
-        console.log("[v0] Artigos lidos:", progressoAtual.artigos_lidos)
-      }
-
-      // Pegar conteúdo do passo atual
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
-      
-      // Mapear tarefas com status
-      const tarefasDetalhadas = []
-      
+      const tarefas = []
+
       if (conteudoPasso) {
-        // Adicionar vídeos
         conteudoPasso.videos?.forEach((video) => {
           const videoAssistido = progressoAtual?.videos_assistidos 
             ? (progressoAtual.videos_assistidos as any[]).find((v: any) => v.id === video.id)
             : null
           
-          tarefasDetalhadas.push({
+          const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === video.id && r.tipo === 'video')
+          
+          tarefas.push({
             id: video.id,
             tipo: 'video',
             titulo: video.titulo,
             concluido: !!videoAssistido,
-            reflexaoEnviada: !!reflexoes.find(r => r.conteudo_id === video.id && r.tipo === 'video'),
+            reflexao,
             xp: videoAssistido?.xp_ganho || null
           })
         })
 
-        // Adicionar artigos
         conteudoPasso.artigos?.forEach((artigo) => {
           const artigoLido = progressoAtual?.artigos_lidos
             ? (progressoAtual.artigos_lidos as any[]).find((a: any) => a.id === artigo.id)
             : null
           
-          tarefasDetalhadas.push({
+          const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
+          
+          tarefas.push({
             id: artigo.id,
             tipo: 'artigo',
             titulo: artigo.titulo,
             concluido: !!artigoLido,
-            reflexaoEnviada: !!reflexoes.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo'),
+            reflexao,
             xp: artigoLido?.xp_ganho || null
           })
         })
@@ -167,14 +114,13 @@ export default async function DiscipuladorPage() {
 
       return {
         discipulo,
-        tarefasPendentes: reflexoes.length + progressos.length,
-        reflexoes,
-        progressos,
-        tarefasDetalhadas,
-        conteudoPasso
+        tarefasPendentes: reflexoesDiscipulo.length + progressosDiscipulo.length,
+        tarefas,
       }
-    }) || []
+    })
   )
+
+  const totalPendentes = dadosPorDiscipulo.reduce((sum, d) => sum + d.tarefasPendentes, 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -185,14 +131,12 @@ export default async function DiscipuladorPage() {
               <h1 className="text-3xl font-bold">Painel do Discipulador</h1>
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Voltar
-                </Button>
-              </Link>
-            </div>
+            <Link href="/dashboard">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -205,7 +149,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <Users className="w-8 h-8 text-primary" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{todosDiscipulos?.length || 0}</p>
+                  <p className="text-2xl font-bold">{discipulos?.length || 0}</p>
                   <p className="text-sm text-muted-foreground">Discípulos</p>
                 </div>
               </div>
@@ -217,9 +161,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <Clock className="w-8 h-8 text-warning" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">
-                    {discipulosPendentesAprovacao.length + (reflexoesComPerfil?.length || 0) + (progressoPendente?.length || 0)}
-                  </p>
+                  <p className="text-2xl font-bold">{totalPendentes}</p>
                   <p className="text-sm text-muted-foreground">Pendentes</p>
                 </div>
               </div>
@@ -231,7 +173,7 @@ export default async function DiscipuladorPage() {
               <div className="flex items-center justify-between">
                 <CheckCircle className="w-8 h-8 text-success" />
                 <div className="text-right">
-                  <p className="text-2xl font-bold">{discipulosAprovados?.filter((d) => d.passo_atual >= 1).length || 0}</p>
+                  <p className="text-2xl font-bold">{discipulos?.filter((d) => d.passo_atual >= 1).length || 0}</p>
                   <p className="text-sm text-muted-foreground">Ativos</p>
                 </div>
               </div>
@@ -244,7 +186,7 @@ export default async function DiscipuladorPage() {
                 <TrendingUp className="w-8 h-8 text-info" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {discipulosAprovados?.filter((d) => d.nivel_atual !== "Explorador").length || 0}
+                    {discipulos?.filter((d) => d.nivel_atual !== "Explorador").length || 0}
                   </p>
                   <p className="text-sm text-muted-foreground">Avançados</p>
                 </div>
@@ -253,220 +195,53 @@ export default async function DiscipuladorPage() {
           </Card>
         </div>
 
-        <Tabs defaultValue="pendentes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pendentes">
-              Pendentes de Validação
-              {(discipulosPendentesAprovacao.length + (reflexoesComPerfil?.length || 0) + (progressoPendente?.length || 0)) > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {discipulosPendentesAprovacao.length + (reflexoesComPerfil?.length || 0) + (progressoPendente?.length || 0)}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="discipulos">Meus Discípulos</TabsTrigger>
-            <TabsTrigger value="chat">Conversas</TabsTrigger>
-          </TabsList>
-
-          {/* Tab: Pendentes de Validação */}
-          <TabsContent value="pendentes" className="space-y-4">
-            {discipulosPendentesAprovacao.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Aguardando Aprovação</h3>
-                {discipulosPendentesAprovacao.map((discipulo) => (
-                  <Card key={discipulo.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">
-                            {discipulo.nome_completo_temp}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {discipulo.email_temporario}
-                          </p>
-                        </div>
-                        <Badge variant="secondary">Novo Discípulo</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Data de Nascimento</p>
-                            <p className="font-medium">
-                              {discipulo.data_nascimento_temp 
-                                ? new Date(discipulo.data_nascimento_temp).toLocaleDateString('pt-BR')
-                                : 'Não informado'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Gênero</p>
-                            <p className="font-medium">{discipulo.genero_temp || 'Não informado'}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Telefone</p>
-                            <p className="font-medium">{discipulo.telefone_temp || 'Não informado'}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Igreja</p>
-                            <p className="font-medium">{discipulo.igreja_temp || 'Não informado'}</p>
-                          </div>
-                        </div>
-                        <Link href={`/discipulador/aprovar/${discipulo.id}`} className="block">
-                          <Button className="w-full" size="sm">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Revisar e Aprovar Cadastro
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {reflexoesComPerfil && reflexoesComPerfil.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Reflexões sobre Vídeos/Artigos</h3>
-                {reflexoesComPerfil.map((reflexao) => (
-                  <Card key={reflexao.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          {reflexao.tipo === "video" ? (
-                            <Video className="w-4 h-4 text-primary" />
-                          ) : (
-                            <FileText className="w-4 h-4 text-primary" />
-                          )}
-                          <div>
-                            <CardTitle className="text-base">
-                              {reflexao.discipulo?.profiles?.nome_completo || reflexao.discipulo?.nome_completo_temp || reflexao.discipulo?.profiles?.email || reflexao.discipulo?.email_temporario}
-                            </CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {reflexao.titulo || `${reflexao.tipo === "video" ? "Vídeo" : "Artigo"} - Fase ${reflexao.fase_numero}, Passo ${reflexao.passo_numero}`}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{reflexao.discipulo?.nivel_atual}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium mb-2">Reflexão do discípulo:</p>
-                          <p className="text-sm bg-muted p-3 rounded-lg">{reflexao.reflexao}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Link href={`/discipulador/validar-reflexao/${reflexao.id}`} className="flex-1">
-                            <Button className="w-full" size="sm">
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Validar Reflexão
-                            </Button>
-                          </Link>
-                          <Link href={`/discipulador/chat/${reflexao.discipulo_id}`}>
-                            <Button variant="outline" size="sm">
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Conversar
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {progressoPendente && progressoPendente.length > 0 && (
-              <div className="space-y-4 mt-6">
-                <h3 className="font-semibold text-lg">Missões de Passos</h3>
-                {progressoPendente.map((progresso) => (
-                  <Card key={progresso.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">
-                            {progresso.discipulo?.profiles?.nome_completo || progresso.discipulo?.profiles?.email}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Fase {progresso.fase_numero} - Passo {progresso.passo_numero}
-                          </p>
-                        </div>
-                        <Badge variant="outline">{progresso.discipulo?.nivel_atual}</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium mb-2">Resposta da missão:</p>
-                          <p className="text-sm bg-muted p-3 rounded-lg">{progresso.resposta_missao}</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Link
-                            href={`/discipulador/validar-passo/${progresso.discipulo_id}/${progresso.fase_numero}/${progresso.passo_numero}`}
-                            className="flex-1"
-                          >
-                            <Button className="w-full" size="sm">
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Validar Missão
-                            </Button>
-                          </Link>
-                          <Link href={`/discipulador/chat/${progresso.discipulo_id}`}>
-                            <Button variant="outline" size="sm">
-                              <MessageCircle className="w-4 h-4 mr-2" />
-                              Conversar
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {discipulosPendentesAprovacao.length === 0 &&
-              (!reflexoesComPerfil || reflexoesComPerfil.length === 0) &&
-              (!progressoPendente || progressoPendente.length === 0) && (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <CheckCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-lg font-medium">Tudo em dia!</p>
-                    <p className="text-muted-foreground">Não há pendências de validação no momento.</p>
-                  </CardContent>
-                </Card>
-              )}
-          </TabsContent>
-
-          {/* Tab: Meus Discípulos */}
-          <TabsContent value="discipulos" className="space-y-4">
-            {tarefasPorDiscipulo && tarefasPorDiscipulo.length > 0 ? (
-              tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, tarefasDetalhadas, conteudoPasso }) => {
-                const nome = discipulo.profiles?.nome_completo || discipulo.nome_completo_temp || discipulo.profiles?.email || discipulo.email_temporario
-                const foto = discipulo.profiles?.foto_perfil_url || discipulo.profiles?.avatar_url || discipulo.foto_perfil_url_temp
-                const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
-
+        {discipulosComPerfil.length > 0 ? (
+          <Tabs defaultValue={discipulosComPerfil[0].id} className="space-y-6">
+            <TabsList className="w-full justify-start overflow-x-auto">
+              {discipulosComPerfil.map((disc) => {
+                const nome = disc.profile?.nome_completo || disc.nome_completo_temp || disc.profile?.email || disc.email_temporario
+                const pendentes = dadosPorDiscipulo.find(d => d.discipulo.id === disc.id)?.tarefasPendentes || 0
+                
                 return (
-                  <Card key={discipulo.id}>
-                    <CardContent className="py-4">
-                      <div className="flex items-center gap-4 mb-4">
+                  <TabsTrigger key={disc.id} value={disc.id} className="gap-2">
+                    {nome.split(" ")[0]}
+                    {pendentes > 0 && (
+                      <Badge variant="destructive" className="ml-1 px-1.5 py-0.5 text-xs">
+                        {pendentes}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                )
+              })}
+            </TabsList>
+
+            {dadosPorDiscipulo.map(({ discipulo, tarefas, tarefasPendentes }) => {
+              const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
+              const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
+              const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
+
+              return (
+                <TabsContent key={discipulo.id} value={discipulo.id} className="space-y-6">
+                  {/* Card do Discípulo */}
+                  <Card>
+                    <CardContent className="py-6">
+                      <div className="flex items-center gap-4 mb-6">
                         <div className="relative">
-                          <Avatar className="w-16 h-16">
+                          <Avatar className="w-20 h-20">
                             <AvatarImage src={foto || undefined} alt={nome} />
-                            <AvatarFallback className="bg-primary text-primary-foreground">
+                            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                               {iniciais}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="absolute -bottom-1 -right-1 bg-background border-2 border-background rounded-full px-2 py-0.5">
+                          <div className="absolute -bottom-1 -right-1 bg-background border-2 border-background rounded-full px-2.5 py-1">
                             <p className="text-xs font-bold">P{discipulo.passo_atual}</p>
                           </div>
                         </div>
 
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold">{nome}</h3>
-                            <Badge variant="outline" className="text-xs">
-                              {discipulo.nivel_atual}
-                            </Badge>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h2 className="text-2xl font-bold">{nome}</h2>
+                            <Badge variant="outline">{discipulo.nivel_atual}</Badge>
                           </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>Fase {discipulo.fase_atual}</span>
@@ -475,132 +250,76 @@ export default async function DiscipuladorPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {tarefasPendentes > 0 && (
-                            <Badge variant="destructive" className="text-sm px-3 py-1">
-                              {tarefasPendentes} Pendente{tarefasPendentes > 1 ? 's' : ''}
-                            </Badge>
-                          )}
-                          <Link href={`/discipulador/chat/${discipulo.id}`}>
-                            <Button size="sm" variant="outline">
-                              <MessageCircle className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                        </div>
+                        <Link href={`/discipulador/chat/${discipulo.id}`}>
+                          <Button>
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Conversar
+                          </Button>
+                        </Link>
                       </div>
 
-                      {conteudoPasso && tarefasDetalhadas.length > 0 && (
-                        <div className="border-t pt-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Sparkles className="w-4 h-4 text-primary" />
-                            <h4 className="font-medium text-sm">
-                              {conteudoPasso.titulo} - Tarefas do Passo {discipulo.passo_atual}
-                            </h4>
-                          </div>
-                          
-                          <div className="grid gap-2">
-                            {tarefasDetalhadas.map((tarefa) => (
-                              <div 
-                                key={tarefa.id}
-                                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                              >
-                                {/* Ícone do tipo de conteúdo */}
-                                <div className={`p-2 rounded ${tarefa.tipo === 'video' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                                  {tarefa.tipo === 'video' ? (
-                                    <Video className="w-4 h-4" />
-                                  ) : (
-                                    <FileText className="w-4 h-4" />
-                                  )}
-                                </div>
-
-                                {/* Título */}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{tarefa.titulo}</p>
-                                  <p className="text-xs text-muted-foreground capitalize">{tarefa.tipo}</p>
-                                </div>
-
-                                {/* Status */}
-                                <div className="flex items-center gap-2">
-                                  {tarefa.xp ? (
-                                    // Avaliado - mostra XP
-                                    <Badge variant="default" className="bg-green-600 text-white">
-                                      <CheckCircle className="w-3 h-3 mr-1" />
-                                      {tarefa.xp} XP
-                                    </Badge>
-                                  ) : tarefa.reflexaoEnviada ? (
-                                    // Pendente de avaliação
-                                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 border-yellow-300">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      Pendente
-                                    </Badge>
-                                  ) : tarefa.concluido ? (
-                                    // Concluído mas sem reflexão
-                                    <Badge variant="outline">
-                                      Concluído
-                                    </Badge>
-                                  ) : (
-                                    // Não iniciado
-                                    <Badge variant="outline" className="text-muted-foreground">
-                                      Não iniciado
-                                    </Badge>
-                                  )}
-                                </div>
+                      {tarefas.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-lg mb-3">Tarefas do Passo Atual</h3>
+                          {tarefas.map((tarefa) => (
+                            <div 
+                              key={tarefa.id}
+                              className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                            >
+                              <div className={`p-2 rounded ${tarefa.tipo === 'video' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                                {tarefa.tipo === 'video' ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                               </div>
-                            ))}
-                          </div>
+
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium truncate">{tarefa.titulo}</p>
+                                <p className="text-sm text-muted-foreground capitalize">{tarefa.tipo}</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {tarefa.xp ? (
+                                  <Badge variant="default" className="bg-green-600">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    {tarefa.xp} XP
+                                  </Badge>
+                                ) : tarefa.reflexao ? (
+                                  <ValidarReflexaoModal 
+                                    reflexao={tarefa.reflexao}
+                                    discipuloId={discipulo.id}
+                                    discipuloNome={nome}
+                                  />
+                                ) : tarefa.concluido ? (
+                                  <Badge variant="outline">Concluído</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-muted-foreground">
+                                    Não iniciado
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {tarefas.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">Nenhuma tarefa disponível para este passo</p>
                         </div>
                       )}
                     </CardContent>
                   </Card>
-                )
-              })
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">Nenhum discípulo aprovado ainda</p>
-                  <p className="text-muted-foreground">Aprove os cadastros pendentes para começar o discipulado.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Tab: Conversas */}
-          <TabsContent value="chat" className="space-y-4">
-            {discipulosAprovados && discipulosAprovados.length > 0 ? (
-              discipulosAprovados.map((discipulo) => (
-                <Link key={discipulo.id} href={`/discipulador/chat/${discipulo.id}`}>
-                  <Card className="hover:border-primary transition-colors cursor-pointer">
-                    <CardContent className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Users className="w-6 h-6 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {discipulo.profiles?.nome_completo || discipulo.profiles?.email}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{discipulo.nivel_atual}</p>
-                          </div>
-                        </div>
-                        <MessageCircle className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))
-            ) : (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <MessageCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">Nenhuma conversa</p>
-                  <p className="text-muted-foreground">Aprove discípulos para iniciar conversas.</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                </TabsContent>
+              )
+            })}
+          </Tabs>
+        ) : (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">Nenhum discípulo aprovado ainda</p>
+              <p className="text-muted-foreground">Aprove os cadastros pendentes para começar o discipulado.</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )
