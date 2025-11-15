@@ -99,8 +99,16 @@ export default async function DiscipuladorPage() {
 
   const tarefasPorDiscipulo = await Promise.all(
     discipulosAprovados?.map(async (discipulo) => {
+      console.log("[v0] ===== Processando discípulo =====")
+      console.log("[v0] Discípulo ID:", discipulo.id)
+      console.log("[v0] Nome:", discipulo.profiles?.nome_completo || discipulo.nome_completo_temp)
+      
       const reflexoes = reflexoesComPerfil?.filter((r) => r.discipulo_id === discipulo.id) || []
       const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
+      
+      console.log("[v0] Reflexões deste discípulo:", reflexoes.length)
+      console.log("[v0] IDs das reflexões:", reflexoes.map(r => r.id))
+      console.log("[v0] Conteúdos das reflexões:", reflexoes.map(r => r.conteudo_id))
       
       // Buscar progresso do passo atual
       const { data: progressoAtual } = await supabase
@@ -109,6 +117,13 @@ export default async function DiscipuladorPage() {
         .eq("discipulo_id", discipulo.id)
         .eq("passo_numero", discipulo.passo_atual)
         .single()
+
+      console.log("[v0] Passo atual:", discipulo.passo_atual)
+      console.log("[v0] Progresso atual encontrado:", progressoAtual ? "SIM" : "NÃO")
+      if (progressoAtual) {
+        console.log("[v0] Vídeos assistidos:", progressoAtual.videos_assistidos)
+        console.log("[v0] Artigos lidos:", progressoAtual.artigos_lidos)
+      }
 
       // Pegar conteúdo do passo atual
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
