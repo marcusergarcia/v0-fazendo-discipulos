@@ -101,28 +101,31 @@ export default function PassoClient({
 
     if (enviandoReflexao) return
 
-    console.log("[v0] Enviando reflexão para:", {
-      tipo: tipoConteudo,
-      conteudoId: conteudoAtual?.id,
-      titulo: conteudoAtual?.titulo,
-      conteudoCompleto: conteudoAtual
-    })
+    console.log("[v0] === INICIANDO ENVIO DE REFLEXÃO ===")
+    console.log("[v0] Tipo:", tipoConteudo)
+    console.log("[v0] Conteúdo ID:", conteudoAtual?.id)
+    console.log("[v0] Título:", conteudoAtual?.titulo)
+    console.log("[v0] Reflexão:", reflexao.substring(0, 50) + "...")
+    console.log("[v0] Passo número:", numero)
 
     setEnviandoReflexao(true)
     try {
+      console.log("[v0] Chamando action...")
       if (tipoConteudo === "video") {
+        console.log("[v0] Concluindo vídeo com reflexão...")
         await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       } else {
+        console.log("[v0] Concluindo artigo com reflexão...")
         await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       }
-      setReflexao("")
-      setModalAberto(false)
-      setEnviandoReflexao(false)
-      window.location.reload()
+      console.log("[v0] Action executada com sucesso!")
+      // O redirect é feito automaticamente pela server action
     } catch (error) {
-      console.error("[v0] Erro ao enviar reflexão:", error)
+      console.error("[v0] ERRO ao enviar reflexão:", error)
+      console.error("[v0] Detalhes do erro:", JSON.stringify(error, null, 2))
       alert("Erro ao enviar reflexão. Tente novamente.")
       setEnviandoReflexao(false)
+      setModalAberto(false)
     }
   }
 
