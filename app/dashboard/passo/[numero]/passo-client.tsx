@@ -117,8 +117,11 @@ export default function PassoClient({
       }
       setReflexao("")
       setModalAberto(false)
+      setEnviandoReflexao(false)
+      window.location.reload()
     } catch (error) {
-      console.error("Erro ao enviar reflexão:", error)
+      console.error("[v0] Erro ao enviar reflexão:", error)
+      alert("Erro ao enviar reflexão. Tente novamente.")
       setEnviandoReflexao(false)
     }
   }
