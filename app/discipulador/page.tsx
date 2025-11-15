@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye } from 'lucide-react'
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye, Video, FileText, Sparkles } from 'lucide-react'
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -82,16 +83,69 @@ export default async function DiscipuladorPage() {
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
     .order("created_at", { ascending: false })
 
-  const tarefasPorDiscipulo = discipulosAprovados?.map((discipulo) => {
-    const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
-    const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
-    return {
-      discipulo,
-      tarefasPendentes: reflexoes.length + progressos.length,
-      reflexoes,
-      progressos,
-    }
-  }) || []
+  const tarefasPorDiscipulo = await Promise.all(
+    discipulosAprovados?.map(async (discipulo) => {
+      const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
+      const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
+      
+      // Buscar progresso do passo atual
+      const { data: progressoAtual } = await supabase
+        .from("progresso_fases")
+        .select("*")
+        .eq("discipulo_id", discipulo.id)
+        .eq("passo_numero", discipulo.passo_atual)
+        .single()
+
+      // Pegar conteúdo do passo atual
+      const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
+      
+      // Mapear tarefas com status
+      const tarefasDetalhadas = []
+      
+      if (conteudoPasso) {
+        // Adicionar vídeos
+        conteudoPasso.videos?.forEach((video) => {
+          const videoAssistido = progressoAtual?.videos_assistidos 
+            ? (progressoAtual.videos_assistidos as any[]).find((v: any) => v.id === video.id)
+            : null
+          
+          tarefasDetalhadas.push({
+            id: video.id,
+            tipo: 'video',
+            titulo: video.titulo,
+            concluido: !!videoAssistido,
+            reflexaoEnviada: !!reflexoes.find(r => r.conteudo_id === video.id && r.tipo === 'video'),
+            xp: videoAssistido?.xp_ganho || null
+          })
+        })
+
+        // Adicionar artigos
+        conteudoPasso.artigos?.forEach((artigo) => {
+          const artigoLido = progressoAtual?.artigos_lidos
+            ? (progressoAtual.artigos_lidos as any[]).find((a: any) => a.id === artigo.id)
+            : null
+          
+          tarefasDetalhadas.push({
+            id: artigo.id,
+            tipo: 'artigo',
+            titulo: artigo.titulo,
+            concluido: !!artigoLido,
+            reflexaoEnviada: !!reflexoes.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo'),
+            xp: artigoLido?.xp_ganho || null
+          })
+        })
+      }
+
+      return {
+        discipulo,
+        tarefasPendentes: reflexoes.length + progressos.length,
+        reflexoes,
+        progressos,
+        tarefasDetalhadas,
+        conteudoPasso
+      }
+    }) || []
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -350,7 +404,7 @@ export default async function DiscipuladorPage() {
           {/* Tab: Meus Discípulos */}
           <TabsContent value="discipulos" className="space-y-4">
             {tarefasPorDiscipulo && tarefasPorDiscipulo.length > 0 ? (
-              tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, reflexoes, progressos }) => {
+              tarefasPorDiscipulo.map(({ discipulo, tarefasPendentes, tarefasDetalhadas, conteudoPasso }) => {
                 const nome = discipulo.profiles?.nome_completo || discipulo.nome_completo_temp || discipulo.profiles?.email || discipulo.email_temporario
                 const foto = discipulo.profiles?.foto_perfil_url || discipulo.profiles?.avatar_url || discipulo.foto_perfil_url_temp
                 const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
@@ -358,7 +412,7 @@ export default async function DiscipuladorPage() {
                 return (
                   <Card key={discipulo.id}>
                     <CardContent className="py-4">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 mb-4">
                         <div className="relative">
                           <Avatar className="w-16 h-16">
                             <AvatarImage src={foto || undefined} alt={nome} />
@@ -386,21 +440,9 @@ export default async function DiscipuladorPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          {tarefasPendentes > 0 ? (
-                            <>
-                              <Badge variant="destructive" className="text-sm px-3 py-1">
-                                {tarefasPendentes} {tarefasPendentes === 1 ? "Tarefa" : "Tarefas"}
-                              </Badge>
-                              <Link href={`/discipulador/tarefas/${discipulo.id}`}>
-                                <Button size="sm" variant="default">
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Ver Tarefas
-                                </Button>
-                              </Link>
-                            </>
-                          ) : (
-                            <Badge variant="outline" className="text-sm px-3 py-1 text-muted-foreground">
-                              Sem tarefas
+                          {tarefasPendentes > 0 && (
+                            <Badge variant="destructive" className="text-sm px-3 py-1">
+                              {tarefasPendentes} Pendente{tarefasPendentes > 1 ? 's' : ''}
                             </Badge>
                           )}
                           <Link href={`/discipulador/chat/${discipulo.id}`}>
@@ -410,6 +452,68 @@ export default async function DiscipuladorPage() {
                           </Link>
                         </div>
                       </div>
+
+                      {conteudoPasso && tarefasDetalhadas.length > 0 && (
+                        <div className="border-t pt-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <h4 className="font-medium text-sm">
+                              {conteudoPasso.titulo} - Tarefas do Passo {discipulo.passo_atual}
+                            </h4>
+                          </div>
+                          
+                          <div className="grid gap-2">
+                            {tarefasDetalhadas.map((tarefa) => (
+                              <div 
+                                key={tarefa.id}
+                                className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                              >
+                                {/* Ícone do tipo de conteúdo */}
+                                <div className={`p-2 rounded ${tarefa.tipo === 'video' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                                  {tarefa.tipo === 'video' ? (
+                                    <Video className="w-4 h-4" />
+                                  ) : (
+                                    <FileText className="w-4 h-4" />
+                                  )}
+                                </div>
+
+                                {/* Título */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{tarefa.titulo}</p>
+                                  <p className="text-xs text-muted-foreground capitalize">{tarefa.tipo}</p>
+                                </div>
+
+                                {/* Status */}
+                                <div className="flex items-center gap-2">
+                                  {tarefa.xp ? (
+                                    // Avaliado - mostra XP
+                                    <Badge variant="default" className="bg-green-600 text-white">
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      {tarefa.xp} XP
+                                    </Badge>
+                                  ) : tarefa.reflexaoEnviada ? (
+                                    // Pendente de avaliação
+                                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 border-yellow-300">
+                                      <Clock className="w-3 h-3 mr-1" />
+                                      Pendente
+                                    </Badge>
+                                  ) : tarefa.concluido ? (
+                                    // Concluído mas sem reflexão
+                                    <Badge variant="outline">
+                                      Concluído
+                                    </Badge>
+                                  ) : (
+                                    // Não iniciado
+                                    <Badge variant="outline" className="text-muted-foreground">
+                                      Não iniciado
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )
