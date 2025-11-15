@@ -16,6 +16,7 @@ import Link from "next/link"
 import { atualizarPerfil, uploadFotoPerfil } from "./actions"
 import { AvatarArmadura } from "@/components/avatar-armadura"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
+import { ArmorPiece } from "@/components/armor-piece"
 
 interface PerfilClientProps {
   profile: any
@@ -181,27 +182,15 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <div className="relative group">
-                <div
-                  className="w-32 h-32 cursor-pointer rounded-full overflow-hidden bg-primary flex items-center justify-center"
-                  onClick={() => document.getElementById("fileInput")?.click()}
-                >
-                  {displayAvatarUrl ? (
-                    <img
-                      src={displayAvatarUrl || "/placeholder.svg"}
-                      alt="Foto de perfil"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.log("[v0] Avatar failed to load, showing fallback");
-                        e.currentTarget.style.display = 'none';
-                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div className="w-full h-full bg-primary text-primary-foreground text-3xl flex items-center justify-center" style={{ display: displayAvatarUrl ? 'none' : 'flex' }}>
+                <Avatar className="w-32 h-32 cursor-pointer" onClick={() => document.getElementById("fileInput")?.click()}>
+                  <AvatarImage 
+                    src={displayAvatarUrl || undefined} 
+                    alt="Foto de perfil"
+                  />
+                  <AvatarFallback className="text-3xl">
                     {getInitials()}
-                  </div>
-                </div>
+                  </AvatarFallback>
+                </Avatar>
                 <div
                   className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   onClick={() => document.getElementById("fileInput")?.click()}
@@ -472,34 +461,4 @@ function getLevelNumber(levelName: string): number {
     Multiplicador: 5,
   }
   return levels[levelName] || 1
-}
-
-function ArmorPiece({
-  name,
-  unlocked,
-  level,
-  description,
-}: {
-  name: string
-  unlocked: boolean
-  level: number
-  description: string
-}) {
-  return (
-    <div
-      className={`p-3 rounded-lg border ${unlocked ? "bg-accent/10 border-accent" : "bg-muted border-muted-foreground/20"}`}
-    >
-      <div className="flex items-center gap-3">
-        {unlocked ? (
-          <Award className="w-5 h-5 text-accent flex-shrink-0" />
-        ) : (
-          <div className="w-5 h-5 rounded-full bg-muted-foreground/20 flex-shrink-0" />
-        )}
-        <div className="flex-1">
-          <p className={`font-medium text-sm ${unlocked ? "text-foreground" : "text-muted-foreground"}`}>{name}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-      </div>
-    </div>
-  )
 }
