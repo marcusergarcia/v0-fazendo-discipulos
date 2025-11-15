@@ -136,8 +136,7 @@ export default async function TarefasDiscipuloPage({
                           <FileText className="w-4 h-4 text-primary" />
                         )}
                         <CardTitle className="text-base">
-                          {reflexao.tipo === "video" ? "Vídeo" : "Artigo"} - Fase {reflexao.fase_numero}, Passo{" "}
-                          {reflexao.passo_numero}
+                          {reflexao.titulo || `${reflexao.tipo === "video" ? "Vídeo" : "Artigo"} - Fase ${reflexao.fase_numero}, Passo ${reflexao.passo_numero}`}
                         </CardTitle>
                       </div>
                       <Badge variant="secondary">Reflexão</Badge>

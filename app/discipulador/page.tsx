@@ -48,10 +48,12 @@ export default async function DiscipuladorPage() {
   // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
   const discipulosAprovados = discipulosComPerfil?.filter(d => d.aprovado_discipulador) || []
 
+  console.log("[v0] IDs dos discípulos aprovados:", discipulosAprovados.map(d => d.id))
+
   // Filtrar pendentes de aprovação inicial
   const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
 
-  const { data: reflexoesPendentes } = await supabase
+  const { data: reflexoesPendentes, error: errorReflexoes } = await supabase
     .from("reflexoes_conteudo")
     .select(`
       *,
@@ -60,11 +62,29 @@ export default async function DiscipuladorPage() {
         nivel_atual, 
         nome_completo_temp,
         email_temporario,
-        foto_perfil_url_temp
+        foto_perfil_url_temp,
+        user_id
       )
     `)
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
     .order("data_criacao", { ascending: false })
+
+  console.log("[v0] Reflexoes query error:", errorReflexoes)
+  console.log("[v0] Reflexoes retornadas:", JSON.stringify(reflexoesPendentes, null, 2))
+
+  const reflexoesComPerfil = reflexoesPendentes ? await Promise.all(
+    reflexoesPendentes.map(async (reflexao) => {
+      if (reflexao.discipulo?.user_id) {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("nome_completo, email, foto_perfil_url, avatar_url")
+          .eq("id", reflexao.discipulo.user_id)
+          .single()
+        return { ...reflexao, discipulo: { ...reflexao.discipulo, profiles: perfil } }
+      }
+      return reflexao
+    })
+  ) : []
 
   // Buscar progresso pendente de validação
   const { data: progressoPendente } = await supabase
@@ -85,7 +105,7 @@ export default async function DiscipuladorPage() {
 
   const tarefasPorDiscipulo = await Promise.all(
     discipulosAprovados?.map(async (discipulo) => {
-      const reflexoes = reflexoesPendentes?.filter((r) => r.discipulo_id === discipulo.id) || []
+      const reflexoes = reflexoesComPerfil?.filter((r) => r.discipulo_id === discipulo.id) || []
       const progressos = progressoPendente?.filter((p) => p.discipulo_id === discipulo.id) || []
       
       // Buscar progresso do passo atual
@@ -189,7 +209,7 @@ export default async function DiscipuladorPage() {
                 <Clock className="w-8 h-8 text-warning" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {discipulosPendentesAprovacao.length + (reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
+                    {discipulosPendentesAprovacao.length + (reflexoesComPerfil?.length || 0) + (progressoPendente?.length || 0)}
                   </p>
                   <p className="text-sm text-muted-foreground">Pendentes</p>
                 </div>
@@ -228,9 +248,9 @@ export default async function DiscipuladorPage() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="pendentes">
               Pendentes de Validação
-              {(discipulosPendentesAprovacao.length + (reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)) > 0 && (
+              {(discipulosPendentesAprovacao.length + (reflexoesComPerfil?.length || 0) + (progressoPendente?.length || 0)) > 0 && (
                 <Badge variant="destructive" className="ml-2">
-                  {discipulosPendentesAprovacao.length + (reflexoesPendentes?.length || 0) + (progressoPendente?.length || 0)}
+                  {discipulosPendentesAprovacao.length + (reflexoesComPerfil?.length || 0) + (progressoPendente?.length || 0)}
                 </Badge>
               )}
             </TabsTrigger>
@@ -295,20 +315,27 @@ export default async function DiscipuladorPage() {
               </div>
             )}
 
-            {reflexoesPendentes && reflexoesPendentes.length > 0 && (
+            {reflexoesComPerfil && reflexoesComPerfil.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Reflexões sobre Vídeos/Artigos</h3>
-                {reflexoesPendentes.map((reflexao) => (
+                {reflexoesComPerfil.map((reflexao) => (
                   <Card key={reflexao.id}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base">
-                            {reflexao.discipulo?.profiles?.nome_completo || reflexao.discipulo?.profiles?.email}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {reflexao.tipo === "video" ? "Vídeo" : "Artigo"}: {reflexao.titulo}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          {reflexao.tipo === "video" ? (
+                            <Video className="w-4 h-4 text-primary" />
+                          ) : (
+                            <FileText className="w-4 h-4 text-primary" />
+                          )}
+                          <div>
+                            <CardTitle className="text-base">
+                              {reflexao.discipulo?.profiles?.nome_completo || reflexao.discipulo?.nome_completo_temp || reflexao.discipulo?.profiles?.email || reflexao.discipulo?.email_temporario}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {reflexao.titulo || `${reflexao.tipo === "video" ? "Vídeo" : "Artigo"} - Fase ${reflexao.fase_numero}, Passo ${reflexao.passo_numero}`}
+                            </p>
+                          </div>
                         </div>
                         <Badge variant="outline">{reflexao.discipulo?.nivel_atual}</Badge>
                       </div>
@@ -389,7 +416,7 @@ export default async function DiscipuladorPage() {
             )}
 
             {discipulosPendentesAprovacao.length === 0 &&
-              (!reflexoesPendentes || reflexoesPendentes.length === 0) &&
+              (!reflexoesComPerfil || reflexoesComPerfil.length === 0) &&
               (!progressoPendente || progressoPendente.length === 0) && (
                 <Card>
                   <CardContent className="py-12 text-center">
