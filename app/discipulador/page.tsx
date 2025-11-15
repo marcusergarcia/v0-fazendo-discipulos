@@ -25,7 +25,6 @@ export default async function DiscipuladorPage() {
 
   console.log("[v0] Discipulador ID:", user.id)
   console.log("[v0] Error:", errorDiscipulos)
-  console.log("[v0] Todos Discipulos retornados:", JSON.stringify(todosDiscipulos, null, 2))
   console.log("[v0] Quantidade de discipulos:", todosDiscipulos?.length || 0)
 
   // Se temos discípulos, buscar os perfis separadamente
@@ -43,17 +42,15 @@ export default async function DiscipuladorPage() {
     })
   ) : []
 
-  console.log("[v0] Discipulos com perfil:", JSON.stringify(discipulosComPerfil, null, 2))
+  console.log("[v0] Discipulos com perfil:", discipulosComPerfil.length)
 
   // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
   const discipulosAprovados = discipulosComPerfil?.filter(d => d.aprovado_discipulador) || []
 
-  console.log("[v0] IDs dos discípulos aprovados:", discipulosAprovados.map(d => d.id))
-
   // Filtrar pendentes de aprovação inicial
   const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
 
-  const { data: reflexoesPendentes, error: errorReflexoes } = await supabase
+  const { data: reflexoesPendentes } = await supabase
     .from("reflexoes_conteudo")
     .select(`
       *,
@@ -68,9 +65,6 @@ export default async function DiscipuladorPage() {
     `)
     .in("discipulo_id", discipulosAprovados?.map((d) => d.id) || [])
     .order("data_criacao", { ascending: false })
-
-  console.log("[v0] Reflexoes query error:", errorReflexoes)
-  console.log("[v0] Reflexoes retornadas:", JSON.stringify(reflexoesPendentes, null, 2))
 
   const reflexoesComPerfil = reflexoesPendentes ? await Promise.all(
     reflexoesPendentes.map(async (reflexao) => {
