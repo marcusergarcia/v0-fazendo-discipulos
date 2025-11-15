@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Camera, Upload, Save, Trophy, Shield, Award } from "lucide-react"
+import { ArrowLeft, Camera, Upload, Save, Trophy, Shield, Award } from 'lucide-react'
 import Link from "next/link"
 import { atualizarPerfil, uploadFotoPerfil } from "./actions"
 import { AvatarArmadura } from "@/components/avatar-armadura"
@@ -22,9 +22,11 @@ interface PerfilClientProps {
   userId: string
   userEmail: string
   nomeDiscipulador: string | null
+  discipuloId: string | null
+  discipuladorId: string | null
 }
 
-export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscipulador }: PerfilClientProps) {
+export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscipulador, discipuloId, discipuladorId }: PerfilClientProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
@@ -232,6 +234,19 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">XP Total</span>
                   <span className="font-semibold">{xpTotal}</span>
+                </div>
+                <div className="pt-3 border-t space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase">IDs do Sistema</h4>
+                  <div className="space-y-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">ID do Discípulo</span>
+                      <code className="text-[10px] bg-muted p-1 rounded break-all">{discipuloId || 'N/A'}</code>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">ID do Discipulador</span>
+                      <code className="text-[10px] bg-muted p-1 rounded break-all">{discipuladorId || 'N/A'}</code>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

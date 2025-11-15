@@ -46,8 +46,9 @@ export default async function DiscipuladorPage() {
   const { data: todasReflexoes, error: reflexoesError } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
-    .in("discipulo_id", discipuloIds)
+    .eq("discipulador_id", user.id)
 
+  console.log("[v0] Query de reflexões usando discipulador_id - User ID:", user.id)
   console.log("[v0] Query de reflexões - Error:", reflexoesError)
   console.log("[v0] Total de reflexões encontradas:", todasReflexoes?.length || 0)
   
@@ -55,6 +56,7 @@ export default async function DiscipuladorPage() {
     console.log("[v0] Primeira reflexão encontrada:", {
       id: todasReflexoes[0].id,
       discipulo_id: todasReflexoes[0].discipulo_id,
+      discipulador_id: todasReflexoes[0].discipulador_id,
       conteudo_id: todasReflexoes[0].conteudo_id,
       tipo: todasReflexoes[0].tipo
     })

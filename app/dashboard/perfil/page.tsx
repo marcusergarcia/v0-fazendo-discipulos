@@ -38,6 +38,8 @@ export default async function PerfilPage() {
       userId={user.id}
       userEmail={user.email || ""}
       nomeDiscipulador={nomeDiscipulador}
+      discipuloId={discipulo?.id || null}
+      discipuladorId={discipulo?.discipulador_id || null}
     />
   )
 }

@@ -189,6 +189,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   
   console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
+  console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
   if (!discipulo) {
     console.log("[v0] SERVER: Discípulo não encontrado!")
     return
@@ -211,6 +212,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     console.log("[v0] SERVER: Inserindo nova reflexão...")
     const { error: reflexaoError } = await supabase.from("reflexoes_conteudo").insert({
       discipulo_id: discipulo.id,
+      discipulador_id: discipulo.discipulador_id,
       fase_numero: 1,
       passo_numero: numero,
       tipo: "video",
@@ -320,6 +322,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   
   console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
+  console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
   if (!discipulo) {
     console.log("[v0] SERVER: Discípulo não encontrado!")
     return
@@ -342,6 +345,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     console.log("[v0] SERVER: Inserindo nova reflexão...")
     const { error: reflexaoError } = await supabase.from("reflexoes_conteudo").insert({
       discipulo_id: discipulo.id,
+      discipulador_id: discipulo.discipulador_id,
       fase_numero: 1,
       passo_numero: numero,
       tipo: "artigo",
