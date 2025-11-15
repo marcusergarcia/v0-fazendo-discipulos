@@ -181,15 +181,27 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <div className="relative group">
-                <Avatar
-                  className="w-32 h-32 cursor-pointer"
+                <div
+                  className="w-32 h-32 cursor-pointer rounded-full overflow-hidden bg-primary flex items-center justify-center"
                   onClick={() => document.getElementById("fileInput")?.click()}
                 >
-                  {displayAvatarUrl && <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />}
-                  <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
+                  {displayAvatarUrl ? (
+                    <img
+                      src={displayAvatarUrl || "/placeholder.svg"}
+                      alt="Foto de perfil"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.log("[v0] Avatar failed to load, showing fallback");
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className="w-full h-full bg-primary text-primary-foreground text-3xl flex items-center justify-center" style={{ display: displayAvatarUrl ? 'none' : 'flex' }}>
                     {getInitials()}
-                  </AvatarFallback>
-                </Avatar>
+                  </div>
+                </div>
                 <div
                   className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                   onClick={() => document.getElementById("fileInput")?.click()}
