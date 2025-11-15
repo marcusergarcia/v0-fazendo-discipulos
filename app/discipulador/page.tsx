@@ -109,9 +109,26 @@ export default async function DiscipuladorPage() {
   ) : []
 
   const tarefasPorDiscipulo = discipulosAprovados.map((discipulo) => {
-    const reflexoes = reflexoesComDiscipulo?.filter((r) => r.discipulo_id === discipulo.id) || []
+    console.log("[v0] ===== PROCESSANDO DISCIPULO =====")
+    console.log("[v0] Discipulo ID:", discipulo.id)
+    console.log("[v0] Discipulo Nome:", discipulo.nome_completo_temp)
+    console.log("[v0] Total reflexoesComDiscipulo:", reflexoesComDiscipulo?.length || 0)
+    console.log("[v0] Todas reflexoes IDs:", reflexoesComDiscipulo?.map(r => ({ id: r.id, discipulo_id: r.discipulo_id })))
+    
+    const reflexoes = reflexoesComDiscipulo?.filter((r) => {
+      const match = r.discipulo_id === discipulo.id
+      console.log("[v0] Comparando reflexao discipulo_id", r.discipulo_id, "com discipulo.id", discipulo.id, "= match:", match)
+      return match
+    }) || []
+    
+    console.log("[v0] Reflexoes encontradas para este discipulo:", reflexoes.length)
+    console.log("[v0] Reflexoes:", JSON.stringify(reflexoes, null, 2))
+    
     const progressos = progressoComDiscipulo?.filter((p) => p.discipulo_id === discipulo.id) || []
     const totalTarefas = reflexoes.length + progressos.length
+    
+    console.log("[v0] Total tarefas:", totalTarefas)
+    console.log("[v0] ===== FIM PROCESSANDO DISCIPULO =====")
     
     return {
       discipulo,
