@@ -110,15 +110,23 @@ export default function PassoClient({
 
     setEnviandoReflexao(true)
     try {
+      let resultado
       if (tipoConteudo === "video") {
-        await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
+        resultado = await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       } else {
-        await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
+        resultado = await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       }
-      setModalAberto(false)
-      setReflexao("")
+      
+      if (resultado?.success) {
+        setModalAberto(false)
+        setReflexao("")
+        window.location.reload()
+      } else {
+        alert(`Erro ao enviar reflexão: ${resultado?.error || "Erro desconhecido"}`)
+      }
     } catch (error) {
       console.error("Erro ao enviar reflexão:", error)
+      alert("Erro ao enviar reflexão. Tente novamente.")
     } finally {
       setEnviandoReflexao(false)
     }
@@ -541,7 +549,7 @@ export default function PassoClient({
                 <>Enviando...</>
               ) : (
                 <>
-                  <Send className="w-4 h-4 mr-2" />
+                  <Send className="w-4 h-4 mr-1" />
                   Enviar ao Discipulador
                 </>
               )}

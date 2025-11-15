@@ -259,10 +259,10 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) return { success: false, error: "Usuário não autenticado" }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) return
+  if (!discipulo) return { success: false, error: "Discípulo não encontrado" }
 
   let { data: progresso } = await supabase
     .from("progresso_fases")
@@ -297,7 +297,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     }
   }
 
-  await supabase.from("reflexoes_conteudo").upsert({
+  const { error: reflexaoError } = await supabase.from("reflexoes_conteudo").upsert({
     discipulo_id: discipulo.id,
     fase_numero: 1,
     passo_numero: numero,
@@ -305,6 +305,11 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     conteudo_id: videoId,
     reflexao: reflexao,
   })
+
+  if (reflexaoError) {
+    console.error("[v0] Erro ao salvar reflexão de vídeo:", reflexaoError)
+    return { success: false, error: "Erro ao salvar reflexão" }
+  }
 
   if (discipulo.discipulador_id) {
     await supabase.from("notificacoes").insert({
@@ -316,7 +321,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     })
   }
 
-  redirect(`/dashboard/passo/${numero}?video=${videoId}`)
+  return { success: true }
 }
 
 export async function concluirArtigoComReflexao(numero: number, artigoId: string, titulo: string, reflexao: string) {
@@ -325,10 +330,10 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) return { success: false, error: "Usuário não autenticado" }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) return
+  if (!discipulo) return { success: false, error: "Discípulo não encontrado" }
 
   let { data: progresso } = await supabase
     .from("progresso_fases")
@@ -363,7 +368,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     }
   }
 
-  await supabase.from("reflexoes_conteudo").upsert({
+  const { error: reflexaoError } = await supabase.from("reflexoes_conteudo").upsert({
     discipulo_id: discipulo.id,
     fase_numero: 1,
     passo_numero: numero,
@@ -371,6 +376,11 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     conteudo_id: artigoId,
     reflexao: reflexao,
   })
+
+  if (reflexaoError) {
+    console.error("[v0] Erro ao salvar reflexão de artigo:", reflexaoError)
+    return { success: false, error: "Erro ao salvar reflexão" }
+  }
 
   if (discipulo.discipulador_id) {
     await supabase.from("notificacoes").insert({
@@ -382,5 +392,5 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     })
   }
 
-  redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
+  return { success: true }
 }
