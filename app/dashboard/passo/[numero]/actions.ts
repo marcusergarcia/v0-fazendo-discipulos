@@ -264,6 +264,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return { success: false, error: "Discípulo não encontrado" }
 
+  console.log("[v0] Salvando reflexão de vídeo:", { discipulo_id: discipulo.id, videoId, titulo })
+
   let { data: progresso } = await supabase
     .from("progresso_fases")
     .select("videos_assistidos")
@@ -297,14 +299,37 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     }
   }
 
-  const { error: reflexaoError } = await supabase.from("reflexoes_conteudo").upsert({
-    discipulo_id: discipulo.id,
-    fase_numero: 1,
-    passo_numero: numero,
-    tipo: "video",
-    conteudo_id: videoId,
-    reflexao: reflexao,
-  })
+  const { data: reflexaoExistente } = await supabase
+    .from("reflexoes_conteudo")
+    .select("id")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .eq("tipo", "video")
+    .eq("conteudo_id", videoId)
+    .maybeSingle()
+
+  let reflexaoError
+
+  if (reflexaoExistente) {
+    const { error } = await supabase
+      .from("reflexoes_conteudo")
+      .update({ reflexao: reflexao })
+      .eq("id", reflexaoExistente.id)
+    reflexaoError = error
+    console.log("[v0] Reflexão atualizada:", { id: reflexaoExistente.id, error })
+  } else {
+    const { error } = await supabase.from("reflexoes_conteudo").insert({
+      discipulo_id: discipulo.id,
+      fase_numero: 1,
+      passo_numero: numero,
+      tipo: "video",
+      conteudo_id: videoId,
+      reflexao: reflexao,
+    })
+    reflexaoError = error
+    console.log("[v0] Nova reflexão inserida:", { error })
+  }
 
   if (reflexaoError) {
     console.error("[v0] Erro ao salvar reflexão de vídeo:", reflexaoError)
@@ -334,6 +359,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return { success: false, error: "Discípulo não encontrado" }
+
+  console.log("[v0] Salvando reflexão de artigo:", { discipulo_id: discipulo.id, artigoId, titulo })
 
   let { data: progresso } = await supabase
     .from("progresso_fases")
@@ -368,14 +395,37 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     }
   }
 
-  const { error: reflexaoError } = await supabase.from("reflexoes_conteudo").upsert({
-    discipulo_id: discipulo.id,
-    fase_numero: 1,
-    passo_numero: numero,
-    tipo: "artigo",
-    conteudo_id: artigoId,
-    reflexao: reflexao,
-  })
+  const { data: reflexaoExistente } = await supabase
+    .from("reflexoes_conteudo")
+    .select("id")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .eq("tipo", "artigo")
+    .eq("conteudo_id", artigoId)
+    .maybeSingle()
+
+  let reflexaoError
+
+  if (reflexaoExistente) {
+    const { error } = await supabase
+      .from("reflexoes_conteudo")
+      .update({ reflexao: reflexao })
+      .eq("id", reflexaoExistente.id)
+    reflexaoError = error
+    console.log("[v0] Reflexão atualizada:", { id: reflexaoExistente.id, error })
+  } else {
+    const { error } = await supabase.from("reflexoes_conteudo").insert({
+      discipulo_id: discipulo.id,
+      fase_numero: 1,
+      passo_numero: numero,
+      tipo: "artigo",
+      conteudo_id: artigoId,
+      reflexao: reflexao,
+    })
+    reflexaoError = error
+    console.log("[v0] Nova reflexão inserida:", { error })
+  }
 
   if (reflexaoError) {
     console.error("[v0] Erro ao salvar reflexão de artigo:", reflexaoError)
