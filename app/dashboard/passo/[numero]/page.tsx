@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation'
-import { redirect } from 'next/navigation'
+import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
@@ -33,32 +33,13 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     redirect("/dashboard")
   }
 
-  let { data: progresso } = await supabase
+  const { data: progresso } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
-    .maybeSingle()
-
-  // Se não existe progresso, criar um novo registro
-  if (!progresso) {
-    const { data: novoProgresso } = await supabase
-      .from("progresso_fases")
-      .insert({
-        discipulo_id: discipulo.id,
-        fase_numero: 1,
-        passo_numero: numero,
-        videos_assistidos: [],
-        artigos_lidos: [],
-        completado: false,
-        enviado_para_validacao: false,
-      })
-      .select()
-      .single()
-
-    progresso = novoProgresso
-  }
+    .single()
 
   const { data: todosPassos } = await supabase
     .from("progresso_fases")
