@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 
 export async function salvarRascunho(numero: number, formData: FormData) {
   const supabase = await createClient()
@@ -181,16 +181,28 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return
 
-  // Salvar reflexão
-  await supabase.from("reflexoes_conteudo").upsert({
-    discipulo_id: discipulo.id,
-    fase_numero: 1,
-    passo_numero: numero,
-    tipo: "video",
-    conteudo_id: videoId,
-    titulo: titulo,
-    reflexao: reflexao,
-  })
+  const { data: reflexaoExistente } = await supabase
+    .from("reflexoes_conteudo")
+    .select("id")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .eq("tipo", "video")
+    .eq("conteudo_id", videoId)
+    .maybeSingle()
+
+  if (!reflexaoExistente) {
+    // Salvar reflexão apenas se não existir
+    await supabase.from("reflexoes_conteudo").insert({
+      discipulo_id: discipulo.id,
+      fase_numero: 1,
+      passo_numero: numero,
+      tipo: "video",
+      conteudo_id: videoId,
+      titulo: titulo,
+      reflexao: reflexao,
+    })
+  }
 
   // Marcar vídeo como assistido
   const { data: progresso } = await supabase
@@ -212,21 +224,34 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       .eq("passo_numero", numero)
   }
 
-  if (discipulo.discipulador_id) {
-    await supabase.from("notificacoes").insert({
-      user_id: discipulo.discipulador_id,
-      tipo: "reflexao",
-      titulo: "Nova reflexão de vídeo",
-      mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão.`,
-      link: `/discipulador`,
-    })
+  if (discipulo.discipulador_id && !reflexaoExistente) {
+    const cincoMinutosAtras = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    
+    const { data: notificacaoRecente } = await supabase
+      .from("notificacoes")
+      .select("id")
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("tipo", "reflexao")
+      .gte("created_at", cincoMinutosAtras)
+      .like("mensagem", `%"${titulo}"%`)
+      .maybeSingle()
 
-    // Enviar no chat
-    await supabase.from("mensagens").insert({
-      discipulo_id: discipulo.id,
-      remetente_id: user.id,
-      mensagem: `🎥 Assisti o vídeo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
-    })
+    if (!notificacaoRecente) {
+      await supabase.from("notificacoes").insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "reflexao",
+        titulo: "Nova reflexão de vídeo",
+        mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão.`,
+        link: `/discipulador`,
+      })
+
+      // Enviar no chat
+      await supabase.from("mensagens").insert({
+        discipulo_id: discipulo.id,
+        remetente_id: user.id,
+        mensagem: `🎥 Assisti o vídeo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
+      })
+    }
   }
 
   redirect(`/dashboard/passo/${numero}?video=${videoId}`)
@@ -243,16 +268,28 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return
 
-  // Salvar reflexão
-  await supabase.from("reflexoes_conteudo").upsert({
-    discipulo_id: discipulo.id,
-    fase_numero: 1,
-    passo_numero: numero,
-    tipo: "artigo",
-    conteudo_id: artigoId,
-    titulo: titulo,
-    reflexao: reflexao,
-  })
+  const { data: reflexaoExistente } = await supabase
+    .from("reflexoes_conteudo")
+    .select("id")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .eq("tipo", "artigo")
+    .eq("conteudo_id", artigoId)
+    .maybeSingle()
+
+  if (!reflexaoExistente) {
+    // Salvar reflexão apenas se não existir
+    await supabase.from("reflexoes_conteudo").insert({
+      discipulo_id: discipulo.id,
+      fase_numero: 1,
+      passo_numero: numero,
+      tipo: "artigo",
+      conteudo_id: artigoId,
+      titulo: titulo,
+      reflexao: reflexao,
+    })
+  }
 
   // Marcar artigo como lido
   const { data: progresso } = await supabase
@@ -274,21 +311,34 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       .eq("passo_numero", numero)
   }
 
-  if (discipulo.discipulador_id) {
-    await supabase.from("notificacoes").insert({
-      user_id: discipulo.discipulador_id,
-      tipo: "reflexao",
-      titulo: "Nova reflexão de artigo",
-      mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão.`,
-      link: `/discipulador`,
-    })
+  if (discipulo.discipulador_id && !reflexaoExistente) {
+    const cincoMinutosAtras = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    
+    const { data: notificacaoRecente } = await supabase
+      .from("notificacoes")
+      .select("id")
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("tipo", "reflexao")
+      .gte("created_at", cincoMinutosAtras)
+      .like("mensagem", `%"${titulo}"%`)
+      .maybeSingle()
 
-    // Enviar no chat
-    await supabase.from("mensagens").insert({
-      discipulo_id: discipulo.id,
-      remetente_id: user.id,
-      mensagem: `📖 Li o artigo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
-    })
+    if (!notificacaoRecente) {
+      await supabase.from("notificacoes").insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "reflexao",
+        titulo: "Nova reflexão de artigo",
+        mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão.`,
+        link: `/discipulador`,
+      })
+
+      // Enviar no chat
+      await supabase.from("mensagens").insert({
+        discipulo_id: discipulo.id,
+        remetente_id: user.id,
+        mensagem: `📖 Li o artigo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
+      })
+    }
   }
 
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)

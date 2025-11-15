@@ -139,4 +139,8 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Adicionar cursor pointer em todos os botões */
+  button {
+    cursor: pointer;
+  }
 }

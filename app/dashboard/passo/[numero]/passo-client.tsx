@@ -99,6 +99,8 @@ export default function PassoClient({
       return
     }
 
+    if (enviandoReflexao) return
+
     console.log("[v0] Enviando reflexão para:", {
       tipo: tipoConteudo,
       conteudoId: conteudoAtual?.id,
@@ -113,11 +115,10 @@ export default function PassoClient({
       } else {
         await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
       }
-      setModalAberto(false)
       setReflexao("")
+      setModalAberto(false)
     } catch (error) {
       console.error("Erro ao enviar reflexão:", error)
-    } finally {
       setEnviandoReflexao(false)
     }
   }
