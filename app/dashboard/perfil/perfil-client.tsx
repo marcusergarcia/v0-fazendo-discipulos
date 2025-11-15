@@ -142,11 +142,19 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
 
   const idade = calcularIdade()
 
-  const displayAvatarUrl = previewUrl || (profile?.genero || profile?.etnia || idade ? generateAvatarUrl({
+  const displayAvatarUrl = previewUrl || generateAvatarUrl({
     genero: profile?.genero,
     idade: idade || undefined,
     etnia: profile?.etnia
-  }) : null)
+  })
+
+  console.log("[v0] Avatar Debug:", {
+    previewUrl,
+    genero: profile?.genero,
+    idade,
+    etnia: profile?.etnia,
+    displayAvatarUrl
+  })
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,7 +185,7 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
                   className="w-32 h-32 cursor-pointer"
                   onClick={() => document.getElementById("fileInput")?.click()}
                 >
-                  {displayAvatarUrl && <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" crossOrigin="anonymous" />}
+                  {displayAvatarUrl && <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />}
                   <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
                     {getInitials()}
                   </AvatarFallback>
