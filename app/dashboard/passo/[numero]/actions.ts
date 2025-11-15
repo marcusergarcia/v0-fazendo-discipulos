@@ -266,6 +266,39 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return
 
+  let { data: progresso } = await supabase
+    .from("progresso_fases")
+    .select("videos_assistidos")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .maybeSingle()
+
+  if (!progresso) {
+    await supabase
+      .from("progresso_fases")
+      .insert({
+        discipulo_id: discipulo.id,
+        fase_numero: 1,
+        passo_numero: numero,
+        videos_assistidos: [videoId],
+        artigos_lidos: [],
+        completado: false,
+        enviado_para_validacao: false,
+      })
+  } else {
+    const videosAtuais = (progresso.videos_assistidos as string[]) || []
+    if (!videosAtuais.includes(videoId)) {
+      videosAtuais.push(videoId)
+      await supabase
+        .from("progresso_fases")
+        .update({ videos_assistidos: videosAtuais })
+        .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
+    }
+  }
+
   await supabase.from("reflexoes_conteudo").upsert({
     discipulo_id: discipulo.id,
     fase_numero: 1,
@@ -274,26 +307,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     conteudo_id: videoId,
     reflexao: reflexao,
   })
-
-  // Marcar vídeo como assistido
-  const { data: progresso } = await supabase
-    .from("progresso_fases")
-    .select("videos_assistidos")
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
-    .single()
-
-  const videosAtuais = (progresso?.videos_assistidos as string[]) || []
-  if (!videosAtuais.includes(videoId)) {
-    videosAtuais.push(videoId)
-    await supabase
-      .from("progresso_fases")
-      .update({ videos_assistidos: videosAtuais })
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
-  }
 
   if (discipulo.discipulador_id) {
     await supabase.from("notificacoes").insert({
@@ -304,7 +317,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       link: `/discipulador`,
     })
 
-    // Enviar no chat
     await supabase.from("mensagens").insert({
       discipulo_id: discipulo.id,
       remetente_id: user.id,
@@ -328,6 +340,39 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) return
 
+  let { data: progresso } = await supabase
+    .from("progresso_fases")
+    .select("artigos_lidos")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .maybeSingle()
+
+  if (!progresso) {
+    await supabase
+      .from("progresso_fases")
+      .insert({
+        discipulo_id: discipulo.id,
+        fase_numero: 1,
+        passo_numero: numero,
+        videos_assistidos: [],
+        artigos_lidos: [artigoId],
+        completado: false,
+        enviado_para_validacao: false,
+      })
+  } else {
+    const artigosAtuais = (progresso.artigos_lidos as string[]) || []
+    if (!artigosAtuais.includes(artigoId)) {
+      artigosAtuais.push(artigoId)
+      await supabase
+        .from("progresso_fases")
+        .update({ artigos_lidos: artigosAtuais })
+        .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
+    }
+  }
+
   await supabase.from("reflexoes_conteudo").upsert({
     discipulo_id: discipulo.id,
     fase_numero: 1,
@@ -336,26 +381,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     conteudo_id: artigoId,
     reflexao: reflexao,
   })
-
-  // Marcar artigo como lido
-  const { data: progresso } = await supabase
-    .from("progresso_fases")
-    .select("artigos_lidos")
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
-    .single()
-
-  const artigosAtuais = (progresso?.artigos_lidos as string[]) || []
-  if (!artigosAtuais.includes(artigoId)) {
-    artigosAtuais.push(artigoId)
-    await supabase
-      .from("progresso_fases")
-      .update({ artigos_lidos: artigosAtuais })
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
-  }
 
   if (discipulo.discipulador_id) {
     await supabase.from("notificacoes").insert({
@@ -366,7 +391,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       link: `/discipulador`,
     })
 
-    // Enviar no chat
     await supabase.from("mensagens").insert({
       discipulo_id: discipulo.id,
       remetente_id: user.id,
