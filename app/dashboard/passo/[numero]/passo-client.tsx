@@ -68,6 +68,9 @@ export default function PassoClient({
   const [conteudoAtual, setConteudoAtual] = useState<any>(null)
   const [reflexao, setReflexao] = useState("")
   const [enviandoReflexao, setEnviandoReflexao] = useState(false)
+  
+  const [modalResetAberto, setModalResetAberto] = useState(false)
+  const [resetando, setResetando] = useState(false)
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -83,7 +86,18 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
-    await resetarProgresso(numero)
+    setModalResetAberto(true)
+  }
+  
+  const confirmarReset = async () => {
+    setResetando(true)
+    try {
+      await resetarProgresso(numero)
+    } finally {
+      setResetando(false)
+      setModalResetAberto(false)
+      window.location.reload()
+    }
   }
 
   const abrirModalMissaoCumprida = (tipo: "video" | "artigo", conteudo: any) => {
@@ -547,6 +561,76 @@ export default function PassoClient({
                 <>
                   <Send className="w-4 h-4 mr-2" />
                   Enviar ao Discipulador
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalResetAberto} onOpenChange={setModalResetAberto}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <RotateCcw className="w-6 h-6" />
+              Resetar Progresso do Passo
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Tem certeza que deseja resetar o progresso deste passo?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/30">
+              <p className="font-semibold text-destructive mb-3">
+                As seguintes informações serão PERMANENTEMENTE excluídas:
+              </p>
+              <ul className="text-sm space-y-2 list-disc list-inside text-destructive/90">
+                <li>Todas as reflexões de vídeos deste passo</li>
+                <li>Todas as reflexões de artigos deste passo</li>
+                <li>Todas as notificações relacionadas a este passo</li>
+                <li>Histórico de vídeos assistidos</li>
+                <li>Histórico de artigos lidos</li>
+              </ul>
+            </div>
+
+            <div className="bg-muted rounded-lg p-4 border">
+              <p className="text-sm font-medium mb-2">O que NÃO será excluído:</p>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Seu XP e nível conquistados</li>
+                <li>Progressos de outros passos</li>
+                <li>Mensagens do chat com seu discipulador</li>
+              </ul>
+            </div>
+
+            <p className="text-sm text-center font-medium">
+              Você poderá refazer os vídeos e artigos após o reset.
+            </p>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalResetAberto(false)}
+              disabled={resetando}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmarReset}
+              disabled={resetando}
+              className="flex-1"
+            >
+              {resetando ? (
+                <>Resetando...</>
+              ) : (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Confirmar Reset
                 </>
               )}
             </Button>

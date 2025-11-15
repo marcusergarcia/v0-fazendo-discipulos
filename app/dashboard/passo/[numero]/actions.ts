@@ -158,6 +158,22 @@ export async function resetarProgresso(numero: number) {
   if (!discipulo) return
 
   await supabase
+    .from("reflexoes_conteudo")
+    .delete()
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+
+  // Buscar notificações que mencionam este passo no título ou mensagem
+  if (discipulo.discipulador_id) {
+    await supabase
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .or(`mensagem.ilike.%Passo ${numero}%,titulo.ilike.%Passo ${numero}%`)
+  }
+
+  await supabase
     .from("progresso_fases")
     .update({
       videos_assistidos: [],

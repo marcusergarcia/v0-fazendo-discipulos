@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { useState, useMemo } from "react"
-import { Shield } from "lucide-react"
+import { Shield } from 'lucide-react'
 
 export default function Page() {
   const [email, setEmail] = useState("")
@@ -27,11 +26,21 @@ export default function Page() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: loginError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      if (error) throw error
+      
+      if (loginError) {
+        if (loginError.message.includes("Invalid login credentials") || 
+            loginError.message.includes("Email not confirmed")) {
+          // Usuário não existe ou não foi aprovado, redirecionar para solicitar convite
+          router.push(`/auth/solicitar-convite?email=${encodeURIComponent(email)}`)
+          return
+        }
+        throw loginError
+      }
+      
       router.push("/dashboard")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Erro ao fazer login")
@@ -93,15 +102,6 @@ export default function Page() {
                   >
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
-                </div>
-                <div className="mt-4 text-center text-sm text-blue-200">
-                  Não tem uma conta?{" "}
-                  <Link
-                    href="/auth/sign-up"
-                    className="text-yellow-400 hover:text-yellow-300 underline underline-offset-4"
-                  >
-                    Cadastre-se
-                  </Link>
                 </div>
               </form>
             </CardContent>

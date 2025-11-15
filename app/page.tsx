@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Trophy } from "lucide-react"
+import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Trophy } from 'lucide-react'
 import { createClient } from "@/lib/supabase/server"
 
 export default async function LandingPage() {
@@ -47,7 +47,7 @@ export default async function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
               <Button size="lg" className="text-lg px-8 py-6" asChild>
-                <Link href={user ? "/dashboard" : "/auth/sign-up"}>
+                <Link href={user ? "/dashboard" : "/auth/login"}>
                   {user ? "Continuar Jornada" : "Iniciar Jornada"}
                   <Target className="w-5 h-5 ml-2" />
                 </Link>
@@ -138,7 +138,7 @@ export default async function LandingPage() {
             Inicie sua jornada de fé hoje. Conecte-se com um discipulador e comece a transformação.
           </p>
           <Button size="lg" className="text-lg px-8 py-6" asChild>
-            <Link href={user ? "/dashboard" : "/auth/sign-up"}>
+            <Link href={user ? "/dashboard" : "/auth/login"}>
               {user ? "Ir para Dashboard" : "Iniciar Agora"}
               <Sparkles className="w-5 h-5 ml-2" />
             </Link>

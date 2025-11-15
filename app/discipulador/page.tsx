@@ -9,6 +9,7 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { ValidarReflexaoModal } from "@/components/validar-reflexao-modal"
+import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -31,7 +32,7 @@ export default async function DiscipuladorPage() {
     (discipulos || []).map(async (disc) => {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("nome_completo, email, foto_perfil_url, avatar_url")
+        .select("nome_completo, email, foto_perfil_url, avatar_url, genero, data_nascimento, etnia")
         .eq("id", disc.user_id)
         .maybeSingle()
 
@@ -232,7 +233,13 @@ export default async function DiscipuladorPage() {
 
             {dadosPorDiscipulo.map(({ discipulo, tarefas, tarefasPendentes }) => {
               const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
-              const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
+              const fotoUrl = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
+              const idade = calcularIdade(discipulo.profile?.data_nascimento || discipulo.data_nascimento_temp)
+              const genero = discipulo.profile?.genero || discipulo.genero_temp
+              const etnia = discipulo.profile?.etnia || discipulo.etnia_temp
+              
+              const foto = fotoUrl || generateAvatar({ genero, idade, etnia })
+              
               const iniciais = nome.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase()
 
               return (
@@ -243,11 +250,12 @@ export default async function DiscipuladorPage() {
                       <div className="flex items-center gap-4 mb-6">
                         <div className="relative">
                           <Avatar className="w-20 h-20">
-                            <AvatarImage src={foto || undefined} alt={nome} />
+                            <AvatarImage src={foto || "/placeholder.svg"} alt={nome} />
                             <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                               {iniciais}
                             </AvatarFallback>
                           </Avatar>
+
                           <div className="absolute -bottom-1 -right-1 bg-background border-2 border-background rounded-full px-2.5 py-1">
                             <p className="text-xs font-bold">P{discipulo.passo_atual}</p>
                           </div>
