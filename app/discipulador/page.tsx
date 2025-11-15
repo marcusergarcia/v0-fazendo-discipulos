@@ -92,6 +92,8 @@ export default async function DiscipuladorPage() {
     
     reflexoesPendentes = result.data || []
     errorReflexoes = result.error
+    
+    console.log("[v0] Query executada: SELECT * FROM reflexoes_conteudo WHERE discipulo_id IN", idsParaBuscar)
   }
 
   console.log("[v0] Reflexões dos aprovados retornadas:", reflexoesPendentes?.length || 0)
