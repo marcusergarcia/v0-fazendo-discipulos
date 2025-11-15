@@ -21,8 +21,11 @@ export default async function TarefasDiscipuloPage({
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
+  console.log("[v0] TarefasDiscipuloPage - User ID:", user.id)
+  console.log("[v0] TarefasDiscipuloPage - Discipulo ID buscado:", discipuloId)
+
   // Buscar informações do discípulo
-  const { data: discipulo } = await supabase
+  const { data: discipulo, error: discipuloError } = await supabase
     .from("discipulos")
     .select(`
       *,
@@ -32,24 +35,34 @@ export default async function TarefasDiscipuloPage({
     .eq("discipulador_id", user.id)
     .single()
 
+  console.log("[v0] Discípulo encontrado:", discipulo ? "SIM" : "NÃO")
+  if (discipuloError) console.log("[v0] Erro ao buscar discípulo:", discipuloError)
+
   if (!discipulo) {
     redirect("/discipulador")
   }
 
   // Buscar reflexões do discípulo
-  const { data: reflexoes } = await supabase
+  const { data: reflexoes, error: reflexoesError } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
     .eq("discipulo_id", discipuloId)
     .order("data_criacao", { ascending: false })
 
+  console.log("[v0] Reflexões encontradas:", reflexoes?.length || 0)
+  console.log("[v0] IDs das reflexões:", reflexoes?.map(r => r.id) || [])
+  if (reflexoesError) console.log("[v0] Erro ao buscar reflexões:", reflexoesError)
+
   // Buscar progresso pendente
-  const { data: progressos } = await supabase
+  const { data: progressos, error: progressosError } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipuloId)
     .eq("status_validacao", "pendente")
     .order("created_at", { ascending: false })
+
+  console.log("[v0] Progressos pendentes:", progressos?.length || 0)
+  if (progressosError) console.log("[v0] Erro ao buscar progressos:", progressosError)
 
   const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
   const foto = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
