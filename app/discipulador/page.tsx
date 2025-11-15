@@ -23,7 +23,8 @@ export default async function DiscipuladorPage() {
     .eq("user_id", user.id)
     .single()
 
-  console.log("[v0] User auth ID:", user.id)
+  console.log("[v0] ===== INICIO DEBUG PAINEL DISCIPULADOR =====")
+  console.log("[v0] User auth ID (Marcus):", user.id)
   console.log("[v0] Discipulador data:", discipuladorData)
 
   const { data: todosDiscipulos, error: errorDiscipulos } = await supabase
@@ -31,7 +32,8 @@ export default async function DiscipuladorPage() {
     .select("*")
     .eq("discipulador_id", user.id)
 
-  console.log("[v0] Error:", errorDiscipulos)
+  console.log("[v0] Query todosDiscipulos WHERE discipulador_id =", user.id)
+  console.log("[v0] Error buscar discipulos:", errorDiscipulos)
   console.log("[v0] Todos Discipulos retornados:", JSON.stringify(todosDiscipulos, null, 2))
   console.log("[v0] Quantidade de discipulos:", todosDiscipulos?.length || 0)
 
@@ -55,19 +57,25 @@ export default async function DiscipuladorPage() {
   // Filtrar apenas aprovados para mostrar na aba "Meus Discípulos"
   const discipulosAprovados = discipulosComPerfil?.filter(d => d.aprovado_discipulador) || []
 
-  console.log("[v0] Discipulos aprovados IDs:", discipulosAprovados.map(d => d.id))
+  console.log("[v0] Discipulos aprovados:", discipulosAprovados.length)
+  console.log("[v0] Discipulos aprovados IDs para buscar reflexoes:", discipulosAprovados.map(d => d.id))
 
   // Filtrar pendentes de aprovação inicial
   const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
 
+  const idsParaBuscar = discipulosAprovados?.map((d) => d.id).filter(Boolean) || []
+  console.log("[v0] IDs para buscar reflexoes:", idsParaBuscar)
+  console.log("[v0] IDs length:", idsParaBuscar.length)
+
   const { data: reflexoesPendentes, error: errorReflexoes } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
-    .in("discipulo_id", discipulosAprovados?.map((d) => d.id).filter(Boolean) || [])
+    .in("discipulo_id", idsParaBuscar)
     .order("data_criacao", { ascending: false })
 
-  console.log("[v0] Query reflexoes - discipulo_ids:", discipulosAprovados?.map((d) => d.id).filter(Boolean))
+  console.log("[v0] Query reflexoes executada com .in(discipulo_id, ", JSON.stringify(idsParaBuscar), ")")
   console.log("[v0] Reflexoes pendentes retornadas:", JSON.stringify(reflexoesPendentes, null, 2))
+  console.log("[v0] Quantidade de reflexoes:", reflexoesPendentes?.length || 0)
   console.log("[v0] Error reflexoes:", errorReflexoes)
 
   const reflexoesComDiscipulo = reflexoesPendentes ? await Promise.all(
@@ -106,6 +114,8 @@ export default async function DiscipuladorPage() {
       progressos,
     }
   }) || []
+
+  console.log("[v0] ===== FIM DEBUG PAINEL DISCIPULADOR =====")
 
   return (
     <div className="min-h-screen bg-background">
