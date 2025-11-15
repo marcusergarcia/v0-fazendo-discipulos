@@ -15,6 +15,7 @@ import { ArrowLeft, Camera, Upload, Save, Trophy, Shield, Award } from 'lucide-r
 import Link from "next/link"
 import { atualizarPerfil, uploadFotoPerfil } from "./actions"
 import { AvatarArmadura } from "@/components/avatar-armadura"
+import { generateAvatarUrl } from "@/lib/generate-avatar"
 
 interface PerfilClientProps {
   profile: any
@@ -141,6 +142,12 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
 
   const idade = calcularIdade()
 
+  const displayAvatarUrl = previewUrl || generateAvatarUrl({
+    genero: profile?.genero,
+    idade: idade || undefined,
+    etnia: profile?.etnia
+  })
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -170,13 +177,10 @@ export function PerfilClient({ profile, discipulo, userId, userEmail, nomeDiscip
                   className="w-32 h-32 cursor-pointer"
                   onClick={() => document.getElementById("fileInput")?.click()}
                 >
-                  {previewUrl ? (
-                    <AvatarImage src={previewUrl || "/placeholder.svg"} alt="Foto de perfil" />
-                  ) : (
-                    <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
-                      {getInitials()}
-                    </AvatarFallback>
-                  )}
+                  <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-3xl">
+                    {getInitials()}
+                  </AvatarFallback>
                 </Avatar>
                 <div
                   className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"

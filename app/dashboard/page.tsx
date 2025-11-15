@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
 import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound } from 'lucide-react'
+import { generateAvatarUrl } from "@/lib/generate-avatar"
 
 export default async function DashboardPage({
   searchParams,
@@ -95,6 +96,26 @@ export default async function DashboardPage({
 
   const avatarUrl = profile?.foto_perfil_url || null
 
+  const calcularIdade = () => {
+    if (!profile?.data_nascimento) return null
+    const hoje = new Date()
+    const nascimento = new Date(profile.data_nascimento)
+    let idade = hoje.getFullYear() - nascimento.getFullYear()
+    const mes = hoje.getMonth() - nascimento.getMonth()
+    if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--
+    }
+    return idade
+  }
+
+  const idade = calcularIdade()
+
+  const displayAvatarUrl = avatarUrl || generateAvatarUrl({
+    genero: profile?.genero,
+    idade: idade || undefined,
+    etnia: profile?.etnia
+  })
+
   const { count: notificationCount } = await supabase
     .from("notificacoes")
     .select("*", { count: "exact", head: true })
@@ -158,16 +179,13 @@ export default async function DashboardPage({
               <Link href="/dashboard/perfil">
                 <Button variant="ghost" size="sm" className="gap-2">
                   <Avatar className="w-7 h-7">
-                    {avatarUrl ? (
-                      <AvatarImage src={avatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
-                    ) : (
-                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {userData.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    )}
+                    <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {userData.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </AvatarFallback>
                   </Avatar>
                   <span className="hidden sm:inline">{userData.name}</span>
                 </Button>
