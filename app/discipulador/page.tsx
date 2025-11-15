@@ -13,11 +13,17 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export default async function DiscipuladorPage() {
+  console.log("[v0] >>>>>>> COMPONENT STARTED <<<<<<<")
+  
   const supabase = await createClient()
+  console.log("[v0] Supabase client created")
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
+  
+  console.log("[v0] User fetched:", user?.id)
+  
   if (!user) redirect("/auth/login")
 
   const { data: discipuladorData } = await supabase
