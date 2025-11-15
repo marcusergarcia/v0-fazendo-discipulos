@@ -66,20 +66,37 @@ export default async function DiscipuladorPage() {
   // Filtrar pendentes de aprovação inicial
   const discipulosPendentesAprovacao = discipulosComPerfil?.filter(d => !d.aprovado_discipulador) || []
 
-  const idsParaBuscar = discipulosAprovados?.map((d) => d.id).filter(Boolean) || []
-  console.log("[v0] IDs para buscar reflexoes:", idsParaBuscar)
-  console.log("[v0] IDs length:", idsParaBuscar.length)
-
-  const { data: reflexoesPendentes, error: errorReflexoes } = await supabase
+  const { data: todasReflexoes, error: errorTodasReflexoes } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
-    .in("discipulo_id", idsParaBuscar)
     .order("data_criacao", { ascending: false })
 
-  console.log("[v0] Query reflexoes executada com .in(discipulo_id, ", JSON.stringify(idsParaBuscar), ")")
-  console.log("[v0] Reflexoes pendentes retornadas:", JSON.stringify(reflexoesPendentes, null, 2))
-  console.log("[v0] Quantidade de reflexoes:", reflexoesPendentes?.length || 0)
-  console.log("[v0] Error reflexoes:", errorReflexoes)
+  console.log("[v0] === TODAS REFLEXOES NO BANCO ===")
+  console.log("[v0] Total reflexões no banco:", todasReflexoes?.length || 0)
+  console.log("[v0] Reflexões:", JSON.stringify(todasReflexoes, null, 2))
+  console.log("[v0] Error buscar todas reflexões:", errorTodasReflexoes)
+
+  const idsParaBuscar = discipulosAprovados?.map((d) => d.id).filter(Boolean) || []
+  console.log("[v0] === BUSCAR REFLEXÕES DOS APROVADOS ===")
+  console.log("[v0] IDs dos discípulos aprovados:", idsParaBuscar)
+  
+  let reflexoesPendentes: any[] = []
+  let errorReflexoes = null
+  
+  if (idsParaBuscar.length > 0) {
+    const result = await supabase
+      .from("reflexoes_conteudo")
+      .select("*")
+      .in("discipulo_id", idsParaBuscar)
+      .order("data_criacao", { ascending: false })
+    
+    reflexoesPendentes = result.data || []
+    errorReflexoes = result.error
+  }
+
+  console.log("[v0] Reflexões dos aprovados retornadas:", reflexoesPendentes?.length || 0)
+  console.log("[v0] Reflexões dos aprovados:", JSON.stringify(reflexoesPendentes, null, 2))
+  console.log("[v0] Error reflexões dos aprovados:", errorReflexoes)
 
   const reflexoesComDiscipulo = reflexoesPendentes ? await Promise.all(
     reflexoesPendentes.map(async (reflexao) => {
@@ -88,7 +105,7 @@ export default async function DiscipuladorPage() {
     })
   ) : []
 
-  console.log("[v0] Reflexoes com discipulo:", JSON.stringify(reflexoesComDiscipulo, null, 2))
+  console.log("[v0] Reflexoes com discipulo vinculado:", reflexoesComDiscipulo.length)
 
   const { data: progressoPendente, error: errorProgresso } = await supabase
     .from("progresso_fases")
