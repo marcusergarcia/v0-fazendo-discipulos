@@ -172,7 +172,7 @@ export default async function DiscipuladorPage() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Painel do Discipulador</h1>
+              <h1 className="text-3xl font-bold">Painel do Discipulador v2.0</h1>
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
             <div className="flex items-center gap-2">
