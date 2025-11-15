@@ -379,7 +379,7 @@ export default async function DiscipuladorPage() {
                                 <Badge variant="secondary" className="text-xs">Reflexão</Badge>
                               </div>
                               <p className="text-sm text-muted-foreground line-clamp-2">
-                                {reflexao.reflexao_preview || reflexao.reflexao || reflexao.resposta_reflexao || "Sem conteúdo"}
+                                {reflexao.reflexao || "Sem conteúdo"}
                               </p>
                               <Link href={`/discipulador/validar-reflexao/${reflexao.id}`}>
                                 <Button size="sm" className="w-full">
