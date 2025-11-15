@@ -374,11 +374,13 @@ export default async function DiscipuladorPage() {
                             <div key={reflexao.id} className="bg-muted p-3 rounded-lg space-y-2">
                               <div className="flex items-center justify-between">
                                 <p className="text-sm font-medium">
-                                  {reflexao.tipo === "video" ? "📹" : "📖"} Reflexão - Fase {reflexao.fase_numero} Passo {reflexao.passo_numero}
+                                  📝 Reflexão - Fase {reflexao.fase_numero} Passo {reflexao.passo_numero}
                                 </p>
                                 <Badge variant="secondary" className="text-xs">Reflexão</Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground line-clamp-2">{reflexao.reflexao}</p>
+                              <p className="text-sm text-muted-foreground line-clamp-2">
+                                {reflexao.reflexao_preview || reflexao.reflexao || reflexao.resposta_reflexao || "Sem conteúdo"}
+                              </p>
                               <Link href={`/discipulador/validar-reflexao/${reflexao.id}`}>
                                 <Button size="sm" className="w-full">
                                   <CheckCircle className="w-3 h-3 mr-2" />
