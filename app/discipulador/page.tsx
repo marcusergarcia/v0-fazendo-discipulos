@@ -9,6 +9,9 @@ import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Eye } 
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
 
