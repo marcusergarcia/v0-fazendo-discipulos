@@ -4,6 +4,10 @@ export interface AvatarParams {
   etnia?: string | null
 }
 
+export function generateAvatarUrl(params: AvatarParams): string {
+  return generateAvatar(params)
+}
+
 export function generateAvatar({ genero, idade, etnia }: AvatarParams): string {
   // Normalizar valores
   const generoStr = genero?.toLowerCase() === 'feminino' ? 'female' : 
