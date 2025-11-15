@@ -215,7 +215,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       passo_numero: numero,
       tipo: "video",
       conteudo_id: videoId,
-      titulo: titulo,
       reflexao: reflexao,
     })
     
@@ -226,29 +225,44 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     }
   }
 
-  console.log("[v0] SERVER: Marcando vídeo como assistido...")
-  const { data: progresso } = await supabase
+  console.log("[v0] SERVER: Verificando/criando progresso...")
+  const { data: progressoExistente } = await supabase
     .from("progresso_fases")
-    .select("videos_assistidos")
+    .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
-    .single()
+    .maybeSingle()
 
-  const videosAtuais = (progresso?.videos_assistidos as string[]) || []
-  if (!videosAtuais.includes(videoId)) {
-    videosAtuais.push(videoId)
-    const { error: progressoError } = await supabase
-      .from("progresso_fases")
-      .update({ videos_assistidos: videosAtuais })
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
-      
-    if (progressoError) {
-      console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
-    } else {
-      console.log("[v0] SERVER: Vídeo marcado como assistido!")
+  if (!progressoExistente) {
+    console.log("[v0] SERVER: Criando registro de progresso...")
+    await supabase.from("progresso_fases").insert({
+      discipulo_id: discipulo.id,
+      fase_numero: 1,
+      passo_numero: numero,
+      videos_assistidos: [videoId],
+      artigos_lidos: [],
+      completado: false,
+      enviado_para_validacao: false,
+      data_inicio: new Date().toISOString(),
+    })
+  } else {
+    console.log("[v0] SERVER: Marcando vídeo como assistido...")
+    const videosAtuais = (progressoExistente.videos_assistidos as string[]) || []
+    if (!videosAtuais.includes(videoId)) {
+      videosAtuais.push(videoId)
+      const { error: progressoError } = await supabase
+        .from("progresso_fases")
+        .update({ videos_assistidos: videosAtuais })
+        .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
+        
+      if (progressoError) {
+        console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
+      } else {
+        console.log("[v0] SERVER: Vídeo marcado como assistido!")
+      }
     }
   }
 
@@ -278,18 +292,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
       } else {
         console.log("[v0] SERVER: Notificação criada!")
-      }
-
-      const { error: msgError } = await supabase.from("mensagens").insert({
-        discipulo_id: discipulo.id,
-        remetente_id: user.id,
-        mensagem: `🎥 Assisti o vídeo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
-      })
-      
-      if (msgError) {
-        console.error("[v0] SERVER: Erro ao criar mensagem:", msgError)
-      } else {
-        console.log("[v0] SERVER: Mensagem criada!")
       }
     }
   }
@@ -343,7 +345,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       passo_numero: numero,
       tipo: "artigo",
       conteudo_id: artigoId,
-      titulo: titulo,
       reflexao: reflexao,
     })
     
@@ -354,29 +355,44 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     }
   }
 
-  console.log("[v0] SERVER: Marcando artigo como lido...")
-  const { data: progresso } = await supabase
+  console.log("[v0] SERVER: Verificando/criando progresso...")
+  const { data: progressoExistente } = await supabase
     .from("progresso_fases")
-    .select("artigos_lidos")
+    .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
-    .single()
+    .maybeSingle()
 
-  const artigosAtuais = (progresso?.artigos_lidos as string[]) || []
-  if (!artigosAtuais.includes(artigoId)) {
-    artigosAtuais.push(artigoId)
-    const { error: progressoError } = await supabase
-      .from("progresso_fases")
-      .update({ artigos_lidos: artigosAtuais })
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
-      
-    if (progressoError) {
-      console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
-    } else {
-      console.log("[v0] SERVER: Artigo marcado como lido!")
+  if (!progressoExistente) {
+    console.log("[v0] SERVER: Criando registro de progresso...")
+    await supabase.from("progresso_fases").insert({
+      discipulo_id: discipulo.id,
+      fase_numero: 1,
+      passo_numero: numero,
+      videos_assistidos: [],
+      artigos_lidos: [artigoId],
+      completado: false,
+      enviado_para_validacao: false,
+      data_inicio: new Date().toISOString(),
+    })
+  } else {
+    console.log("[v0] SERVER: Marcando artigo como lido...")
+    const artigosAtuais = (progressoExistente.artigos_lidos as string[]) || []
+    if (!artigosAtuais.includes(artigoId)) {
+      artigosAtuais.push(artigoId)
+      const { error: progressoError } = await supabase
+        .from("progresso_fases")
+        .update({ artigos_lidos: artigosAtuais })
+        .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
+        
+      if (progressoError) {
+        console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
+      } else {
+        console.log("[v0] SERVER: Artigo marcado como lido!")
+      }
     }
   }
 
@@ -398,7 +414,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         user_id: discipulo.discipulador_id,
         tipo: "reflexao",
         titulo: "Nova reflexão de artigo",
-        mensagem: `Seu discípulo leu o artigo "${titulo}" e fiz uma reflexão.`,
+        mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão.`,
         link: `/discipulador`,
       })
       
@@ -406,18 +422,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
       } else {
         console.log("[v0] SERVER: Notificação criada!")
-      }
-
-      const { error: msgError } = await supabase.from("mensagens").insert({
-        discipulo_id: discipulo.id,
-        remetente_id: user.id,
-        mensagem: `📖 Li o artigo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
-      })
-      
-      if (msgError) {
-        console.error("[v0] SERVER: Erro ao criar mensagem:", msgError)
-      } else {
-        console.log("[v0] SERVER: Mensagem criada!")
       }
     }
   }

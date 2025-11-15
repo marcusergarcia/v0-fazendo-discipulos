@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation"
-import { redirect } from "next/navigation"
+import { notFound } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
@@ -39,7 +39,28 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
-    .single()
+    .maybeSingle()
+
+  // Se não existe progresso, criar registro inicial
+  let progressoAtual = progresso
+  if (!progressoAtual) {
+    const { data: novoProgresso } = await supabase
+      .from("progresso_fases")
+      .insert({
+        discipulo_id: discipulo.id,
+        fase_numero: 1,
+        passo_numero: numero,
+        videos_assistidos: [],
+        artigos_lidos: [],
+        completado: false,
+        enviado_para_validacao: false,
+        data_inicio: new Date().toISOString(),
+      })
+      .select()
+      .single()
+    
+    progressoAtual = novoProgresso
+  }
 
   const { data: todosPassos } = await supabase
     .from("progresso_fases")
@@ -51,16 +72,16 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   let videosAssistidos: string[] = []
   let artigosLidos: string[] = []
-  if (progresso?.videos_assistidos) {
-    videosAssistidos = progresso.videos_assistidos
+  if (progressoAtual?.videos_assistidos) {
+    videosAssistidos = progressoAtual.videos_assistidos
   }
-  if (progresso?.artigos_lidos) {
-    artigosLidos = progresso.artigos_lidos
+  if (progressoAtual?.artigos_lidos) {
+    artigosLidos = progressoAtual.artigos_lidos
   }
 
   const getStatus = () => {
-    if (progresso?.completado) return "validado"
-    if (progresso?.enviado_para_validacao) return "aguardando"
+    if (progressoAtual?.completado) return "validado"
+    if (progressoAtual?.enviado_para_validacao) return "aguardando"
     return "pendente"
   }
 
@@ -71,7 +92,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       numero={numero}
       passo={passo}
       discipulo={discipulo}
-      progresso={progresso}
+      progresso={progressoAtual}
       passosCompletados={passosCompletados}
       videosAssistidos={videosAssistidos}
       artigosLidos={artigosLidos}
