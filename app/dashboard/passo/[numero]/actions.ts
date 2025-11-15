@@ -323,7 +323,10 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   if (reflexaoExistente) {
     reflexaoResult = await supabase
       .from("reflexoes_conteudo")
-      .update({ reflexao: reflexao })
+      .update({ 
+        titulo: titulo,
+        reflexao: reflexao 
+      })
       .eq("id", reflexaoExistente.id)
       .select()
     console.log("[v0] UPDATE reflexão - data:", reflexaoResult.data, "error:", reflexaoResult.error)
@@ -334,6 +337,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       passo_numero: numero,
       tipo: "video",
       conteudo_id: videoId,
+      titulo: titulo,
       reflexao: reflexao,
     }
     console.log("[v0] INSERT reflexão - payload:", insertData)
@@ -437,7 +441,10 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   if (reflexaoExistente) {
     reflexaoResult = await supabase
       .from("reflexoes_conteudo")
-      .update({ reflexao: reflexao })
+      .update({ 
+        titulo: titulo,
+        reflexao: reflexao 
+      })
       .eq("id", reflexaoExistente.id)
       .select()
     console.log("[v0] UPDATE reflexão - data:", reflexaoResult.data, "error:", reflexaoResult.error)
@@ -448,6 +455,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       passo_numero: numero,
       tipo: "artigo",
       conteudo_id: artigoId,
+      titulo: titulo,
       reflexao: reflexao,
     }
     console.log("[v0] INSERT reflexão - payload:", insertData)
