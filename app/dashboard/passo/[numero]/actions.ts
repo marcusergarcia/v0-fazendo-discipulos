@@ -256,8 +256,6 @@ export async function resetarProgresso(numero: number) {
 export async function concluirVideoComReflexao(numero: number, videoId: string, titulo: string, reflexao: string) {
   const supabase = await createClient()
 
-  console.log("[v0] concluirVideoComReflexao recebeu:", { numero, videoId, titulo, reflexao: reflexao?.substring(0, 50) })
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -313,14 +311,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       user_id: discipulo.discipulador_id,
       tipo: "reflexao",
       titulo: "Nova reflexão de vídeo",
-      mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão.`,
+      mensagem: `${discipulo.nome_completo_temp} completou o vídeo "${titulo}" com uma reflexão.`,
       link: `/discipulador`,
-    })
-
-    await supabase.from("mensagens").insert({
-      discipulo_id: discipulo.id,
-      remetente_id: user.id,
-      mensagem: `🎥 Assisti o vídeo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
     })
   }
 
@@ -329,8 +321,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
 
 export async function concluirArtigoComReflexao(numero: number, artigoId: string, titulo: string, reflexao: string) {
   const supabase = await createClient()
-
-  console.log("[v0] concluirArtigoComReflexao recebeu:", { numero, artigoId, titulo, reflexao: reflexao?.substring(0, 50) })
 
   const {
     data: { user },
@@ -387,14 +377,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       user_id: discipulo.discipulador_id,
       tipo: "reflexao",
       titulo: "Nova reflexão de artigo",
-      mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão.`,
+      mensagem: `${discipulo.nome_completo_temp} leu o artigo "${titulo}" e fez uma reflexão.`,
       link: `/discipulador`,
-    })
-
-    await supabase.from("mensagens").insert({
-      discipulo_id: discipulo.id,
-      remetente_id: user.id,
-      mensagem: `📖 Li o artigo "${titulo}" e fiz uma reflexão:\n\n${reflexao}`,
     })
   }
 
