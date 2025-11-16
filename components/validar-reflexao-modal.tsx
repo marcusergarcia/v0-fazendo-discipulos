@@ -7,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Clock, CheckCircle, Loader2, CheckCircle2 } from 'lucide-react'
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from 'next/navigation'
+import { aprovarReflexaoAction } from "@/app/discipulador/actions"
 
 interface ValidarReflexaoModalProps {
   reflexao: {
@@ -29,7 +29,6 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpG
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
   const router = useRouter()
-  const supabase = createClient()
 
   async function handleAprovar() {
     if (!feedback.trim()) {
@@ -40,57 +39,20 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpG
     setLoading(true)
 
     try {
-      console.log("[v0] Aprovando reflexão:", reflexao.id, "XP:", xpConcedido)
-      
-      const { error: updateError } = await supabase
-        .from("reflexoes_conteudo")
-        .update({ 
-          xp_ganho: xpConcedido,
-          feedback_discipulador: feedback,
-          data_aprovacao: new Date().toISOString()
-        })
-        .eq("id", reflexao.id)
+      const result = await aprovarReflexaoAction(
+        reflexao.id,
+        discipuloId,
+        xpConcedido,
+        feedback
+      )
 
-      if (updateError) {
-        console.error("[v0] Erro ao atualizar reflexão:", updateError)
-        throw updateError
+      if (result.success) {
+        toast.success(result.message)
+        setOpen(false)
+        router.refresh()
+      } else {
+        toast.error(result.message)
       }
-
-      console.log("[v0] Reflexão atualizada com sucesso")
-
-      const { data: progresso } = await supabase
-        .from("progresso_fases")
-        .select("pontuacao_total")
-        .eq("discipulo_id", discipuloId)
-        .single()
-
-      if (progresso) {
-        await supabase
-          .from("progresso_fases")
-          .update({ 
-            pontuacao_total: (progresso.pontuacao_total || 0) + xpConcedido 
-          })
-          .eq("discipulo_id", discipuloId)
-      }
-
-      const { data: disc } = await supabase
-        .from("discipulos")
-        .select("xp_total")
-        .eq("id", discipuloId)
-        .single()
-
-      if (disc) {
-        await supabase
-          .from("discipulos")
-          .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
-          .eq("id", discipuloId)
-      }
-
-      console.log("[v0] XP adicionado ao discípulo")
-
-      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
-      setOpen(false)
-      router.refresh()
     } catch (error) {
       console.error("[v0] Erro ao aprovar reflexão:", error)
       toast.error("Erro ao aprovar reflexão")
