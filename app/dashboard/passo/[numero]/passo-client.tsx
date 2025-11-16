@@ -73,7 +73,6 @@ export default function PassoClient({
   
   const [modalResetAberto, setModalResetAberto] = useState(false)
   const [resetando, setResetando] = useState(false)
-  const [senhaConfirmacao, setSenhaConfirmacao] = useState("")
   const [erroSenha, setErroSenha] = useState<string | null>(null)
 
   const handleSalvarRascunho = async () => {
@@ -90,27 +89,24 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
-    setSenhaConfirmacao("")
-    setErroSenha(null)
     setModalResetAberto(true)
   }
   
   const confirmarReset = async () => {
-    if (!senhaConfirmacao) {
-      setErroSenha("Por favor, digite sua senha para confirmar")
-      return
-    }
-
     setResetando(true)
     setErroSenha(null)
     
     try {
-      const resultado = await resetarProgresso(numero, senhaConfirmacao)
+      console.log("[v0] CLIENT: Chamando resetarProgresso...")
+      const resultado = await resetarProgresso(numero)
+      console.log("[v0] CLIENT: Resultado:", resultado)
+      
       if (resultado.success) {
         setModalResetAberto(false)
         window.location.href = `/dashboard/passo/${numero}?reset=true`
       }
     } catch (error: any) {
+      console.error("[v0] CLIENT: Erro ao resetar:", error)
       setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
     }
@@ -619,26 +615,11 @@ export default function PassoClient({
               </ul>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="senha-confirmacao" className="text-base font-semibold">
-                Digite sua senha para confirmar:
-              </Label>
-              <Input
-                id="senha-confirmacao"
-                type="password"
-                placeholder="Sua senha"
-                value={senhaConfirmacao}
-                onChange={(e) => {
-                  setSenhaConfirmacao(e.target.value)
-                  setErroSenha(null)
-                }}
-                disabled={resetando}
-                className="text-base"
-              />
-              {erroSenha && (
+            {erroSenha && (
+              <div className="bg-destructive/10 rounded-lg p-3 border border-destructive/30">
                 <p className="text-sm text-destructive font-medium">{erroSenha}</p>
-              )}
-            </div>
+              </div>
+            )}
 
             <p className="text-sm text-center font-medium text-muted-foreground">
               Você poderá refazer os vídeos e artigos após o reset.
@@ -651,8 +632,6 @@ export default function PassoClient({
               variant="outline"
               onClick={() => {
                 setModalResetAberto(false)
-                setSenhaConfirmacao("")
-                setErroSenha(null)
               }}
               disabled={resetando}
               className="flex-1"
@@ -663,7 +642,7 @@ export default function PassoClient({
               type="button"
               variant="destructive"
               onClick={confirmarReset}
-              disabled={resetando || !senhaConfirmacao}
+              disabled={resetando}
               className="flex-1"
             >
               {resetando ? (

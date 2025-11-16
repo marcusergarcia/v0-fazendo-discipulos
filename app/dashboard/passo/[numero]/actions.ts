@@ -146,7 +146,7 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
 }
 
-export async function resetarProgresso(numero: number, senha: string) {
+export async function resetarProgresso(numero: number) {
   console.log("[v0] ===== INICIANDO RESET DE PROGRESSO =====")
   console.log("[v0] Passo número:", numero)
   
@@ -181,34 +181,36 @@ export async function resetarProgresso(numero: number, senha: string) {
   console.log("[v0] Buscando reflexões para excluir...")
   const { data: reflexoes, error: errorBuscarReflexoes } = await supabase
     .from("reflexoes_conteudo")
-    .select("id, tipo, titulo")
+    .select("id, tipo, titulo, conteudo_id")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
 
   if (errorBuscarReflexoes) {
     console.log("[v0] ERRO ao buscar reflexões:", errorBuscarReflexoes)
-  } else {
-    console.log("[v0] Total de reflexões encontradas:", reflexoes?.length || 0)
-    console.log("[v0] Reflexões:", reflexoes)
+    throw new Error("Erro ao buscar reflexões: " + errorBuscarReflexoes.message)
+  }
 
-    if (reflexoes && reflexoes.length > 0) {
-      const idsReflexoes = reflexoes.map(r => r.id)
-      console.log("[v0] IDs das reflexões a excluir:", idsReflexoes)
-      
-      const { error: errorExcluirReflexoes } = await supabase
-        .from("reflexoes_conteudo")
-        .delete()
-        .in("id", idsReflexoes)
+  console.log("[v0] Total de reflexões encontradas:", reflexoes?.length || 0)
+  console.log("[v0] Reflexões encontradas:", JSON.stringify(reflexoes, null, 2))
 
-      if (errorExcluirReflexoes) {
-        console.log("[v0] ERRO ao excluir reflexões:", errorExcluirReflexoes)
-      } else {
-        console.log("[v0] ✅ Reflexões excluídas com sucesso!")
-      }
-    } else {
-      console.log("[v0] Nenhuma reflexão encontrada para excluir")
+  if (reflexoes && reflexoes.length > 0) {
+    const idsReflexoes = reflexoes.map(r => r.id)
+    console.log("[v0] IDs das reflexões a excluir:", idsReflexoes)
+    
+    const { error: errorExcluirReflexoes, count } = await supabase
+      .from("reflexoes_conteudo")
+      .delete()
+      .in("id", idsReflexoes)
+
+    if (errorExcluirReflexoes) {
+      console.log("[v0] ERRO ao excluir reflexões:", errorExcluirReflexoes)
+      throw new Error("Erro ao excluir reflexões: " + errorExcluirReflexoes.message)
     }
+    
+    console.log("[v0] ✅ Reflexões excluídas com sucesso! Total excluído:", count)
+  } else {
+    console.log("[v0] Nenhuma reflexão encontrada para excluir")
   }
 
   if (discipulo.discipulador_id) {
@@ -218,38 +220,42 @@ export async function resetarProgresso(numero: number, senha: string) {
       .select("id, titulo, mensagem, link")
       .eq("user_id", discipulo.discipulador_id)
 
-    console.log("[v0] Total de notificações do discipulador:", notificacoes?.length || 0)
+    if (errorBuscarNotif) {
+      console.log("[v0] ERRO ao buscar notificações:", errorBuscarNotif)
+    } else {
+      console.log("[v0] Total de notificações do discipulador:", notificacoes?.length || 0)
 
-    if (notificacoes && notificacoes.length > 0) {
-      const notifParaExcluir = notificacoes.filter(n => {
-        const mencionaPasso = 
-          n.titulo?.includes(`Passo ${numero}`) ||
-          n.mensagem?.includes(`Passo ${numero}`) ||
-          n.mensagem?.includes(`passo ${numero}`) ||
-          n.link?.includes(`/${numero}`)
-        
-        return mencionaPasso
-      })
+      if (notificacoes && notificacoes.length > 0) {
+        const notifParaExcluir = notificacoes.filter(n => {
+          const mencionaPasso = 
+            n.titulo?.includes(`Passo ${numero}`) ||
+            n.mensagem?.includes(`Passo ${numero}`) ||
+            n.mensagem?.includes(`passo ${numero}`) ||
+            n.link?.includes(`/${numero}`)
+          
+          return mencionaPasso
+        })
 
-      console.log("[v0] Notificações relacionadas ao passo:", notifParaExcluir.length)
-      console.log("[v0] Notificações para excluir:", notifParaExcluir)
+        console.log("[v0] Notificações relacionadas ao passo:", notifParaExcluir.length)
+        console.log("[v0] Notificações para excluir:", JSON.stringify(notifParaExcluir, null, 2))
 
-      if (notifParaExcluir.length > 0) {
-        const idsNotif = notifParaExcluir.map(n => n.id)
-        console.log("[v0] IDs das notificações a excluir:", idsNotif)
-        
-        const { error: errorExcluirNotif } = await supabase
-          .from("notificacoes")
-          .delete()
-          .in("id", idsNotif)
+        if (notifParaExcluir.length > 0) {
+          const idsNotif = notifParaExcluir.map(n => n.id)
+          console.log("[v0] IDs das notificações a excluir:", idsNotif)
+          
+          const { error: errorExcluirNotif, count: countNotif } = await supabase
+            .from("notificacoes")
+            .delete()
+            .in("id", idsNotif)
 
-        if (errorExcluirNotif) {
-          console.log("[v0] ERRO ao excluir notificações:", errorExcluirNotif)
+          if (errorExcluirNotif) {
+            console.log("[v0] ERRO ao excluir notificações:", errorExcluirNotif)
+          } else {
+            console.log("[v0] ✅ Notificações excluídas com sucesso! Total excluído:", countNotif)
+          }
         } else {
-          console.log("[v0] ✅ Notificações excluídas com sucesso!")
+          console.log("[v0] Nenhuma notificação relacionada ao passo encontrada")
         }
-      } else {
-        console.log("[v0] Nenhuma notificação relacionada ao passo encontrada")
       }
     }
   }
