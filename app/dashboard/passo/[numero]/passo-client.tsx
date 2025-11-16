@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -71,6 +73,8 @@ export default function PassoClient({
   
   const [modalResetAberto, setModalResetAberto] = useState(false)
   const [resetando, setResetando] = useState(false)
+  const [senhaConfirmacao, setSenhaConfirmacao] = useState("")
+  const [erroSenha, setErroSenha] = useState<string | null>(null)
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -86,17 +90,25 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
+    setSenhaConfirmacao("")
+    setErroSenha(null)
     setModalResetAberto(true)
   }
   
   const confirmarReset = async () => {
+    if (!senhaConfirmacao) {
+      setErroSenha("Por favor, digite sua senha para confirmar")
+      return
+    }
+
     setResetando(true)
+    setErroSenha(null)
+    
     try {
-      await resetarProgresso(numero)
-    } finally {
+      await resetarProgresso(numero, senhaConfirmacao)
+    } catch (error: any) {
+      setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
-      setModalResetAberto(false)
-      window.location.reload()
     }
   }
 
@@ -603,7 +615,28 @@ export default function PassoClient({
               </ul>
             </div>
 
-            <p className="text-sm text-center font-medium">
+            <div className="space-y-2">
+              <Label htmlFor="senha-confirmacao" className="text-base font-semibold">
+                Digite sua senha para confirmar:
+              </Label>
+              <Input
+                id="senha-confirmacao"
+                type="password"
+                placeholder="Sua senha"
+                value={senhaConfirmacao}
+                onChange={(e) => {
+                  setSenhaConfirmacao(e.target.value)
+                  setErroSenha(null)
+                }}
+                disabled={resetando}
+                className="text-base"
+              />
+              {erroSenha && (
+                <p className="text-sm text-destructive font-medium">{erroSenha}</p>
+              )}
+            </div>
+
+            <p className="text-sm text-center font-medium text-muted-foreground">
               Você poderá refazer os vídeos e artigos após o reset.
             </p>
           </div>
@@ -612,7 +645,11 @@ export default function PassoClient({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setModalResetAberto(false)}
+              onClick={() => {
+                setModalResetAberto(false)
+                setSenhaConfirmacao("")
+                setErroSenha(null)
+              }}
               disabled={resetando}
               className="flex-1"
             >
@@ -622,7 +659,7 @@ export default function PassoClient({
               type="button"
               variant="destructive"
               onClick={confirmarReset}
-              disabled={resetando}
+              disabled={resetando || !senhaConfirmacao}
               className="flex-1"
             >
               {resetando ? (

@@ -146,42 +146,173 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
 }
 
-export async function resetarProgresso(numero: number) {
+export async function resetarProgresso(numero: number, senha: string) {
   const supabase = await createClient()
 
+  console.log("[v0] Iniciando reset de progresso do passo", numero)
+
+  // Validar usuário atual
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return
+  
+  if (!user) {
+    console.log("[v0] Erro: Usuário não autenticado")
+    throw new Error("Usuário não autenticado")
+  }
 
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) return
+  console.log("[v0] Usuário autenticado:", user.id)
 
-  await supabase
+  // Validar senha usando signInWithPassword
+  const { error: senhaError } = await supabase.auth.signInWithPassword({
+    email: user.email!,
+    password: senha,
+  })
+
+  if (senhaError) {
+    console.log("[v0] Erro ao validar senha:", senhaError.message)
+    throw new Error("Senha incorreta. Por favor, tente novamente.")
+  }
+
+  console.log("[v0] Senha validada com sucesso")
+
+  // Buscar dados do discípulo
+  const { data: discipulo, error: discipuloError } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  if (discipuloError || !discipulo) {
+    console.log("[v0] Erro ao buscar discípulo:", discipuloError)
+    throw new Error("Discípulo não encontrado")
+  }
+
+  console.log("[v0] Discípulo encontrado:", discipulo.id)
+
+  // 1. Excluir todas as reflexões de vídeos deste passo
+  const { data: reflexoesVideos, error: errorBuscarVideos } = await supabase
     .from("reflexoes_conteudo")
-    .delete()
+    .select("id")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
+    .eq("tipo", "video")
 
-  // Buscar notificações que mencionam este passo no título ou mensagem
-  if (discipulo.discipulador_id) {
-    await supabase
-      .from("notificacoes")
-      .delete()
-      .eq("user_id", discipulo.discipulador_id)
-      .or(`mensagem.ilike.%Passo ${numero}%,titulo.ilike.%Passo ${numero}%`)
+  if (errorBuscarVideos) {
+    console.log("[v0] Erro ao buscar reflexões de vídeos:", errorBuscarVideos)
+  } else {
+    console.log("[v0] Reflexões de vídeos encontradas:", reflexoesVideos?.length || 0)
+    
+    if (reflexoesVideos && reflexoesVideos.length > 0) {
+      const { error: errorDeleteVideos } = await supabase
+        .from("reflexoes_conteudo")
+        .delete()
+        .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
+        .eq("tipo", "video")
+      
+      if (errorDeleteVideos) {
+        console.log("[v0] Erro ao excluir reflexões de vídeos:", errorDeleteVideos)
+      } else {
+        console.log("[v0] Reflexões de vídeos excluídas com sucesso")
+      }
+    }
   }
 
-  await supabase
+  // 2. Excluir todas as reflexões de artigos deste passo
+  const { data: reflexoesArtigos, error: errorBuscarArtigos } = await supabase
+    .from("reflexoes_conteudo")
+    .select("id")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+    .eq("tipo", "artigo")
+
+  if (errorBuscarArtigos) {
+    console.log("[v0] Erro ao buscar reflexões de artigos:", errorBuscarArtigos)
+  } else {
+    console.log("[v0] Reflexões de artigos encontradas:", reflexoesArtigos?.length || 0)
+    
+    if (reflexoesArtigos && reflexoesArtigos.length > 0) {
+      const { error: errorDeleteArtigos } = await supabase
+        .from("reflexoes_conteudo")
+        .delete()
+        .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
+        .eq("tipo", "artigo")
+      
+      if (errorDeleteArtigos) {
+        console.log("[v0] Erro ao excluir reflexões de artigos:", errorDeleteArtigos)
+      } else {
+        console.log("[v0] Reflexões de artigos excluídas com sucesso")
+      }
+    }
+  }
+
+  // 3. Excluir notificações relacionadas a este passo
+  if (discipulo.discipulador_id) {
+    const { data: notificacoes, error: errorBuscarNotif } = await supabase
+      .from("notificacoes")
+      .select("id, titulo, mensagem")
+      .eq("user_id", discipulo.discipulador_id)
+
+    if (errorBuscarNotif) {
+      console.log("[v0] Erro ao buscar notificações:", errorBuscarNotif)
+    } else {
+      // Filtrar notificações que mencionam o passo
+      const notifParaExcluir = notificacoes?.filter(
+        (n) =>
+          n.titulo?.includes(`Passo ${numero}`) ||
+          n.mensagem?.includes(`Passo ${numero}`) ||
+          n.mensagem?.includes(`passo ${numero}`)
+      )
+
+      console.log("[v0] Notificações encontradas para excluir:", notifParaExcluir?.length || 0)
+
+      if (notifParaExcluir && notifParaExcluir.length > 0) {
+        const idsParaExcluir = notifParaExcluir.map((n) => n.id)
+        
+        const { error: errorDeleteNotif } = await supabase
+          .from("notificacoes")
+          .delete()
+          .in("id", idsParaExcluir)
+
+        if (errorDeleteNotif) {
+          console.log("[v0] Erro ao excluir notificações:", errorDeleteNotif)
+        } else {
+          console.log("[v0] Notificações excluídas com sucesso")
+        }
+      }
+    }
+  }
+
+  // 4. Resetar progresso do passo (marcar como não iniciado)
+  const { error: errorResetProgresso } = await supabase
     .from("progresso_fases")
     .update({
       videos_assistidos: [],
       artigos_lidos: [],
+      completado: false,
+      enviado_para_validacao: false,
+      status_validacao: null,
+      resposta_pergunta: null,
+      resposta_missao: null,
+      rascunho_resposta: null,
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
+
+  if (errorResetProgresso) {
+    console.log("[v0] Erro ao resetar progresso:", errorResetProgresso)
+    throw new Error("Erro ao resetar progresso")
+  }
+
+  console.log("[v0] Progresso resetado com sucesso!")
+  console.log("[v0] Status alterado para: não iniciado")
 
   redirect(`/dashboard/passo/${numero}?reset=true`)
 }
