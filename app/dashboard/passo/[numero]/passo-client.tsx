@@ -179,7 +179,7 @@ export default function PassoClient({
             <div className="flex-1">
               <h1 className="text-xl font-bold">{passo.fase}</h1>
               <p className="text-sm text-muted-foreground">
-                Passo {numero} de 10 • Nível: {discipulo.nivel_atual}
+                Passo {numero} de 10 • Nível: {discipulo.nivel_atual} • {discipulo.nome_completo || 'Sem nome'} • ID: {discipulo.id?.slice(0, 8)}
               </p>
             </div>
             <Badge className="bg-primary/10 text-primary border-primary/20">
@@ -600,6 +600,15 @@ export default function PassoClient({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <div className="bg-muted rounded-lg p-4 border">
+              <p className="text-sm font-semibold mb-2">Informações do Discípulo:</p>
+              <div className="text-sm space-y-1">
+                <p><span className="font-medium">Nome:</span> {discipulo.nome_completo || 'Não informado'}</p>
+                <p><span className="font-medium">ID:</span> {discipulo.id}</p>
+                <p><span className="font-medium">Passo:</span> {numero}</p>
+              </div>
+            </div>
+
             <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/30">
               <p className="font-semibold text-destructive mb-3">
                 As seguintes informações serão PERMANENTEMENTE excluídas:
