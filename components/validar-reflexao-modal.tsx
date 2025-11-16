@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle, Loader2, CheckCircle2 } from 'lucide-react'
+import { Clock, CheckCircle, Loader2 } from 'lucide-react'
+import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from 'next/navigation'
-import { aprovarReflexaoAction } from "@/app/discipulador/actions"
 
 interface ValidarReflexaoModalProps {
   reflexao: {
@@ -20,15 +20,15 @@ interface ValidarReflexaoModalProps {
   }
   discipuloId: string
   discipuloNome: string
-  xpGanho?: number | null
 }
 
-export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpGanho }: ValidarReflexaoModalProps) {
+export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: ValidarReflexaoModalProps) {
   const [open, setOpen] = useState(false)
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
   const router = useRouter()
+  const supabase = createClient()
 
   async function handleAprovar() {
     if (!feedback.trim()) {
@@ -39,35 +39,63 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpG
     setLoading(true)
 
     try {
-      const result = await aprovarReflexaoAction(
-        reflexao.id,
-        discipuloId,
-        xpConcedido,
-        feedback
-      )
+      // Atualizar reflexão (adicionar campos de validação se necessário)
+      // Por enquanto, apenas marcar como avaliada no progresso
+      
+      // Buscar progresso atual
+      const { data: progresso } = await supabase
+        .from("progresso_fases")
+        .select("*")
+        .eq("discipulo_id", discipuloId)
+        .single()
 
-      if (result.success) {
-        toast.success(result.message)
+      if (progresso) {
+        // Atualizar o item específico nos arrays
+        let videos_assistidos = progresso.videos_assistidos || []
+        let artigos_lidos = progresso.artigos_lidos || []
+
+        if (reflexao.tipo === 'video') {
+          videos_assistidos = videos_assistidos.map((v: any) => 
+            v.id === reflexao.id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v
+          )
+        } else {
+          artigos_lidos = artigos_lidos.map((a: any) => 
+            a.id === reflexao.id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a
+          )
+        }
+
+        await supabase
+          .from("progresso_fases")
+          .update({
+            videos_assistidos: reflexao.tipo === 'video' ? videos_assistidos : progresso.videos_assistidos,
+            artigos_lidos: reflexao.tipo === 'artigo' ? artigos_lidos : progresso.artigos_lidos,
+          })
+          .eq("id", progresso.id)
+
+        // Adicionar XP ao discípulo
+        const { data: disc } = await supabase
+          .from("discipulos")
+          .select("xp_total")
+          .eq("id", discipuloId)
+          .single()
+
+        if (disc) {
+          await supabase
+            .from("discipulos")
+            .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
+            .eq("id", discipuloId)
+        }
+
+        toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
         setOpen(false)
         router.refresh()
-      } else {
-        toast.error(result.message)
       }
     } catch (error) {
-      console.error("[v0] Erro ao aprovar reflexão:", error)
+      console.error("Erro ao aprovar reflexão:", error)
       toast.error("Erro ao aprovar reflexão")
     } finally {
       setLoading(false)
     }
-  }
-
-  if (xpGanho && xpGanho > 0) {
-    return (
-      <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100">
-        <CheckCircle2 className="w-3 h-3 mr-1" />
-        Aprovado (+{xpGanho} XP)
-      </Badge>
-    )
   }
 
   return (

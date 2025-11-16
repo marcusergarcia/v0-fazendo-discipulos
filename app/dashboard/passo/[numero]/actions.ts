@@ -357,51 +357,9 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
   console.log("[v0] Discípulo ID:", discipulo.id)
 
   if (reflexoesIds.length > 0) {
-    console.log("[v0] Buscando XP ganho das reflexões...")
-    const { data: reflexoesComXP } = await supabase
-      .from("reflexoes_conteudo")
-      .select("xp_ganho, notificacao_id")
-      .in("id", reflexoesIds)
-    
-    const totalXPRemover = reflexoesComXP?.reduce((acc, r) => acc + (r.xp_ganho || 0), 0) || 0
-    console.log("[v0] Total de XP a remover:", totalXPRemover)
-    
-    if (totalXPRemover > 0) {
-      const { data: disc } = await supabase
-        .from("discipulos")
-        .select("xp_total")
-        .eq("id", discipulo.id)
-        .single()
-      
-      if (disc) {
-        const novoXP = Math.max(0, (disc.xp_total || 0) - totalXPRemover)
-        await supabase
-          .from("discipulos")
-          .update({ xp_total: novoXP })
-          .eq("id", discipulo.id)
-        
-        console.log("[v0] XP atualizado de", disc.xp_total, "para", novoXP)
-      }
-      
-      const { data: progresso } = await supabase
-        .from("progresso_fases")
-        .select("pontuacao_total")
-        .eq("discipulo_id", discipulo.id)
-        .single()
-      
-      if (progresso) {
-        const novaPontuacao = Math.max(0, (progresso.pontuacao_total || 0) - totalXPRemover)
-        await supabase
-          .from("progresso_fases")
-          .update({ pontuacao_total: novaPontuacao })
-          .eq("discipulo_id", discipulo.id)
-        
-        console.log("[v0] Pontuação atualizada de", progresso.pontuacao_total, "para", novaPontuacao)
-      }
-    }
-    
     console.log("[v0] Excluindo reflexões e notificações via RPC...")
     
+    // Excluir cada reflexão usando a função SQL que bypassa RLS
     for (const reflexaoId of reflexoesIds) {
       console.log("[v0] Chamando RPC para reflexão:", reflexaoId)
       
@@ -416,25 +374,39 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
     }
     
     console.log("[v0] ✅ Todas as reflexões e notificações processadas via RPC!")
-    
-    const { data: progressoAtual } = await supabase
-      .from("progresso_fases")
-      .select("reflexoes_concluidas")
-      .eq("discipulo_id", discipulo.id)
-      .single()
-    
-    if (progressoAtual) {
-      const novoContador = Math.max(0, (progressoAtual.reflexoes_concluidas || 0) - reflexoesIds.length)
-      console.log("[v0] Decrementando reflexoes_concluidas de", progressoAtual.reflexoes_concluidas, "para", novoContador)
-      
-      await supabase
-        .from("progresso_fases")
-        .update({ reflexoes_concluidas: novoContador })
-        .eq("discipulo_id", discipulo.id)
-    }
   }
 
-  console.log("[v0] ✅ RESET CONCLUÍDO =====")
+  // Resetar progresso
+  console.log("[v0] Resetando progresso do passo...")
+  const { error: errorReset } = await supabase
+    .from("progresso_fases")
+    .update({
+      videos_assistidos: [],
+      artigos_lidos: [],
+      completado: false,
+      enviado_para_validacao: false,
+      status_validacao: null,
+      resposta_pergunta: null,
+      resposta_missao: null,
+      rascunho_resposta: null,
+      data_completado: null,
+      data_envio_validacao: null,
+      data_validacao: null,
+      feedback_discipulador: null,
+      nota_discipulador: null,
+      xp_ganho: 0,
+    })
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+
+  if (errorReset) {
+    console.error("[v0] ERRO ao resetar progresso:", errorReset)
+    throw new Error("Erro ao resetar progresso")
+  }
+
+  console.log("[v0] ✅ Progresso resetado com sucesso!")
+  console.log("[v0] ===== RESET CONCLUÍDO =====")
 
   return { success: true, message: "Progresso resetado com sucesso!" }
 }

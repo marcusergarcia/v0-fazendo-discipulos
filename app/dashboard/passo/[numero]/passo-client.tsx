@@ -286,10 +286,7 @@ export default function PassoClient({
             </CardHeader>
             <CardContent className="space-y-3">
               {passo.videos.map((video: any) => {
-                const assistido = videosAssistidos.some((v: any) => typeof v === 'string' && v === video.id)
-                const reflexaoInfo = videosAssistidos.find((v: any) => typeof v === 'object' && v.id === video.id)
-                const xpGanho = reflexaoInfo?.xp_ganho || null
-                
+                const assistido = videosAssistidos.includes(video.id)
                 return (
                   <div
                     key={video.id}
@@ -313,12 +310,7 @@ export default function PassoClient({
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                      {xpGanho && xpGanho > 0 ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-300">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Aprovado (+{xpGanho} XP)
-                        </Badge>
-                      ) : assistido ? (
+                      {assistido ? (
                         <Badge className="bg-accent text-accent-foreground">
                           <CheckCheck className="w-3 h-3 mr-1" />
                           Missão Cumprida
@@ -358,10 +350,7 @@ export default function PassoClient({
             </CardHeader>
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
-                const lido = artigosLidos.some((a: any) => typeof a === 'string' && a === artigo.id)
-                const reflexaoInfo = artigosLidos.find((a: any) => typeof a === 'object' && a.id === artigo.id)
-                const xpGanho = reflexaoInfo?.xp_ganho || null
-                
+                const lido = artigosLidos.includes(artigo.id)
                 return (
                   <div
                     key={artigo.id}
@@ -383,12 +372,7 @@ export default function PassoClient({
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
-                      {xpGanho && xpGanho > 0 ? (
-                        <Badge className="bg-green-100 text-green-700 border-green-300">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Aprovado (+{xpGanho} XP)
-                        </Badge>
-                      ) : lido ? (
+                      {lido ? (
                         <Badge className="bg-accent text-accent-foreground">
                           <CheckCheck className="w-3 h-3 mr-1" />
                           Missão Cumprida
