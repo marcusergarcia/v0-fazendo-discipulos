@@ -101,6 +101,12 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     artigosLidos = passo.artigos.map(a => a.id)
   }
 
+  const { data: reflexoes } = await supabase
+    .from("reflexoes_conteudo")
+    .select("*")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+
   const getStatus = () => {
     if (!ehPassoAtual) return "validado" // Passos anteriores estão validados
     if (progressoAtual?.completado) return "validado"
@@ -120,6 +126,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       videosAssistidos={videosAssistidos}
       artigosLidos={artigosLidos}
       status={status}
+      reflexoes={reflexoes || []}
     />
   )
 }

@@ -59,7 +59,9 @@ export default async function DiscipuladorPage() {
       discipulo_id: todasReflexoes[0].discipulo_id,
       discipulador_id: todasReflexoes[0].discipulador_id,
       conteudo_id: todasReflexoes[0].conteudo_id,
-      tipo: todasReflexoes[0].tipo
+      tipo: todasReflexoes[0].tipo,
+      data_aprovacao: todasReflexoes[0].data_aprovacao,
+      xp_ganho: todasReflexoes[0].xp_ganho
     })
   }
   
@@ -67,7 +69,9 @@ export default async function DiscipuladorPage() {
   discipuloIds.forEach(id => {
     const reflexoes = todasReflexoes?.filter(r => r.discipulo_id === id) || []
     console.log(`  - Discípulo ${id}:`, reflexoes.length, "reflexões")
-    console.log(`    IDs das reflexões:`, reflexoes.map(r => r.id))
+    reflexoes.forEach(r => {
+      console.log(`    Reflexão ${r.id}: tipo=${r.tipo}, conteudo_id=${r.conteudo_id}, aprovada=${!!r.data_aprovacao}, xp=${r.xp_ganho}`)
+    })
   })
 
   const { data: progressosPendentes } = await supabase
@@ -100,14 +104,16 @@ export default async function DiscipuladorPage() {
           
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === video.id && r.tipo === 'video')
           
+          const foiAprovado = reflexao && reflexao.data_aprovacao != null
+          
           tarefas.push({
             id: video.id,
             tipo: 'video',
             titulo: video.titulo,
             concluido: !!videoAssistido,
             reflexao,
-            avaliado: reflexao?.avaliado || false,
-            xp: reflexao?.xp_concedido || videoAssistido?.xp_ganho || null
+            avaliado: foiAprovado,
+            xp: reflexao?.xp_ganho || videoAssistido?.xp_ganho || null
           })
         })
 
@@ -118,14 +124,16 @@ export default async function DiscipuladorPage() {
           
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
           
+          const foiAprovado = reflexao && reflexao.data_aprovacao != null
+          
           tarefas.push({
             id: artigo.id,
             tipo: 'artigo',
             titulo: artigo.titulo,
             concluido: !!artigoLido,
             reflexao,
-            avaliado: reflexao?.avaliado || false,
-            xp: reflexao?.xp_concedido || artigoLido?.xp_ganho || null
+            avaliado: foiAprovado,
+            xp: reflexao?.xp_ganho || artigoLido?.xp_ganho || null
           })
         })
       }

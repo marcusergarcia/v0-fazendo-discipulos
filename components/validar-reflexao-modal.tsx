@@ -42,69 +42,42 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
       const { error: reflexaoError } = await supabase
         .from("reflexoes_conteudo")
         .update({
-          avaliado: true,
           feedback_discipulador: feedback,
-          xp_concedido: xpConcedido,
-          data_avaliacao: new Date().toISOString()
+          xp_ganho: xpConcedido,
+          data_aprovacao: new Date().toISOString()
         })
         .eq("id", reflexao.id)
 
       if (reflexaoError) {
-        console.error("Erro ao atualizar reflexão:", reflexaoError)
         throw reflexaoError
       }
       
-      // Buscar progresso atual
-      const { data: progresso } = await supabase
-        .from("progresso_fases")
-        .select("*")
-        .eq("discipulo_id", discipuloId)
+      // Atualizar XP do discípulo
+      const { data: disc } = await supabase
+        .from("discipulos")
+        .select("xp_total")
+        .eq("id", discipuloId)
         .single()
 
-      if (progresso) {
-        // Atualizar o item específico nos arrays
-        let videos_assistidos = progresso.videos_assistidos || []
-        let artigos_lidos = progresso.artigos_lidos || []
-
-        if (reflexao.tipo === 'video') {
-          videos_assistidos = videos_assistidos.map((v: any) => 
-            v.id === reflexao.id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v
-          )
-        } else {
-          artigos_lidos = artigos_lidos.map((a: any) => 
-            a.id === reflexao.id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a
-          )
-        }
-
+      if (disc) {
+        const novoXP = (disc.xp_total || 0) + xpConcedido
+        
         await supabase
-          .from("progresso_fases")
-          .update({
-            videos_assistidos: reflexao.tipo === 'video' ? videos_assistidos : progresso.videos_assistidos,
-            artigos_lidos: reflexao.tipo === 'artigo' ? artigos_lidos : progresso.artigos_lidos,
-          })
-          .eq("id", progresso.id)
-
-        // Adicionar XP ao discípulo
-        const { data: disc } = await supabase
           .from("discipulos")
-          .select("xp_total")
+          .update({ xp_total: novoXP })
           .eq("id", discipuloId)
-          .single()
-
-        if (disc) {
-          await supabase
-            .from("discipulos")
-            .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
-            .eq("id", discipuloId)
-        }
-
-        toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
-        setOpen(false)
-        window.location.reload()
       }
+
+      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
+      
+      setOpen(false)
+      
+      // Recarregar a página para atualizar os badges
+      router.refresh()
+      
     } catch (error) {
-      console.error("Erro ao aprovar reflexão:", error)
-      toast.error("Erro ao aprovar reflexão")
+      console.error("[v0] Erro ao aprovar reflexão:", error)
+      toast.error("Erro ao aprovar reflexão: " + (error as any).message)
     } finally {
       setLoading(false)
     }

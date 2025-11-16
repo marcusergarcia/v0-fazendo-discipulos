@@ -36,6 +36,7 @@ type PassoClientProps = {
   videosAssistidos: string[]
   artigosLidos: string[]
   status: "pendente" | "aguardando" | "validado"
+  reflexoes: any[] // Adicionar array de reflexões
 }
 
 export default function PassoClient({
@@ -47,6 +48,7 @@ export default function PassoClient({
   videosAssistidos,
   artigosLidos,
   status,
+  reflexoes, // Receber reflexões como prop
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -138,7 +140,7 @@ export default function PassoClient({
         setErroSenha("Erro ao resetar progresso")
         setResetando(false)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("[v0] CLIENT: ERRO:", error)
       setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
@@ -287,6 +289,9 @@ export default function PassoClient({
             <CardContent className="space-y-3">
               {passo.videos.map((video: any) => {
                 const assistido = videosAssistidos.includes(video.id)
+                const reflexaoVideo = reflexoes.find(r => r.conteudo_id === video.id && r.tipo === 'video')
+                const foiAprovado = reflexaoVideo && reflexaoVideo.data_aprovacao != null
+                
                 return (
                   <div
                     key={video.id}
@@ -311,10 +316,17 @@ export default function PassoClient({
                         Assistir
                       </Button>
                       {assistido ? (
-                        <Badge className="bg-accent text-accent-foreground">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Missão Cumprida
-                        </Badge>
+                        foiAprovado ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCheck className="w-3 h-3 mr-1" />
+                            Aprovado - {reflexaoVideo.xp_ganho} XP
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-accent text-accent-foreground">
+                            <CheckCheck className="w-3 h-3 mr-1" />
+                            Missão Cumprida
+                          </Badge>
+                        )
                       ) : (
                         <Button
                           type="button"
@@ -351,6 +363,9 @@ export default function PassoClient({
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
+                const reflexaoArtigo = reflexoes.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
+                const foiAprovado = reflexaoArtigo && reflexaoArtigo.data_aprovacao != null
+                
                 return (
                   <div
                     key={artigo.id}
@@ -373,10 +388,17 @@ export default function PassoClient({
                         Ler
                       </Button>
                       {lido ? (
-                        <Badge className="bg-accent text-accent-foreground">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Missão Cumprida
-                        </Badge>
+                        foiAprovado ? (
+                          <Badge className="bg-green-600 text-white">
+                            <CheckCheck className="w-3 h-3 mr-1" />
+                            Aprovado - {reflexaoArtigo.xp_ganho} XP
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-accent text-accent-foreground">
+                            <CheckCheck className="w-3 h-3 mr-1" />
+                            Missão Cumprida
+                          </Badge>
+                        )
                       ) : (
                         <Button
                           type="button"
