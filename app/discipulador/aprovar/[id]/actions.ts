@@ -83,6 +83,22 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     if (updateError) throw new Error(`Erro ao atualizar discípulo: ${updateError.message}`)
 
+    const { error: progressoError } = await supabaseAdmin.from("progresso_fases").insert({
+      discipulo_id: userId,
+      nivel: 1,
+      passo: 1,
+      reflexoes_concluidas: 0,
+      pontuacao_total: 0,
+      fase_numero: 1,
+      passo_numero: 1,
+      completado: false,
+      data_inicio: new Date().toISOString(),
+    })
+
+    if (progressoError) {
+      console.error("[v0] Erro ao criar progresso inicial:", progressoError)
+    }
+
     await supabaseAdmin.from("notificacoes").insert({
       user_id: userId,
       tipo: "aprovacao_aceita",
