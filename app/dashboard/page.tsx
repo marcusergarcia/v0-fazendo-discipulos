@@ -445,7 +445,7 @@ function StepCard({
   const getIcon = () => {
     switch (status) {
       case "completed":
-        return <CheckCircle2 className="w-6 h-6 text-accent" />
+        return <CheckCircle2 className="w-6 h-6 text-green-600" />
       case "current":
         return <Target className="w-6 h-6 text-primary" />
       case "locked":
@@ -456,7 +456,7 @@ function StepCard({
   const getStyles = () => {
     switch (status) {
       case "completed":
-        return "border-accent bg-accent/5"
+        return "border-green-600 bg-green-50"
       case "current":
         return "border-primary bg-primary/5 ring-2 ring-primary/20"
       case "locked":
@@ -464,11 +464,23 @@ function StepCard({
     }
   }
 
+  const getBadge = () => {
+    if (status === "completed") {
+      return (
+        <Badge className="mt-2 bg-green-600 text-white text-xs">
+          Aprovado
+        </Badge>
+      )
+    }
+    return null
+  }
+
   const content = (
     <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
       <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>
+      {getBadge()}
     </div>
   )
 

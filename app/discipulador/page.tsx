@@ -300,11 +300,12 @@ export default async function DiscipuladorPage() {
 
                               <div className="flex items-center gap-2">
                                 {tarefa.xp ? (
-                                  <Badge variant="default" className="bg-green-600">
+                                  <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     Aprovado
                                   </Badge>
                                 ) : tarefa.reflexao ? (
+                                  {/* Só mostra botão Avaliar se ainda não foi aprovado */}
                                   <ValidarReflexaoModal 
                                     reflexao={tarefa.reflexao}
                                     discipuloId={discipulo.id}
