@@ -147,24 +147,23 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
 }
 
 export async function resetarProgresso(numero: number, senha: string) {
+  console.log("[v0] ===== INICIANDO RESET DE PROGRESSO =====")
+  console.log("[v0] Passo número:", numero)
+  
   const supabase = await createClient()
 
-  console.log("[v0] Iniciando reset de progresso do passo", numero)
-
-  // Validar usuário atual
   const {
     data: { user },
     error: userError
   } = await supabase.auth.getUser()
   
   if (userError || !user) {
-    console.log("[v0] Erro: Usuário não autenticado", userError)
+    console.log("[v0] ERRO: Usuário não autenticado", userError)
     throw new Error("Usuário não autenticado")
   }
 
   console.log("[v0] Usuário autenticado:", user.id, user.email)
 
-  // Buscar dados do discípulo
   const { data: discipulo, error: discipuloError } = await supabase
     .from("discipulos")
     .select("id, discipulador_id")
@@ -172,62 +171,45 @@ export async function resetarProgresso(numero: number, senha: string) {
     .single()
 
   if (discipuloError || !discipulo) {
-    console.log("[v0] Erro ao buscar discípulo:", discipuloError)
+    console.log("[v0] ERRO ao buscar discípulo:", discipuloError)
     throw new Error("Discípulo não encontrado")
   }
 
   console.log("[v0] Discípulo encontrado:", discipulo.id)
   console.log("[v0] Discipulador ID:", discipulo.discipulador_id)
 
-  const { data: reflexoesVideos, error: errorBuscarVideos } = await supabase
+  console.log("[v0] Excluindo reflexões de vídeos...")
+  const { error: errorDeleteVideos, count: countVideos } = await supabase
     .from("reflexoes_conteudo")
-    .select("id, conteudo_id, titulo")
+    .delete()
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "video")
-
-  console.log("[v0] Reflexões de vídeos encontradas:", reflexoesVideos?.length || 0, reflexoesVideos)
-
-  if (reflexoesVideos && reflexoesVideos.length > 0) {
-    const idsVideos = reflexoesVideos.map(r => r.id)
-    const { error: errorDeleteVideos } = await supabase
-      .from("reflexoes_conteudo")
-      .delete()
-      .in("id", idsVideos)
-    
-    if (errorDeleteVideos) {
-      console.log("[v0] Erro ao excluir reflexões de vídeos:", errorDeleteVideos)
-    } else {
-      console.log("[v0] Reflexões de vídeos excluídas:", idsVideos)
-    }
+  
+  if (errorDeleteVideos) {
+    console.log("[v0] ERRO ao excluir reflexões de vídeos:", errorDeleteVideos)
+  } else {
+    console.log("[v0] Reflexões de vídeos excluídas. Count:", countVideos)
   }
 
-  const { data: reflexoesArtigos, error: errorBuscarArtigos } = await supabase
+  console.log("[v0] Excluindo reflexões de artigos...")
+  const { error: errorDeleteArtigos, count: countArtigos } = await supabase
     .from("reflexoes_conteudo")
-    .select("id, conteudo_id, titulo")
+    .delete()
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "artigo")
-
-  console.log("[v0] Reflexões de artigos encontradas:", reflexoesArtigos?.length || 0, reflexoesArtigos)
-
-  if (reflexoesArtigos && reflexoesArtigos.length > 0) {
-    const idsArtigos = reflexoesArtigos.map(r => r.id)
-    const { error: errorDeleteArtigos } = await supabase
-      .from("reflexoes_conteudo")
-      .delete()
-      .in("id", idsArtigos)
-    
-    if (errorDeleteArtigos) {
-      console.log("[v0] Erro ao excluir reflexões de artigos:", errorDeleteArtigos)
-    } else {
-      console.log("[v0] Reflexões de artigos excluídas:", idsArtigos)
-    }
+  
+  if (errorDeleteArtigos) {
+    console.log("[v0] ERRO ao excluir reflexões de artigos:", errorDeleteArtigos)
+  } else {
+    console.log("[v0] Reflexões de artigos excluídas. Count:", countArtigos)
   }
 
   if (discipulo.discipulador_id) {
+    console.log("[v0] Buscando notificações para excluir...")
     const { data: notificacoes, error: errorBuscarNotif } = await supabase
       .from("notificacoes")
       .select("id, titulo, mensagem, link")
@@ -236,34 +218,37 @@ export async function resetarProgresso(numero: number, senha: string) {
     console.log("[v0] Total de notificações do discipulador:", notificacoes?.length || 0)
 
     if (notificacoes && notificacoes.length > 0) {
-      // Filtrar notificações que mencionam o passo ou estão relacionadas ao discípulo
       const notifParaExcluir = notificacoes.filter(n => {
         const mencionaPasso = 
-          n.titulo?.toLowerCase().includes(`passo ${numero}`) ||
-          n.mensagem?.toLowerCase().includes(`passo ${numero}`) ||
+          n.titulo?.includes(`Passo ${numero}`) ||
+          n.mensagem?.includes(`Passo ${numero}`) ||
+          n.mensagem?.includes(`passo ${numero}`) ||
           n.link?.includes(`/${numero}`)
         
         return mencionaPasso
       })
 
-      console.log("[v0] Notificações relacionadas ao passo:", notifParaExcluir.length, notifParaExcluir)
+      console.log("[v0] Notificações relacionadas ao passo:", notifParaExcluir.length)
 
       if (notifParaExcluir.length > 0) {
         const idsNotif = notifParaExcluir.map(n => n.id)
-        const { error: errorDeleteNotif } = await supabase
+        console.log("[v0] IDs das notificações a excluir:", idsNotif)
+        
+        const { error: errorDeleteNotif, count: countNotif } = await supabase
           .from("notificacoes")
           .delete()
           .in("id", idsNotif)
 
         if (errorDeleteNotif) {
-          console.log("[v0] Erro ao excluir notificações:", errorDeleteNotif)
+          console.log("[v0] ERRO ao excluir notificações:", errorDeleteNotif)
         } else {
-          console.log("[v0] Notificações excluídas:", idsNotif)
+          console.log("[v0] Notificações excluídas. Count:", countNotif)
         }
       }
     }
   }
 
+  console.log("[v0] Resetando progresso...")
   const { error: errorResetProgresso } = await supabase
     .from("progresso_fases")
     .update({
@@ -287,11 +272,11 @@ export async function resetarProgresso(numero: number, senha: string) {
     .eq("passo_numero", numero)
 
   if (errorResetProgresso) {
-    console.log("[v0] Erro ao resetar progresso:", errorResetProgresso)
-    throw new Error("Erro ao resetar progresso")
+    console.log("[v0] ERRO ao resetar progresso:", errorResetProgresso)
+    throw new Error("Erro ao resetar progresso: " + errorResetProgresso.message)
   }
 
-  console.log("[v0] Progresso resetado com sucesso!")
+  console.log("[v0] ===== RESET CONCLUÍDO COM SUCESSO =====")
   console.log("[v0] Status alterado para: não iniciado no painel do discipulador")
 
   return { success: true, message: "Progresso resetado com sucesso!" }
