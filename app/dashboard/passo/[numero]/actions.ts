@@ -154,32 +154,20 @@ export async function resetarProgresso(numero: number, senha: string) {
   // Validar usuário atual
   const {
     data: { user },
+    error: userError
   } = await supabase.auth.getUser()
   
-  if (!user) {
-    console.log("[v0] Erro: Usuário não autenticado")
+  if (userError || !user) {
+    console.log("[v0] Erro: Usuário não autenticado", userError)
     throw new Error("Usuário não autenticado")
   }
 
-  console.log("[v0] Usuário autenticado:", user.id)
-
-  // Validar senha usando signInWithPassword
-  const { error: senhaError } = await supabase.auth.signInWithPassword({
-    email: user.email!,
-    password: senha,
-  })
-
-  if (senhaError) {
-    console.log("[v0] Erro ao validar senha:", senhaError.message)
-    throw new Error("Senha incorreta. Por favor, tente novamente.")
-  }
-
-  console.log("[v0] Senha validada com sucesso")
+  console.log("[v0] Usuário autenticado:", user.id, user.email)
 
   // Buscar dados do discípulo
   const { data: discipulo, error: discipuloError } = await supabase
     .from("discipulos")
-    .select("*")
+    .select("id, discipulador_id")
     .eq("user_id", user.id)
     .single()
 
@@ -189,107 +177,93 @@ export async function resetarProgresso(numero: number, senha: string) {
   }
 
   console.log("[v0] Discípulo encontrado:", discipulo.id)
+  console.log("[v0] Discipulador ID:", discipulo.discipulador_id)
 
-  // 1. Excluir todas as reflexões de vídeos deste passo
   const { data: reflexoesVideos, error: errorBuscarVideos } = await supabase
     .from("reflexoes_conteudo")
-    .select("id")
+    .select("id, conteudo_id, titulo")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "video")
 
-  if (errorBuscarVideos) {
-    console.log("[v0] Erro ao buscar reflexões de vídeos:", errorBuscarVideos)
-  } else {
-    console.log("[v0] Reflexões de vídeos encontradas:", reflexoesVideos?.length || 0)
+  console.log("[v0] Reflexões de vídeos encontradas:", reflexoesVideos?.length || 0, reflexoesVideos)
+
+  if (reflexoesVideos && reflexoesVideos.length > 0) {
+    const idsVideos = reflexoesVideos.map(r => r.id)
+    const { error: errorDeleteVideos } = await supabase
+      .from("reflexoes_conteudo")
+      .delete()
+      .in("id", idsVideos)
     
-    if (reflexoesVideos && reflexoesVideos.length > 0) {
-      const { error: errorDeleteVideos } = await supabase
-        .from("reflexoes_conteudo")
-        .delete()
-        .eq("discipulo_id", discipulo.id)
-        .eq("fase_numero", 1)
-        .eq("passo_numero", numero)
-        .eq("tipo", "video")
-      
-      if (errorDeleteVideos) {
-        console.log("[v0] Erro ao excluir reflexões de vídeos:", errorDeleteVideos)
-      } else {
-        console.log("[v0] Reflexões de vídeos excluídas com sucesso")
-      }
+    if (errorDeleteVideos) {
+      console.log("[v0] Erro ao excluir reflexões de vídeos:", errorDeleteVideos)
+    } else {
+      console.log("[v0] Reflexões de vídeos excluídas:", idsVideos)
     }
   }
 
-  // 2. Excluir todas as reflexões de artigos deste passo
   const { data: reflexoesArtigos, error: errorBuscarArtigos } = await supabase
     .from("reflexoes_conteudo")
-    .select("id")
+    .select("id, conteudo_id, titulo")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "artigo")
 
-  if (errorBuscarArtigos) {
-    console.log("[v0] Erro ao buscar reflexões de artigos:", errorBuscarArtigos)
-  } else {
-    console.log("[v0] Reflexões de artigos encontradas:", reflexoesArtigos?.length || 0)
+  console.log("[v0] Reflexões de artigos encontradas:", reflexoesArtigos?.length || 0, reflexoesArtigos)
+
+  if (reflexoesArtigos && reflexoesArtigos.length > 0) {
+    const idsArtigos = reflexoesArtigos.map(r => r.id)
+    const { error: errorDeleteArtigos } = await supabase
+      .from("reflexoes_conteudo")
+      .delete()
+      .in("id", idsArtigos)
     
-    if (reflexoesArtigos && reflexoesArtigos.length > 0) {
-      const { error: errorDeleteArtigos } = await supabase
-        .from("reflexoes_conteudo")
-        .delete()
-        .eq("discipulo_id", discipulo.id)
-        .eq("fase_numero", 1)
-        .eq("passo_numero", numero)
-        .eq("tipo", "artigo")
-      
-      if (errorDeleteArtigos) {
-        console.log("[v0] Erro ao excluir reflexões de artigos:", errorDeleteArtigos)
-      } else {
-        console.log("[v0] Reflexões de artigos excluídas com sucesso")
-      }
+    if (errorDeleteArtigos) {
+      console.log("[v0] Erro ao excluir reflexões de artigos:", errorDeleteArtigos)
+    } else {
+      console.log("[v0] Reflexões de artigos excluídas:", idsArtigos)
     }
   }
 
-  // 3. Excluir notificações relacionadas a este passo
   if (discipulo.discipulador_id) {
     const { data: notificacoes, error: errorBuscarNotif } = await supabase
       .from("notificacoes")
-      .select("id, titulo, mensagem")
+      .select("id, titulo, mensagem, link")
       .eq("user_id", discipulo.discipulador_id)
 
-    if (errorBuscarNotif) {
-      console.log("[v0] Erro ao buscar notificações:", errorBuscarNotif)
-    } else {
-      // Filtrar notificações que mencionam o passo
-      const notifParaExcluir = notificacoes?.filter(
-        (n) =>
-          n.titulo?.includes(`Passo ${numero}`) ||
-          n.mensagem?.includes(`Passo ${numero}`) ||
-          n.mensagem?.includes(`passo ${numero}`)
-      )
+    console.log("[v0] Total de notificações do discipulador:", notificacoes?.length || 0)
 
-      console.log("[v0] Notificações encontradas para excluir:", notifParaExcluir?.length || 0)
-
-      if (notifParaExcluir && notifParaExcluir.length > 0) {
-        const idsParaExcluir = notifParaExcluir.map((n) => n.id)
+    if (notificacoes && notificacoes.length > 0) {
+      // Filtrar notificações que mencionam o passo ou estão relacionadas ao discípulo
+      const notifParaExcluir = notificacoes.filter(n => {
+        const mencionaPasso = 
+          n.titulo?.toLowerCase().includes(`passo ${numero}`) ||
+          n.mensagem?.toLowerCase().includes(`passo ${numero}`) ||
+          n.link?.includes(`/${numero}`)
         
+        return mencionaPasso
+      })
+
+      console.log("[v0] Notificações relacionadas ao passo:", notifParaExcluir.length, notifParaExcluir)
+
+      if (notifParaExcluir.length > 0) {
+        const idsNotif = notifParaExcluir.map(n => n.id)
         const { error: errorDeleteNotif } = await supabase
           .from("notificacoes")
           .delete()
-          .in("id", idsParaExcluir)
+          .in("id", idsNotif)
 
         if (errorDeleteNotif) {
           console.log("[v0] Erro ao excluir notificações:", errorDeleteNotif)
         } else {
-          console.log("[v0] Notificações excluídas com sucesso")
+          console.log("[v0] Notificações excluídas:", idsNotif)
         }
       }
     }
   }
 
-  // 4. Resetar progresso do passo (marcar como não iniciado)
   const { error: errorResetProgresso } = await supabase
     .from("progresso_fases")
     .update({
@@ -301,6 +275,12 @@ export async function resetarProgresso(numero: number, senha: string) {
       resposta_pergunta: null,
       resposta_missao: null,
       rascunho_resposta: null,
+      data_completado: null,
+      data_envio_validacao: null,
+      data_validacao: null,
+      feedback_discipulador: null,
+      nota_discipulador: null,
+      xp_ganho: 0,
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
@@ -312,7 +292,7 @@ export async function resetarProgresso(numero: number, senha: string) {
   }
 
   console.log("[v0] Progresso resetado com sucesso!")
-  console.log("[v0] Status alterado para: não iniciado")
+  console.log("[v0] Status alterado para: não iniciado no painel do discipulador")
 
   return { success: true, message: "Progresso resetado com sucesso!" }
 }
