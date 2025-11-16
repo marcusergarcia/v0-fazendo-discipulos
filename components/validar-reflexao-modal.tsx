@@ -46,7 +46,8 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpG
         .from("reflexoes_conteudo")
         .update({ 
           xp_ganho: xpConcedido,
-          feedback_discipulador: feedback
+          feedback_discipulador: feedback,
+          data_aprovacao: new Date().toISOString()
         })
         .eq("id", reflexao.id)
 
