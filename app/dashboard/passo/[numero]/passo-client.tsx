@@ -23,6 +23,7 @@ import {
   concluirVideoComReflexao,
   concluirArtigoComReflexao,
   resetarProgresso,
+  buscarReflexoesParaReset, // Importar nova função
 } from "./actions"
 import { useState } from "react"
 
@@ -74,6 +75,8 @@ export default function PassoClient({
   const [modalResetAberto, setModalResetAberto] = useState(false)
   const [resetando, setResetando] = useState(false)
   const [erroSenha, setErroSenha] = useState<string | null>(null)
+  const [reflexoesParaExcluir, setReflexoesParaExcluir] = useState<any[]>([])
+  const [carregandoReflexoes, setCarregandoReflexoes] = useState(false)
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -89,7 +92,20 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
-    setModalResetAberto(true)
+    setCarregandoReflexoes(true)
+    setErroSenha(null)
+    
+    try {
+      const reflexoes = await buscarReflexoesParaReset(numero)
+      console.log("[v0] Reflexões encontradas para exclusão:", reflexoes)
+      setReflexoesParaExcluir(reflexoes)
+      setModalResetAberto(true)
+    } catch (error: any) {
+      console.error("[v0] Erro ao buscar reflexões:", error)
+      setErroSenha("Erro ao carregar reflexões. Tente novamente.")
+    } finally {
+      setCarregandoReflexoes(false)
+    }
   }
   
   const confirmarReset = async () => {
@@ -98,23 +114,23 @@ export default function PassoClient({
     setErroSenha(null)
     
     try {
-      console.log("[v0] CLIENT: Chamando resetarProgresso com numero:", numero)
-      const resultado = await resetarProgresso(numero)
-      console.log("[v0] CLIENT: Resultado recebido:", resultado)
+      const reflexoesIds = reflexoesParaExcluir.map(r => r.id)
+      console.log("[v0] CLIENT: Chamando resetarProgresso com IDs:", reflexoesIds)
+      
+      const resultado = await resetarProgresso(numero, reflexoesIds)
+      console.log("[v0] CLIENT: Resultado:", resultado)
       
       if (resultado.success) {
-        console.log("[v0] CLIENT: Reset bem-sucedido, fechando modal e redirecionando")
+        console.log("[v0] CLIENT: Reset bem-sucedido!")
         setModalResetAberto(false)
         window.location.href = `/dashboard/passo/${numero}?reset=true`
       } else {
-        console.log("[v0] CLIENT: Reset não teve sucesso")
         setErroSenha("Erro ao resetar progresso")
         setResetando(false)
       }
     } catch (error: any) {
-      console.error("[v0] CLIENT: ERRO CAPTURADO:", error)
-      console.error("[v0] CLIENT: Erro completo:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
-      setErroSenha(error.message || "Erro ao resetar progresso. Por favor, tente novamente.")
+      console.error("[v0] CLIENT: ERRO:", error)
+      setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
     }
   }
@@ -588,7 +604,7 @@ export default function PassoClient({
       </Dialog>
 
       <Dialog open={modalResetAberto} onOpenChange={setModalResetAberto}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <RotateCcw className="w-6 h-6" />
@@ -608,6 +624,37 @@ export default function PassoClient({
                 <p><span className="font-medium">Passo:</span> {numero}</p>
               </div>
             </div>
+
+            {reflexoesParaExcluir.length > 0 && (
+              <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/30">
+                <p className="font-semibold text-destructive mb-3">
+                  Reflexões que serão excluídas ({reflexoesParaExcluir.length}):
+                </p>
+                <div className="space-y-2">
+                  {reflexoesParaExcluir.map((reflexao) => (
+                    <div key={reflexao.id} className="bg-background/50 rounded p-3 text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline" className="text-xs">
+                          {reflexao.tipo === 'video' ? '🎥 Vídeo' : '📄 Artigo'}
+                        </Badge>
+                        <span className="font-medium">{reflexao.titulo}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        ID: {reflexao.id.slice(0, 8)}... • Notificação: {reflexao.notificacao_id ? reflexao.notificacao_id.slice(0, 8) + '...' : 'Nenhuma'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {reflexoesParaExcluir.length === 0 && (
+              <div className="bg-muted rounded-lg p-4 border">
+                <p className="text-sm text-muted-foreground text-center">
+                  Nenhuma reflexão encontrada para este passo. O reset apenas limpará o histórico de vídeos e artigos.
+                </p>
+              </div>
+            )}
 
             <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/30">
               <p className="font-semibold text-destructive mb-3">
@@ -648,6 +695,7 @@ export default function PassoClient({
               variant="outline"
               onClick={() => {
                 setModalResetAberto(false)
+                setReflexoesParaExcluir([])
               }}
               disabled={resetando}
               className="flex-1"
