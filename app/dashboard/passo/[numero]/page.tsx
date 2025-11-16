@@ -33,6 +33,14 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     redirect("/dashboard")
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nome_completo")
+    .eq("id", user.id)
+    .single()
+
+  const nomeDiscipulo = profile?.nome_completo || "Sem nome"
+
   const { data: progresso } = await supabase
     .from("progresso_fases")
     .select("*")
@@ -91,7 +99,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     <PassoClient
       numero={numero}
       passo={passo}
-      discipulo={discipulo}
+      discipulo={{...discipulo, nome_completo: nomeDiscipulo}}
       progresso={progressoAtual}
       passosCompletados={passosCompletados}
       videosAssistidos={videosAssistidos}
