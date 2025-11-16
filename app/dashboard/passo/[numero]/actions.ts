@@ -516,22 +516,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
           console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
         }
       }
-      
-      const { data: progressoAtual } = await supabase
-        .from("progresso_fases")
-        .select("reflexoes_concluidas")
-        .eq("discipulo_id", discipulo.id)
-        .single()
-      
-      if (progressoAtual) {
-        const novoContador = (progressoAtual.reflexoes_concluidas || 0) + 1
-        console.log("[v0] SERVER: Incrementando reflexoes_concluidas de", progressoAtual.reflexoes_concluidas, "para", novoContador)
-        
-        await supabase
-          .from("progresso_fases")
-          .update({ reflexoes_concluidas: novoContador })
-          .eq("discipulo_id", discipulo.id)
-      }
     }
   }
 
@@ -680,22 +664,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         } else {
           console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
         }
-      }
-      
-      const { data: progressoAtual } = await supabase
-        .from("progresso_fases")
-        .select("reflexoes_concluidas")
-        .eq("discipulo_id", discipulo.id)
-        .single()
-      
-      if (progressoAtual) {
-        const novoContador = (progressoAtual.reflexoes_concluidas || 0) + 1
-        console.log("[v0] SERVER: Incrementando reflexoes_concluidas de", progressoAtual.reflexoes_concluidas, "para", novoContador)
-        
-        await supabase
-          .from("progresso_fases")
-          .update({ reflexoes_concluidas: novoContador })
-          .eq("discipulo_id", discipulo.id)
       }
     }
   }
