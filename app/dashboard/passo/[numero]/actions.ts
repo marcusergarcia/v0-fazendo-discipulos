@@ -363,50 +363,34 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
   console.log("[v0] Discípulo ID:", discipulo.id)
 
   if (reflexoesIds.length > 0) {
-    console.log("[v0] Buscando reflexões com seus IDs de notificações...")
-    const { data: reflexoes, error: errorBuscar } = await supabaseAdmin
-      .from("reflexoes_conteudo")
-      .select("id, notificacao_id")
-      .in("id", reflexoesIds)
+    console.log("[v0] Excluindo notificações relacionadas às reflexões...")
+    const { data: deletedNotifs, error: errorNotif } = await supabaseAdmin
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id || discipulo.id)
+      .or(reflexoesIds.map(id => `reflexao_id.eq.${id}`).join(','))
+      .select()
 
-    if (errorBuscar) {
-      console.log("[v0] ERRO ao buscar reflexões:", errorBuscar)
+    if (errorNotif) {
+      console.error("[v0] ERRO ao excluir notificações:", JSON.stringify(errorNotif, null, 2))
     } else {
-      console.log("[v0] Reflexões encontradas:", reflexoes)
-      
-      const notificacoesIds = reflexoes
-        ?.filter(r => r.notificacao_id)
-        .map(r => r.notificacao_id) || []
-      
-      if (notificacoesIds.length > 0) {
-        console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
-        const { error: errorNotif } = await supabaseAdmin
-          .from("notificacoes")
-          .delete()
-          .in("id", notificacoesIds)
-
-        if (errorNotif) {
-          console.error("[v0] ERRO ao excluir notificações:", errorNotif)
-        } else {
-          console.log("[v0] ✅ Notificações excluídas com sucesso!")
-        }
-      } else {
-        console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
-      }
+      console.log("[v0] ✅ Notificações excluídas:", deletedNotifs?.length || 0)
     }
 
-    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
-    const { error: errorExcluir } = await supabaseAdmin
+    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões com ADMIN...")
+    const { data: deletedReflexoes, error: errorExcluir } = await supabaseAdmin
       .from("reflexoes_conteudo")
       .delete()
       .in("id", reflexoesIds)
+      .select()
 
     if (errorExcluir) {
-      console.error("[v0] ERRO ao excluir reflexões:", errorExcluir)
-      throw new Error("Erro ao excluir reflexões")
+      console.error("[v0] ERRO ao excluir reflexões:", JSON.stringify(errorExcluir, null, 2))
+      throw new Error(`Erro ao excluir reflexões: ${errorExcluir.message}`)
     }
     
-    console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
+    console.log("[v0] ✅ Reflexões excluídas:", deletedReflexoes?.length || 0)
+    console.log("[v0] Dados excluídos:", JSON.stringify(deletedReflexoes, null, 2))
   }
 
   console.log("[v0] Resetando progresso do passo...")
