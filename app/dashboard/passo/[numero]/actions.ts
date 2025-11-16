@@ -364,17 +364,19 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
 
   if (reflexoesIds.length > 0) {
     console.log("[v0] Excluindo notificações relacionadas às reflexões...")
+    
+    // Excluir notificações usando IN ao invés de OR
     const { data: deletedNotifs, error: errorNotif } = await supabaseAdmin
       .from("notificacoes")
       .delete()
-      .eq("user_id", discipulo.discipulador_id || discipulo.id)
-      .or(reflexoesIds.map(id => `reflexao_id.eq.${id}`).join(','))
+      .in("reflexao_id", reflexoesIds)
       .select()
 
     if (errorNotif) {
       console.error("[v0] ERRO ao excluir notificações:", JSON.stringify(errorNotif, null, 2))
     } else {
       console.log("[v0] ✅ Notificações excluídas:", deletedNotifs?.length || 0)
+      console.log("[v0] Dados notificações excluídas:", JSON.stringify(deletedNotifs, null, 2))
     }
 
     console.log("[v0] Excluindo", reflexoesIds.length, "reflexões com ADMIN...")
