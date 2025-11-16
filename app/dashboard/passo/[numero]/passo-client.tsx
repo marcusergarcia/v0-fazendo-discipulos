@@ -93,21 +93,28 @@ export default function PassoClient({
   }
   
   const confirmarReset = async () => {
+    console.log("[v0] CLIENT: confirmarReset iniciado")
     setResetando(true)
     setErroSenha(null)
     
     try {
-      console.log("[v0] CLIENT: Chamando resetarProgresso...")
+      console.log("[v0] CLIENT: Chamando resetarProgresso com numero:", numero)
       const resultado = await resetarProgresso(numero)
-      console.log("[v0] CLIENT: Resultado:", resultado)
+      console.log("[v0] CLIENT: Resultado recebido:", resultado)
       
       if (resultado.success) {
+        console.log("[v0] CLIENT: Reset bem-sucedido, fechando modal e redirecionando")
         setModalResetAberto(false)
         window.location.href = `/dashboard/passo/${numero}?reset=true`
+      } else {
+        console.log("[v0] CLIENT: Reset não teve sucesso")
+        setErroSenha("Erro ao resetar progresso")
+        setResetando(false)
       }
     } catch (error: any) {
-      console.error("[v0] CLIENT: Erro ao resetar:", error)
-      setErroSenha(error.message || "Erro ao resetar progresso")
+      console.error("[v0] CLIENT: ERRO CAPTURADO:", error)
+      console.error("[v0] CLIENT: Erro completo:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
+      setErroSenha(error.message || "Erro ao resetar progresso. Por favor, tente novamente.")
       setResetando(false)
     }
   }
