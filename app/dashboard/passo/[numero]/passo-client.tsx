@@ -265,16 +265,6 @@ export default function PassoClient({
                   </CardTitle>
                   <CardDescription>Vídeos curtos para aprofundar seu entendimento</CardDescription>
                 </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleResetarProgresso}
-                  disabled={carregandoReflexoes}
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  {carregandoReflexoes ? "Carregando..." : "Resetar Progresso"}
-                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -339,16 +329,6 @@ export default function PassoClient({
                   </CardTitle>
                   <CardDescription>Artigos e recursos para estudo complementar</CardDescription>
                 </div>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleResetarProgresso}
-                  disabled={carregandoReflexoes}
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  {carregandoReflexoes ? "Carregando..." : "Resetar Progresso"}
-                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -397,6 +377,20 @@ export default function PassoClient({
               })}
             </CardContent>
           </Card>
+        )}
+
+        {((passo.videos && passo.videos.length > 0) || (passo.artigos && passo.artigos.length > 0)) && (
+          <div className="mb-6 flex justify-end">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleResetarProgresso}
+              disabled={carregandoReflexoes}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              {carregandoReflexoes ? "Carregando..." : "Resetar Progresso do Passo"}
+            </Button>
+          </div>
         )}
 
         <Card className="mb-6">
