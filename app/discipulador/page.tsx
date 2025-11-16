@@ -310,14 +310,9 @@ export default async function DiscipuladorPage() {
 
                               <div className="flex items-center gap-2">
                                 {tarefa.avaliado ? (
-                                  <Badge variant="default" className="bg-green-600">
+                                  <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     Aprovado - {tarefa.xp} XP
-                                  </Badge>
-                                ) : tarefa.xp ? (
-                                  <Badge variant="default" className="bg-green-600">
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    {tarefa.xp} XP
                                   </Badge>
                                 ) : tarefa.reflexao ? (
                                   <ValidarReflexaoModal 
@@ -326,7 +321,10 @@ export default async function DiscipuladorPage() {
                                     discipuloNome={nome}
                                   />
                                 ) : tarefa.concluido ? (
-                                  <Badge variant="outline">Concluído</Badge>
+                                  <Badge variant="outline" className="bg-yellow-50 border-yellow-300">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    Missão Cumprida
+                                  </Badge>
                                 ) : (
                                   <Badge variant="outline" className="text-muted-foreground">
                                     Não iniciado

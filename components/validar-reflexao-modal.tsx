@@ -39,6 +39,19 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     setLoading(true)
 
     try {
+      const { data: reflexaoAtual } = await supabase
+        .from("reflexoes_conteudo")
+        .select("data_aprovacao, xp_ganho")
+        .eq("id", reflexao.id)
+        .single()
+
+      if (reflexaoAtual?.data_aprovacao) {
+        toast.error("Esta reflexão já foi aprovada anteriormente")
+        setOpen(false)
+        router.refresh()
+        return
+      }
+
       const { error: reflexaoError } = await supabase
         .from("reflexoes_conteudo")
         .update({
@@ -52,7 +65,6 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
         throw reflexaoError
       }
       
-      // Atualizar XP do discípulo
       const { data: disc } = await supabase
         .from("discipulos")
         .select("xp_total")
@@ -75,9 +87,13 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
       // Recarregar a página para atualizar os badges
       router.refresh()
       
+      setTimeout(() => {
+        router.refresh()
+      }, 300)
+      
     } catch (error) {
       console.error("[v0] Erro ao aprovar reflexão:", error)
-      toast.error("Erro ao aprovar reflexão: " + (error as any).message)
+      toast.error("Erro ao atualizar reflexão: " + (error as any).message)
     } finally {
       setLoading(false)
     }
