@@ -330,6 +330,12 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
   
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -358,7 +364,7 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
 
   if (reflexoesIds.length > 0) {
     console.log("[v0] Buscando reflexões com seus IDs de notificações...")
-    const { data: reflexoes, error: errorBuscar } = await supabase
+    const { data: reflexoes, error: errorBuscar } = await supabaseAdmin
       .from("reflexoes_conteudo")
       .select("id, notificacao_id")
       .in("id", reflexoesIds)
@@ -368,15 +374,13 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
     } else {
       console.log("[v0] Reflexões encontradas:", reflexoes)
       
-      // Coletar IDs das notificações que existem
       const notificacoesIds = reflexoes
         ?.filter(r => r.notificacao_id)
         .map(r => r.notificacao_id) || []
       
-      // Excluir notificações SE existirem
       if (notificacoesIds.length > 0) {
         console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
-        const { error: errorNotif } = await supabase
+        const { error: errorNotif } = await supabaseAdmin
           .from("notificacoes")
           .delete()
           .in("id", notificacoesIds)
@@ -391,9 +395,8 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
       }
     }
 
-    // Excluir TODAS as reflexões pelos IDs, independente de terem notificação
     console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
-    const { error: errorExcluir } = await supabase
+    const { error: errorExcluir } = await supabaseAdmin
       .from("reflexoes_conteudo")
       .delete()
       .in("id", reflexoesIds)
@@ -406,7 +409,6 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
     console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
   }
 
-  // Resetar progresso
   console.log("[v0] Resetando progresso do passo...")
   const { error: errorReset } = await supabase
     .from("progresso_fases")
