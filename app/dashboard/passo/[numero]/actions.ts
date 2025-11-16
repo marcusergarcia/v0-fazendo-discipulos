@@ -314,7 +314,7 @@ export async function resetarProgresso(numero: number, senha: string) {
   console.log("[v0] Progresso resetado com sucesso!")
   console.log("[v0] Status alterado para: não iniciado")
 
-  redirect(`/dashboard/passo/${numero}?reset=true`)
+  return { success: true, message: "Progresso resetado com sucesso!" }
 }
 
 export async function concluirVideoComReflexao(numero: number, videoId: string, titulo: string, reflexao: string) {

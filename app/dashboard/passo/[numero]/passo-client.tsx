@@ -105,7 +105,11 @@ export default function PassoClient({
     setErroSenha(null)
     
     try {
-      await resetarProgresso(numero, senhaConfirmacao)
+      const resultado = await resetarProgresso(numero, senhaConfirmacao)
+      if (resultado.success) {
+        setModalResetAberto(false)
+        window.location.href = `/dashboard/passo/${numero}?reset=true`
+      }
     } catch (error: any) {
       setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
