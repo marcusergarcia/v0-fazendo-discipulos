@@ -146,120 +146,44 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
 }
 
-export async function resetarProgresso(numero: number, senha: string) {
+export async function resetarProgresso(numero: number) {
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { error: "Usuário não autenticado" }
-
-  // Validação de senha básica
-  if (!senha || senha.trim().length < 6) {
-    return { error: "Senha deve ter no mínimo 6 caracteres." }
-  }
+  if (!user) return
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) return { error: "Discípulo não encontrado" }
+  if (!discipulo) return
 
-  console.log("[v0] Iniciando exclusão de dados do passo", numero)
-
-  // Buscar e excluir reflexões de conteúdo
-  const { data: reflexoes, error: reflexoesSelectError } = await supabase
+  await supabase
     .from("reflexoes_conteudo")
-    .select("id, tipo, conteudo_id, titulo")
+    .delete()
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
 
-  console.log("[v0] Reflexões encontradas:", reflexoes?.length || 0)
-
-  if (reflexoes && reflexoes.length > 0) {
-    const reflexoesIds = reflexoes.map((r) => r.id)
-    const { error: deleteReflexoesError } = await supabase
-      .from("reflexoes_conteudo")
-      .delete()
-      .in("id", reflexoesIds)
-
-    if (deleteReflexoesError) {
-      console.error("[v0] Erro ao excluir reflexões:", deleteReflexoesError)
-      return { error: "Erro ao excluir reflexões. Tente novamente." }
-    } else {
-      console.log("[v0] Reflexões excluídas com sucesso!")
-    }
-  }
-
-  // Buscar e excluir notificações relacionadas ao passo
+  // Buscar notificações que mencionam este passo no título ou mensagem
   if (discipulo.discipulador_id) {
-    // Buscar todas as notificações do discipulador
-    const { data: todasNotificacoes, error: notificacoesSelectError } = await supabase
+    await supabase
       .from("notificacoes")
-      .select("id, titulo, mensagem, link")
+      .delete()
       .eq("user_id", discipulo.discipulador_id)
-
-    console.log("[v0] Total de notificações do discipulador:", todasNotificacoes?.length || 0)
-
-    if (todasNotificacoes && todasNotificacoes.length > 0) {
-      // Filtrar notificações que mencionam este passo
-      const notificacoesRelacionadas = todasNotificacoes.filter((n) => {
-        const mencionaPasso =
-          n.titulo?.toLowerCase().includes(`passo ${numero}`) ||
-          n.mensagem?.toLowerCase().includes(`passo ${numero}`) ||
-          n.link?.includes(`/${numero}`) ||
-          n.link?.includes(`passo/${numero}`)
-        return mencionaPasso
-      })
-
-      console.log("[v0] Notificações relacionadas ao passo:", notificacoesRelacionadas.length)
-
-      if (notificacoesRelacionadas.length > 0) {
-        const notificacaoIds = notificacoesRelacionadas.map((n) => n.id)
-
-        const { error: deleteNotificacoesError } = await supabase
-          .from("notificacoes")
-          .delete()
-          .in("id", notificacaoIds)
-
-        if (deleteNotificacoesError) {
-          console.error("[v0] Erro ao excluir notificações:", deleteNotificacoesError)
-          return { error: "Erro ao excluir notificações. Tente novamente." }
-        } else {
-          console.log("[v0] Notificações excluídas com sucesso!")
-        }
-      }
-    }
+      .or(`mensagem.ilike.%Passo ${numero}%,titulo.ilike.%Passo ${numero}%`)
   }
 
-  // Resetar o progresso do passo (não deletar, apenas limpar)
-  const { error: updateProgressoError } = await supabase
+  await supabase
     .from("progresso_fases")
     .update({
       videos_assistidos: [],
       artigos_lidos: [],
-      completado: false,
-      enviado_para_validacao: false,
-      status_validacao: null,
-      resposta_pergunta: null,
-      resposta_missao: null,
-      rascunho_resposta: null,
-      data_envio_validacao: null,
-      data_validacao: null,
-      feedback_discipulador: null,
-      nota_discipulador: null,
-      validado_por: null,
-      xp_ganho: 0,
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
 
-  if (updateProgressoError) {
-    console.error("[v0] Erro ao atualizar progresso:", updateProgressoError)
-    return { error: "Erro ao resetar progresso. Tente novamente." }
-  }
-
-  console.log("[v0] Progresso resetado com sucesso!")
-  return { success: true }
+  redirect(`/dashboard/passo/${numero}?reset=true`)
 }
 
 export async function concluirVideoComReflexao(numero: number, videoId: string, titulo: string, reflexao: string) {

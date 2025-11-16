@@ -9,6 +9,7 @@ export default async function SolicitarConvitePage({
   const params = await searchParams
   const supabase = await createClient()
 
+  // Buscar discipuladores ativos com contagem de discípulos
   const { data: discipuladores, error } = await supabase
     .from("profiles")
     .select(
@@ -18,7 +19,7 @@ export default async function SolicitarConvitePage({
       profile_status,
       discipulador_status,
       discipulos:discipulos!discipulador_id(count)
-      `
+    `
     )
     .eq("discipulador_status", "ativo")
     .eq("profile_status", "ativo")

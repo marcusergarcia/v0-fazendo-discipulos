@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -14,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { ArrowLeft, BookOpen, Sparkles, Award, Target, Send, Save, MessageCircle, Clock, CheckCheck, Play, ExternalLink, RotateCcw, CheckCircle, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, BookOpen, Sparkles, Award, Target, Send, Save, MessageCircle, Clock, CheckCheck, Play, ExternalLink, RotateCcw, CheckCircle } from 'lucide-react'
 import Link from "next/link"
 import {
   salvarRascunho,
@@ -72,8 +71,6 @@ export default function PassoClient({
   
   const [modalResetAberto, setModalResetAberto] = useState(false)
   const [resetando, setResetando] = useState(false)
-  const [senhaConfirmacao, setSenhaConfirmacao] = useState("")
-  const [erroSenha, setErroSenha] = useState("")
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -89,34 +86,17 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
-    setSenhaConfirmacao("")
-    setErroSenha("")
     setModalResetAberto(true)
   }
   
   const confirmarReset = async () => {
-    if (!senhaConfirmacao.trim()) {
-      setErroSenha("Por favor, digite sua senha para confirmar")
-      return
-    }
-
     setResetando(true)
-    setErroSenha("")
-    
     try {
-      const result = await resetarProgresso(numero, senhaConfirmacao)
-      
-      if (result?.error) {
-        setErroSenha(result.error)
-        setResetando(false)
-        return
-      }
-      
+      await resetarProgresso(numero)
+    } finally {
+      setResetando(false)
       setModalResetAberto(false)
       window.location.reload()
-    } catch (error) {
-      setErroSenha("Erro ao resetar progresso. Tente novamente.")
-      setResetando(false)
     }
   }
 
@@ -592,26 +572,25 @@ export default function PassoClient({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-6 h-6" />
+              <RotateCcw className="w-6 h-6" />
               Resetar Progresso do Passo
             </DialogTitle>
             <DialogDescription className="text-base">
-              Esta ação não pode ser desfeita. Confirme que deseja resetar todo o progresso deste passo.
+              Tem certeza que deseja resetar o progresso deste passo?
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/30">
               <p className="font-semibold text-destructive mb-3">
-                ⚠️ As seguintes informações serão PERMANENTEMENTE excluídas:
+                As seguintes informações serão PERMANENTEMENTE excluídas:
               </p>
               <ul className="text-sm space-y-2 list-disc list-inside text-destructive/90">
-                <li><strong>Todas as reflexões de vídeos</strong> deste passo</li>
-                <li><strong>Todas as reflexões de artigos</strong> deste passo</li>
+                <li>Todas as reflexões de vídeos deste passo</li>
+                <li>Todas as reflexões de artigos deste passo</li>
                 <li>Todas as notificações relacionadas a este passo</li>
                 <li>Histórico de vídeos assistidos</li>
                 <li>Histórico de artigos lidos</li>
-                <li>Status de validação (voltará para "não iniciado")</li>
               </ul>
             </div>
 
@@ -621,50 +600,19 @@ export default function PassoClient({
                 <li>Seu XP e nível conquistados</li>
                 <li>Progressos de outros passos</li>
                 <li>Mensagens do chat com seu discipulador</li>
-                <li>Suas informações de perfil</li>
               </ul>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="senha-confirmacao" className="text-sm font-semibold">
-                Digite sua senha para confirmar:
-              </label>
-              <Input
-                id="senha-confirmacao"
-                type="password"
-                placeholder="Digite sua senha"
-                value={senhaConfirmacao}
-                onChange={(e) => {
-                  setSenhaConfirmacao(e.target.value)
-                  setErroSenha("")
-                }}
-                disabled={resetando}
-                className={erroSenha ? "border-destructive" : ""}
-              />
-              {erroSenha && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
-                  {erroSenha}
-                </p>
-              )}
-            </div>
-
-            <div className="bg-yellow-500/10 rounded-lg p-3 border border-yellow-500/30">
-              <p className="text-sm text-center font-medium text-yellow-700 dark:text-yellow-500">
-                Você poderá refazer os vídeos e artigos após o reset.
-              </p>
-            </div>
+            <p className="text-sm text-center font-medium">
+              Você poderá refazer os vídeos e artigos após o reset.
+            </p>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => {
-                setModalResetAberto(false)
-                setSenhaConfirmacao("")
-                setErroSenha("")
-              }}
+              onClick={() => setModalResetAberto(false)}
               disabled={resetando}
               className="flex-1"
             >
@@ -674,7 +622,7 @@ export default function PassoClient({
               type="button"
               variant="destructive"
               onClick={confirmarReset}
-              disabled={resetando || !senhaConfirmacao.trim()}
+              disabled={resetando}
               className="flex-1"
             >
               {resetando ? (
