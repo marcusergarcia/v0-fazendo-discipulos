@@ -333,6 +333,18 @@ export default async function DashboardPage({
                     ? "current"
                     : "locked"
 
+                let xpGanho: number | null = null
+                if (stepProgress?.videos_assistidos) {
+                  const videosArray = stepProgress.videos_assistidos as any[]
+                  const videoComXP = videosArray.find((v: any) => v.xp_ganho !== undefined && v.xp_ganho !== null)
+                  if (videoComXP) xpGanho = videoComXP.xp_ganho
+                }
+                if (xpGanho === null && stepProgress?.artigos_lidos) {
+                  const artigosArray = stepProgress.artigos_lidos as any[]
+                  const artigoComXP = artigosArray.find((a: any) => a.xp_ganho !== undefined && a.xp_ganho !== null)
+                  if (artigoComXP) xpGanho = artigoComXP.xp_ganho
+                }
+
                 return (
                   <StepCard
                     key={stepNumber}
@@ -340,6 +352,7 @@ export default async function DashboardPage({
                     title={getPassoNome(stepNumber)}
                     status={status as "completed" | "current" | "locked"}
                     href={status === "locked" ? undefined : `/dashboard/passo/${stepNumber}`}
+                    xpGanho={xpGanho}
                   />
                 )
               })}
@@ -441,7 +454,8 @@ function StepCard({
   title,
   status,
   href,
-}: { number: number; title: string; status: "completed" | "current" | "locked"; href?: string }) {
+  xpGanho,
+}: { number: number; title: string; status: "completed" | "current" | "locked"; href?: string; xpGanho?: number | null }) {
   const getIcon = () => {
     switch (status) {
       case "completed":
@@ -466,11 +480,19 @@ function StepCard({
 
   const getBadge = () => {
     if (status === "completed") {
-      return (
-        <Badge className="mt-2 bg-green-600 text-white text-xs">
-          Aprovado
-        </Badge>
-      )
+      if (xpGanho !== null && xpGanho !== undefined && xpGanho > 0) {
+        return (
+          <Badge className="mt-2 bg-green-600 text-white text-xs">
+            Aprovado
+          </Badge>
+        )
+      } else {
+        return (
+          <Badge className="mt-2 bg-blue-600 text-white text-xs">
+            Missão Cumprida
+          </Badge>
+        )
+      }
     }
     return null
   }
