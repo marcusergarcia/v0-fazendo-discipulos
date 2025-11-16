@@ -310,7 +310,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   console.log("[v0] SERVER: User ID:", user?.id)
   if (!user) {
     console.log("[v0] SERVER: Usuário não encontrado!")
-    return
+    throw new Error("Usuário não autenticado")
   }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
@@ -319,7 +319,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
   if (!discipulo) {
     console.log("[v0] SERVER: Discípulo não encontrado!")
-    return
+    throw new Error("Discípulo não encontrado")
   }
 
   console.log("[v0] SERVER: Verificando reflexão existente...")
@@ -339,38 +339,24 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   
   if (!reflexaoExistente && discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
-    const cincoMinutosAtras = new Date(Date.now() - 5 * 60 * 1000).toISOString()
     
-    const { data: notificacaoRecente } = await supabase
+    const { data: novaNotificacao, error: notifError } = await supabase
       .from("notificacoes")
+      .insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "reflexao",
+        titulo: "Nova reflexão de vídeo",
+        mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão no Passo ${numero}.`,
+        link: `/discipulador`,
+      })
       .select("id")
-      .eq("user_id", discipulo.discipulador_id)
-      .eq("tipo", "reflexao")
-      .gte("created_at", cincoMinutosAtras)
-      .like("mensagem", `%"${titulo}"%`)
-      .maybeSingle()
-
-    if (!notificacaoRecente) {
-      const { data: novaNotificacao, error: notifError } = await supabase
-        .from("notificacoes")
-        .insert({
-          user_id: discipulo.discipulador_id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de vídeo",
-          mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão.`,
-          link: `/discipulador`,
-        })
-        .select("id")
-        .single()
-      
-      if (notifError) {
-        console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
-      } else {
-        console.log("[v0] SERVER: Notificação criada com ID:", novaNotificacao.id)
-        notificacaoId = novaNotificacao.id
-      }
+      .single()
+    
+    if (notifError) {
+      console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
-      notificacaoId = notificacaoRecente.id
+      console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+      notificacaoId = novaNotificacao.id
     }
   }
 
@@ -394,15 +380,21 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     
     if (reflexaoError) {
       console.error("[v0] SERVER: Erro ao inserir reflexão:", reflexaoError)
+      throw new Error("Erro ao salvar reflexão")
     } else {
-      console.log("[v0] SERVER: Reflexão inserida com sucesso! ID:", novaReflexao.id)
+      console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
       
       if (notificacaoId) {
-        await supabase
+        const { error: updateError } = await supabase
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
-        console.log("[v0] SERVER: Notificação atualizada com reflexao_id")
+        
+        if (updateError) {
+          console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
+        } else {
+          console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
+        }
       }
     }
   }
@@ -461,7 +453,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   console.log("[v0] SERVER: User ID:", user?.id)
   if (!user) {
     console.log("[v0] SERVER: Usuário não encontrado!")
-    return
+    throw new Error("Usuário não autenticado")
   }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
@@ -470,7 +462,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
   if (!discipulo) {
     console.log("[v0] SERVER: Discípulo não encontrado!")
-    return
+    throw new Error("Discípulo não encontrado")
   }
 
   console.log("[v0] SERVER: Verificando reflexão existente...")
@@ -490,38 +482,24 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   
   if (!reflexaoExistente && discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
-    const cincoMinutosAtras = new Date(Date.now() - 5 * 60 * 1000).toISOString()
     
-    const { data: notificacaoRecente } = await supabase
+    const { data: novaNotificacao, error: notifError } = await supabase
       .from("notificacoes")
+      .insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "reflexao",
+        titulo: "Nova reflexão de artigo",
+        mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão no Passo ${numero}.`,
+        link: `/discipulador`,
+      })
       .select("id")
-      .eq("user_id", discipulo.discipulador_id)
-      .eq("tipo", "reflexao")
-      .gte("created_at", cincoMinutosAtras)
-      .like("mensagem", `%"${titulo}"%`)
-      .maybeSingle()
-
-    if (!notificacaoRecente) {
-      const { data: novaNotificacao, error: notifError } = await supabase
-        .from("notificacoes")
-        .insert({
-          user_id: discipulo.discipulador_id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de artigo",
-          mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão.`,
-          link: `/discipulador`,
-        })
-        .select("id")
-        .single()
-      
-      if (notifError) {
-        console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
-      } else {
-        console.log("[v0] SERVER: Notificação criada com ID:", novaNotificacao.id)
-        notificacaoId = novaNotificacao.id
-      }
+      .single()
+    
+    if (notifError) {
+      console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
-      notificacaoId = notificacaoRecente.id
+      console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+      notificacaoId = novaNotificacao.id
     }
   }
 
@@ -545,15 +523,21 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     
     if (reflexaoError) {
       console.error("[v0] SERVER: Erro ao inserir reflexão:", reflexaoError)
+      throw new Error("Erro ao salvar reflexão")
     } else {
-      console.log("[v0] SERVER: Reflexão inserida com sucesso! ID:", novaReflexao.id)
+      console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
       
       if (notificacaoId) {
-        await supabase
+        const { error: updateError } = await supabase
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
-        console.log("[v0] SERVER: Notificação atualizada com reflexao_id")
+        
+        if (updateError) {
+          console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
+        } else {
+          console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
+        }
       }
     }
   }

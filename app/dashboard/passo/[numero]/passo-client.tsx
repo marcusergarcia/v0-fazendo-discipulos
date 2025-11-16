@@ -265,12 +265,16 @@ export default function PassoClient({
                   </CardTitle>
                   <CardDescription>Vídeos curtos para aprofundar seu entendimento</CardDescription>
                 </div>
-                {(videosAssistidos.length > 0 || artigosLidos.length > 0) && (
-                  <Button type="button" variant="outline" size="sm" onClick={handleResetarProgresso}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Resetar Progresso
-                  </Button>
-                )}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleResetarProgresso}
+                  disabled={carregandoReflexoes}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  {carregandoReflexoes ? "Carregando..." : "Resetar Progresso"}
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -327,11 +331,25 @@ export default function PassoClient({
         {passo.artigos && passo.artigos.length > 0 && (
           <Card className="mb-6 border-secondary/30">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-secondary" />
-                Leia e Entenda
-              </CardTitle>
-              <CardDescription>Artigos e recursos para estudo complementar</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-secondary" />
+                    Leia e Entenda
+                  </CardTitle>
+                  <CardDescription>Artigos e recursos para estudo complementar</CardDescription>
+                </div>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleResetarProgresso}
+                  disabled={carregandoReflexoes}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  {carregandoReflexoes ? "Carregando..." : "Resetar Progresso"}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
