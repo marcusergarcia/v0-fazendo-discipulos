@@ -68,34 +68,7 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
 
-    const progressoInicial = []
-    for (let passo = 1; passo <= 10; passo++) {
-      progressoInicial.push({
-        discipulo_id: discipuloId,
-        fase_numero: 1,
-        passo_numero: passo,
-        nivel: 1,
-        data_inicio: passo === 1 ? new Date().toISOString() : null,
-        videos_assistidos: [],
-        artigos_lidos: [],
-        completado: false,
-        enviado_para_validacao: false,
-        resposta_pergunta: null,
-        resposta_missao: null,
-        rascunho_resposta: null,
-        status_validacao: null,
-        data_completado: null,
-        reflexoes_concluidas: 0,
-        pontuacao_total: 0,
-      })
-    }
-
-    const { error: progressoError } = await supabaseAdmin.from("progresso_fases").insert(progressoInicial)
-
-    if (progressoError) {
-      console.error("[v0] Erro ao criar progresso inicial:", progressoError)
-      throw new Error(`Erro ao criar progresso inicial: ${progressoError.message}`)
-    }
+    // O progresso será criado quando o discípulo iniciar o passo 1 pela primeira vez
 
     const { error: updateError } = await supabaseAdmin
       .from("discipulos")

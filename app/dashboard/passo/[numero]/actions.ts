@@ -29,7 +29,6 @@ export async function salvarRascunho(numero: number, formData: FormData) {
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
 
   redirect(`/dashboard/passo/${numero}?saved=true`)
 }
@@ -70,7 +69,6 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
 
   if (discipulo.discipulador_id) {
     await supabaseAdmin.from("notificacoes").insert({
@@ -81,7 +79,6 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       link: `/discipulador/validar-passo/${discipulo.id}/1/${numero}`,
     })
 
-    // Enviar mensagem automática no chat
     await supabase.from("mensagens").insert({
       discipulo_id: discipulo.id,
       remetente_id: user.id,
@@ -108,7 +105,6 @@ export async function marcarVideoAssistido(numero: number, videoId: string) {
     .select("videos_assistidos")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .single()
 
   const videosAtuais = (progresso?.videos_assistidos as string[]) || []
@@ -119,7 +115,6 @@ export async function marcarVideoAssistido(numero: number, videoId: string) {
       .update({ videos_assistidos: videosAtuais })
       .eq("discipulo_id", discipulo.id)
       .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
   }
 
   redirect(`/dashboard/passo/${numero}?video=${videoId}`)
@@ -141,7 +136,6 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
     .select("artigos_lidos")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .single()
 
   const artigosAtuais = (progresso?.artigos_lidos as string[]) || []
@@ -152,7 +146,6 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
       .update({ artigos_lidos: artigosAtuais })
       .eq("discipulo_id", discipulo.id)
       .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
   }
 
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
@@ -431,7 +424,6 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
 
   if (errorReset) {
     console.error("[v0] ERRO ao resetar progresso:", errorReset)
@@ -557,7 +549,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .maybeSingle()
 
   if (!progressoExistente) {
@@ -580,7 +571,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         .update({ videos_assistidos: videosAtuais })
         .eq("discipulo_id", discipulo.id)
         .eq("fase_numero", 1)
-        .eq("passo_numero", numero)
         
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
@@ -709,7 +699,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .maybeSingle()
 
   if (!progressoExistente) {
@@ -732,7 +721,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         .update({ artigos_lidos: artigosAtuais })
         .eq("discipulo_id", discipulo.id)
         .eq("fase_numero", 1)
-        .eq("passo_numero", numero)
         
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)

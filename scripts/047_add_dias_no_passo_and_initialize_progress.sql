@@ -47,32 +47,33 @@ INSERT INTO public.progresso_fases (
   data_completado
 )
 SELECT 
-  p.user_id as discipulo_id,
+  d.id as discipulo_id,
   1 as fase_numero,
   passo_num as passo_numero,
   1 as nivel,
   passo_num as passo,
   CASE WHEN passo_num = 1 THEN NOW() ELSE NULL END as data_inicio, -- Só primeiro passo começa agora
-  '{}' as videos_assistidos,
-  '{}' as artigos_lidos,
+  ARRAY[]::TEXT[] as videos_assistidos,
+  ARRAY[]::TEXT[] as artigos_lidos,
   false as completado,
   false as enviado_para_validacao,
   NULL as resposta_pergunta,
   NULL as resposta_missao,
   NULL as rascunho_resposta,
-  NULL as status_validacao,
+  'pendente' as status_validacao,
   0 as pontuacao_total,
   0 as reflexoes_concluidas,
   NULL as data_completado
 FROM 
-  public.profiles p
+  public.discipulos d
   CROSS JOIN generate_series(1, 10) as passo_num
 WHERE 
-  p.perfil_discipulo = true
+  d.aprovado_discipulador = true
   AND NOT EXISTS (
     SELECT 1 FROM public.progresso_fases pf
-    WHERE pf.discipulo_id = p.user_id
-  );
+    WHERE pf.discipulo_id = d.id
+  )
+ON CONFLICT (discipulo_id, fase_numero, passo_numero) DO NOTHING;
 
 -- 5. Criar índice para melhorar performance
 CREATE INDEX IF NOT EXISTS idx_progresso_dias ON public.progresso_fases(discipulo_id, completado, dias_no_passo);
