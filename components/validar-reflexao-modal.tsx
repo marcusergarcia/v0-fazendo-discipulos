@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle, Loader2 } from 'lucide-react'
+import { Clock, CheckCircle, Loader2, CheckCircle2 } from 'lucide-react'
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useRouter } from 'next/navigation'
@@ -20,9 +20,10 @@ interface ValidarReflexaoModalProps {
   }
   discipuloId: string
   discipuloNome: string
+  xpGanho?: number | null
 }
 
-export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: ValidarReflexaoModalProps) {
+export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpGanho }: ValidarReflexaoModalProps) {
   const [open, setOpen] = useState(false)
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
@@ -96,6 +97,15 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     } finally {
       setLoading(false)
     }
+  }
+
+  if (xpGanho && xpGanho > 0) {
+    return (
+      <Badge className="bg-green-100 text-green-700 border-green-300 hover:bg-green-100">
+        <CheckCircle2 className="w-3 h-3 mr-1" />
+        Aprovado (+{xpGanho} XP)
+      </Badge>
+    )
   }
 
   return (

@@ -333,18 +333,6 @@ export default async function DashboardPage({
                     ? "current"
                     : "locked"
 
-                let xpGanho: number | null = null
-                if (stepProgress?.videos_assistidos) {
-                  const videosArray = stepProgress.videos_assistidos as any[]
-                  const videoComXP = videosArray.find((v: any) => v.xp_ganho !== undefined && v.xp_ganho !== null)
-                  if (videoComXP) xpGanho = videoComXP.xp_ganho
-                }
-                if (xpGanho === null && stepProgress?.artigos_lidos) {
-                  const artigosArray = stepProgress.artigos_lidos as any[]
-                  const artigoComXP = artigosArray.find((a: any) => a.xp_ganho !== undefined && a.xp_ganho !== null)
-                  if (artigoComXP) xpGanho = artigoComXP.xp_ganho
-                }
-
                 return (
                   <StepCard
                     key={stepNumber}
@@ -352,7 +340,6 @@ export default async function DashboardPage({
                     title={getPassoNome(stepNumber)}
                     status={status as "completed" | "current" | "locked"}
                     href={status === "locked" ? undefined : `/dashboard/passo/${stepNumber}`}
-                    xpGanho={xpGanho}
                   />
                 )
               })}
@@ -454,12 +441,11 @@ function StepCard({
   title,
   status,
   href,
-  xpGanho,
-}: { number: number; title: string; status: "completed" | "current" | "locked"; href?: string; xpGanho?: number | null }) {
+}: { number: number; title: string; status: "completed" | "current" | "locked"; href?: string }) {
   const getIcon = () => {
     switch (status) {
       case "completed":
-        return <CheckCircle2 className="w-6 h-6 text-green-600" />
+        return <CheckCircle2 className="w-6 h-6 text-accent" />
       case "current":
         return <Target className="w-6 h-6 text-primary" />
       case "locked":
@@ -470,7 +456,7 @@ function StepCard({
   const getStyles = () => {
     switch (status) {
       case "completed":
-        return "border-green-600 bg-green-50"
+        return "border-accent bg-accent/5"
       case "current":
         return "border-primary bg-primary/5 ring-2 ring-primary/20"
       case "locked":
@@ -478,31 +464,11 @@ function StepCard({
     }
   }
 
-  const getBadge = () => {
-    if (status === "completed") {
-      if (xpGanho !== null && xpGanho !== undefined && xpGanho > 0) {
-        return (
-          <Badge className="mt-2 bg-green-600 text-white text-xs">
-            Aprovado
-          </Badge>
-        )
-      } else {
-        return (
-          <Badge className="mt-2 bg-blue-600 text-white text-xs">
-            Missão Cumprida
-          </Badge>
-        )
-      }
-    }
-    return null
-  }
-
   const content = (
     <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
       <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>
-      {getBadge()}
     </div>
   )
 
