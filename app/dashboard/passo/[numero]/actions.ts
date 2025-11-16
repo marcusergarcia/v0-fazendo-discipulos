@@ -159,7 +159,7 @@ export async function buscarReflexoesParaReset(numero: number) {
   
   if (!user) {
     console.error("[v0] SERVER: Erro - Usuário não autenticado")
-    throw new Error("Usuário não autenticado")
+    return []
   }
 
   const { data: discipulo, error: discipuloError } = await supabase
@@ -172,26 +172,27 @@ export async function buscarReflexoesParaReset(numero: number) {
   
   if (discipuloError || !discipulo) {
     console.error("[v0] SERVER: Erro ao buscar discípulo:", discipuloError)
-    throw new Error("Discípulo não encontrado")
+    return []
   }
 
   console.log("[v0] SERVER: Buscando reflexões - discipulo_id:", discipulo.id, "passo:", numero)
   
   const { data: reflexoes, error } = await supabase
     .from("reflexoes_conteudo")
-    .select("id, tipo, titulo, conteudo_id, notificacao_id, created_at")
+    .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
-    .order("created_at", { ascending: true })
 
   if (error) {
     console.error("[v0] SERVER: Erro ao buscar reflexões:", error)
-    throw new Error(`Erro ao buscar reflexões: ${error.message}`)
+    return []
   }
 
   console.log("[v0] SERVER: Reflexões encontradas:", reflexoes?.length || 0)
-  console.log("[v0] SERVER: Reflexões:", JSON.stringify(reflexoes, null, 2))
+  if (reflexoes && reflexoes.length > 0) {
+    console.log("[v0] SERVER: Primeira reflexão:", reflexoes[0])
+  }
 
   return reflexoes || []
 }
