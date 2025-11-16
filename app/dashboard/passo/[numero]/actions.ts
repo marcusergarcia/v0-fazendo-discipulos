@@ -147,26 +147,36 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
 }
 
 export async function buscarReflexoesParaReset(numero: number) {
+  console.log("[v0] SERVER: buscarReflexoesParaReset iniciada - Passo:", numero)
+  
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   
+  console.log("[v0] SERVER: User ID:", user?.id)
+  
   if (!user) {
+    console.error("[v0] SERVER: Erro - Usuário não autenticado")
     throw new Error("Usuário não autenticado")
   }
 
-  const { data: discipulo } = await supabase
+  const { data: discipulo, error: discipuloError } = await supabase
     .from("discipulos")
     .select("id")
     .eq("user_id", user.id)
     .single()
 
-  if (!discipulo) {
+  console.log("[v0] SERVER: Discípulo encontrado:", discipulo?.id)
+  
+  if (discipuloError || !discipulo) {
+    console.error("[v0] SERVER: Erro ao buscar discípulo:", discipuloError)
     throw new Error("Discípulo não encontrado")
   }
 
+  console.log("[v0] SERVER: Buscando reflexões - discipulo_id:", discipulo.id, "passo:", numero)
+  
   const { data: reflexoes, error } = await supabase
     .from("reflexoes_conteudo")
     .select("id, tipo, titulo, conteudo_id, notificacao_id, created_at")
@@ -176,9 +186,12 @@ export async function buscarReflexoesParaReset(numero: number) {
     .order("created_at", { ascending: true })
 
   if (error) {
-    console.error("[v0] Erro ao buscar reflexões:", error)
-    throw new Error("Erro ao buscar reflexões")
+    console.error("[v0] SERVER: Erro ao buscar reflexões:", error)
+    throw new Error(`Erro ao buscar reflexões: ${error.message}`)
   }
+
+  console.log("[v0] SERVER: Reflexões encontradas:", reflexoes?.length || 0)
+  console.log("[v0] SERVER: Reflexões:", JSON.stringify(reflexoes, null, 2))
 
   return reflexoes || []
 }

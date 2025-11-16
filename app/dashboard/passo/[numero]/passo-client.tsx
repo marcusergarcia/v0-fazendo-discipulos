@@ -92,19 +92,29 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
+    console.log("[v0] CLIENT: handleResetarProgresso iniciado")
     setCarregandoReflexoes(true)
     setErroSenha(null)
     
     try {
+      console.log("[v0] CLIENT: Chamando buscarReflexoesParaReset para passo", numero)
       const reflexoes = await buscarReflexoesParaReset(numero)
-      console.log("[v0] Reflexões encontradas para exclusão:", reflexoes)
+      console.log("[v0] CLIENT: Reflexões retornadas:", reflexoes)
+      console.log("[v0] CLIENT: Total de reflexões:", reflexoes.length)
+      
       setReflexoesParaExcluir(reflexoes)
       setModalResetAberto(true)
+      
+      console.log("[v0] CLIENT: Modal aberto com sucesso")
     } catch (error: any) {
-      console.error("[v0] Erro ao buscar reflexões:", error)
-      setErroSenha("Erro ao carregar reflexões. Tente novamente.")
+      console.error("[v0] CLIENT: ERRO ao buscar reflexões:", error)
+      console.error("[v0] CLIENT: Stack:", error.stack)
+      setErroSenha(`Erro ao carregar reflexões: ${error.message}`)
+      // Mesmo com erro, abre o modal para permitir reset
+      setModalResetAberto(true)
     } finally {
       setCarregandoReflexoes(false)
+      console.log("[v0] CLIENT: Carregamento finalizado")
     }
   }
   
