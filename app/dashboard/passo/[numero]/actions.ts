@@ -258,11 +258,13 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         } else {
           console.log("[v0] ✅ Notificações excluídas com sucesso!")
         }
+      } else {
+        console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
       }
     }
 
-    // Excluir as reflexões
-    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões...")
+    // Excluir TODAS as reflexões pelos IDs, independente de terem notificação
+    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
     const { error: errorExcluir } = await supabase
       .from("reflexoes_conteudo")
       .delete()
@@ -273,7 +275,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       throw new Error("Erro ao excluir reflexões")
     }
     
-    console.log("[v0] ✅ Reflexões excluídas com sucesso!")
+    console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
   }
 
   // Resetar progresso
@@ -355,11 +357,12 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
     } else {
       console.log("[v0] Reflexões encontradas:", reflexoes)
       
-      // Coletar IDs das notificações
+      // Coletar IDs das notificações que existem
       const notificacoesIds = reflexoes
         ?.filter(r => r.notificacao_id)
         .map(r => r.notificacao_id) || []
       
+      // Excluir notificações SE existirem
       if (notificacoesIds.length > 0) {
         console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
         const { error: errorNotif } = await supabase
@@ -372,11 +375,13 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
         } else {
           console.log("[v0] ✅ Notificações excluídas com sucesso!")
         }
+      } else {
+        console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
       }
     }
 
-    // Excluir as reflexões
-    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões...")
+    // Excluir TODAS as reflexões pelos IDs, independente de terem notificação
+    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
     const { error: errorExcluir } = await supabase
       .from("reflexoes_conteudo")
       .delete()
@@ -387,7 +392,7 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
       throw new Error("Erro ao excluir reflexões")
     }
     
-    console.log("[v0] ✅ Reflexões excluídas com sucesso!")
+    console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
   }
 
   // Resetar progresso

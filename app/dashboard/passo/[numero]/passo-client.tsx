@@ -192,6 +192,13 @@ export default function PassoClient({
     }
   }
 
+  const temProgressoParaResetar = () => {
+    const temVideos = videosAssistidos.length > 0
+    const temArtigos = artigosLidos.length > 0
+    const temResposta = progresso?.resposta_pergunta || progresso?.resposta_missao
+    return temVideos || temArtigos || temResposta
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
@@ -389,7 +396,7 @@ export default function PassoClient({
           </Card>
         )}
 
-        {((passo.videos && passo.videos.length > 0) || (passo.artigos && passo.artigos.length > 0)) && (
+        {((passo.videos && passo.videos.length > 0) || (passo.artigos && passo.artigos.length > 0)) && temProgressoParaResetar() && (
           <div className="mb-6 flex justify-end">
             <Button 
               type="button" 
