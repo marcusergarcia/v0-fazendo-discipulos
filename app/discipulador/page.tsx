@@ -302,7 +302,7 @@ export default async function DiscipuladorPage() {
                                 {tarefa.xp ? (
                                   <Badge variant="default" className="bg-green-600">
                                     <CheckCircle className="w-3 h-3 mr-1" />
-                                    {tarefa.xp} XP
+                                    Aprovado ({tarefa.xp} XP)
                                   </Badge>
                                 ) : tarefa.reflexao ? (
                                   <ValidarReflexaoModal 
