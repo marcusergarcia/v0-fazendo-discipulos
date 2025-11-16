@@ -1,7 +1,11 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { redirect } from 'next/navigation'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function salvarRascunho(numero: number, formData: FormData) {
   const supabase = await createClient()
@@ -31,6 +35,13 @@ export async function salvarRascunho(numero: number, formData: FormData) {
 
 export async function enviarParaValidacao(numero: number, formData: FormData) {
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+  
   const respostaPergunta = formData.get("resposta_pergunta") as string
   const respostaMissao = formData.get("resposta_missao") as string
 
@@ -61,7 +72,7 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
     .eq("passo_numero", numero)
 
   if (discipulo.discipulador_id) {
-    await supabase.from("notificacoes").insert({
+    await supabaseAdmin.from("notificacoes").insert({
       user_id: discipulo.discipulador_id,
       tipo: "missao",
       titulo: "Nova missão para validar",
@@ -435,6 +446,12 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   console.log("[v0] SERVER: Params:", { numero, videoId, titulo, reflexao: reflexao.substring(0, 50) })
   
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -473,7 +490,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   if (!reflexaoExistente && discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
     
-    const { data: novaNotificacao, error: notifError } = await supabase
+    const { data: novaNotificacao, error: notifError } = await supabaseAdmin
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
@@ -518,7 +535,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
       
       if (notificacaoId) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
@@ -578,6 +595,12 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   console.log("[v0] SERVER: Params:", { numero, artigoId, titulo, reflexao: reflexao.substring(0, 50) })
   
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -616,7 +639,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   if (!reflexaoExistente && discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
     
-    const { data: novaNotificacao, error: notifError } = await supabase
+    const { data: novaNotificacao, error: notifError } = await supabaseAdmin
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
@@ -661,7 +684,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
       
       if (notificacaoId) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
