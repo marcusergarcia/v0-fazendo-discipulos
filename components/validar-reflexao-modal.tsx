@@ -39,8 +39,20 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     setLoading(true)
 
     try {
-      // Atualizar reflexão (adicionar campos de validação se necessário)
-      // Por enquanto, apenas marcar como avaliada no progresso
+      const { error: reflexaoError } = await supabase
+        .from("reflexoes_conteudo")
+        .update({
+          avaliado: true,
+          feedback_discipulador: feedback,
+          xp_concedido: xpConcedido,
+          data_avaliacao: new Date().toISOString()
+        })
+        .eq("id", reflexao.id)
+
+      if (reflexaoError) {
+        console.error("Erro ao atualizar reflexão:", reflexaoError)
+        throw reflexaoError
+      }
       
       // Buscar progresso atual
       const { data: progresso } = await supabase
@@ -88,7 +100,7 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
 
         toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
         setOpen(false)
-        router.refresh()
+        window.location.reload()
       }
     } catch (error) {
       console.error("Erro ao aprovar reflexão:", error)

@@ -106,7 +106,8 @@ export default async function DiscipuladorPage() {
             titulo: video.titulo,
             concluido: !!videoAssistido,
             reflexao,
-            xp: videoAssistido?.xp_ganho || null
+            avaliado: reflexao?.avaliado || false,
+            xp: reflexao?.xp_concedido || videoAssistido?.xp_ganho || null
           })
         })
 
@@ -123,7 +124,8 @@ export default async function DiscipuladorPage() {
             titulo: artigo.titulo,
             concluido: !!artigoLido,
             reflexao,
-            xp: artigoLido?.xp_ganho || null
+            avaliado: reflexao?.avaliado || false,
+            xp: reflexao?.xp_concedido || artigoLido?.xp_ganho || null
           })
         })
       }
@@ -299,7 +301,12 @@ export default async function DiscipuladorPage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {tarefa.xp ? (
+                                {tarefa.avaliado ? (
+                                  <Badge variant="default" className="bg-green-600">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Aprovado - {tarefa.xp} XP
+                                  </Badge>
+                                ) : tarefa.xp ? (
                                   <Badge variant="default" className="bg-green-600">
                                     <CheckCircle className="w-3 h-3 mr-1" />
                                     {tarefa.xp} XP
