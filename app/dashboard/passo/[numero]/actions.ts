@@ -331,6 +331,12 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
   
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -358,26 +364,52 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
   console.log("[v0] Discípulo ID:", discipulo.id)
 
   if (reflexoesIds.length > 0) {
-    console.log("[v0] Excluindo reflexões e notificações via RPC...")
-    
-    // Excluir cada reflexão usando a função SQL que bypassa RLS
-    for (const reflexaoId of reflexoesIds) {
-      console.log("[v0] Chamando RPC para reflexão:", reflexaoId)
+    console.log("[v0] Buscando reflexões com seus IDs de notificações...")
+    const { data: reflexoes, error: errorBuscar } = await supabaseAdmin
+      .from("reflexoes_conteudo")
+      .select("id, notificacao_id")
+      .in("id", reflexoesIds)
+
+    if (errorBuscar) {
+      console.log("[v0] ERRO ao buscar reflexões:", errorBuscar)
+    } else {
+      console.log("[v0] Reflexões encontradas:", reflexoes)
       
-      const { data: resultado, error: rpcError } = await supabase
-        .rpc('delete_reflexao_com_notificacao', { reflexao_id_param: reflexaoId })
+      const notificacoesIds = reflexoes
+        ?.filter(r => r.notificacao_id)
+        .map(r => r.notificacao_id) || []
       
-      if (rpcError) {
-        console.error("[v0] ERRO no RPC para reflexão", reflexaoId, ":", rpcError)
+      if (notificacoesIds.length > 0) {
+        console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
+        const { error: errorNotif } = await supabaseAdmin
+          .from("notificacoes")
+          .delete()
+          .in("id", notificacoesIds)
+
+        if (errorNotif) {
+          console.error("[v0] ERRO ao excluir notificações:", errorNotif)
+        } else {
+          console.log("[v0] ✅ Notificações excluídas com sucesso!")
+        }
       } else {
-        console.log("[v0] ✅ Resultado RPC:", resultado)
+        console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
       }
     }
+
+    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
+    const { error: errorExcluir } = await supabaseAdmin
+      .from("reflexoes_conteudo")
+      .delete()
+      .in("id", reflexoesIds)
+
+    if (errorExcluir) {
+      console.error("[v0] ERRO ao excluir reflexões:", errorExcluir)
+      throw new Error("Erro ao excluir reflexões")
+    }
     
-    console.log("[v0] ✅ Todas as reflexões e notificações processadas via RPC!")
+    console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
   }
 
-  // Resetar progresso
   console.log("[v0] Resetando progresso do passo...")
   const { error: errorReset } = await supabase
     .from("progresso_fases")
@@ -559,7 +591,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   }
 
   revalidatePath(`/dashboard/passo/${numero}`)
-  console.log("[v0] SERVER: Página revalidada!")
+  console.log("[v0] SERVER: ✅ Página revalidada, dados atualizados!")
 
   return { success: true, videoId }
 }
@@ -711,7 +743,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   }
 
   revalidatePath(`/dashboard/passo/${numero}`)
-  console.log("[v0] SERVER: Página revalidada!")
+  console.log("[v0] SERVER: ✅ Página revalidada, dados atualizados!")
 
   return { success: true, artigoId }
 }
