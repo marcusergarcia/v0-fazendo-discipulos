@@ -94,36 +94,28 @@ export default async function DiscipuladorPage() {
 
       if (conteudoPasso) {
         conteudoPasso.videos?.forEach((video) => {
-          const videoAssistido = progressoAtual?.videos_assistidos 
-            ? (progressoAtual.videos_assistidos as any[]).find((v: any) => v.id === video.id)
-            : null
-          
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === video.id && r.tipo === 'video')
           
           tarefas.push({
             id: video.id,
             tipo: 'video',
             titulo: video.titulo,
-            concluido: !!videoAssistido,
+            concluido: !!reflexao,
             reflexao,
-            xp: videoAssistido?.xp_ganho || null
+            xp: reflexao?.xp_ganho || null
           })
         })
 
         conteudoPasso.artigos?.forEach((artigo) => {
-          const artigoLido = progressoAtual?.artigos_lidos
-            ? (progressoAtual.artigos_lidos as any[]).find((a: any) => a.id === artigo.id)
-            : null
-          
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
           
           tarefas.push({
             id: artigo.id,
             tipo: 'artigo',
             titulo: artigo.titulo,
-            concluido: !!artigoLido,
+            concluido: !!reflexao,
             reflexao,
-            xp: artigoLido?.xp_ganho || null
+            xp: reflexao?.xp_ganho || null
           })
         })
       }

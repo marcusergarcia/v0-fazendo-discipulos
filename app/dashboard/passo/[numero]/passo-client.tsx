@@ -286,9 +286,9 @@ export default function PassoClient({
             </CardHeader>
             <CardContent className="space-y-3">
               {passo.videos.map((video: any) => {
-                const assistido = videosAssistidos.includes(video.id)
-                const videoInfo = progresso?.videos_assistidos?.find((v: any) => v.id === video.id)
-                const temXP = videoInfo?.xp_ganho > 0
+                const assistido = videosAssistidos.some((v: any) => typeof v === 'string' && v === video.id)
+                const reflexaoInfo = videosAssistidos.find((v: any) => typeof v === 'object' && v.id === video.id)
+                const xpGanho = reflexaoInfo?.xp_ganho || null
                 
                 return (
                   <div
@@ -313,10 +313,10 @@ export default function PassoClient({
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                      {temXP ? (
+                      {xpGanho && xpGanho > 0 ? (
                         <Badge className="bg-green-100 text-green-700 border-green-300">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Aprovado (+{videoInfo.xp_ganho} XP)
+                          Aprovado (+{xpGanho} XP)
                         </Badge>
                       ) : assistido ? (
                         <Badge className="bg-accent text-accent-foreground">
@@ -358,9 +358,9 @@ export default function PassoClient({
             </CardHeader>
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
-                const lido = artigosLidos.includes(artigo.id)
-                const artigoInfo = progresso?.artigos_lidos?.find((a: any) => a.id === artigo.id)
-                const temXP = artigoInfo?.xp_ganho > 0
+                const lido = artigosLidos.some((a: any) => typeof a === 'string' && a === artigo.id)
+                const reflexaoInfo = artigosLidos.find((a: any) => typeof a === 'object' && a.id === artigo.id)
+                const xpGanho = reflexaoInfo?.xp_ganho || null
                 
                 return (
                   <div
@@ -383,10 +383,10 @@ export default function PassoClient({
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
-                      {temXP ? (
+                      {xpGanho && xpGanho > 0 ? (
                         <Badge className="bg-green-100 text-green-700 border-green-300">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Aprovado (+{artigoInfo.xp_ganho} XP)
+                          Aprovado (+{xpGanho} XP)
                         </Badge>
                       ) : lido ? (
                         <Badge className="bg-accent text-accent-foreground">

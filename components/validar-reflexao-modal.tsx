@@ -40,59 +40,58 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, xpG
     setLoading(true)
 
     try {
-      // Atualizar reflexão (adicionar campos de validação se necessário)
-      // Por enquanto, apenas marcar como avaliada no progresso
+      console.log("[v0] Aprovando reflexão:", reflexao.id, "XP:", xpConcedido)
       
-      // Buscar progresso atual
+      const { error: updateError } = await supabase
+        .from("reflexoes_conteudo")
+        .update({ 
+          xp_ganho: xpConcedido,
+          feedback_discipulador: feedback
+        })
+        .eq("id", reflexao.id)
+
+      if (updateError) {
+        console.error("[v0] Erro ao atualizar reflexão:", updateError)
+        throw updateError
+      }
+
+      console.log("[v0] Reflexão atualizada com sucesso")
+
       const { data: progresso } = await supabase
         .from("progresso_fases")
-        .select("*")
+        .select("pontuacao_total")
         .eq("discipulo_id", discipuloId)
         .single()
 
       if (progresso) {
-        // Atualizar o item específico nos arrays
-        let videos_assistidos = progresso.videos_assistidos || []
-        let artigos_lidos = progresso.artigos_lidos || []
-
-        if (reflexao.tipo === 'video') {
-          videos_assistidos = videos_assistidos.map((v: any) => 
-            v.id === reflexao.id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v
-          )
-        } else {
-          artigos_lidos = artigos_lidos.map((a: any) => 
-            a.id === reflexao.id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a
-          )
-        }
-
         await supabase
           .from("progresso_fases")
-          .update({
-            videos_assistidos: reflexao.tipo === 'video' ? videos_assistidos : progresso.videos_assistidos,
-            artigos_lidos: reflexao.tipo === 'artigo' ? artigos_lidos : progresso.artigos_lidos,
+          .update({ 
+            pontuacao_total: (progresso.pontuacao_total || 0) + xpConcedido 
           })
-          .eq("id", progresso.id)
-
-        // Adicionar XP ao discípulo
-        const { data: disc } = await supabase
-          .from("discipulos")
-          .select("xp_total")
-          .eq("id", discipuloId)
-          .single()
-
-        if (disc) {
-          await supabase
-            .from("discipulos")
-            .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
-            .eq("id", discipuloId)
-        }
-
-        toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
-        setOpen(false)
-        router.refresh()
+          .eq("discipulo_id", discipuloId)
       }
+
+      const { data: disc } = await supabase
+        .from("discipulos")
+        .select("xp_total")
+        .eq("id", discipuloId)
+        .single()
+
+      if (disc) {
+        await supabase
+          .from("discipulos")
+          .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
+          .eq("id", discipuloId)
+      }
+
+      console.log("[v0] XP adicionado ao discípulo")
+
+      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
+      setOpen(false)
+      router.refresh()
     } catch (error) {
-      console.error("Erro ao aprovar reflexão:", error)
+      console.error("[v0] Erro ao aprovar reflexão:", error)
       toast.error("Erro ao aprovar reflexão")
     } finally {
       setLoading(false)

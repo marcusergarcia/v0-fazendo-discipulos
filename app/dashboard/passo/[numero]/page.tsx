@@ -78,14 +78,59 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   const passosCompletados = todosPassos?.filter((p) => p.completado).length || 0
 
-  let videosAssistidos: string[] = []
-  let artigosLidos: string[] = []
-  if (progressoAtual?.videos_assistidos) {
-    videosAssistidos = progressoAtual.videos_assistidos
+  const { data: reflexoes } = await supabase
+    .from("reflexoes_conteudo")
+    .select("*")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+
+  console.log("[v0] Reflexões carregadas para o passo", numero, ":", reflexoes?.length || 0)
+
+  let videosAssistidos: any[] = []
+  let artigosLidos: any[] = []
+
+  if (reflexoes && reflexoes.length > 0) {
+    reflexoes.forEach(reflexao => {
+      if (reflexao.tipo === 'video') {
+        videosAssistidos.push({
+          id: reflexao.conteudo_id,
+          xp_ganho: reflexao.xp_ganho || null
+        })
+      } else if (reflexao.tipo === 'artigo') {
+        artigosLidos.push({
+          id: reflexao.conteudo_id,
+          xp_ganho: reflexao.xp_ganho || null
+        })
+      }
+    })
   }
-  if (progressoAtual?.artigos_lidos) {
-    artigosLidos = progressoAtual.artigos_lidos
+
+  if (progressoAtual?.videos_assistidos && Array.isArray(progressoAtual.videos_assistidos)) {
+    progressoAtual.videos_assistidos.forEach((v: any) => {
+      const videoId = typeof v === 'string' ? v : v.id
+      if (videoId && !videosAssistidos.find(vid => vid.id === videoId)) {
+        videosAssistidos.push({
+          id: videoId,
+          xp_ganho: typeof v === 'object' ? v.xp_ganho : null
+        })
+      }
+    })
   }
+
+  if (progressoAtual?.artigos_lidos && Array.isArray(progressoAtual.artigos_lidos)) {
+    progressoAtual.artigos_lidos.forEach((a: any) => {
+      const artigoId = typeof a === 'string' ? a : a.id
+      if (artigoId && !artigosLidos.find(art => art.id === artigoId)) {
+        artigosLidos.push({
+          id: artigoId,
+          xp_ganho: typeof a === 'object' ? a.xp_ganho : null
+        })
+      }
+    })
+  }
+
+  console.log("[v0] Videos assistidos:", videosAssistidos.length)
+  console.log("[v0] Artigos lidos:", artigosLidos.length)
 
   const getStatus = () => {
     if (progressoAtual?.completado) return "validado"
