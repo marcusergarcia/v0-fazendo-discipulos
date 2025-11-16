@@ -85,7 +85,6 @@ export default function SolicitarConviteClient({ discipuladores, emailInicial }:
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Formulário de Dados */}
                 <div className="grid gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="nome" className="text-white">
@@ -145,7 +144,6 @@ export default function SolicitarConviteClient({ discipuladores, emailInicial }:
                   </div>
                 </div>
 
-                {/* Lista de Discipuladores */}
                 <div className="space-y-3">
                   <Label className="text-white text-lg">Escolha um Discipulador</Label>
                   <p className="text-sm text-blue-200">

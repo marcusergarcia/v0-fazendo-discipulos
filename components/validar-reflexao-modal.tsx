@@ -39,9 +39,6 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     setLoading(true)
 
     try {
-      // Atualizar reflexão (adicionar campos de validação se necessário)
-      // Por enquanto, apenas marcar como avaliada no progresso
-      
       // Buscar progresso atual
       const { data: progresso } = await supabase
         .from("progresso_fases")
