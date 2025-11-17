@@ -214,6 +214,12 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
   
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -259,7 +265,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       
       if (notificacoesIds.length > 0) {
         console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
-        const { error: errorNotif } = await supabase
+        const { error: errorNotif } = await supabaseAdmin
           .from("notificacoes")
           .delete()
           .in("id", notificacoesIds)
@@ -330,6 +336,12 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
   
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -373,10 +385,9 @@ export async function resetarProgressoPasso(numero: number, reflexoesIds: string
         ?.filter(r => r.notificacao_id)
         .map(r => r.notificacao_id) || []
       
-      // Excluir notificações SE existirem
       if (notificacoesIds.length > 0) {
         console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
-        const { error: errorNotif } = await supabase
+        const { error: errorNotif } = await supabaseAdmin
           .from("notificacoes")
           .delete()
           .in("id", notificacoesIds)
