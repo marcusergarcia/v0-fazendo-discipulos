@@ -44,13 +44,12 @@ export default async function DiscipuladorPage() {
   
   console.log("[v0] IDs dos discípulos para buscar reflexões:", discipuloIds)
   
-  const { data: todasReflexoes, error: reflexoesError } = await supabase
+  const { data: todasReflexoes } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
-    .eq("discipulador_id", user.id)
+    .in("discipulo_id", discipuloIds)
 
   console.log("[v0] Query de reflexões usando discipulador_id - User ID:", user.id)
-  console.log("[v0] Query de reflexões - Error:", reflexoesError)
   console.log("[v0] Total de reflexões encontradas:", todasReflexoes?.length || 0)
   
   if (todasReflexoes && todasReflexoes.length > 0) {
@@ -90,7 +89,6 @@ export default async function DiscipuladorPage() {
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipulo.id)
-        .eq("passo_numero", discipulo.passo_atual)
         .maybeSingle()
 
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
@@ -99,48 +97,48 @@ export default async function DiscipuladorPage() {
       if (conteudoPasso) {
         conteudoPasso.videos?.forEach((video) => {
           const videoAssistido = progressoAtual?.videos_assistidos 
-            ? (progressoAtual.videos_assistidos as any[]).find((v: any) => v.id === video.id)
-            : null
+            ? (progressoAtual.videos_assistidos as any[]).includes(video.id)
+            : false
           
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === video.id && r.tipo === 'video')
           
-          const foiAprovado = reflexao && reflexao.data_aprovacao != null
+          const foiAprovado = reflexao?.aprovado === true
           
           tarefas.push({
             id: video.id,
             tipo: 'video',
             titulo: video.titulo,
-            concluido: !!videoAssistido,
+            concluido: videoAssistido,
             reflexao,
             avaliado: foiAprovado,
-            xp: reflexao?.xp_ganho || videoAssistido?.xp_ganho || null
+            xp: reflexao?.xp_ganho || null
           })
         })
 
         conteudoPasso.artigos?.forEach((artigo) => {
           const artigoLido = progressoAtual?.artigos_lidos
-            ? (progressoAtual.artigos_lidos as any[]).find((a: any) => a.id === artigo.id)
-            : null
+            ? (progressoAtual.artigos_lidos as any[]).includes(artigo.id)
+            : false
           
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
           
-          const foiAprovado = reflexao && reflexao.data_aprovacao != null
+          const foiAprovado = reflexao?.aprovado === true
           
           tarefas.push({
             id: artigo.id,
             tipo: 'artigo',
             titulo: artigo.titulo,
-            concluido: !!artigoLido,
+            concluido: artigoLido,
             reflexao,
             avaliado: foiAprovado,
-            xp: reflexao?.xp_ganho || artigoLido?.xp_ganho || null
+            xp: reflexao?.xp_ganho || null
           })
         })
       }
 
       return {
         discipulo,
-        tarefasPendentes: reflexoesDiscipulo.length + progressosDiscipulo.length,
+        tarefasPendentes: reflexoesDiscipulo.filter(r => !r.aprovado).length + progressosDiscipulo.length,
         tarefas,
       }
     })

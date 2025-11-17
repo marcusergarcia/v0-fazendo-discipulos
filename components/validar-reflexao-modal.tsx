@@ -17,6 +17,8 @@ interface ValidarReflexaoModalProps {
     titulo: string
     reflexao: string
     tipo: string
+    aprovado?: boolean
+    xp_ganho?: number | null
   }
   discipuloId: string
   discipuloNome: string
@@ -30,6 +32,15 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
   const router = useRouter()
   const supabase = createClient()
 
+  if (reflexao.aprovado) {
+    return (
+      <Badge className="bg-green-600 hover:bg-green-700 text-white">
+        <CheckCircle className="w-3 h-3 mr-1" />
+        Aprovado - {reflexao.xp_ganho} XP
+      </Badge>
+    )
+  }
+
   async function handleAprovar() {
     if (!feedback.trim()) {
       toast.error("Por favor, adicione um feedback antes de aprovar")
@@ -41,11 +52,11 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     try {
       const { data: reflexaoAtual } = await supabase
         .from("reflexoes_conteudo")
-        .select("data_aprovacao, xp_ganho")
+        .select("aprovado, xp_ganho")
         .eq("id", reflexao.id)
         .single()
 
-      if (reflexaoAtual?.data_aprovacao) {
+      if (reflexaoAtual?.aprovado) {
         toast.error("Esta reflexão já foi aprovada anteriormente")
         setOpen(false)
         router.refresh()
@@ -57,43 +68,68 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
         .update({
           feedback_discipulador: feedback,
           xp_ganho: xpConcedido,
-          data_aprovacao: new Date().toISOString()
+          data_aprovacao: new Date().toISOString(),
+          aprovado: true
         })
         .eq("id", reflexao.id)
 
       if (reflexaoError) {
-        throw reflexaoError
+        console.error("Erro ao atualizar reflexão:", reflexaoError)
+        throw new Error(reflexaoError.message)
       }
       
-      const { data: disc } = await supabase
+      const { data: disc, error: discError } = await supabase
         .from("discipulos")
         .select("xp_total")
         .eq("id", discipuloId)
         .single()
 
+      if (discError) {
+        console.error("Erro ao buscar discípulo:", discError)
+        throw new Error(discError.message)
+      }
+
       if (disc) {
         const novoXP = (disc.xp_total || 0) + xpConcedido
         
-        await supabase
+        const { error: updateError } = await supabase
           .from("discipulos")
           .update({ xp_total: novoXP })
           .eq("id", discipuloId)
+
+        if (updateError) {
+          console.error("Erro ao atualizar XP:", updateError)
+          throw new Error(updateError.message)
+        }
       }
 
-      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
+      const { data: progresso } = await supabase
+        .from("progresso_fases")
+        .select("reflexoes_concluidas, pontuacao_total")
+        .eq("discipulo_id", discipuloId)
+        .single()
+
+      if (progresso) {
+        await supabase
+          .from("progresso_fases")
+          .update({
+            reflexoes_concluidas: (progresso.reflexoes_concluidas || 0) + 1,
+            pontuacao_total: (progresso.pontuacao_total || 0) + xpConcedido
+          })
+          .eq("discipulo_id", discipuloId)
+      }
+
+      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido`)
       
       setOpen(false)
       
-      // Recarregar a página para atualizar os badges
-      router.refresh()
-      
       setTimeout(() => {
         router.refresh()
-      }, 300)
+      }, 500)
       
-    } catch (error) {
-      console.error("[v0] Erro ao aprovar reflexão:", error)
-      toast.error("Erro ao atualizar reflexão: " + (error as any).message)
+    } catch (error: any) {
+      console.error("Erro ao aprovar reflexão:", error)
+      toast.error(`Erro ao aprovar: ${error.message || 'Erro desconhecido'}`)
     } finally {
       setLoading(false)
     }
