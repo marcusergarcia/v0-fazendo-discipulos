@@ -18,10 +18,11 @@ interface ValidarReflexaoModalProps {
     tipo: string
     conteudo_id: string
     xp_ganho?: number
+    situacao?: string // Adicionado campo situacao
   }
   discipuloId: string
   discipuloNome: string
-  onAprovado?: () => void
+  onAprovado?: (xpConcedido: number) => void
 }
 
 export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onAprovado }: ValidarReflexaoModalProps) {
@@ -40,25 +41,61 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
     setLoading(true)
 
     try {
-      if (reflexao.xp_ganho && reflexao.xp_ganho > 0) {
+      console.log("[v0] Iniciando aprovação da reflexão:", reflexao.id)
+      console.log("[v0] Situação atual da reflexão:", reflexao.situacao)
+      
+      if (reflexao.situacao === 'aprovado') {
         toast.error("Esta reflexão já foi aprovada anteriormente")
         setLoading(false)
         setOpen(false)
         return
       }
 
-      const { error: updateReflexaoError } = await supabase
+      const { data: reflexaoAtual } = await supabase
+        .from("reflexoes_conteudo")
+        .select("situacao, xp_ganho")
+        .eq("id", reflexao.id)
+        .single()
+
+      console.log("[v0] Reflexão atual no banco:", reflexaoAtual)
+
+      if (reflexaoAtual && reflexaoAtual.situacao === 'aprovado') {
+        toast.error("Esta reflexão já foi aprovada por outro processo")
+        setLoading(false)
+        setOpen(false)
+        return
+      }
+
+      console.log("[v0] Tentando atualizar reflexão com:", {
+        feedback_discipulador: feedback,
+        xp_ganho: xpConcedido,
+        situacao: 'aprovado'
+      })
+
+      const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
         .from("reflexoes_conteudo")
         .update({
           feedback_discipulador: feedback,
           xp_ganho: xpConcedido,
-          data_aprovacao: new Date().toISOString()
+          data_aprovacao: new Date().toISOString(),
+          situacao: 'aprovado' // Marcar como aprovado
         })
         .eq("id", reflexao.id)
+        .select()
+
+      console.log("[v0] Resultado do update:", reflexaoAtualizada)
+      console.log("[v0] Erro do update:", updateReflexaoError)
 
       if (updateReflexaoError) {
         console.error("[v0] Erro ao atualizar reflexão:", updateReflexaoError)
-        toast.error("Erro ao atualizar reflexão")
+        toast.error("Erro ao atualizar reflexão: " + updateReflexaoError.message)
+        setLoading(false)
+        return
+      }
+
+      if (!reflexaoAtualizada || reflexaoAtualizada.length === 0) {
+        console.error("[v0] Nenhuma linha foi atualizada!")
+        toast.error("Erro: Nenhuma reflexão foi atualizada")
         setLoading(false)
         return
       }
@@ -114,7 +151,7 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
       if (notificacao) {
         await supabase
           .from("notificacoes")
-          .update({ lida: true })
+          .delete()
           .eq("id", notificacao.id)
       }
 
@@ -122,10 +159,10 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
       setOpen(false)
       
       if (onAprovado) {
-        onAprovado()
+        onAprovado(xpConcedido)
       }
     } catch (error) {
-      console.error("Erro ao aprovar reflexão:", error)
+      console.error("[v0] Erro ao aprovar reflexão:", error)
       toast.error("Erro ao aprovar reflexão")
     } finally {
       setLoading(false)

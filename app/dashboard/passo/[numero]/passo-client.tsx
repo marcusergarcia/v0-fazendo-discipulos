@@ -287,6 +287,10 @@ export default function PassoClient({
             <CardContent className="space-y-3">
               {passo.videos.map((video: any) => {
                 const assistido = videosAssistidos.includes(video.id)
+                const reflexaoInfo = video.reflexao_situacao === 'aprovado' 
+                  ? { situacao: 'aprovado', xp: video.reflexao_xp || 0 }
+                  : null
+                
                 return (
                   <div
                     key={video.id}
@@ -310,7 +314,12 @@ export default function PassoClient({
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                      {assistido ? (
+                      {reflexaoInfo?.situacao === 'aprovado' ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Aprovado {reflexaoInfo.xp}XP
+                        </Badge>
+                      ) : assistido ? (
                         <Badge className="bg-accent text-accent-foreground">
                           <CheckCheck className="w-3 h-3 mr-1" />
                           Missão Cumprida
@@ -351,6 +360,10 @@ export default function PassoClient({
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
+                const reflexaoInfo = artigo.reflexao_situacao === 'aprovado'
+                  ? { situacao: 'aprovado', xp: artigo.reflexao_xp || 0 }
+                  : null
+                
                 return (
                   <div
                     key={artigo.id}
@@ -372,7 +385,12 @@ export default function PassoClient({
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
-                      {lido ? (
+                      {reflexaoInfo?.situacao === 'aprovado' ? (
+                        <Badge className="bg-green-600 text-white">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Aprovado {reflexaoInfo.xp}XP
+                        </Badge>
+                      ) : lido ? (
                         <Badge className="bg-accent text-accent-foreground">
                           <CheckCheck className="w-3 h-3 mr-1" />
                           Missão Cumprida

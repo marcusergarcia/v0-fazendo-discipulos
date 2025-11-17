@@ -65,6 +65,7 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
       .from("notificacoes")
       .select("*")
       .eq("user_id", userId)
+      .eq("lida", false) // Apenas notificações não lidas
       .order("created_at", { ascending: false })
       .limit(10)
 

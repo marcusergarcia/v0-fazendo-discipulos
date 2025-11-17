@@ -431,6 +431,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         titulo: titulo,
         reflexao: reflexao,
         notificacao_id: notificacaoId,
+        situacao: 'enviado', // Marcar como enviado
       })
       .select("id")
       .single()
@@ -580,6 +581,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         titulo: titulo,
         reflexao: reflexao,
         notificacao_id: notificacaoId,
+        situacao: 'enviado', // Marcar como enviado
       })
       .select("id")
       .single()

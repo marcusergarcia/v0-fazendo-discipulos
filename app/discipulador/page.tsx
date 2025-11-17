@@ -41,7 +41,7 @@ export default async function DiscipuladorPage() {
   
   const { data: todasReflexoes } = await supabase
     .from("reflexoes_conteudo")
-    .select("*")
+    .select("*, situacao")
     .eq("discipulador_id", user.id)
 
   const { data: progressosPendentes } = await supabase
@@ -80,9 +80,11 @@ export default async function DiscipuladorPage() {
             concluido: !!videoAssistido,
             reflexao: reflexao ? {
               ...reflexao,
-              xp_ganho: reflexao.xp_ganho || null
+              xp_ganho: reflexao.xp_ganho || null,
+              situacao: reflexao.situacao || null // Incluir situacao
             } : null,
-            xp: reflexao?.xp_ganho || null
+            xp: reflexao?.xp_ganho || null,
+            situacao: reflexao?.situacao || null // Passar situacao
           })
         })
 
@@ -100,9 +102,11 @@ export default async function DiscipuladorPage() {
             concluido: !!artigoLido,
             reflexao: reflexao ? {
               ...reflexao,
-              xp_ganho: reflexao.xp_ganho || null
+              xp_ganho: reflexao.xp_ganho || null,
+              situacao: reflexao.situacao || null // Incluir situacao
             } : null,
-            xp: reflexao?.xp_ganho || null
+            xp: reflexao?.xp_ganho || null,
+            situacao: reflexao?.situacao || null // Passar situacao
           })
         })
       }
@@ -283,6 +287,7 @@ export default async function DiscipuladorPage() {
                                   discipuloId={discipulo.id}
                                   discipuloNome={nome}
                                   xp={tarefa.xp}
+                                  situacao={tarefa.situacao} // Passar situacao como prop
                                 />
                                 {!tarefa.reflexao && !tarefa.xp && (
                                   tarefa.concluido ? (

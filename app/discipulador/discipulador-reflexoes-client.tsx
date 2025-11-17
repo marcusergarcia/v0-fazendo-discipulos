@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Badge } from "@/components/ui/badge"
 import { ValidarReflexaoModal } from "@/components/validar-reflexao-modal"
 import { CheckCircle } from 'lucide-react'
@@ -14,42 +14,56 @@ interface Reflexao {
   reflexao: string
   criado_em: string
   xp_ganho?: number
+  situacao?: string
 }
 
 interface ReflexoesClientProps {
   reflexao: Reflexao | null
   discipuloId: string
   discipuloNome: string
+  xp?: number | null
+  situacao?: string | null
 }
 
 export function ReflexoesClient({
   reflexao,
   discipuloId,
   discipuloNome,
+  xp,
+  situacao,
 }: ReflexoesClientProps) {
-  const [foiAprovado, setFoiAprovado] = useState(false)
+  const router = useRouter()
 
-  const jaAprovado = (reflexao?.xp_ganho && reflexao.xp_ganho > 0) || foiAprovado
+  const handleAprovado = (xpConcedido: number) => {
+    setTimeout(() => {
+      router.refresh()
+    }, 500)
+  }
 
-  if (reflexao && jaAprovado) {
+  const situacaoAtual = reflexao?.situacao || situacao
+
+  // Se a situação é 'aprovado', mostra badge aprovado
+  if (situacaoAtual === 'aprovado') {
     return (
       <Badge variant="default" className="bg-green-600 hover:bg-green-700">
         <CheckCircle className="w-3 h-3 mr-1" />
-        Aprovado
+        Aprovado {reflexao?.xp_ganho || xp}XP
       </Badge>
     )
   }
 
-  if (reflexao) {
+  // Se tem reflexão e situação é 'enviado', mostra botão avaliar
+  if (reflexao && situacaoAtual === 'enviado') {
     return (
       <ValidarReflexaoModal
         reflexao={reflexao}
         discipuloId={discipuloId}
         discipuloNome={discipuloNome}
-        onAprovado={() => setFoiAprovado(true)}
+        onAprovado={handleAprovado}
       />
     )
   }
 
+  // Caso contrário, não mostra nada
   return null
 }
