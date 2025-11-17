@@ -8,7 +8,7 @@ import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video,
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
-import { ValidarReflexaoModal } from "@/components/validar-reflexao-modal"
+import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 
 export default async function DiscipuladorPage() {
@@ -25,9 +25,6 @@ export default async function DiscipuladorPage() {
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
 
-  console.log("[v0] Total de discípulos aprovados:", discipulos?.length || 0)
-
-  // Buscar profiles de cada discípulo
   const discipulosComPerfil = await Promise.all(
     (discipulos || []).map(async (disc) => {
       const { data: profile } = await supabase
@@ -42,33 +39,10 @@ export default async function DiscipuladorPage() {
 
   const discipuloIds = discipulos?.map(d => d.id) || []
   
-  console.log("[v0] IDs dos discípulos para buscar reflexões:", discipuloIds)
-  
-  const { data: todasReflexoes, error: reflexoesError } = await supabase
+  const { data: todasReflexoes } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
     .eq("discipulador_id", user.id)
-
-  console.log("[v0] Query de reflexões usando discipulador_id - User ID:", user.id)
-  console.log("[v0] Query de reflexões - Error:", reflexoesError)
-  console.log("[v0] Total de reflexões encontradas:", todasReflexoes?.length || 0)
-  
-  if (todasReflexoes && todasReflexoes.length > 0) {
-    console.log("[v0] Primeira reflexão encontrada:", {
-      id: todasReflexoes[0].id,
-      discipulo_id: todasReflexoes[0].discipulo_id,
-      discipulador_id: todasReflexoes[0].discipulador_id,
-      conteudo_id: todasReflexoes[0].conteudo_id,
-      tipo: todasReflexoes[0].tipo
-    })
-  }
-  
-  console.log("[v0] Reflexões por discípulo:")
-  discipuloIds.forEach(id => {
-    const reflexoes = todasReflexoes?.filter(r => r.discipulo_id === id) || []
-    console.log(`  - Discípulo ${id}:`, reflexoes.length, "reflexões")
-    console.log(`    IDs das reflexões:`, reflexoes.map(r => r.id))
-  })
 
   const { data: progressosPendentes } = await supabase
     .from("progresso_fases")
@@ -81,7 +55,6 @@ export default async function DiscipuladorPage() {
       const reflexoesDiscipulo = todasReflexoes?.filter(r => r.discipulo_id === discipulo.id) || []
       const progressosDiscipulo = progressosPendentes?.filter(p => p.discipulo_id === discipulo.id) || []
 
-      // Buscar progresso atual
       const { data: progressoAtual } = await supabase
         .from("progresso_fases")
         .select("*")
@@ -105,8 +78,11 @@ export default async function DiscipuladorPage() {
             tipo: 'video',
             titulo: video.titulo,
             concluido: !!videoAssistido,
-            reflexao,
-            xp: videoAssistido?.xp_ganho || null
+            reflexao: reflexao ? {
+              ...reflexao,
+              xp_ganho: reflexao.xp_ganho || null
+            } : null,
+            xp: reflexao?.xp_ganho || null
           })
         })
 
@@ -122,8 +98,11 @@ export default async function DiscipuladorPage() {
             tipo: 'artigo',
             titulo: artigo.titulo,
             concluido: !!artigoLido,
-            reflexao,
-            xp: artigoLido?.xp_ganho || null
+            reflexao: reflexao ? {
+              ...reflexao,
+              xp_ganho: reflexao.xp_ganho || null
+            } : null,
+            xp: reflexao?.xp_ganho || null
           })
         })
       }
@@ -299,23 +278,20 @@ export default async function DiscipuladorPage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {tarefa.xp ? (
-                                  <Badge variant="default" className="bg-green-600">
-                                    <CheckCircle className="w-3 h-3 mr-1" />
-                                    {tarefa.xp} XP
-                                  </Badge>
-                                ) : tarefa.reflexao ? (
-                                  <ValidarReflexaoModal 
-                                    reflexao={tarefa.reflexao}
-                                    discipuloId={discipulo.id}
-                                    discipuloNome={nome}
-                                  />
-                                ) : tarefa.concluido ? (
-                                  <Badge variant="outline">Concluído</Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-muted-foreground">
-                                    Não iniciado
-                                  </Badge>
+                                <ReflexoesClient
+                                  reflexao={tarefa.reflexao}
+                                  discipuloId={discipulo.id}
+                                  discipuloNome={nome}
+                                  xp={tarefa.xp}
+                                />
+                                {!tarefa.reflexao && !tarefa.xp && (
+                                  tarefa.concluido ? (
+                                    <Badge variant="outline">Concluído</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-muted-foreground">
+                                      Não iniciado
+                                    </Badge>
+                                  )
                                 )}
                               </div>
                             </div>

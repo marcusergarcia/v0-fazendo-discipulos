@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge"
 import { Clock, CheckCircle, Loader2 } from 'lucide-react'
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { useRouter } from 'next/navigation'
 
 interface ValidarReflexaoModalProps {
   reflexao: {
@@ -17,17 +16,19 @@ interface ValidarReflexaoModalProps {
     titulo: string
     reflexao: string
     tipo: string
+    conteudo_id: string
+    xp_ganho?: number
   }
   discipuloId: string
   discipuloNome: string
+  onAprovado?: () => void
 }
 
-export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: ValidarReflexaoModalProps) {
+export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onAprovado }: ValidarReflexaoModalProps) {
   const [open, setOpen] = useState(false)
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
-  const router = useRouter()
   const supabase = createClient()
 
   async function handleAprovar() {
@@ -39,10 +40,29 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     setLoading(true)
 
     try {
-      // Atualizar reflexão (adicionar campos de validação se necessário)
-      // Por enquanto, apenas marcar como avaliada no progresso
-      
-      // Buscar progresso atual
+      if (reflexao.xp_ganho && reflexao.xp_ganho > 0) {
+        toast.error("Esta reflexão já foi aprovada anteriormente")
+        setLoading(false)
+        setOpen(false)
+        return
+      }
+
+      const { error: updateReflexaoError } = await supabase
+        .from("reflexoes_conteudo")
+        .update({
+          feedback_discipulador: feedback,
+          xp_ganho: xpConcedido,
+          data_aprovacao: new Date().toISOString()
+        })
+        .eq("id", reflexao.id)
+
+      if (updateReflexaoError) {
+        console.error("[v0] Erro ao atualizar reflexão:", updateReflexaoError)
+        toast.error("Erro ao atualizar reflexão")
+        setLoading(false)
+        return
+      }
+
       const { data: progresso } = await supabase
         .from("progresso_fases")
         .select("*")
@@ -50,17 +70,16 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
         .single()
 
       if (progresso) {
-        // Atualizar o item específico nos arrays
         let videos_assistidos = progresso.videos_assistidos || []
         let artigos_lidos = progresso.artigos_lidos || []
 
         if (reflexao.tipo === 'video') {
           videos_assistidos = videos_assistidos.map((v: any) => 
-            v.id === reflexao.id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v
+            v.id === reflexao.conteudo_id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v
           )
         } else {
           artigos_lidos = artigos_lidos.map((a: any) => 
-            a.id === reflexao.id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a
+            a.id === reflexao.conteudo_id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a
           )
         }
 
@@ -71,24 +90,39 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
             artigos_lidos: reflexao.tipo === 'artigo' ? artigos_lidos : progresso.artigos_lidos,
           })
           .eq("id", progresso.id)
+      }
 
-        // Adicionar XP ao discípulo
-        const { data: disc } = await supabase
+      const { data: disc } = await supabase
+        .from("discipulos")
+        .select("xp_total")
+        .eq("id", discipuloId)
+        .single()
+
+      if (disc) {
+        await supabase
           .from("discipulos")
-          .select("xp_total")
+          .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
           .eq("id", discipuloId)
-          .single()
+      }
 
-        if (disc) {
-          await supabase
-            .from("discipulos")
-            .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
-            .eq("id", discipuloId)
-        }
+      const { data: notificacao } = await supabase
+        .from("notificacoes")
+        .select("id")
+        .eq("reflexao_id", reflexao.id)
+        .maybeSingle()
 
-        toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
-        setOpen(false)
-        router.refresh()
+      if (notificacao) {
+        await supabase
+          .from("notificacoes")
+          .update({ lida: true })
+          .eq("id", notificacao.id)
+      }
+
+      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
+      setOpen(false)
+      
+      if (onAprovado) {
+        onAprovado()
       }
     } catch (error) {
       console.error("Erro ao aprovar reflexão:", error)
@@ -100,12 +134,15 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="bg-yellow-50 border-yellow-300 hover:bg-yellow-100">
-          <Clock className="w-3 h-3 mr-1" />
-          Avaliar
-        </Button>
-      </DialogTrigger>
+      <Button 
+        size="sm" 
+        variant="outline" 
+        className="bg-yellow-50 border-yellow-300 hover:bg-yellow-100"
+        onClick={() => setOpen(true)}
+      >
+        <Clock className="w-3 h-3 mr-1" />
+        Avaliar
+      </Button>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Avaliar Reflexão de {discipuloNome}</DialogTitle>
