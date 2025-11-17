@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -59,32 +59,11 @@ export async function middleware(request: NextRequest) {
       .eq("user_id", user.id)
       .single()
 
-    console.log("[v0] Middleware - Verificando status:", {
-      userId: user.id,
-      path: request.nextUrl.pathname,
-      profileStatus: profile?.status,
-      discipuloStatus: discipulo?.status,
-      aprovado: discipulo?.aprovado_discipulador,
-      hasDiscipulador: discipulo?.discipulador_id !== null,
-    })
-
     if (discipulo?.discipulador_id !== null && (profile?.status === "inativo" || discipulo?.status === "inativo")) {
       const url = request.nextUrl.clone()
       url.pathname = "/aguardando-aprovacao"
-      console.log("[v0] BLOQUEANDO - Status inativo:", {
-        userId: user.id,
-        profileStatus: profile?.status,
-        discipuloStatus: discipulo?.status,
-      })
       return NextResponse.redirect(url)
     }
-
-    console.log("[v0] PERMITINDO ACESSO:", {
-      userId: user.id,
-      isMaster: discipulo?.discipulador_id === null,
-      profileStatus: profile?.status,
-      discipuloStatus: discipulo?.status,
-    })
   }
 
   if (

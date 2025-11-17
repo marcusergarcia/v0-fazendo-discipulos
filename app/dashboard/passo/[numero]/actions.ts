@@ -185,13 +185,28 @@ export async function buscarReflexoesParaReset(numero: number) {
     return []
   }
 
+  console.log("[v0] SERVER: Buscando TODAS as reflexões do discípulo...")
+  const { data: todasReflexoes } = await supabase
+    .from("reflexoes_conteudo")
+    .select("*")
+    .eq("discipulo_id", discipulo.id)
+  
+  console.log("[v0] SERVER: Total de reflexões no banco:", todasReflexoes?.length || 0)
+  if (todasReflexoes && todasReflexoes.length > 0) {
+    console.log("[v0] SERVER: Exemplo de reflexão:", {
+      id: todasReflexoes[0].id,
+      fase_numero: todasReflexoes[0].fase_numero,
+      passo_numero: todasReflexoes[0].passo_numero,
+      tipo: todasReflexoes[0].tipo
+    })
+  }
+
   console.log("[v0] SERVER: Buscando reflexões - discipulo_id:", discipulo.id, "passo:", numero)
   
   const { data: reflexoes, error } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
     .eq("passo_numero", numero)
 
   if (error) {
@@ -199,9 +214,14 @@ export async function buscarReflexoesParaReset(numero: number) {
     return []
   }
 
-  console.log("[v0] SERVER: Reflexões encontradas:", reflexoes?.length || 0)
+  console.log("[v0] SERVER: Reflexões do passo", numero, "encontradas:", reflexoes?.length || 0)
   if (reflexoes && reflexoes.length > 0) {
-    console.log("[v0] SERVER: Primeira reflexão:", reflexoes[0])
+    console.log("[v0] SERVER: Detalhes das reflexões:", reflexoes.map(r => ({
+      id: r.id,
+      titulo: r.titulo,
+      tipo: r.tipo,
+      notificacao_id: r.notificacao_id
+    })))
   }
 
   return reflexoes || []

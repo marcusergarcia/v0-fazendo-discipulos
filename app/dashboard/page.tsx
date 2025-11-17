@@ -14,9 +14,11 @@ import { generateAvatarUrl } from "@/lib/generate-avatar"
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { error?: string }
+  searchParams: Promise<{ error?: string }>
 }) {
   console.log("[v0] DashboardPage iniciada")
+
+  const params = await searchParams
 
   const supabase = await createClient()
 
@@ -123,7 +125,7 @@ export default async function DashboardPage({
 
   return (
     <div className="min-h-screen bg-background">
-      {searchParams.error === "passo-load-failed" && (
+      {params.error === "passo-load-failed" && (
         <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mx-4 mt-4">
           <p className="font-medium">Erro ao carregar passo</p>
           <p className="text-sm">Ocorreu um problema ao carregar a página do passo. Por favor, tente novamente.</p>
