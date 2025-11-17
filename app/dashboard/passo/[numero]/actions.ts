@@ -65,7 +65,6 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       resposta_missao: respostaMissao,
       status_validacao: "pendente",
       enviado_para_validacao: true,
-      data_envio_validacao: new Date().toISOString(),
     })
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
@@ -296,7 +295,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
     }
 
-    // Resetar progresso
     console.log("[v0] Resetando progresso do passo...")
     const { error: errorReset } = await supabase
       .from("progresso_fases")
@@ -310,11 +308,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         resposta_missao: null,
         rascunho_resposta: null,
         data_completado: null,
-        data_envio_validacao: null,
-        data_validacao: null,
-        feedback_discipulador: null,
-        nota_discipulador: null,
-        xp_ganho: 0,
       })
       .eq("discipulo_id", discipulo.id)
       .eq("fase_numero", 1)
