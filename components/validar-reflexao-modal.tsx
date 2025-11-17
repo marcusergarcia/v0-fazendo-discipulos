@@ -17,7 +17,6 @@ interface ValidarReflexaoModalProps {
     titulo: string
     reflexao: string
     tipo: string
-    aprovado?: boolean
     xp_ganho?: number | null
   }
   discipuloId: string
@@ -32,7 +31,9 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
   const router = useRouter()
   const supabase = createClient()
 
-  if (reflexao.aprovado) {
+  const jaAprovado = reflexao.xp_ganho !== null && reflexao.xp_ganho !== undefined
+
+  if (jaAprovado) {
     return (
       <Badge className="bg-green-600 hover:bg-green-700 text-white">
         <CheckCircle className="w-3 h-3 mr-1" />
@@ -52,11 +53,11 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
     try {
       const { data: reflexaoAtual } = await supabase
         .from("reflexoes_conteudo")
-        .select("aprovado, xp_ganho")
+        .select("xp_ganho")
         .eq("id", reflexao.id)
         .single()
 
-      if (reflexaoAtual?.aprovado) {
+      if (reflexaoAtual?.xp_ganho !== null) {
         toast.error("Esta reflexão já foi aprovada anteriormente")
         setOpen(false)
         router.refresh()
@@ -68,8 +69,7 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome }: V
         .update({
           feedback_discipulador: feedback,
           xp_ganho: xpConcedido,
-          data_aprovacao: new Date().toISOString(),
-          aprovado: true
+          data_aprovacao: new Date().toISOString()
         })
         .eq("id", reflexao.id)
 

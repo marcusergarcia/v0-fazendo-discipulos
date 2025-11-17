@@ -290,7 +290,7 @@ export default function PassoClient({
               {passo.videos.map((video: any) => {
                 const assistido = videosAssistidos.includes(video.id)
                 const reflexaoVideo = reflexoes.find(r => r.conteudo_id === video.id && r.tipo === 'video')
-                const foiAprovado = reflexaoVideo && reflexaoVideo.data_aprovacao != null
+                const foiAprovado = reflexaoVideo && reflexaoVideo.xp_ganho !== null && reflexaoVideo.xp_ganho !== undefined
                 
                 return (
                   <div
@@ -364,7 +364,7 @@ export default function PassoClient({
               {passo.artigos.map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
                 const reflexaoArtigo = reflexoes.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
-                const foiAprovado = reflexaoArtigo && reflexaoArtigo.data_aprovacao != null
+                const foiAprovado = reflexaoArtigo && reflexaoArtigo.xp_ganho !== null && reflexaoArtigo.xp_ganho !== undefined
                 
                 return (
                   <div
