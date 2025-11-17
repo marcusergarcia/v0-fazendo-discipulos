@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { redirect } from 'next/navigation'
-import { revalidatePath } from 'next/cache'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -28,6 +27,8 @@ export async function salvarRascunho(numero: number, formData: FormData) {
       rascunho_resposta: JSON.stringify({ pergunta: respostaPergunta, missao: respostaMissao }),
     })
     .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
 
   redirect(`/dashboard/passo/${numero}?saved=true`)
 }
@@ -67,6 +68,8 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       data_envio_validacao: new Date().toISOString(),
     })
     .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
 
   if (discipulo.discipulador_id) {
     await supabaseAdmin.from("notificacoes").insert({
@@ -77,6 +80,7 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       link: `/discipulador/validar-passo/${discipulo.id}/1/${numero}`,
     })
 
+    // Enviar mensagem automática no chat
     await supabase.from("mensagens").insert({
       discipulo_id: discipulo.id,
       remetente_id: user.id,
@@ -103,6 +107,7 @@ export async function marcarVideoAssistido(numero: number, videoId: string) {
     .select("videos_assistidos")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
     .single()
 
   const videosAtuais = (progresso?.videos_assistidos as string[]) || []
@@ -113,6 +118,7 @@ export async function marcarVideoAssistido(numero: number, videoId: string) {
       .update({ videos_assistidos: videosAtuais })
       .eq("discipulo_id", discipulo.id)
       .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
   }
 
   redirect(`/dashboard/passo/${numero}?video=${videoId}`)
@@ -134,6 +140,7 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
     .select("artigos_lidos")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
     .single()
 
   const artigosAtuais = (progresso?.artigos_lidos as string[]) || []
@@ -144,6 +151,7 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
       .update({ artigos_lidos: artigosAtuais })
       .eq("discipulo_id", discipulo.id)
       .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
   }
 
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
@@ -206,12 +214,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
   
   const supabase = await createClient()
-  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
 
   const {
     data: { user },
@@ -240,7 +242,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
 
   if (reflexoesIds.length > 0) {
     console.log("[v0] Buscando reflexões com seus IDs de notificações...")
-    const { data: reflexoes, error: errorBuscar } = await supabaseAdmin
+    const { data: reflexoes, error: errorBuscar } = await supabase
       .from("reflexoes_conteudo")
       .select("id, notificacao_id")
       .in("id", reflexoesIds)
@@ -250,13 +252,14 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
     } else {
       console.log("[v0] Reflexões encontradas:", reflexoes)
       
+      // Coletar IDs das notificações
       const notificacoesIds = reflexoes
         ?.filter(r => r.notificacao_id)
         .map(r => r.notificacao_id) || []
       
       if (notificacoesIds.length > 0) {
         console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
-        const { error: errorNotif } = await supabaseAdmin
+        const { error: errorNotif } = await supabase
           .from("notificacoes")
           .delete()
           .in("id", notificacoesIds)
@@ -266,11 +269,14 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         } else {
           console.log("[v0] ✅ Notificações excluídas com sucesso!")
         }
+      } else {
+        console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
       }
     }
 
+    // Excluir TODAS as reflexões pelos IDs, independente de terem notificação
     console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
-    const { error: errorExcluir } = await supabaseAdmin
+    const { error: errorExcluir } = await supabase
       .from("reflexoes_conteudo")
       .delete()
       .in("id", reflexoesIds)
@@ -283,6 +289,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
     console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
   }
 
+  // Resetar progresso
   console.log("[v0] Resetando progresso do passo...")
   const { error: errorReset } = await supabase
     .from("progresso_fases")
@@ -303,6 +310,125 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       xp_ganho: 0,
     })
     .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+
+  if (errorReset) {
+    console.error("[v0] ERRO ao resetar progresso:", errorReset)
+    throw new Error("Erro ao resetar progresso")
+  }
+
+  console.log("[v0] ✅ Progresso resetado com sucesso!")
+  console.log("[v0] ===== RESET CONCLUÍDO =====")
+
+  return { success: true, message: "Progresso resetado com sucesso!" }
+}
+
+export async function resetarProgressoPasso(numero: number, reflexoesIds: string[]) {
+  console.log("[v0] ===== INICIANDO RESET DE PROGRESSO =====")
+  console.log("[v0] Passo número:", numero)
+  console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
+  
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser()
+  
+  if (userError || !user) {
+    console.log("[v0] ERRO: Usuário não autenticado", userError)
+    throw new Error("Usuário não autenticado")
+  }
+
+  console.log("[v0] Usuário autenticado:", user.id)
+
+  const { data: discipulo, error: discipuloError } = await supabase
+    .from("discipulos")
+    .select("id, discipulador_id")
+    .eq("user_id", user.id)
+    .single()
+
+  if (discipuloError || !discipulo) {
+    console.log("[v0] ERRO ao buscar discípulo:", discipuloError)
+    throw new Error("Discípulo não encontrado")
+  }
+
+  console.log("[v0] Discípulo ID:", discipulo.id)
+
+  if (reflexoesIds.length > 0) {
+    console.log("[v0] Buscando reflexões com seus IDs de notificações...")
+    const { data: reflexoes, error: errorBuscar } = await supabase
+      .from("reflexoes_conteudo")
+      .select("id, notificacao_id")
+      .in("id", reflexoesIds)
+
+    if (errorBuscar) {
+      console.log("[v0] ERRO ao buscar reflexões:", errorBuscar)
+    } else {
+      console.log("[v0] Reflexões encontradas:", reflexoes)
+      
+      // Coletar IDs das notificações que existem
+      const notificacoesIds = reflexoes
+        ?.filter(r => r.notificacao_id)
+        .map(r => r.notificacao_id) || []
+      
+      // Excluir notificações SE existirem
+      if (notificacoesIds.length > 0) {
+        console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
+        const { error: errorNotif } = await supabase
+          .from("notificacoes")
+          .delete()
+          .in("id", notificacoesIds)
+
+        if (errorNotif) {
+          console.error("[v0] ERRO ao excluir notificações:", errorNotif)
+        } else {
+          console.log("[v0] ✅ Notificações excluídas com sucesso!")
+        }
+      } else {
+        console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
+      }
+    }
+
+    // Excluir TODAS as reflexões pelos IDs, independente de terem notificação
+    console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
+    const { error: errorExcluir } = await supabase
+      .from("reflexoes_conteudo")
+      .delete()
+      .in("id", reflexoesIds)
+
+    if (errorExcluir) {
+      console.error("[v0] ERRO ao excluir reflexões:", errorExcluir)
+      throw new Error("Erro ao excluir reflexões")
+    }
+    
+    console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
+  }
+
+  // Resetar progresso
+  console.log("[v0] Resetando progresso do passo...")
+  const { error: errorReset } = await supabase
+    .from("progresso_fases")
+    .update({
+      videos_assistidos: [],
+      artigos_lidos: [],
+      completado: false,
+      enviado_para_validacao: false,
+      status_validacao: null,
+      resposta_pergunta: null,
+      resposta_missao: null,
+      rascunho_resposta: null,
+      data_completado: null,
+      data_envio_validacao: null,
+      data_validacao: null,
+      feedback_discipulador: null,
+      nota_discipulador: null,
+      xp_ganho: 0,
+    })
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
 
   if (errorReset) {
     console.error("[v0] ERRO ao resetar progresso:", errorReset)
@@ -427,6 +553,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
     .maybeSingle()
 
   if (!progressoExistente) {
@@ -448,6 +576,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         .from("progresso_fases")
         .update({ videos_assistidos: videosAtuais })
         .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
         
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
@@ -456,9 +586,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       }
     }
   }
-
-  revalidatePath(`/dashboard/passo/${numero}`)
-  console.log("[v0] SERVER: ✅ Página revalidada, dados atualizados!")
 
   return { success: true, videoId }
 }
@@ -575,6 +702,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
     .maybeSingle()
 
   if (!progressoExistente) {
@@ -596,6 +725,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         .from("progresso_fases")
         .update({ artigos_lidos: artigosAtuais })
         .eq("discipulo_id", discipulo.id)
+        .eq("fase_numero", 1)
+        .eq("passo_numero", numero)
         
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
@@ -604,9 +735,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       }
     }
   }
-
-  revalidatePath(`/dashboard/passo/${numero}`)
-  console.log("[v0] SERVER: ✅ Página revalidada, dados atualizados!")
 
   return { success: true, artigoId }
 }

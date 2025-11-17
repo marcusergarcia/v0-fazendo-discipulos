@@ -46,24 +46,23 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
-    .single()
+    .eq("passo_numero", numero)
+    .maybeSingle()
 
+  // Se não existe progresso, criar registro inicial
   let progressoAtual = progresso
-  if (!progressoAtual && numero === 1) {
+  if (!progressoAtual) {
     const { data: novoProgresso } = await supabase
       .from("progresso_fases")
       .insert({
         discipulo_id: discipulo.id,
         fase_numero: 1,
-        passo_numero: 1,
-        nivel: 1,
+        passo_numero: numero,
         videos_assistidos: [],
         artigos_lidos: [],
         completado: false,
         enviado_para_validacao: false,
         data_inicio: new Date().toISOString(),
-        reflexoes_concluidas: 0,
-        pontuacao_total: 0,
       })
       .select()
       .single()
@@ -71,44 +70,24 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     progressoAtual = novoProgresso
   }
 
-  // Se não tem progresso e está tentando acessar outro passo, redirecionar para passo 1
-  if (!progressoAtual && numero !== 1) {
-    redirect(`/dashboard/passo/1`)
-  }
+  const { data: todosPassos } = await supabase
+    .from("progresso_fases")
+    .select("*")
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
 
-  const passoAtual = progressoAtual?.passo_numero || 1
-  
-  // Se tentar acessar passo futuro, redirecionar para o passo atual
-  if (numero > passoAtual) {
-    redirect(`/dashboard/passo/${passoAtual}`)
-  }
-
-  // Verificar se o passo atual está sendo visualizado
-  const ehPassoAtual = numero === passoAtual
-
-  const passosCompletados = passoAtual - 1
+  const passosCompletados = todosPassos?.filter((p) => p.completado).length || 0
 
   let videosAssistidos: string[] = []
   let artigosLidos: string[] = []
-  
-  // Se estiver visualizando passo anterior, considerar tudo completo
-  if (ehPassoAtual) {
-    videosAssistidos = progressoAtual?.videos_assistidos || []
-    artigosLidos = progressoAtual?.artigos_lidos || []
-  } else {
-    // Passo anterior já foi completado, marcar tudo como feito
-    videosAssistidos = passo.videos.map(v => v.id)
-    artigosLidos = passo.artigos.map(a => a.id)
+  if (progressoAtual?.videos_assistidos) {
+    videosAssistidos = progressoAtual.videos_assistidos
+  }
+  if (progressoAtual?.artigos_lidos) {
+    artigosLidos = progressoAtual.artigos_lidos
   }
 
-  const { data: reflexoes } = await supabase
-    .from("reflexoes_conteudo")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-    .eq("passo_numero", numero)
-
   const getStatus = () => {
-    if (!ehPassoAtual) return "validado" // Passos anteriores estão validados
     if (progressoAtual?.completado) return "validado"
     if (progressoAtual?.enviado_para_validacao) return "aguardando"
     return "pendente"
@@ -121,12 +100,11 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       numero={numero}
       passo={passo}
       discipulo={{...discipulo, nome_completo: nomeDiscipulo}}
-      progresso={ehPassoAtual ? progressoAtual : null} // Só passa progresso se for o passo atual
+      progresso={progressoAtual}
       passosCompletados={passosCompletados}
       videosAssistidos={videosAssistidos}
       artigosLidos={artigosLidos}
       status={status}
-      reflexoes={reflexoes || []}
     />
   )
 }

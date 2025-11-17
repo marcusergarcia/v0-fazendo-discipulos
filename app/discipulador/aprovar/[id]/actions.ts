@@ -68,8 +68,6 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
 
-    // O progresso será criado quando o discípulo iniciar o passo 1 pela primeira vez
-
     const { error: updateError } = await supabaseAdmin
       .from("discipulos")
       .update({

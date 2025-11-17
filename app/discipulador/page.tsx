@@ -44,12 +44,13 @@ export default async function DiscipuladorPage() {
   
   console.log("[v0] IDs dos discípulos para buscar reflexões:", discipuloIds)
   
-  const { data: todasReflexoes } = await supabase
+  const { data: todasReflexoes, error: reflexoesError } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
-    .in("discipulo_id", discipuloIds)
+    .eq("discipulador_id", user.id)
 
   console.log("[v0] Query de reflexões usando discipulador_id - User ID:", user.id)
+  console.log("[v0] Query de reflexões - Error:", reflexoesError)
   console.log("[v0] Total de reflexões encontradas:", todasReflexoes?.length || 0)
   
   if (todasReflexoes && todasReflexoes.length > 0) {
@@ -58,9 +59,7 @@ export default async function DiscipuladorPage() {
       discipulo_id: todasReflexoes[0].discipulo_id,
       discipulador_id: todasReflexoes[0].discipulador_id,
       conteudo_id: todasReflexoes[0].conteudo_id,
-      tipo: todasReflexoes[0].tipo,
-      data_aprovacao: todasReflexoes[0].data_aprovacao,
-      xp_ganho: todasReflexoes[0].xp_ganho
+      tipo: todasReflexoes[0].tipo
     })
   }
   
@@ -68,9 +67,7 @@ export default async function DiscipuladorPage() {
   discipuloIds.forEach(id => {
     const reflexoes = todasReflexoes?.filter(r => r.discipulo_id === id) || []
     console.log(`  - Discípulo ${id}:`, reflexoes.length, "reflexões")
-    reflexoes.forEach(r => {
-      console.log(`    Reflexão ${r.id}: tipo=${r.tipo}, conteudo_id=${r.conteudo_id}, aprovada=${!!r.data_aprovacao}, xp=${r.xp_ganho}`)
-    })
+    console.log(`    IDs das reflexões:`, reflexoes.map(r => r.id))
   })
 
   const { data: progressosPendentes } = await supabase
@@ -89,6 +86,7 @@ export default async function DiscipuladorPage() {
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipulo.id)
+        .eq("passo_numero", discipulo.passo_atual)
         .maybeSingle()
 
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
@@ -97,48 +95,42 @@ export default async function DiscipuladorPage() {
       if (conteudoPasso) {
         conteudoPasso.videos?.forEach((video) => {
           const videoAssistido = progressoAtual?.videos_assistidos 
-            ? (progressoAtual.videos_assistidos as any[]).includes(video.id)
-            : false
+            ? (progressoAtual.videos_assistidos as any[]).find((v: any) => v.id === video.id)
+            : null
           
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === video.id && r.tipo === 'video')
-          
-          const foiAprovado = reflexao?.xp_ganho !== null && reflexao?.xp_ganho !== undefined
           
           tarefas.push({
             id: video.id,
             tipo: 'video',
             titulo: video.titulo,
-            concluido: videoAssistido,
+            concluido: !!videoAssistido,
             reflexao,
-            avaliado: foiAprovado,
-            xp: reflexao?.xp_ganho || null
+            xp: videoAssistido?.xp_ganho || null
           })
         })
 
         conteudoPasso.artigos?.forEach((artigo) => {
           const artigoLido = progressoAtual?.artigos_lidos
-            ? (progressoAtual.artigos_lidos as any[]).includes(artigo.id)
-            : false
+            ? (progressoAtual.artigos_lidos as any[]).find((a: any) => a.id === artigo.id)
+            : null
           
           const reflexao = reflexoesDiscipulo.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
-          
-          const foiAprovado = reflexao?.xp_ganho !== null && reflexao?.xp_ganho !== undefined
           
           tarefas.push({
             id: artigo.id,
             tipo: 'artigo',
             titulo: artigo.titulo,
-            concluido: artigoLido,
+            concluido: !!artigoLido,
             reflexao,
-            avaliado: foiAprovado,
-            xp: reflexao?.xp_ganho || null
+            xp: artigoLido?.xp_ganho || null
           })
         })
       }
 
       return {
         discipulo,
-        tarefasPendentes: reflexoesDiscipulo.filter(r => r.xp_ganho === null || r.xp_ganho === undefined).length + progressosDiscipulo.length,
+        tarefasPendentes: reflexoesDiscipulo.length + progressosDiscipulo.length,
         tarefas,
       }
     })
@@ -307,10 +299,10 @@ export default async function DiscipuladorPage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {tarefa.avaliado ? (
-                                  <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                {tarefa.xp ? (
+                                  <Badge variant="default" className="bg-green-600">
                                     <CheckCircle className="w-3 h-3 mr-1" />
-                                    Aprovado - {tarefa.xp} XP
+                                    {tarefa.xp} XP
                                   </Badge>
                                 ) : tarefa.reflexao ? (
                                   <ValidarReflexaoModal 
@@ -319,10 +311,7 @@ export default async function DiscipuladorPage() {
                                     discipuloNome={nome}
                                   />
                                 ) : tarefa.concluido ? (
-                                  <Badge variant="outline" className="bg-yellow-50 border-yellow-300">
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    Missão Cumprida
-                                  </Badge>
+                                  <Badge variant="outline">Concluído</Badge>
                                 ) : (
                                   <Badge variant="outline" className="text-muted-foreground">
                                     Não iniciado

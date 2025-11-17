@@ -46,15 +46,27 @@ export default async function DashboardPage({
 
   console.log("[v0] Discipulo check - Data:", discipulo?.id, "Error:", discipuloError)
 
-  const { data: progresso, error: progressoError } = await supabase
+  // Buscar progresso dos passos
+  const { data: progressoFases, error: progressoError } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo?.id || "")
-    .maybeSingle()
+    .eq("fase_numero", discipulo?.fase_atual || 1)
+    .order("passo_numero")
 
-  console.log("[v0] Progresso check - Data:", progresso, "Error:", progressoError)
+  console.log("[v0] Progresso check - Count:", progressoFases?.length, "Error:", progressoError)
+
+  // Buscar recompensas
+  const { data: recompensas, error: recompensasError } = await supabase
+    .from("recompensas")
+    .select("*")
+    .eq("discipulo_id", discipulo?.id || "")
+    .order("conquistado_em", { ascending: false })
+
+  console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
   // Calcular XP para próximo nível baseado nos passos completados
+  const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
   const xpAtual = discipulo?.xp_total || 0
   const xpProximoNivel = 1000
 
@@ -62,10 +74,10 @@ export default async function DashboardPage({
   const nivelNome = discipulo?.nivel_atual || "Explorador"
 
   // Fase atual
-  const faseNome = `FASE ${progresso?.fase_numero || 1}: ${getFaseNome(progresso?.fase_numero || 1)}`
+  const faseNome = `FASE ${discipulo?.fase_atual || 1}: ${getFaseNome(discipulo?.fase_atual || 1)}`
 
-  const passoAtual = progresso?.passo_numero || 1
-  const passosCompletados = progresso ? progresso.passo_numero - 1 : 0 // Passos completados são os anteriores ao atual
+  // Passo atual (primeiro não completado)
+  const passoAtual = progressoFases?.find((p) => !p.completado)?.passo_numero || 1
   const totalPassos = 10
 
   const userData = {
@@ -276,14 +288,14 @@ export default async function DashboardPage({
                 <StatItem
                   icon={<Award />}
                   label="Insígnias"
-                  value={passosCompletados.toString()}
+                  value={recompensas?.filter((r) => r.tipo_recompensa === "insignia").length.toString() || "0"}
                 />
                 <StatItem
                   icon={<BookOpen />}
                   label="Passos Completos"
                   value={`${passosCompletados}/${userData.totalSteps}`}
                 />
-                <StatItem icon={<Users />} label="Discipulador" value={discipulo?.nome_discipulador || "Aguardando"} />
+                <StatItem icon={<Users />} label="Discipulador" value="Aguardando" />
               </CardContent>
             </Card>
 
@@ -314,10 +326,12 @@ export default async function DashboardPage({
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {Array.from({ length: 10 }, (_, i) => {
                 const stepNumber = i + 1
-                const status = 
-                  stepNumber < passoAtual ? "completed" :
-                  stepNumber === passoAtual ? "current" :
-                  "locked"
+                const stepProgress = progressoFases?.find((p) => p.passo_numero === stepNumber)
+                const status = stepProgress?.completado
+                  ? "completed"
+                  : stepNumber === userData.currentStep
+                    ? "current"
+                    : "locked"
 
                 return (
                   <StepCard
