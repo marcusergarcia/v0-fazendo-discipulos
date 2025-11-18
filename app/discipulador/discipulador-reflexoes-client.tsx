@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Badge } from "@/components/ui/badge"
 import { ValidarReflexaoModal } from "@/components/validar-reflexao-modal"
+import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
 import { CheckCircle } from 'lucide-react'
 
 interface Reflexao {
@@ -15,6 +16,20 @@ interface Reflexao {
   criado_em: string
   xp_ganho?: number
   situacao?: string
+}
+
+interface RespostaPassoAtual {
+  id: string
+  discipulo_id: string
+  fase_numero: number
+  passo_numero: number
+  pergunta: string
+  resposta_pergunta: string
+  missao_pratica: string
+  resposta_missao: string
+  situacao: string
+  notificacao_id: string | null
+  xp_ganho?: number
 }
 
 interface ReflexoesClientProps {
@@ -42,7 +57,7 @@ export function ReflexoesClient({
 
   const situacaoAtual = reflexao?.situacao || situacao
 
-  // Se a situação é 'aprovado', mostra badge aprovado
+
   if (situacaoAtual === 'aprovado') {
     return (
       <Badge variant="default" className="bg-green-600 hover:bg-green-700">
@@ -52,7 +67,6 @@ export function ReflexoesClient({
     )
   }
 
-  // Se tem reflexão e situação é 'enviado', mostra botão avaliar
   if (reflexao && situacaoAtual === 'enviado') {
     return (
       <ValidarReflexaoModal
@@ -64,6 +78,5 @@ export function ReflexoesClient({
     )
   }
 
-  // Caso contrário, não mostra nada
   return null
 }

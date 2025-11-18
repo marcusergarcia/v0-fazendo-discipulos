@@ -87,8 +87,14 @@ export default function PassoClient({
 
   const handleEnviarValidacao = async () => {
     const formData = new FormData()
+    formData.append("resposta_pergunta", respostaPergunta)
     formData.append("resposta_missao", respostaMissao)
-    await enviarParaValidacao(numero, formData)
+    
+    try {
+      await enviarParaValidacao(numero, formData)
+    } catch (error: any) {
+      alert(error.message || "Erro ao enviar respostas")
+    }
   }
 
   const handleResetarProgresso = async () => {
@@ -442,8 +448,16 @@ export default function PassoClient({
               className="min-h-32 text-base"
               value={respostaPergunta}
               onChange={(e) => setRespostaPergunta(e.target.value)}
-              disabled={status === "validado"}
+              disabled={status === "validado" || status === "aguardando"}
             />
+            {status === "validado" && (
+              <div className="mt-3 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                  Pergunta aprovada pelo discipulador!
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -464,36 +478,48 @@ export default function PassoClient({
                 className="min-h-24 text-base"
                 value={respostaMissao}
                 onChange={(e) => setRespostaMissao(e.target.value)}
-                disabled={status === "validado"}
+                disabled={status === "validado" || status === "aguardando"}
               />
+              {status === "validado" && (
+                <div className="mt-2 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                    Missão aprovada pelo discipulador!
+                  </p>
+                </div>
+              )}
 
               <div
                 className={`rounded-lg p-4 flex items-start gap-3 ${
                   status === "validado"
-                    ? "bg-accent/10 border border-accent"
+                    ? "bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800"
                     : status === "aguardando"
-                      ? "bg-secondary/10 border border-secondary"
+                      ? "bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800"
                       : "bg-muted"
                 }`}
               >
                 {status === "validado" && (
                   <>
-                    <CheckCheck className="w-5 h-5 text-accent mt-0.5" />
+                    <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-semibold text-accent mb-1">Validado! Próximo passo liberado.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Seu discipulador confirmou que você compreendeu o conteúdo.
+                      <p className="font-semibold text-green-700 dark:text-green-300 mb-1">
+                        ✅ Respostas Aprovadas! Próximo passo liberado.
+                      </p>
+                      <p className="text-sm text-green-600 dark:text-green-400">
+                        Seu discipulador confirmou que você compreendeu o conteúdo. Você já pode avançar para o Passo 2!
                       </p>
                     </div>
                   </>
                 )}
                 {status === "aguardando" && (
                   <>
-                    <Clock className="w-5 h-5 text-secondary mt-0.5" />
+                    <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
                     <div className="flex-1">
-                      <p className="font-semibold text-secondary mb-1">Aguardando validação do discipulador.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Sua missão foi enviada. Em breve seu discipulador irá validá-la.
+                      <p className="font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+                        Aguardando validação do discipulador.
+                      </p>
+                      <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                        Suas respostas foram enviadas. Em breve seu discipulador irá validá-las.
                       </p>
                     </div>
                   </>
@@ -527,7 +553,12 @@ export default function PassoClient({
                   <Button
                     type="button"
                     size="lg"
-                    disabled={status === "validado" || status === "aguardando"}
+                    disabled={
+                      status === "validado" || 
+                      status === "aguardando" || 
+                      !respostaPergunta.trim() || 
+                      !respostaMissao.trim()
+                    }
                     onClick={handleEnviarValidacao}
                   >
                     {status === "aguardando" ? (
@@ -551,23 +582,6 @@ export default function PassoClient({
             </div>
           </CardContent>
         </Card>
-
-        {status === "validado" && (
-          <Card className="border-accent bg-accent/5 mb-6">
-            <CardContent className="py-8">
-              <div className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-accent/20 mb-4">
-                  <Award className="w-10 h-10 text-accent" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2">🎖 Insígnia Conquistada!</h3>
-                <p className="text-xl font-semibold text-accent mb-1">{passo.recompensa.toUpperCase()}</p>
-                <p className="text-muted-foreground">
-                  Esta insígnia confirma que você reconheceu sua origem espiritual em Deus.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Navegação */}
         <div className="flex justify-between mt-8">

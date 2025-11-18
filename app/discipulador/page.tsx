@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
+import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -50,10 +51,19 @@ export default async function DiscipuladorPage() {
     .in("discipulo_id", discipuloIds)
     .eq("status_validacao", "pendente")
 
+  const { data: respostasHistorico } = await supabase
+    .from("historico_respostas_passo")
+    .select("*")
+    .in("discipulo_id", discipuloIds)
+
+  console.log("[v0] Respostas do histórico:", respostasHistorico)
+
   const dadosPorDiscipulo = await Promise.all(
     discipulosComPerfil.map(async (discipulo) => {
       const reflexoesDiscipulo = todasReflexoes?.filter(r => r.discipulo_id === discipulo.id) || []
       const progressosDiscipulo = progressosPendentes?.filter(p => p.discipulo_id === discipulo.id) || []
+
+      const respostasDiscipulo = respostasHistorico?.filter(r => r.discipulo_id === discipulo.id) || []
 
       const { data: progressoAtual } = await supabase
         .from("progresso_fases")
@@ -81,10 +91,10 @@ export default async function DiscipuladorPage() {
             reflexao: reflexao ? {
               ...reflexao,
               xp_ganho: reflexao.xp_ganho || null,
-              situacao: reflexao.situacao || null // Incluir situacao
+              situacao: reflexao.situacao || null
             } : null,
             xp: reflexao?.xp_ganho || null,
-            situacao: reflexao?.situacao || null // Passar situacao
+            situacao: reflexao?.situacao || null
           })
         })
 
@@ -103,18 +113,55 @@ export default async function DiscipuladorPage() {
             reflexao: reflexao ? {
               ...reflexao,
               xp_ganho: reflexao.xp_ganho || null,
-              situacao: reflexao.situacao || null // Incluir situacao
+              situacao: reflexao.situacao || null
             } : null,
             xp: reflexao?.xp_ganho || null,
-            situacao: reflexao?.situacao || null // Passar situacao
+            situacao: reflexao?.situacao || null
           })
         })
+        
+        const respostaPergunta = respostasDiscipulo.find(
+          r => r.passo_numero === discipulo.passo_atual && 
+               r.fase_numero === discipulo.fase_atual && 
+               r.tipo_resposta === 'pergunta'
+        )
+        
+        const respostaMissao = respostasDiscipulo.find(
+          r => r.passo_numero === discipulo.passo_atual && 
+               r.fase_numero === discipulo.fase_atual && 
+               r.tipo_resposta === 'missao'
+        )
+        
+        if (conteudoPasso.perguntaChave) {
+          tarefas.push({
+            id: 'pergunta-responder',
+            tipo: 'pergunta',
+            titulo: conteudoPasso.perguntaChave,
+            concluido: !!(respostaPergunta?.resposta),
+            resposta: respostaPergunta || null,
+            xp: respostaPergunta?.xp_ganho || null,
+            situacao: respostaPergunta?.situacao || null
+          })
+        }
+        
+        if (conteudoPasso.missao) {
+          tarefas.push({
+            id: 'missao-pratica',
+            tipo: 'missao',
+            titulo: conteudoPasso.missao,
+            concluido: !!(respostaMissao?.resposta),
+            resposta: respostaMissao || null,
+            xp: respostaMissao?.xp_ganho || null,
+            situacao: respostaMissao?.situacao || null
+          })
+        }
       }
 
       return {
         discipulo,
         tarefasPendentes: reflexoesDiscipulo.length + progressosDiscipulo.length,
         tarefas,
+        progressoAtual,
       }
     })
   )
@@ -214,7 +261,7 @@ export default async function DiscipuladorPage() {
               })}
             </TabsList>
 
-            {dadosPorDiscipulo.map(({ discipulo, tarefas, tarefasPendentes }) => {
+            {dadosPorDiscipulo.map(({ discipulo, tarefas, tarefasPendentes, progressoAtual }) => {
               const nome = discipulo.profile?.nome_completo || discipulo.nome_completo_temp || discipulo.profile?.email || discipulo.email_temporario
               const fotoUrl = discipulo.profile?.foto_perfil_url || discipulo.profile?.avatar_url || discipulo.foto_perfil_url_temp
               const idade = calcularIdade(discipulo.profile?.data_nascimento || discipulo.data_nascimento_temp)
@@ -272,31 +319,63 @@ export default async function DiscipuladorPage() {
                               key={tarefa.id}
                               className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                             >
-                              <div className={`p-2 rounded ${tarefa.tipo === 'video' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                                {tarefa.tipo === 'video' ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                              <div className={`p-2 rounded ${
+                                tarefa.tipo === 'video' ? 'bg-red-100 text-red-600' : 
+                                tarefa.tipo === 'artigo' ? 'bg-blue-100 text-blue-600' :
+                                tarefa.tipo === 'pergunta' ? 'bg-orange-100 text-orange-600' :
+                                'bg-purple-100 text-purple-600'
+                              }`}>
+                                {tarefa.tipo === 'video' ? <Video className="w-5 h-5" /> : 
+                                 tarefa.tipo === 'artigo' ? <FileText className="w-5 h-5" /> : 
+                                 <FileText className="w-5 h-5" />}
                               </div>
 
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{tarefa.titulo}</p>
-                                <p className="text-sm text-muted-foreground capitalize">{tarefa.tipo}</p>
+                                <p className="text-sm text-muted-foreground capitalize">
+                                  {tarefa.tipo === 'pergunta' ? 'Pergunta para Responder' : 
+                                   tarefa.tipo === 'missao' ? 'Missão Prática' : 
+                                   tarefa.tipo}
+                                </p>
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <ReflexoesClient
-                                  reflexao={tarefa.reflexao}
-                                  discipuloId={discipulo.id}
-                                  discipuloNome={nome}
-                                  xp={tarefa.xp}
-                                  situacao={tarefa.situacao} // Passar situacao como prop
-                                />
-                                {!tarefa.reflexao && !tarefa.xp && (
-                                  tarefa.concluido ? (
-                                    <Badge variant="outline">Concluído</Badge>
+                                {(tarefa.tipo === 'pergunta' || tarefa.tipo === 'missao') ? (
+                                  tarefa.situacao === 'aprovado' ? (
+                                    <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                      <CheckCircle className="w-3 h-3 mr-1" />
+                                      Aprovado {tarefa.xp}XP
+                                    </Badge>
+                                  ) : tarefa.situacao === 'enviado' ? (
+                                    <AvaliarRespostasModal
+                                      resposta={tarefa.resposta}
+                                      discipuloNome={nome}
+                                      onAprovado={() => {}}
+                                    />
                                   ) : (
                                     <Badge variant="outline" className="text-muted-foreground">
                                       Não iniciado
                                     </Badge>
                                   )
+                                ) : (
+                                  <>
+                                    <ReflexoesClient
+                                      reflexao={tarefa.reflexao}
+                                      discipuloId={discipulo.id}
+                                      discipuloNome={nome}
+                                      xp={tarefa.xp}
+                                      situacao={tarefa.situacao}
+                                    />
+                                    {!tarefa.reflexao && !tarefa.xp && (
+                                      tarefa.concluido ? (
+                                        <Badge variant="outline">Concluído</Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-muted-foreground">
+                                          Não iniciado
+                                        </Badge>
+                                      )
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </div>

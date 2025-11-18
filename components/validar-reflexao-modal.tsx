@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle, Loader2 } from 'lucide-react'
+import { Clock, CheckCircle, Loader2, HelpCircle, Target } from 'lucide-react'
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -18,14 +18,24 @@ interface ValidarReflexaoModalProps {
     tipo: string
     conteudo_id: string
     xp_ganho?: number
-    situacao?: string // Adicionado campo situacao
+    situacao?: string
+    passo_numero: number
   }
   discipuloId: string
   discipuloNome: string
   onAprovado?: (xpConcedido: number) => void
+  respostaPergunta?: string | null
+  respostaMissao?: string | null
 }
 
-export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onAprovado }: ValidarReflexaoModalProps) {
+export function ValidarReflexaoModal({ 
+  reflexao, 
+  discipuloId, 
+  discipuloNome, 
+  onAprovado,
+  respostaPergunta,
+  respostaMissao
+}: ValidarReflexaoModalProps) {
   const [open, setOpen] = useState(false)
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
@@ -41,9 +51,6 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
     setLoading(true)
 
     try {
-      console.log("[v0] Iniciando aprovação da reflexão:", reflexao.id)
-      console.log("[v0] Situação atual da reflexão:", reflexao.situacao)
-      
       if (reflexao.situacao === 'aprovado') {
         toast.error("Esta reflexão já foi aprovada anteriormente")
         setLoading(false)
@@ -57,8 +64,6 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
         .eq("id", reflexao.id)
         .single()
 
-      console.log("[v0] Reflexão atual no banco:", reflexaoAtual)
-
       if (reflexaoAtual && reflexaoAtual.situacao === 'aprovado') {
         toast.error("Esta reflexão já foi aprovada por outro processo")
         setLoading(false)
@@ -66,35 +71,24 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
         return
       }
 
-      console.log("[v0] Tentando atualizar reflexão com:", {
-        feedback_discipulador: feedback,
-        xp_ganho: xpConcedido,
-        situacao: 'aprovado'
-      })
-
       const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
         .from("reflexoes_conteudo")
         .update({
           feedback_discipulador: feedback,
           xp_ganho: xpConcedido,
           data_aprovacao: new Date().toISOString(),
-          situacao: 'aprovado' // Marcar como aprovado
+          situacao: 'aprovado'
         })
         .eq("id", reflexao.id)
         .select()
 
-      console.log("[v0] Resultado do update:", reflexaoAtualizada)
-      console.log("[v0] Erro do update:", updateReflexaoError)
-
       if (updateReflexaoError) {
-        console.error("[v0] Erro ao atualizar reflexão:", updateReflexaoError)
         toast.error("Erro ao atualizar reflexão: " + updateReflexaoError.message)
         setLoading(false)
         return
       }
 
       if (!reflexaoAtualizada || reflexaoAtualizada.length === 0) {
-        console.error("[v0] Nenhuma linha foi atualizada!")
         toast.error("Erro: Nenhuma reflexão foi atualizada")
         setLoading(false)
         return
@@ -104,11 +98,13 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipuloId)
+        .eq("passo_numero", reflexao.passo_numero)
         .single()
 
       if (progresso) {
         let videos_assistidos = progresso.videos_assistidos || []
         let artigos_lidos = progresso.artigos_lidos || []
+        let pontuacaoAtual = progresso.pontuacao_total || 0
 
         if (reflexao.tipo === 'video') {
           videos_assistidos = videos_assistidos.map((v: any) => 
@@ -120,15 +116,20 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
           )
         }
 
+        // Adicionar XP à pontuação total do passo
+        pontuacaoAtual += xpConcedido
+
         await supabase
           .from("progresso_fases")
           .update({
             videos_assistidos: reflexao.tipo === 'video' ? videos_assistidos : progresso.videos_assistidos,
             artigos_lidos: reflexao.tipo === 'artigo' ? artigos_lidos : progresso.artigos_lidos,
+            pontuacao_total: pontuacaoAtual,
           })
           .eq("id", progresso.id)
       }
 
+      // Atualizar XP total do discípulo
       const { data: disc } = await supabase
         .from("discipulos")
         .select("xp_total")
@@ -142,6 +143,7 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
           .eq("id", discipuloId)
       }
 
+      // Marcar notificação como lida
       const { data: notificacao } = await supabase
         .from("notificacoes")
         .select("id")
@@ -151,8 +153,65 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
       if (notificacao) {
         await supabase
           .from("notificacoes")
-          .delete()
+          .update({ lida: true })
           .eq("id", notificacao.id)
+      }
+
+      const { data: discipuloInfo } = await supabase
+        .from("discipulos")
+        .select("passo_atual")
+        .eq("id", discipuloId)
+        .single()
+
+      if (discipuloInfo) {
+        const passoAtual = discipuloInfo.passo_atual
+
+        // Verificar todas as reflexões do passo
+        const { data: todasReflexoes } = await supabase
+          .from("reflexoes_conteudo")
+          .select("situacao")
+          .eq("discipulo_id", discipuloId)
+          .eq("passo_numero", passoAtual)
+
+        const todasReflexoesAprovadas = todasReflexoes && todasReflexoes.length > 0
+          ? todasReflexoes.every(r => r.situacao === 'aprovado')
+          : false
+
+        // Verificar se pergunta e missão estão aprovadas
+        const { data: respostas } = await supabase
+          .from("historico_respostas_passo")
+          .select("situacao, tipo_resposta")
+          .eq("discipulo_id", discipuloId)
+          .eq("passo_numero", passoAtual)
+
+        const perguntaAprovada = respostas?.some(r => r.tipo_resposta === 'pergunta' && r.situacao === 'aprovado')
+        const missaoAprovada = respostas?.some(r => r.tipo_resposta === 'missao' && r.situacao === 'aprovado')
+
+        // Se tudo aprovado, marcar passo como completado e liberar próximo
+        if (todasReflexoesAprovadas && perguntaAprovada && missaoAprovada) {
+          // Marcar passo como completado
+          await supabase
+            .from("progresso_fases")
+            .update({
+              completado: true,
+              data_completado: new Date().toISOString(),
+            })
+            .eq("discipulo_id", discipuloId)
+            .eq("passo_numero", passoAtual)
+
+          // Liberar próximo passo
+          const proximoPasso = passoAtual + 1
+          
+          if (proximoPasso <= 10) {
+            await supabase
+              .from("discipulos")
+              .update({ passo_atual: proximoPasso })
+              .eq("id", discipuloId)
+
+            console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
+            toast.success(`Parabéns! Passo ${passoAtual} concluído. Passo ${proximoPasso} liberado!`)
+          }
+        }
       }
 
       toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
@@ -180,11 +239,11 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
         <Clock className="w-3 h-3 mr-1" />
         Avaliar
       </Button>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Avaliar Reflexão de {discipuloNome}</DialogTitle>
           <DialogDescription>
-            Leia a reflexão e forneça um feedback construtivo ao discípulo
+            Leia a reflexão e as respostas do discípulo, depois forneça um feedback construtivo
           </DialogDescription>
         </DialogHeader>
 
@@ -203,11 +262,35 @@ export function ValidarReflexaoModal({ reflexao, discipuloId, discipuloNome, onA
             </div>
           </div>
 
-          <div>
+          {respostaPergunta && (
+            <div className="border-t pt-4">
+              <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                <HelpCircle className="w-4 h-4 text-primary" />
+                Pergunta para Responder
+              </Label>
+              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <p className="whitespace-pre-wrap text-sm">{respostaPergunta}</p>
+              </div>
+            </div>
+          )}
+
+          {respostaMissao && (
+            <div className="border-t pt-4">
+              <Label className="text-sm font-medium flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-secondary" />
+                Missão Prática
+              </Label>
+              <div className="p-4 bg-secondary/5 rounded-lg border border-secondary/20">
+                <p className="whitespace-pre-wrap text-sm">{respostaMissao}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="border-t pt-4">
             <Label htmlFor="feedback">Seu Feedback (obrigatório)</Label>
             <Textarea
               id="feedback"
-              placeholder="Escreva um feedback construtivo e encorajador..."
+              placeholder="Escreva um feedback construtivo e encorajador sobre a reflexão e as respostas do discípulo..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               rows={4}

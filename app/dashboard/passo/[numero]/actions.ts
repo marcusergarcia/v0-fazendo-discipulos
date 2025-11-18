@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { redirect } from 'next/navigation'
+import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -45,8 +46,8 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
   const respostaPergunta = formData.get("resposta_pergunta") as string
   const respostaMissao = formData.get("resposta_missao") as string
 
-  if (!respostaPergunta || !respostaMissao || respostaMissao.trim().length < 10) {
-    return
+  if (!respostaPergunta || !respostaMissao || respostaPergunta.trim().length < 10 || respostaMissao.trim().length < 10) {
+    throw new Error("Por favor, preencha ambas as respostas com pelo menos 10 caracteres")
   }
 
   const {
@@ -55,8 +56,63 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
   if (!user) return
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-
   if (!discipulo) return
+
+  const conteudoPasso = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
+
+  let notificacaoId: string | null = null
+  if (discipulo.discipulador_id) {
+    const { data: novaNotificacao } = await supabaseAdmin
+      .from("notificacoes")
+      .insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "respostas_passo",
+        titulo: "Novas respostas para avaliar",
+        mensagem: `Seu discípulo enviou as respostas do Passo ${numero} para avaliação.`,
+        link: `/discipulador`,
+        lida: false,
+      })
+      .select("id")
+      .single()
+    
+    if (novaNotificacao) {
+      notificacaoId = novaNotificacao.id
+    }
+  }
+
+  const { error: perguntaError } = await supabase.from("historico_respostas_passo").insert({
+    discipulo_id: discipulo.id,
+    discipulador_id: discipulo.discipulador_id,
+    fase_numero: discipulo.fase_atual || 1,
+    passo_numero: numero,
+    tipo_resposta: 'pergunta',
+    resposta: respostaPergunta,
+    situacao: "enviado",
+    notificacao_id: notificacaoId,
+    data_envio: new Date().toISOString(),
+  })
+
+  if (perguntaError) {
+    console.error("[v0] Erro ao salvar pergunta:", perguntaError)
+    throw new Error("Erro ao enviar pergunta para avaliação")
+  }
+
+  const { error: missaoError } = await supabase.from("historico_respostas_passo").insert({
+    discipulo_id: discipulo.id,
+    discipulador_id: discipulo.discipulador_id,
+    fase_numero: discipulo.fase_atual || 1,
+    passo_numero: numero,
+    tipo_resposta: 'missao',
+    resposta: respostaMissao,
+    situacao: "enviado",
+    notificacao_id: null, // Não duplicar notificação
+    data_envio: new Date().toISOString(),
+  })
+
+  if (missaoError) {
+    console.error("[v0] Erro ao salvar missão:", missaoError)
+    throw new Error("Erro ao enviar missão para avaliação")
+  }
 
   await supabase
     .from("progresso_fases")
@@ -67,25 +123,8 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       enviado_para_validacao: true,
     })
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
+    .eq("fase_numero", discipulo.fase_atual || 1)
     .eq("passo_numero", numero)
-
-  if (discipulo.discipulador_id) {
-    await supabaseAdmin.from("notificacoes").insert({
-      user_id: discipulo.discipulador_id,
-      tipo: "missao",
-      titulo: "Nova missão para validar",
-      mensagem: `Seu discípulo enviou a missão do Passo ${numero} para validação.`,
-      link: `/discipulador/validar-passo/${discipulo.id}/1/${numero}`,
-    })
-
-    // Enviar mensagem automática no chat
-    await supabase.from("mensagens").insert({
-      discipulo_id: discipulo.id,
-      remetente_id: user.id,
-      mensagem: `📝 Enviei a missão do Passo ${numero} para você validar!\n\n**Resposta da Pergunta:**\n${respostaPergunta}\n\n**Missão:**\n${respostaMissao}`,
-    })
-  }
 
   redirect(`/dashboard/passo/${numero}?sent=true`)
 }
@@ -646,4 +685,107 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   }
 
   return { success: true, artigoId }
+}
+
+export async function verificarConclusaoPasso(numero: number) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  
+  if (!user) return { completo: false }
+
+  const { data: discipulo } = await supabase
+    .from("discipulos")
+    .select("id, passo_atual")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!discipulo || discipulo.passo_atual !== numero) {
+    return { completo: false }
+  }
+
+  // Verificar todas as reflexões do passo
+  const { data: reflexoes } = await supabase
+    .from("reflexoes_conteudo")
+    .select("situacao")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+
+  const todasReflexoesAprovadas = reflexoes && reflexoes.length > 0 
+    ? reflexoes.every(r => r.situacao === 'aprovado')
+    : false
+
+  // Verificar respostas do passo
+  const { data: respostas } = await supabase
+    .from("historico_respostas_passo")
+    .select("situacao")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+    .order("created_at", { ascending: false })
+    .limit(1)
+
+  const respostasAprovadas = respostas && respostas.length > 0
+    ? respostas[0].situacao === 'aprovado'
+    : false
+
+  const passoCompleto = todasReflexoesAprovadas && respostasAprovadas
+
+  return {
+    completo: passoCompleto,
+    reflexoesAprovadas: todasReflexoesAprovadas,
+    respostasAprovadas: respostasAprovadas,
+  }
+}
+
+export async function liberarProximoPasso() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  
+  if (!user) return { success: false, error: "Usuário não autenticado" }
+
+  const { data: discipulo } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!discipulo) {
+    return { success: false, error: "Discípulo não encontrado" }
+  }
+
+  const passoAtual = discipulo.passo_atual
+  const verificacao = await verificarConclusaoPasso(passoAtual)
+
+  if (!verificacao.completo) {
+    return {
+      success: false,
+      error: "Você precisa ter todas as reflexões e respostas aprovadas primeiro",
+    }
+  }
+
+  // Liberar próximo passo
+  const proximoPasso = passoAtual + 1
+
+  if (proximoPasso > 10) {
+    return { success: false, error: "Você já completou todos os passos!" }
+  }
+
+  const { error } = await supabase
+    .from("discipulos")
+    .update({ passo_atual: proximoPasso })
+    .eq("id", discipulo.id)
+
+  if (error) {
+    return { success: false, error: "Erro ao liberar próximo passo" }
+  }
+
+  return {
+    success: true,
+    proximoPasso,
+  }
 }
