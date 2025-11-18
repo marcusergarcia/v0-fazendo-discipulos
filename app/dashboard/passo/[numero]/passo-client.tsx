@@ -36,6 +36,7 @@ type PassoClientProps = {
   videosAssistidos: string[]
   artigosLidos: string[]
   status: "pendente" | "aguardando" | "validado"
+  discipuladorId: string | null // Adicionar discipuladorId
 }
 
 export default function PassoClient({
@@ -47,6 +48,7 @@ export default function PassoClient({
   videosAssistidos,
   artigosLidos,
   status,
+  discipuladorId, // Receber discipuladorId
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -573,12 +575,21 @@ export default function PassoClient({
                 </div>
               )}
 
-              <Link href={`/dashboard/chat`}>
-                <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Conversar com meu discipulador
-                </Button>
-              </Link>
+              {discipuladorId ? (
+                <Link href={`/dashboard/chat/com/${discipuladorId}`}>
+                  <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Conversar com meu discipulador
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/dashboard/chat`}>
+                  <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Conversar com meu discipulador
+                  </Button>
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>

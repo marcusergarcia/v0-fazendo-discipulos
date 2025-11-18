@@ -127,7 +127,7 @@ export default function ChatClient({
     <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="border-b bg-background p-4 flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard/chat")}>
+        <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>

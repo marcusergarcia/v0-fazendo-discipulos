@@ -41,6 +41,14 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   const nomeDiscipulo = profile?.nome_completo || "Sem nome"
 
+  const { data: discipuladorData } = await supabase
+    .from("discipulos")
+    .select("discipulador_id")
+    .eq("id", discipulo.id)
+    .single()
+
+  const discipuladorId = discipuladorData?.discipulador_id || null
+
   const { data: progresso } = await supabase
     .from("progresso_fases")
     .select("*")
@@ -132,6 +140,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       videosAssistidos={videosAssistidos}
       artigosLidos={artigosLidos}
       status={status}
+      discipuladorId={discipuladorId}
     />
   )
 }
