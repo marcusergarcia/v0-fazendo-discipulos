@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
-import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound } from 'lucide-react'
+import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound, Book } from 'lucide-react'
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 
 export default async function DashboardPage({
@@ -81,6 +81,9 @@ export default async function DashboardPage({
   // Passo atual (primeiro não completado)
   const passoAtual = discipulo?.passo_atual || 1
   const totalPassos = 10
+
+  // Calcular insígnias (1 insígnia por passo completado)
+  const totalInsignias = passosCompletados
 
   const userData = {
     name: profile?.nome_completo || user.email?.split("@")[0] || "Discípulo",
@@ -176,6 +179,12 @@ export default async function DashboardPage({
                 <Button variant="ghost" size="sm" className="gap-2">
                   <Users className="w-4 h-4" />
                   <span className="hidden sm:inline">Chat</span>
+                </Button>
+              </Link>
+              <Link href="/dashboard/leitura-biblica">
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Book className="w-4 h-4" />
+                  <span className="hidden sm:inline">Leitura Bíblica</span>
                 </Button>
               </Link>
               <Link href="/dashboard/perfil">
@@ -290,7 +299,7 @@ export default async function DashboardPage({
                 <StatItem
                   icon={<Award />}
                   label="Insígnias"
-                  value={recompensas?.filter((r) => r.tipo_recompensa === "insignia").length.toString() || "0"}
+                  value={totalInsignias.toString()}
                 />
                 <StatItem
                   icon={<BookOpen />}

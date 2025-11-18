@@ -150,6 +150,17 @@ export default function AvaliarRespostasModal({
             .eq("discipulo_id", resposta.discipulo_id)
             .eq("passo_numero", resposta.passo_numero)
 
+          const insigniaNome = getInsigniaNome(resposta.passo_numero)
+          await supabase
+            .from("recompensas")
+            .insert({
+              discipulo_id: resposta.discipulo_id,
+              tipo_recompensa: 'insignia',
+              nome_recompensa: insigniaNome,
+              descricao: `Insígnia conquistada ao completar o Passo ${resposta.passo_numero}`,
+              conquistado_em: new Date().toISOString(),
+            })
+
           // Liberar próximo passo
           const proximoPasso = resposta.passo_numero + 1
           
@@ -275,4 +286,20 @@ export default function AvaliarRespostasModal({
       </Dialog>
     </>
   )
+}
+
+function getInsigniaNome(passo: number): string {
+  const insignias: Record<number, string> = {
+    1: "Insígnia: Criação",
+    2: "Insígnia: Amor Divino",
+    3: "Insígnia: Reconhecimento da Verdade",
+    4: "Insígnia: Consciência",
+    5: "Insígnia: Salvador",
+    6: "Insígnia: Cruz e Ressurreição",
+    7: "Insígnia: Graça",
+    8: "Insígnia: Coração Quebrantado",
+    9: "Insígnia: Confissão",
+    10: "Insígnia: Novo Nascimento",
+  }
+  return insignias[passo] || "Insígnia Especial"
 }

@@ -26,6 +26,7 @@ import {
   buscarReflexoesParaReset, // Importar nova função
 } from "./actions"
 import { useState } from "react"
+import { TextWithBibleLinks } from "@/components/text-with-bible-links"
 
 type PassoClientProps = {
   numero: number
@@ -253,7 +254,7 @@ export default function PassoClient({
             <div className="space-y-3">
               {passo.conteudo.map((linha: string, i: number) => (
                 <p key={i} className="leading-relaxed text-base">
-                  {linha}
+                  <TextWithBibleLinks text={linha} />
                 </p>
               ))}
             </div>
@@ -442,7 +443,9 @@ export default function PassoClient({
             <CardDescription>Responda com suas próprias palavras</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-semibold mb-4">{passo.perguntaChave}</p>
+            <p className="text-lg font-semibold mb-4">
+              <TextWithBibleLinks text={passo.perguntaChave} />
+            </p>
             <Textarea
               name="resposta_pergunta"
               id="resposta_pergunta"
