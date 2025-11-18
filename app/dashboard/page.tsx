@@ -46,7 +46,7 @@ export default async function DashboardPage({
     .eq("user_id", user.id)
     .single()
 
-  console.log("[v0] Discipulo check - Data:", discipulo?.id, "Error:", discipuloError)
+  console.log("[v0] Discipulo check - Data:", discipulo?.id, "Passo atual:", discipulo?.passo_atual, "Error:", discipuloError)
 
   // Buscar progresso dos passos
   const { data: progressoFases, error: progressoError } = await supabase
@@ -79,7 +79,7 @@ export default async function DashboardPage({
   const faseNome = `FASE ${discipulo?.fase_atual || 1}: ${getFaseNome(discipulo?.fase_atual || 1)}`
 
   // Passo atual (primeiro não completado)
-  const passoAtual = progressoFases?.find((p) => !p.completado)?.passo_numero || 1
+  const passoAtual = discipulo?.passo_atual || 1
   const totalPassos = 10
 
   const userData = {
