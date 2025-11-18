@@ -62,4 +62,72 @@ export const PASSOS_CONTEUDO = {
     icone: "✨",
     xp: 100,
   },
+  2: {
+    titulo: "Deus nos Ama",
+    fase: "FASE 1: O Evangelho",
+    conteudo: [
+      "Deus não apenas nos criou, mas nos ama profundamente.",
+      "Esse amor é constante, imutável e demonstrado através de suas ações na história.",
+      "O maior ato desse amor foi enviar Seu Filho Jesus Cristo para restaurar nossa relação com Ele.",
+      "Base bíblica:",
+      "• João 3:16 — \"Porque Deus amou o mundo de tal maneira…\"",
+      "• Romanos 5:8 — \"Mas Deus prova o seu amor para conosco…\"",
+      "• 1 João 4:7–10 — \"Deus é amor.\"",
+      "O discipulado não começa com medo, pressão ou religião, mas com amor.",
+    ],
+    versiculos: [
+      { 
+        texto: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.", 
+        referencia: "João 3:16" 
+      }
+    ],
+    videos: [
+      {
+        id: "video-p2-1",
+        titulo: "Deus te ama – resumo bíblico",
+        canal: "Evangelizando Cidades",
+        duracao: "3:00",
+        url: "https://www.youtube.com/watch?v=TqGnsobXp0o",
+      },
+      {
+        id: "video-p2-2",
+        titulo: "O que é o amor de Deus? (Explicação simples)",
+        canal: "Canal da Bíblia",
+        duracao: "5:20",
+        url: "https://www.youtube.com/watch?v=a5gULs1pEh8",
+      },
+      {
+        id: "video-p2-3",
+        titulo: "Ilustração: O Amor de Deus explicado",
+        canal: "Pregações Gospel",
+        duracao: "4:45",
+        url: "https://www.youtube.com/watch?v=aaMxDtgW3k4",
+      },
+    ],
+    artigos: [
+      {
+        id: "artigo-p2-1",
+        titulo: "Amor de Deus (Cristianismo)",
+        fonte: "Wikipedia",
+        url: "https://pt.wikipedia.org/wiki/Amor_de_Deus",
+      },
+      {
+        id: "artigo-p2-2",
+        titulo: "João 3:16 – contexto",
+        fonte: "Wikipedia",
+        url: "https://pt.wikipedia.org/wiki/Jo%C3%A3o_3:16",
+      },
+      {
+        id: "artigo-p2-3",
+        titulo: "Natureza de Deus – Deus é Amor",
+        fonte: "Wikipedia",
+        url: "https://pt.wikipedia.org/wiki/Deus_no_cristianismo#Deus_%C3%A9_amor",
+      },
+    ],
+    perguntaChave: "Como você descreveria o amor de Deus por você, de forma pessoal?",
+    missao: 'Escrever uma pequena carta (5 a 10 linhas) respondendo: "Como o amor de Deus pode mudar a forma como eu vivo hoje?"',
+    recompensa: "Amado por Deus",
+    icone: "❤️",
+    xp: 100,
+  },
 }
