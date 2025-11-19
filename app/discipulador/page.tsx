@@ -4,13 +4,14 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText } from 'lucide-react'
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText, Gift, Copy } from 'lucide-react'
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
+import { CopiarLinkBoasVindas } from "@/components/copiar-link-boas-vindas"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -321,12 +322,16 @@ export default async function DiscipuladorPage() {
                           </div>
                         </div>
 
-                        <Link href={`/discipulador/chat/${discipulo.id}`}>
-                          <Button>
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Conversar
-                          </Button>
-                        </Link>
+                        <div className="flex gap-2">
+                          <CopiarLinkBoasVindas />
+                          
+                          <Link href={`/discipulador/chat/${discipulo.id}`}>
+                            <Button>
+                              <MessageCircle className="w-4 h-4 mr-2" />
+                              Conversar
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
 
                       {tarefas.length > 0 && (
