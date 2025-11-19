@@ -303,33 +303,34 @@ export default function PassoClient({
                 return (
                   <div
                     key={video.id}
-                    className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                    className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-all ${
                       assistido ? "bg-accent/10 border-accent" : "bg-muted/50 border-border"
                     }`}
                   >
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-base mb-1">{video.titulo}</h4>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex-1 w-full sm:w-auto">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1">{video.titulo}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         {video.canal} • {video.duracao}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => window.open(video.url, "_blank")}
+                        className="w-full sm:w-auto"
                       >
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
                       {reflexaoInfo?.situacao === 'aprovado' ? (
-                        <Badge className="bg-green-600 text-white">
+                        <Badge className="bg-green-600 text-white justify-center sm:justify-start">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Aprovado {reflexaoInfo.xp}XP
                         </Badge>
                       ) : assistido ? (
-                        <Badge className="bg-accent text-accent-foreground">
+                        <Badge className="bg-accent text-accent-foreground justify-center sm:justify-start">
                           <CheckCheck className="w-3 h-3 mr-1" />
                           Missão Cumprida
                         </Badge>
@@ -338,7 +339,7 @@ export default function PassoClient({
                           type="button"
                           size="sm"
                           onClick={() => abrirModalMissaoCumprida("video", video)}
-                          className="bg-primary"
+                          className="bg-primary w-full sm:w-auto"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
                           Realizar Missão
@@ -376,31 +377,32 @@ export default function PassoClient({
                 return (
                   <div
                     key={artigo.id}
-                    className={`flex items-center gap-4 p-4 rounded-lg border transition-all ${
+                    className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border transition-all ${
                       lido ? "bg-accent/10 border-accent" : "bg-muted/50 border-border"
                     }`}
                   >
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-base mb-1">{artigo.titulo}</h4>
-                      <p className="text-sm text-muted-foreground">{artigo.fonte}</p>
+                    <div className="flex-1 w-full sm:w-auto">
+                      <h4 className="font-semibold text-sm sm:text-base mb-1">{artigo.titulo}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{artigo.fonte}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         onClick={() => window.open(artigo.url, "_blank")}
+                        className="w-full sm:w-auto"
                       >
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
                       {reflexaoInfo?.situacao === 'aprovado' ? (
-                        <Badge className="bg-green-600 text-white">
+                        <Badge className="bg-green-600 text-white justify-center sm:justify-start">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Aprovado {reflexaoInfo.xp}XP
                         </Badge>
                       ) : lido ? (
-                        <Badge className="bg-accent text-accent-foreground">
+                        <Badge className="bg-accent text-accent-foreground justify-center sm:justify-start">
                           <CheckCheck className="w-3 h-3 mr-1" />
                           Missão Cumprida
                         </Badge>
@@ -410,6 +412,7 @@ export default function PassoClient({
                           size="sm"
                           variant="secondary"
                           onClick={() => abrirModalMissaoCumprida("artigo", artigo)}
+                          className="bg-primary w-full sm:w-auto"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
                           Realizar Missão
@@ -487,60 +490,41 @@ export default function PassoClient({
               />
               {status === "validado" && (
                 <div className="mt-2 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                    Missão aprovada pelo discipulador!
-                  </p>
+                  <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-green-700 dark:text-green-300 mb-1">
+                      ✅ Respostas Aprovadas! Próximo passo liberado.
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      Seu discipulador confirmou que você compreendeu o conteúdo. Você já pode avançar para o Passo 2!
+                    </p>
+                  </div>
                 </div>
               )}
-
-              <div
-                className={`rounded-lg p-4 flex items-start gap-3 ${
-                  status === "validado"
-                    ? "bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800"
-                    : status === "aguardando"
-                      ? "bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800"
-                      : "bg-muted"
-                }`}
-              >
-                {status === "validado" && (
-                  <>
-                    <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-green-700 dark:text-green-300 mb-1">
-                        ✅ Respostas Aprovadas! Próximo passo liberado.
-                      </p>
-                      <p className="text-sm text-green-600 dark:text-green-400">
-                        Seu discipulador confirmou que você compreendeu o conteúdo. Você já pode avançar para o Passo 2!
-                      </p>
-                    </div>
-                  </>
-                )}
-                {status === "aguardando" && (
-                  <>
-                    <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
-                        Aguardando validação do discipulador.
-                      </p>
-                      <p className="text-sm text-yellow-600 dark:text-yellow-400">
-                        Suas respostas foram enviadas. Em breve seu discipulador irá validá-las.
-                      </p>
-                    </div>
-                  </>
-                )}
-                {status === "pendente" && (
-                  <>
-                    <Send className="w-5 h-5 text-muted-foreground mt-0.5" />
-                    <div className="flex-1">
-                      <p className="font-semibold mb-1">Aguardando sua missão.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Esta missão precisa ser enviada e confirmada para liberar o próximo passo.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
+              {status === "aguardando" && (
+                <div className="mt-2 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-yellow-700 dark:text-yellow-300 mb-1">
+                      Aguardando validação do discipulador.
+                    </p>
+                    <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                      Suas respostas foram enviadas. Em breve seu discipulador irá validá-las.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {status === "pendente" && (
+                <div className="mt-2 rounded-lg p-4 flex items-start gap-3">
+                  <Send className="w-5 h-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold mb-1">Aguardando sua missão.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Esta missão precisa ser enviada e confirmada para liberar o próximo passo.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {status !== "validado" && (
                 <div className="grid grid-cols-2 gap-3">

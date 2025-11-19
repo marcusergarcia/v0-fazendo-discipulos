@@ -162,9 +162,9 @@ export default async function DashboardPage({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/discipulador">
-                      <Button variant="ghost" size="sm" className="gap-2 relative h-9 w-9 sm:w-auto sm:px-3">
-                        <UsersRound className="w-5 h-5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Discipulador</span>
+                      <Button variant="ghost" size="sm" className="gap-1.5 relative h-9 px-2 sm:px-3">
+                        <UsersRound className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm">Discipulador</span>
                         {notificationCount && notificationCount > 0 && (
                           <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
                             {notificationCount > 9 ? "9+" : notificationCount}
@@ -174,30 +174,30 @@ export default async function DashboardPage({
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Discipulador</p>
+                    <p>Área do Discipulador</p>
                   </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/discipulador/convites">
-                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
-                        <UserPlus className="w-5 h-5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Convidar</span>
+                      <Button variant="ghost" size="sm" className="gap-1.5 h-9 px-2 sm:px-3">
+                        <UserPlus className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm">Convidar</span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Convidar Discípulo</p>
+                    <p>Convidar Novo Discípulo</p>
                   </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/dashboard/arvore">
-                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
-                        <GitBranch className="w-5 h-5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Árvore</span>
+                      <Button variant="ghost" size="sm" className="gap-1.5 h-9 px-2 sm:px-3">
+                        <GitBranch className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm">Árvore</span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
@@ -209,9 +209,9 @@ export default async function DashboardPage({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/dashboard/chat">
-                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
-                        <Users className="w-5 h-5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Chat</span>
+                      <Button variant="ghost" size="sm" className="gap-1.5 h-9 px-2 sm:px-3">
+                        <Users className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm">Chat</span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
@@ -223,22 +223,22 @@ export default async function DashboardPage({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/dashboard/leitura-biblica">
-                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
-                        <Book className="w-5 h-5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Leitura Bíblica</span>
+                      <Button variant="ghost" size="sm" className="gap-1.5 h-9 px-2 sm:px-3">
+                        <Book className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm">Bíblia</span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Leitura Bíblica</p>
+                    <p>Leitura Bíblica Anual</p>
                   </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link href="/dashboard/perfil">
-                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-auto px-2 sm:px-3">
-                        <Avatar className="w-7 h-7">
+                      <Button variant="ghost" size="sm" className="gap-1.5 h-9 px-2 sm:px-3">
+                        <Avatar className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0">
                           <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
                           <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                             {userData.name
@@ -247,12 +247,12 @@ export default async function DashboardPage({
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="hidden lg:inline max-w-[100px] truncate">{userData.name}</span>
+                        <span className="hidden md:inline text-xs sm:text-sm max-w-[80px] truncate">{userData.name}</span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Perfil</p>
+                    <p>Meu Perfil</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -266,9 +266,9 @@ export default async function DashboardPage({
                         redirect("/auth/login")
                       }}
                     >
-                      <Button variant="ghost" size="sm" type="submit" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
-                        <LogOut className="w-5 h-5 sm:w-4 sm:h-4" />
-                        <span className="hidden sm:inline">Sair</span>
+                      <Button variant="ghost" size="sm" type="submit" className="gap-1.5 h-9 px-2 sm:px-3">
+                        <LogOut className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="text-xs sm:text-sm">Sair</span>
                       </Button>
                     </form>
                   </TooltipTrigger>
