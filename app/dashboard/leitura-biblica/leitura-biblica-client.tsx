@@ -22,14 +22,14 @@ export default function LeituraBiblicaClient({
 }: LeituraBiblicaClientProps) {
   const [confirmada, setConfirmada] = useState(leituraJaConfirmada)
   const [confirmando, setConfirmando] = useState(false)
-  const [mostrandoBiblia, setMostrandoBiblia] = useState(false)
+  const [mostrarTexto, setMostrarTexto] = useState(false)
 
   const handleConfirmarLeitura = async () => {
     setConfirmando(true)
     try {
       const result = await confirmarLeituraAction({
         discipuloId,
-        semananum: leituraAtual.semana,
+        semanaNumero: leituraAtual.semana,
         livro: leituraAtual.livro,
         capituloInicio: leituraAtual.capituloInicio,
         capituloFim: leituraAtual.capituloFim
@@ -64,10 +64,10 @@ export default function LeituraBiblicaClient({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <p className="text-lg font-semibold mb-2">
+          <div className="text-lg font-semibold mb-2">
             📖 {leituraAtual.livro} {leituraAtual.capituloInicio}
             {leituraAtual.capituloFim !== leituraAtual.capituloInicio && `-${leituraAtual.capituloFim}`}
-          </p>
+          </div>
           <p className="text-muted-foreground">{leituraAtual.descricao}</p>
           <p className="text-sm text-muted-foreground mt-2">
             📚 Total: {leituraAtual.totalCapitulos} capítulo{leituraAtual.totalCapitulos > 1 ? 's' : ''}
@@ -75,16 +75,15 @@ export default function LeituraBiblicaClient({
         </div>
 
         <Button
-          onClick={() => setMostrandoBiblia(!mostrandoBiblia)}
+          onClick={() => setMostrarTexto(!mostrarTexto)}
           variant="outline"
           className="w-full gap-2"
-          size="lg"
         >
           <Book className="w-4 h-4" />
-          {mostrandoBiblia ? 'Ocultar Texto Bíblico' : 'Ler Aqui (NVI)'}
+          {mostrarTexto ? 'Ocultar Texto Bíblico' : 'Ler Aqui (ACF)'}
         </Button>
 
-        {mostrandoBiblia && (
+        {mostrarTexto && (
           <BibleReader
             bookName={leituraAtual.livro}
             startChapter={leituraAtual.capituloInicio}

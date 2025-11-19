@@ -5,14 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Trophy, Book, Calendar, CheckCircle } from 'lucide-react'
-import { createClient } from "@/lib/supabase/server"
 
-export default async function LandingPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+export default function LandingPage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -47,8 +41,8 @@ export default async function LandingPage() {
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
               <Button size="lg" className="text-lg px-8 py-6" asChild>
-                <Link href={user ? "/dashboard" : "/auth/login"}>
-                  {user ? "Continuar Jornada" : "Iniciar Jornada"}
+                <Link href="/auth/login">
+                  Iniciar Jornada
                   <Target className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
@@ -160,10 +154,10 @@ export default async function LandingPage() {
           <Card className="p-8 text-center bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30">
             <div className="flex flex-col items-center gap-4">
               <Book className="w-12 h-12 text-primary" />
-              <h3 className="text-2xl font-bold">Versão NVI</h3>
+              <h3 className="text-2xl font-bold">Versão ACF</h3>
               <p className="text-muted-foreground max-w-xl text-balance">
-                Todas as leituras utilizam a Nova Versão Internacional (NVI), facilitando a compreensão 
-                e tornando a Palavra acessível para todos os níveis de discípulos.
+                Todas as leituras utilizam a Almeida Corrigida Fiel (ACF), versão tradicional e fiel aos textos originais,
+                tornando a Palavra acessível para todos os níveis de discípulos.
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
                 <Sparkles className="w-4 h-4 text-primary" />
@@ -202,8 +196,8 @@ export default async function LandingPage() {
             Inicie sua jornada de fé hoje. Conecte-se com um discipulador e comece a transformação.
           </p>
           <Button size="lg" className="text-lg px-8 py-6" asChild>
-            <Link href={user ? "/dashboard" : "/auth/login"}>
-              {user ? "Ir para Dashboard" : "Iniciar Agora"}
+            <Link href="/auth/login">
+              Iniciar Agora
               <Sparkles className="w-5 h-5 ml-2" />
             </Link>
           </Button>

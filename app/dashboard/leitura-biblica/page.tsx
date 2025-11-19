@@ -5,11 +5,15 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import Link from 'next/link'
-import { ArrowLeft, BookOpen, CheckCircle2, Trophy, Calendar } from 'lucide-react'
+import { ArrowLeft, BookOpen, CheckCircle2, Trophy, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { PLANO_LEITURA_ANUAL, getLeituraPorPasso } from '@/constants/plano-leitura-biblica'
 import LeituraBiblicaClient from './leitura-biblica-client'
 
-export default async function LeituraBiblicaPage() {
+export default async function LeituraBiblicaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ semana?: string }>
+}) {
   const supabase = await createClient()
 
   const {
@@ -44,9 +48,13 @@ export default async function LeituraBiblicaPage() {
   const leiturasRealizadas = leiturasConfirmadas.length
   const progressoPercentual = Math.round((leiturasRealizadas / totalLeituras) * 100)
 
-  // Leitura da semana atual (baseada no passo)
+  const params = await searchParams
   const semanaAtual = discipulo.passo_atual || 1
-  const leituraAtual = getLeituraPorPasso(semanaAtual)
+  const semanaSelecionada = params.semana ? parseInt(params.semana) : semanaAtual
+  const leituraAtual = getLeituraPorPasso(semanaSelecionada)
+
+  const temSemanaAnterior = semanaSelecionada > 1
+  const temProximaSemana = semanaSelecionada < 52
 
   return (
     <div className="min-h-screen bg-background">
@@ -66,9 +74,9 @@ export default async function LeituraBiblicaPage() {
             <BookOpen className="w-10 h-10 text-primary" />
             Leitura Bíblica em 1 Ano
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <div className="text-muted-foreground text-lg">
             Leia a Bíblia em 1 ano seguindo um plano progressivo e temático
-          </p>
+          </div>
         </div>
 
         {/* Progresso Geral */}
@@ -96,7 +104,47 @@ export default async function LeituraBiblicaPage() {
           </CardContent>
         </Card>
 
-        {/* Leitura da Semana Atual */}
+        {leituraAtual && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-4">
+              <Link href={`/dashboard/leitura-biblica?semana=${semanaSelecionada - 1}`}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={!temSemanaAnterior}
+                  className="gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Semana Anterior
+                </Button>
+              </Link>
+
+              <div className="text-center">
+                {semanaSelecionada !== semanaAtual && (
+                  <Link href="/dashboard/leitura-biblica">
+                    <Button variant="ghost" size="sm">
+                      Voltar para Semana Atual ({semanaAtual})
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
+              <Link href={`/dashboard/leitura-biblica?semana=${semanaSelecionada + 1}`}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={!temProximaSemana}
+                  className="gap-2"
+                >
+                  Próxima Semana
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Leitura da Semana */}
         {leituraAtual && (
           <LeituraBiblicaClient 
             leituraAtual={leituraAtual}

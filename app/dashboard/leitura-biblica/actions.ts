@@ -45,7 +45,6 @@ export async function confirmarLeituraAction({
 
     if (xpError) {
       console.error('[v0] Erro ao incrementar XP:', xpError)
-      // Não retorna erro aqui porque a leitura já foi salva
     }
 
     return { success: true }

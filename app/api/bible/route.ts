@@ -1,111 +1,136 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { bibleData } from '@/lib/bible-data'
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 
-const BOOK_ABBREVIATIONS: Record<string, string> = {
-  'Gênesis': 'gn',
-  'Genesis': 'gn',
-  'Êxodo': 'ex',
-  'Exodo': 'ex',
-  'João': 'jo',
-  'Joao': 'jo',
-  'Marcos': 'mc',
-  'Mateus': 'mt',
-  'Lucas': 'lc',
-  'Atos': 'at',
-  'Romanos': 'rm',
-  'Filipenses': 'fp',
-  'Efésios': 'ef',
-  'Efesios': 'ef',
-  'Colossenses': 'cl',
-  '1 Tessalonicenses': '1ts',
-  '1 Coríntios': '1co',
-  '1 Corinthios': '1co',
-  '2 Coríntios': '2co',
-  '2 Corinthios': '2co',
-  'Gálatas': 'gl',
-  'Galatas': 'gl',
-  'Hebreus': 'hb',
-  'Salmos': 'sl',
-  'Provérbios': 'pv',
-  'Proverbios': 'pv',
-  'Isaías': 'is',
-  'Isaias': 'is',
-  'Ezequiel': 'ez',
-  'Daniel': 'dn',
-  'Apocalipse': 'ap'
+const bookMap: Record<string, string> = {
+  'gênesis': 'gn',
+  'êxodo': 'ex',
+  'levítico': 'lv',
+  'números': 'nm',
+  'deuteronômio': 'dt',
+  'josué': 'js',
+  'juízes': 'jz',
+  'rute': 'rt',
+  '1 samuel': '1sm',
+  '2 samuel': '2sm',
+  '1 reis': '1rs',
+  '2 reis': '2rs',
+  '1 crônicas': '1cr',
+  '2 crônicas': '2cr',
+  'esdras': 'ed',
+  'neemias': 'ne',
+  'ester': 'et',
+  'jó': 'jó',
+  'salmos': 'sl',
+  'provérbios': 'pv',
+  'eclesiastes': 'ec',
+  'cântico dos cânticos': 'ct',
+  'isaías': 'is',
+  'jeremias': 'jr',
+  'lamentações': 'lm',
+  'ezequiel': 'ez',
+  'daniel': 'dn',
+  'oséias': 'os',
+  'joel': 'jl',
+  'amós': 'am',
+  'obadias': 'ob',
+  'jonas': 'jn',
+  'miquéias': 'mq',
+  'naum': 'na',
+  'habacuque': 'hc',
+  'sofonias': 'sf',
+  'ageu': 'ag',
+  'zacarias': 'zc',
+  'malaquias': 'ml',
+  'mateus': 'mt',
+  'marcos': 'mc',
+  'lucas': 'lc',
+  'joão': 'jo',
+  'atos': 'at',
+  'romanos': 'rm',
+  '1 coríntios': '1co',
+  '2 coríntios': '2co',
+  'gálatas': 'gl',
+  'efésios': 'ef',
+  'filipenses': 'fp',
+  'colossenses': 'cl',
+  '1 tessalonicenses': '1ts',
+  '2 tessalonicenses': '2ts',
+  '1 timóteo': '1tm',
+  '2 timóteo': '2tm',
+  'tito': 'tt',
+  'filemom': 'fm',
+  'hebreus': 'hb',
+  'tiago': 'tg',
+  '1 pedro': '1pe',
+  '2 pedro': '2pe',
+  '1 joão': '1jo',
+  '2 joão': '2jo',
+  '3 joão': '3jo',
+  'judas': 'jd',
+  'apocalipse': 'ap'
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const book = searchParams.get('book')
+    const { searchParams } = new URL(request.url)
+    const bookName = searchParams.get('book')
     const chapter = searchParams.get('chapter')
 
-    console.log('[v0] ===== BIBLE API REQUEST =====')
-    console.log('[v0] Raw book param:', book)
-    console.log('[v0] Raw chapter param:', chapter)
-    console.log('[v0] Book type:', typeof book)
-    console.log('[v0] Chapter type:', typeof chapter)
-
-    if (!book || !chapter) {
-      console.log('[v0] Missing parameters!')
+    if (!bookName || !chapter) {
       return NextResponse.json(
         { error: 'Parâmetros book e chapter são obrigatórios' },
         { status: 400 }
       )
     }
 
-    const normalizedBook = book.trim().toLowerCase()
-    console.log('[v0] Normalized book:', normalizedBook)
-    console.log('[v0] Available books in mapping:', Object.keys(BOOK_ABBREVIATIONS))
-    
-    const bookData = bibleData.find(b => 
-      b.name.toLowerCase() === normalizedBook ||
-      b.abbrev.pt.toLowerCase() === normalizedBook
-    )
+    const supabase = await createClient()
 
-    if (!bookData) {
-      console.error('[v0] Book not found in local data!')
-      console.log('[v0] Tried:', normalizedBook)
+    const bookKey = bookName.toLowerCase().trim()
+    const abreviacao = bookMap[bookKey]
+
+    if (!abreviacao) {
       return NextResponse.json(
-        { error: `Livro "${book}" não encontrado` },
+        { error: `Livro não encontrado: ${bookName}` },
         { status: 404 }
       )
     }
 
-    // Encontrar o capítulo
-    const chapterData = bookData.chapters.find(c => c.number === parseInt(chapter))
+    const { data: livro, error: livroError } = await supabase
+      .from('livros_biblia')
+      .select('id, nome')
+      .eq('abreviacao', abreviacao)
+      .single()
 
-    if (!chapterData) {
-      console.error('[v0] Chapter not found in local data!')
-      console.log('[v0] Tried:', chapter)
+    if (livroError || !livro) {
       return NextResponse.json(
-        { error: `Capítulo ${chapter} não encontrado no livro ${bookData.name}` },
+        { error: 'Livro não encontrado no banco de dados' },
         { status: 404 }
       )
     }
 
-    // Retornar no formato esperado pelo componente
-    const transformedData = {
-      book: bookData.name,
+    const { data: capitulo, error: capituloError } = await supabase
+      .from('capitulos_biblia')
+      .select('texto')
+      .eq('livro_id', livro.id)
+      .eq('numero_capitulo', parseInt(chapter))
+      .single()
+
+    if (capituloError || !capitulo) {
+      return NextResponse.json(
+        { error: 'Capítulo não encontrado no banco de dados' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      book: livro.nome,
       chapter: parseInt(chapter),
-      verses: chapterData.verses
-    }
-
-    console.log('[v0] Transformed data:', JSON.stringify(transformedData, null, 2))
-    console.log('[v0] ===== END BIBLE API REQUEST =====')
-
-    return NextResponse.json(transformedData)
-
+      text: capitulo.texto
+    })
   } catch (error) {
-    console.error('[v0] ===== BIBLE API ERROR =====')
-    console.error('[v0] Error:', error)
-    console.error('[v0] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.error('[v0] Erro na API de Bíblia:', error)
     return NextResponse.json(
-      { 
-        error: 'Erro ao buscar texto bíblico',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
-      },
+      { error: 'Erro interno do servidor' },
       { status: 500 }
     )
   }

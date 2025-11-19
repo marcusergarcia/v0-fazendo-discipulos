@@ -73,30 +73,18 @@ export function BibleReader({ bookName, startChapter, endChapter }: BibleReaderP
         ) : error ? (
           <div className="text-center py-12 space-y-4">
             <p className="text-muted-foreground">
-              Não foi possível carregar o capítulo neste momento
+              Este capítulo ainda não foi adicionado ao banco de dados.
             </p>
             <p className="text-sm text-muted-foreground">
-              Você pode ler este capítulo em:
+              Por favor, aguarde enquanto populamos a Bíblia completa ACF.
             </p>
-            <a
-              href={`https://www.bibliaonline.com.br/nvi/${bookName.toLowerCase()}/${currentChapter}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-primary hover:underline"
-            >
-              <BookOpen className="w-4 h-4" />
-              Abrir na Bíblia Online
-            </a>
           </div>
         ) : (
           <ScrollArea className="h-[400px] w-full rounded-md border p-4">
-            <div className="space-y-3">
-              {chapterData?.verses.map((verse) => (
-                <p key={verse.number} className="text-base leading-relaxed">
-                  <span className="font-semibold text-primary mr-2">{verse.number}</span>
-                  {verse.text}
-                </p>
-              ))}
+            <div className="space-y-4">
+              <p className="text-base leading-relaxed whitespace-pre-wrap">
+                {chapterData?.text}
+              </p>
             </div>
           </ScrollArea>
         )}
