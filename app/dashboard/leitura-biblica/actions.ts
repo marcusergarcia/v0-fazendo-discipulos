@@ -53,3 +53,98 @@ export async function confirmarLeituraAction({
     return { success: false, error: 'Erro desconhecido' }
   }
 }
+
+export async function marcarCapituloLido(
+  livroId: number,
+  numeroCapitulo: number,
+  tempoLeitura: number
+) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { success: false, error: 'Não autenticado' }
+  }
+
+  const { error } = await supabase.from('leituras_capitulos').upsert(
+    {
+      usuario_id: user.id,
+      livro_id: livroId,
+      numero_capitulo: numeroCapitulo,
+      lido: true,
+      tempo_leitura: tempoLeitura,
+      data_leitura: new Date().toISOString(),
+    },
+    {
+      onConflict: 'usuario_id,livro_id,numero_capitulo',
+    }
+  )
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function desmarcarCapituloLido(
+  livroId: number,
+  numeroCapitulo: number
+) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { success: false, error: 'Não autenticado' }
+  }
+
+  const { error } = await supabase.from('leituras_capitulos').upsert(
+    {
+      usuario_id: user.id,
+      livro_id: livroId,
+      numero_capitulo: numeroCapitulo,
+      lido: false,
+    },
+    {
+      onConflict: 'usuario_id,livro_id,numero_capitulo',
+    }
+  )
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true }
+}
+
+export async function buscarCapitulosLidos(livroId: number, capitulos: number[]) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { leituras: [] }
+  }
+
+  const { data, error } = await supabase
+    .from('leituras_capitulos')
+    .select('numero_capitulo, lido')
+    .eq('usuario_id', user.id)
+    .eq('livro_id', livroId)
+    .in('numero_capitulo', capitulos)
+
+  if (error) {
+    console.error('Erro ao buscar capítulos lidos:', error)
+    return { leituras: [] }
+  }
+
+  return { leituras: data || [] }
+}

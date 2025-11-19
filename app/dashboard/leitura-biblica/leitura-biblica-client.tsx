@@ -2,54 +2,36 @@
 
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, Sparkles, Book } from 'lucide-react'
+import { CheckCircle2, Book } from 'lucide-react'
 import type { LeituraSemanal } from '@/constants/plano-leitura-biblica'
-import { confirmarLeituraAction } from './actions'
-import { BibleReader } from '@/components/bible-reader'
-
-interface LeituraBiblicaClientProps {
-  leituraAtual: LeituraSemanal
-  discipuloId: string
-  leituraJaConfirmada: boolean
-}
+import { ChapterCheckboxList } from '@/components/chapter-checkbox-list'
+import { Button } from '@/components/ui/button'
+import { BibleReaderWithAutoCheck } from '@/components/bible-reader-with-auto-check'
+import { LIVROS_MAP } from '@/lib/livros-map'
 
 export default function LeituraBiblicaClient({
   leituraAtual,
   discipuloId,
   leituraJaConfirmada
 }: LeituraBiblicaClientProps) {
-  const [confirmada, setConfirmada] = useState(leituraJaConfirmada)
-  const [confirmando, setConfirmando] = useState(false)
   const [mostrarTexto, setMostrarTexto] = useState(false)
+  const [chaptersRead, setChaptersRead] = useState(0)
+  const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
+  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
 
-  const handleConfirmarLeitura = async () => {
-    setConfirmando(true)
-    try {
-      const result = await confirmarLeituraAction({
-        discipuloId,
-        semanaNumero: leituraAtual.semana,
-        livro: leituraAtual.livro,
-        capituloInicio: leituraAtual.capituloInicio,
-        capituloFim: leituraAtual.capituloFim
-      })
-
-      if (result.success) {
-        setConfirmada(true)
-        const confetti = (await import('canvas-confetti')).default
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        })
-      }
-    } catch (error) {
-      console.error('[v0] Erro ao confirmar leitura:', error)
-    } finally {
-      setConfirmando(false)
-    }
+  const handleProgressChange = (lidos: number, total: number) => {
+    setChaptersRead(lidos)
+    setTotalChapters(total)
   }
+
+  const handleChapterRead = (chapter: number) => {
+    setCapitulosLidos(prev => new Set([...prev, chapter]))
+    // Atualizar contagem
+    setChaptersRead(prev => prev + 1)
+  }
+
+  const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
 
   return (
     <Card className="mb-8 border-2 border-primary">
@@ -68,10 +50,25 @@ export default function LeituraBiblicaClient({
             📖 {leituraAtual.livro} {leituraAtual.capituloInicio}
             {leituraAtual.capituloFim !== leituraAtual.capituloInicio && `-${leituraAtual.capituloFim}`}
           </div>
-          <p className="text-muted-foreground">{leituraAtual.descricao}</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            📚 Total: {leituraAtual.totalCapitulos} capítulo{leituraAtual.totalCapitulos > 1 ? 's' : ''}
-          </p>
+          <div className="text-muted-foreground">{leituraAtual.descricao}</div>
+          <div className="text-sm text-muted-foreground mt-2">
+            📚 Total: {totalChapters} capítulo{totalChapters > 1 ? 's' : ''}
+            {chaptersRead > 0 && (
+              <span className="ml-2 text-primary font-semibold">
+                • {chaptersRead} lido{chaptersRead > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="text-sm font-medium">Marque os capítulos lidos:</div>
+          <ChapterCheckboxList
+            livroId={LIVROS_MAP[leituraAtual.livro] || 1}
+            capituloInicial={leituraAtual.capituloInicio}
+            capituloFinal={leituraAtual.capituloFim}
+            onProgressChange={handleProgressChange}
+          />
         </div>
 
         <Button
@@ -84,42 +81,33 @@ export default function LeituraBiblicaClient({
         </Button>
 
         {mostrarTexto && (
-          <BibleReader
-            bookName={leituraAtual.livro}
-            startChapter={leituraAtual.capituloInicio}
-            endChapter={leituraAtual.capituloFim}
-          />
+          <div className="mt-4">
+            <BibleReaderWithAutoCheck
+              bookName={leituraAtual.livro}
+              livroId={LIVROS_MAP[leituraAtual.livro] || 1}
+              startChapter={leituraAtual.capituloInicio}
+              endChapter={leituraAtual.capituloFim}
+              capitulosLidos={capitulosLidos}
+              onChapterRead={handleChapterRead}
+            />
+          </div>
         )}
 
-        {confirmada ? (
+        {allChaptersRead && (
           <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3">
             <CheckCircle2 className="w-6 h-6 text-accent flex-shrink-0" />
             <div>
-              <p className="font-semibold text-accent">Leitura Confirmada!</p>
-              <p className="text-sm text-muted-foreground">Você ganhou 10 XP</p>
+              <div className="font-semibold text-accent">Todos os capítulos lidos!</div>
+              <div className="text-sm text-muted-foreground">
+                Parabéns! Você completou a leitura desta semana. XP será creditado automaticamente.
+              </div>
             </div>
           </div>
-        ) : (
-          <Button
-            onClick={handleConfirmarLeitura}
-            disabled={confirmando}
-            className="w-full gap-2"
-            size="lg"
-          >
-            {confirmando ? (
-              'Confirmando...'
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                Confirmar que Li
-              </>
-            )}
-          </Button>
         )}
 
-        <p className="text-xs text-muted-foreground text-center">
-          💡 Dica: Separe 15-20 minutos por dia para sua leitura bíblica
-        </p>
+        <div className="text-xs text-muted-foreground text-center">
+          💡 Dica: Role até o fim de cada capítulo e aguarde 3 minutos para marcar automaticamente
+        </div>
       </CardContent>
     </Card>
   )
