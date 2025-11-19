@@ -83,6 +83,13 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     if (updateError) throw new Error(`Erro ao atualizar discípulo: ${updateError.message}`)
 
+    await supabaseAdmin
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("link", `/discipulador/aprovar/${discipuloId}`)
+
+    // Criar notificação de boas-vindas para o novo discípulo
     await supabaseAdmin.from("notificacoes").insert({
       user_id: userId,
       tipo: "aprovacao_aceita",
@@ -95,7 +102,14 @@ export async function aprovarDiscipulo(discipuloId: string) {
     revalidatePath("/discipulador/aprovar")
     revalidatePath("/dashboard/arvore")
 
-    return { success: true, userId }
+    const linkBoasVindas = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fazendodiscipulos.vercel.app'}/boas-vindas?novo=true`
+    
+    return { 
+      success: true, 
+      userId,
+      linkBoasVindas,
+      email: discipulo.email_temporario 
+    }
   } catch (error) {
     console.error("[v0] Erro ao aprovar discípulo:", error)
     return {
@@ -119,6 +133,12 @@ export async function rejeitarDiscipulo(discipuloId: string, motivo?: string) {
     if (!discipulo) {
       throw new Error("Discípulo não encontrado")
     }
+
+    await supabaseAdmin
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("link", `/discipulador/aprovar/${discipuloId}`)
 
     const { error: deleteError } = await supabaseAdmin.from("discipulos").delete().eq("id", discipuloId)
 

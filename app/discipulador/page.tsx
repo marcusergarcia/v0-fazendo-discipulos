@@ -20,6 +20,15 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
+  const { data: discipulosPendentesAprovacao } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("discipulador_id", user.id)
+    .eq("aprovado_discipulador", false)
+    .is("user_id", null)
+
+  const totalAguardandoAprovacao = discipulosPendentesAprovacao?.length || 0
+
   const { data: discipulos } = await supabase
     .from("discipulos")
     .select("*")
@@ -202,17 +211,26 @@ export default async function DiscipuladorPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <Clock className="w-8 h-8 text-warning" />
-                <div className="text-right">
-                  <p className="text-2xl font-bold">{totalPendentes}</p>
-                  <p className="text-sm text-muted-foreground">Pendentes</p>
+          <Link href="/discipulador/aprovar">
+            <Card className={totalAguardandoAprovacao > 0 ? "border-warning hover:bg-muted/50 transition-colors cursor-pointer" : ""}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <Clock className="w-8 h-8 text-warning" />
+                  <div className="text-right">
+                    <p className="text-2xl font-bold">{totalAguardandoAprovacao}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {totalAguardandoAprovacao === 1 ? "Aguardando Aprovação" : "Aguardando Aprovações"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                {totalAguardandoAprovacao > 0 && (
+                  <div className="mt-2 text-xs text-center text-warning font-medium">
+                    Clique para revisar
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
 
           <Card>
             <CardContent className="pt-6">

@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, XCircle, User, Mail, Phone, Church, Calendar, MapPin, Clock, AlertCircle } from 'lucide-react'
+import { CheckCircle2, XCircle, User, Mail, Phone, Church, Calendar, MapPin, Clock, AlertCircle, Copy, Check, MessageCircle } from 'lucide-react'
 import Image from "next/image"
 import { useRouter } from 'next/navigation'
 import { aprovarDiscipulo, rejeitarDiscipulo } from "./actions"
@@ -30,6 +30,7 @@ interface AprovarDiscipuloClientProps {
     aceitou_lgpd: boolean
     aceitou_compromisso: boolean
     data_aceite_termos: string | null
+    aprovado_discipulador: boolean
   }
 }
 
@@ -39,6 +40,14 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
   const [error, setError] = useState<string | null>(null)
   const [showRejectForm, setShowRejectForm] = useState(false)
   const [motivoRejeicao, setMotivoRejeicao] = useState("")
+  const [aprovado, setAprovado] = useState(false)
+  const [linkBoasVindas, setLinkBoasVindas] = useState("")
+  const [copiado, setCopiado] = useState(false)
+
+  if (discipulo.aprovado_discipulador && !aprovado) {
+    router.push("/discipulador/aprovar")
+    return null
+  }
 
   const handleAprovar = async () => {
     if (!confirm("Tem certeza que deseja aprovar este discípulo? Ele receberá acesso ao sistema.")) return
@@ -53,8 +62,9 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
         throw new Error(resultado.error)
       }
 
-      router.push("/discipulador/aprovar?aprovacao=sucesso")
-      router.refresh()
+      setAprovado(true)
+      setLinkBoasVindas(resultado.linkBoasVindas || '')
+      
     } catch (error) {
       console.error("Erro ao aprovar:", error)
       setError(error instanceof Error ? error.message : "Erro ao aprovar discípulo")
@@ -84,6 +94,96 @@ export default function AprovarDiscipuloClient({ discipulo }: AprovarDiscipuloCl
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(linkBoasVindas)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch (error) {
+      alert("Não foi possível copiar o link")
+    }
+  }
+
+  const compartilharWhatsApp = () => {
+    const mensagem = `Olá ${discipulo.nome_completo_temp}! 🎉\n\nSeu cadastro foi aprovado no Fazendo Discípulos!\n\nAcesse o sistema através deste link e comece sua jornada de fé:\n${linkBoasVindas}\n\nBem-vindo! Que Deus abençoe sua caminhada.`
+    const telefone = discipulo.telefone_temp?.replace(/\D/g, '') || ''
+    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`
+    window.open(url, '_blank')
+  }
+
+  const compartilharEmail = () => {
+    const assunto = "Bem-vindo ao Fazendo Discípulos!"
+    const corpo = `Olá ${discipulo.nome_completo_temp}!\n\nSeu cadastro foi aprovado no Fazendo Discípulos!\n\nAcesse o sistema através deste link e comece sua jornada de fé:\n${linkBoasVindas}\n\nBem-vindo! Que Deus abençoe sua caminhada.`
+    window.location.href = `mailto:${discipulo.email_temporario}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`
+  }
+
+  if (aprovado) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-blue-950 p-6">
+        <div className="max-w-4xl mx-auto">
+          <Card className="bg-white/10 backdrop-blur border-white/20">
+            <CardHeader>
+              <CardTitle className="text-3xl text-white flex items-center gap-2">
+                <CheckCircle2 className="h-8 w-8 text-green-400" />
+                Discípulo Aprovado com Sucesso!
+              </CardTitle>
+              <CardDescription className="text-blue-200">
+                {discipulo.nome_completo_temp} foi aprovado e já pode acessar o sistema
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-green-500/10 border-2 border-green-500/30 rounded-lg p-6 space-y-4">
+                <h3 className="text-white font-semibold">Link de Acesso ao Sistema:</h3>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    readOnly 
+                    value={linkBoasVindas}
+                    className="flex-1 px-4 py-2 bg-white/10 border border-white/30 rounded text-white text-sm"
+                  />
+                  <Button
+                    onClick={copiarLink}
+                    className="bg-white/20 hover:bg-white/30"
+                  >
+                    {copiado ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+                
+                <p className="text-sm text-blue-200">
+                  Uma notificação de boas-vindas foi enviada ao discípulo. Você também pode compartilhar este link diretamente:
+                </p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    onClick={compartilharWhatsApp}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Phone className="w-4 h-4 mr-2" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    onClick={compartilharEmail}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email
+                  </Button>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => router.push("/discipulador")} 
+                className="w-full"
+              >
+                Voltar ao Painel do Discipulador
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

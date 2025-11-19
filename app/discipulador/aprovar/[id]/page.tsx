@@ -19,8 +19,6 @@ export default async function AprovarDiscipuloPage({ params }: { params: Promise
     .select("*")
     .eq("id", id)
     .eq("discipulador_id", user.id)
-    .eq("aprovado_discipulador", false)
-    .is("user_id", null) // Apenas os que ainda não foram aprovados
     .single()
 
   if (error || !discipulo) {

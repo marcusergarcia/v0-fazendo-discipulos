@@ -6,6 +6,12 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import Link from "next/link"
 import Image from "next/image"
 import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound, Book } from 'lucide-react'
@@ -136,151 +142,210 @@ export default async function DashboardPage({
       )}
 
       {/* Header */}
-      <header className="border-b bg-card shadow-sm">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <header className="border-b bg-card shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto px-2 sm:px-4 py-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <Image
                   src="/logo-fazendo-discipulos.png"
                   alt="Ministério Fazendo Discípulos"
-                  width={120}
-                  height={45}
+                  width={100}
+                  height={38}
                   priority
-                  className="object-contain"
+                  className="object-contain w-20 sm:w-28"
                 />
               </Link>
             </div>
-            <div className="flex items-center gap-2">
-              <Link href="/discipulador">
-                <Button variant="ghost" size="sm" className="gap-2 relative">
-                  <UsersRound className="w-4 h-4" />
-                  <span className="hidden sm:inline">Discipulador</span>
-                  {notificationCount && notificationCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                      {notificationCount > 9 ? "9+" : notificationCount}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
-              <Link href="/discipulador/convites">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <UserPlus className="w-4 h-4" />
-                  <span className="hidden sm:inline">Convidar</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/arvore">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <GitBranch className="w-4 h-4" />
-                  <span className="hidden sm:inline">Árvore</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/chat">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Users className="w-4 h-4" />
-                  <span className="hidden sm:inline">Chat</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/leitura-biblica">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Book className="w-4 h-4" />
-                  <span className="hidden sm:inline">Leitura Bíblica</span>
-                </Button>
-              </Link>
-              <Link href="/dashboard/perfil">
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Avatar className="w-7 h-7">
-                    <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                      {userData.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden sm:inline">{userData.name}</span>
-                </Button>
-              </Link>
-              <form
-                action={async () => {
-                  "use server"
-                  const supabase = await createClient()
-                  await supabase.auth.signOut()
-                  redirect("/auth/login")
-                }}
-              >
-                <Button variant="ghost" size="sm" type="submit" className="gap-2">
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">Sair</span>
-                </Button>
-              </form>
-            </div>
+            <TooltipProvider>
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/discipulador">
+                      <Button variant="ghost" size="sm" className="gap-2 relative h-9 w-9 sm:w-auto sm:px-3">
+                        <UsersRound className="w-5 h-5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Discipulador</span>
+                        {notificationCount && notificationCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                            {notificationCount > 9 ? "9+" : notificationCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Discipulador</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/discipulador/convites">
+                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
+                        <UserPlus className="w-5 h-5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Convidar</span>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Convidar Discípulo</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/dashboard/arvore">
+                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
+                        <GitBranch className="w-5 h-5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Árvore</span>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Árvore de Discipulado</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/dashboard/chat">
+                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
+                        <Users className="w-5 h-5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Chat</span>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mensagens</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/dashboard/leitura-biblica">
+                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
+                        <Book className="w-5 h-5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Leitura Bíblica</span>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Leitura Bíblica</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link href="/dashboard/perfil">
+                      <Button variant="ghost" size="sm" className="gap-2 h-9 w-auto px-2 sm:px-3">
+                        <Avatar className="w-7 h-7">
+                          <AvatarImage src={displayAvatarUrl || "/placeholder.svg"} alt="Foto de perfil" />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                            {userData.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="hidden lg:inline max-w-[100px] truncate">{userData.name}</span>
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Perfil</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <form
+                      action={async () => {
+                        "use server"
+                        const supabase = await createClient()
+                        await supabase.auth.signOut()
+                        redirect("/auth/login")
+                      }}
+                    >
+                      <Button variant="ghost" size="sm" type="submit" className="gap-2 h-9 w-9 sm:w-auto sm:px-3">
+                        <LogOut className="w-5 h-5 sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Sair</span>
+                      </Button>
+                    </form>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sair do Sistema</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Profile Section */}
-        <Card className="mb-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <CardTitle className="text-3xl">Olá, {userData.name}!</CardTitle>
-                <CardDescription className="text-lg">Continue sua jornada de fé</CardDescription>
+        <Card className="mb-6 sm:mb-8 bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20">
+          <CardHeader className="pb-3 sm:pb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3">
+              <div className="space-y-1 sm:space-y-2">
+                <CardTitle className="text-xl sm:text-2xl lg:text-3xl leading-tight break-words">
+                  Olá, {userData.name}!
+                </CardTitle>
+                <CardDescription className="text-base sm:text-lg">Continue sua jornada de fé</CardDescription>
               </div>
-              <Badge className="text-lg px-4 py-2 bg-secondary text-secondary-foreground">
+              <Badge className="text-sm sm:text-base lg:text-lg px-3 py-1.5 sm:px-4 sm:py-2 bg-secondary text-secondary-foreground whitespace-nowrap flex-shrink-0">
                 <Trophy className="w-4 h-4 mr-2" />
                 Nível {userData.level}: {userData.levelName}
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-0">
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span className="font-medium">Experiência</span>
                 <span className="text-muted-foreground">
                   {userData.xp} / {userData.xpToNext} XP
                 </span>
               </div>
-              <Progress value={(userData.xp / userData.xpToNext) * 100} className="h-3" />
+              <Progress value={(userData.xp / userData.xpToNext) * 100} className="h-2 sm:h-3" />
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Current Quest */}
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
+            <CardHeader className="pb-3 sm:pb-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Target className="w-5 h-5 text-primary flex-shrink-0" />
                 Missão Atual
               </CardTitle>
-              <CardDescription>{userData.currentPhase}</CardDescription>
+              <CardDescription className="text-sm sm:text-base">{userData.currentPhase}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
+                <span className="text-xs sm:text-sm font-medium">
                   Passo {userData.currentStep} de {userData.totalSteps}
                 </span>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-xs sm:text-sm text-muted-foreground">
                   {Math.round((passosCompletados / userData.totalSteps) * 100)}% completo
                 </span>
               </div>
               <Progress value={(passosCompletados / userData.totalSteps) * 100} className="h-2" />
 
-              <div className="pt-4 space-y-3">
-                <h4 className="font-semibold text-lg">
+              <div className="pt-2 sm:pt-4 space-y-2 sm:space-y-3">
+                <h4 className="font-semibold text-base sm:text-lg break-words">
                   Passo {userData.currentStep}: {getPassoNome(userData.currentStep)}
                 </h4>
-                <p className="text-sm text-muted-foreground">{getPassoDescricao(userData.currentStep)}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{getPassoDescricao(userData.currentStep)}</p>
 
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <Clock className="w-4 h-4 flex-shrink-0" />
                   <span>Tempo estimado: 20-30 minutos</span>
                 </div>
 
                 <Link href={`/dashboard/passo/${userData.currentStep}`}>
-                  <Button className="w-full mt-4" size="lg">
+                  <Button className="w-full mt-3 sm:mt-4" size="lg">
                     Continuar Missão
                     <Sparkles className="w-4 h-4 ml-2" />
                   </Button>
