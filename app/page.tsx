@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Trophy } from 'lucide-react'
+import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Trophy, Book, Calendar, CheckCircle } from 'lucide-react'
 import { createClient } from "@/lib/supabase/server"
 
 export default async function LandingPage() {
@@ -107,6 +107,70 @@ export default async function LandingPage() {
             description="Torne-se discipulador e ajude outros a crescer na fé"
             color="text-chart-4"
           />
+        </div>
+      </section>
+
+      <section className="py-20 container mx-auto px-4 bg-gradient-to-br from-primary/5 to-accent/5">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <Badge className="px-4 py-2 text-sm font-semibold bg-primary/10 text-primary mb-4">
+              <Book className="w-4 h-4 mr-2 inline" />
+              Novidade
+            </Badge>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-balance">
+              Leia a Bíblia Inteira em Um Ano
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
+              Uma jornada transformadora através das Escrituras, sincronizada com seu crescimento espiritual
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <Card className="p-8 border-primary/20 bg-gradient-to-br from-background to-primary/5">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-primary/10">
+                  <Calendar className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">52 Semanas Estruturadas</h3>
+                  <p className="text-muted-foreground">
+                    Cada semana corresponde a um passo da sua jornada. Comece pelos Evangelhos, explore a vida cristã prática, 
+                    aprofunde-se na doutrina e descubra o Antigo Testamento em uma ordem que faz sentido para seu crescimento.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-8 border-accent/20 bg-gradient-to-br from-background to-accent/5">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-accent/10">
+                  <CheckCircle className="w-6 h-6 text-accent" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Acompanhamento com Recompensas</h3>
+                  <p className="text-muted-foreground">
+                    Confirme sua leitura semanal e ganhe XP! Acompanhe seu progresso anual com um indicador visual motivador. 
+                    A Palavra de Deus se torna parte natural da sua rotina de discipulado.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <Card className="p-8 text-center bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30">
+            <div className="flex flex-col items-center gap-4">
+              <Book className="w-12 h-12 text-primary" />
+              <h3 className="text-2xl font-bold">Versão NVI</h3>
+              <p className="text-muted-foreground max-w-xl text-balance">
+                Todas as leituras utilizam a Nova Versão Internacional (NVI), facilitando a compreensão 
+                e tornando a Palavra acessível para todos os níveis de discípulos.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span>Sincronizado automaticamente com seu passo atual</span>
+              </div>
+            </div>
+          </Card>
         </div>
       </section>
 

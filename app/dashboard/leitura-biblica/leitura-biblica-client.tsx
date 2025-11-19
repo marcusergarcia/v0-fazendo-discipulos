@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, ExternalLink, Sparkles } from 'lucide-react'
+import { CheckCircle2, Sparkles, Book } from 'lucide-react'
 import type { LeituraSemanal } from '@/constants/plano-leitura-biblica'
 import { confirmarLeituraAction } from './actions'
-// import confetti from 'canvas-confetti' - removido
+import { BibleReader } from '@/components/bible-reader'
 
 interface LeituraBiblicaClientProps {
   leituraAtual: LeituraSemanal
@@ -22,6 +22,7 @@ export default function LeituraBiblicaClient({
 }: LeituraBiblicaClientProps) {
   const [confirmada, setConfirmada] = useState(leituraJaConfirmada)
   const [confirmando, setConfirmando] = useState(false)
+  const [mostrandoBiblia, setMostrandoBiblia] = useState(false)
 
   const handleConfirmarLeitura = async () => {
     setConfirmando(true)
@@ -50,8 +51,6 @@ export default function LeituraBiblicaClient({
     }
   }
 
-  const urlBiblia = `https://www.bibliaonline.com.br/nvi/${leituraAtual.livro.toLowerCase()}/${leituraAtual.capituloInicio}`
-
   return (
     <Card className="mb-8 border-2 border-primary">
       <CardHeader>
@@ -75,14 +74,23 @@ export default function LeituraBiblicaClient({
           </p>
         </div>
 
-        <div className="flex gap-3">
-          <a href={urlBiblia} target="_blank" rel="noopener noreferrer" className="flex-1">
-            <Button variant="outline" className="w-full gap-2">
-              <ExternalLink className="w-4 h-4" />
-              Ler na Bíblia Online (NVI)
-            </Button>
-          </a>
-        </div>
+        <Button
+          onClick={() => setMostrandoBiblia(!mostrandoBiblia)}
+          variant="outline"
+          className="w-full gap-2"
+          size="lg"
+        >
+          <Book className="w-4 h-4" />
+          {mostrandoBiblia ? 'Ocultar Texto Bíblico' : 'Ler Aqui (NVI)'}
+        </Button>
+
+        {mostrandoBiblia && (
+          <BibleReader
+            bookName={leituraAtual.livro}
+            startChapter={leituraAtual.capituloInicio}
+            endChapter={leituraAtual.capituloFim}
+          />
+        )}
 
         {confirmada ? (
           <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3">
