@@ -29,14 +29,37 @@ export default function LeituraBiblicaClient({
   const [capituloInicial, setCapituloInicial] = useState(leituraAtual.capituloInicio)
 
   useEffect(() => {
+    const storageKey = `capitulos_lidos_${discipuloId}_${leituraAtual.semana}`
+    const saved = localStorage.getItem(storageKey)
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        setCapitulosLidos(new Set(parsed))
+      } catch (e) {
+        console.error("[v0] Erro ao carregar capítulos lidos:", e)
+      }
+    }
+  }, [discipuloId, leituraAtual.semana])
+
+  useEffect(() => {
+    if (capitulosLidos.size > 0) {
+      const storageKey = `capitulos_lidos_${discipuloId}_${leituraAtual.semana}`
+      localStorage.setItem(storageKey, JSON.stringify(Array.from(capitulosLidos)))
+    }
+  }, [capitulosLidos, discipuloId, leituraAtual.semana])
+
+  useEffect(() => {
     const primeiroNaoLido = Array.from({ length: leituraAtual.capituloFim - leituraAtual.capituloInicio + 1 })
       .map((_, i) => leituraAtual.capituloInicio + i)
       .find((cap) => !capitulosLidos.has(cap))
 
     if (primeiroNaoLido) {
       setCapituloInicial(primeiroNaoLido)
+      // Salvar o último capítulo acessado
+      const storageKey = `ultimo_capitulo_${discipuloId}_${leituraAtual.semana}`
+      localStorage.setItem(storageKey, String(primeiroNaoLido))
     }
-  }, [capitulosLidos, leituraAtual])
+  }, [capitulosLidos, leituraAtual, discipuloId])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
