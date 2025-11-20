@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Loader2, BookOpen, Highlighter, Check, PlayC
 import { createBrowserClient } from "@supabase/ssr"
 import { marcarCapituloLido } from "@/app/dashboard/leitura-biblica/actions"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 interface BibleReaderWithAutoCheckProps {
   bookName: string
@@ -175,7 +176,9 @@ export function BibleReaderWithAutoCheck({
     const result = await marcarCapituloLido(livroId, currentChapter, timeElapsed)
 
     if (result.success && result.xpGanho && result.xpGanho > 0) {
-      alert(`🎉 Capítulo ${currentChapter} concluído! +${result.xpGanho} XP`)
+      toast.success(`Capítulo ${currentChapter} concluído! +${result.xpGanho} XP`, {
+        duration: 2000,
+      })
     }
 
     if (result.success) {
@@ -224,7 +227,9 @@ export function BibleReaderWithAutoCheck({
       data: { user },
     } = await supabase.auth.getUser()
     if (!user) {
-      alert("Você precisa estar logado para salvar marcações")
+      toast.error("Você precisa estar logado para salvar marcações", {
+        duration: 2000,
+      })
       return
     }
 
@@ -241,10 +246,14 @@ export function BibleReaderWithAutoCheck({
 
     if (!insertError) {
       await loadHighlights(currentChapter)
-      alert("✨ Texto marcado com sucesso!")
+      toast.success("Texto marcado com sucesso!", {
+        duration: 2000,
+      })
       selection.removeAllRanges()
     } else {
-      alert("Erro ao salvar marcação")
+      toast.error("Erro ao salvar marcação", {
+        duration: 2000,
+      })
     }
   }
 
@@ -352,13 +361,34 @@ export function BibleReaderWithAutoCheck({
                 Ler Agora
               </Button>
             )}
-            <Button
-              variant={highlightMode ? "default" : "outline"}
-              size="sm"
-              onClick={() => setHighlightMode(!highlightMode)}
-            >
-              <Highlighter className="w-4 h-4" />
-            </Button>
+            {(rastreamentoAtivo || capitulosLidos.has(currentChapter)) && (
+              <>
+                <div className="flex gap-1.5">
+                  {HIGHLIGHT_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => {
+                        setSelectedColor(color.value)
+                        setHighlightMode(true)
+                      }}
+                      className={cn(
+                        "w-7 h-7 rounded border-2 transition-all hover:scale-110",
+                        color.class,
+                        selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
+                      )}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                <Button
+                  variant={highlightMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setHighlightMode(!highlightMode)}
+                >
+                  <Highlighter className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -373,23 +403,6 @@ export function BibleReaderWithAutoCheck({
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
               <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progressPercent}%` }} />
             </div>
-          </div>
-        )}
-
-        {highlightMode && (
-          <div className="mt-3 flex gap-2">
-            {HIGHLIGHT_COLORS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => setSelectedColor(color.value)}
-                className={cn(
-                  "w-8 h-8 rounded border-2 transition-all",
-                  color.class,
-                  selectedColor === color.value ? "border-primary scale-110" : "border-transparent",
-                )}
-                title={color.name}
-              />
-            ))}
           </div>
         )}
       </CardHeader>

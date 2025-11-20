@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { Check } from "lucide-react"
 import { buscarCapitulosLidos } from "@/app/dashboard/leitura-biblica/actions"
+import { cn } from "@/lib/utils"
 
 interface ChapterCheckboxListProps {
   livroId: number
@@ -14,6 +14,7 @@ interface ChapterCheckboxListProps {
   onCapituloLidoChange?: (capitulo: number, lido: boolean) => void
   onUltimoCapituloChange?: (numeroCapitulo: number) => void
   onCapituloClick?: (numeroCapitulo: number) => void
+  capitulosSemana?: number[]
 }
 
 export function ChapterCheckboxList({
@@ -25,6 +26,7 @@ export function ChapterCheckboxList({
   onCapituloLidoChange,
   onUltimoCapituloChange,
   onCapituloClick,
+  capitulosSemana = [],
 }: ChapterCheckboxListProps) {
   const capitulos = Array.from({ length: capituloFinal - capituloInicial + 1 }, (_, i) => capituloInicial + i)
 
@@ -52,7 +54,6 @@ export function ChapterCheckboxList({
 
   useEffect(() => {
     if (externalCapitulosLidos && externalCapitulosLidos.size > 0) {
-      // Criar novo Set combinando capítulos do banco + externos
       const merged = new Set([...capitulosLidos, ...externalCapitulosLidos])
 
       setCapitulosLidos(merged)
@@ -69,25 +70,31 @@ export function ChapterCheckboxList({
 
   return (
     <div className="flex flex-wrap gap-3">
-      {capitulos.map((cap) => (
-        <div key={cap} className="flex items-center gap-2">
-          <Checkbox
-            id={`cap-${livroId}-${cap}`}
-            checked={capitulosLidos.has(cap)}
-            disabled={true}
-            className="cursor-not-allowed"
-          />
-          <Label
-            htmlFor={`cap-${livroId}-${cap}`}
-            className={`text-sm font-medium ${
-              onCapituloClick ? "cursor-pointer hover:text-primary hover:underline" : "cursor-not-allowed opacity-70"
-            }`}
+      {capitulos.map((cap) => {
+        const isLido = capitulosLidos.has(cap)
+
+        return (
+          <button
+            key={cap}
             onClick={() => onCapituloClick && onCapituloClick(cap)}
+            disabled={!onCapituloClick}
+            className={cn(
+              "relative flex items-center justify-center w-10 h-10 rounded-md border-2 transition-all",
+              "hover:scale-110 hover:shadow-md",
+              isLido
+                ? "border-green-500 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400"
+                : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300",
+              onCapituloClick ? "cursor-pointer" : "cursor-not-allowed opacity-50",
+            )}
+            title={isLido ? `Capítulo ${cap} - Lido` : `Capítulo ${cap} - Clique para ler`}
           >
-            {cap}
-          </Label>
-        </div>
-      ))}
+            <span className="font-semibold text-sm">{cap}</span>
+            {isLido && (
+              <Check className="absolute -top-1 -right-1 w-4 h-4 text-green-500 bg-white dark:bg-gray-900 rounded-full" />
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }

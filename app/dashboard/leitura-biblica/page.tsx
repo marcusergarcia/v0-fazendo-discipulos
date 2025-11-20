@@ -14,7 +14,6 @@ import {
   ChevronRight,
   AlertCircle,
 } from "lucide-react"
-import { PLANO_LEITURA_ANUAL, getLeituraPorPasso } from "@/constants/plano-leitura-biblica"
 import LeituraBiblicaClient from "./leitura-biblica-client"
 
 export default async function LeituraBiblicaPage({
@@ -40,33 +39,42 @@ export default async function LeituraBiblicaPage({
     redirect("/dashboard")
   }
 
+  const { data: planoLeitura } = await supabase
+    .from("plano_leitura_biblica")
+    .select("semana, tema, livro, capitulo_inicio, capitulo_fim, total_capitulos, fase, descricao, capitulos_semana")
+    .order("semana", { ascending: true })
+
+  if (!planoLeitura || planoLeitura.length === 0) {
+    redirect("/dashboard")
+  }
+
   const { data: leituraData } = await supabase
     .from("leituras_capitulos")
     .select("capitulos_lidos")
     .eq("usuario_id", discipulo.id)
     .single()
 
-  const capitulosLidos = leituraData?.capitulos_lidos || []
+  const capitulosLidos = new Set(leituraData?.capitulos_lidos || [])
 
-  // Calcular quais semanas estão completas
   const semanasConcluidas = new Set<number>()
   const semanasEmProgresso = new Set<number>()
 
-  for (let i = 1; i <= 52; i++) {
-    const leituraDaSemana = getLeituraPorPasso(i)
-    if (!leituraDaSemana) continue
+  for (const semana of planoLeitura) {
+    const capitulosDaSemana = semana.capitulos_semana || []
 
-    // Contar quantos capítulos desta semana foram lidos
-    const capitulosDaSemana = capitulosLidos.filter((capId: number) => {
-      // Verificar se o capítulo pertence a esta semana
-      // (assumindo que os IDs seguem ordem sequencial no banco)
-      return true // TODO: implementar lógica correta de verificação
-    })
+    if (capitulosDaSemana.length === 0) continue
 
-    if (capitulosDaSemana.length === leituraDaSemana.totalCapitulos) {
-      semanasConcluidas.add(i)
-    } else if (capitulosDaSemana.length > 0) {
-      semanasEmProgresso.add(i)
+    // Verificar se TODOS os capítulos da semana foram lidos
+    const todosCapitulosLidos = capitulosDaSemana.every((capId: number) => capitulosLidos.has(capId))
+
+    if (todosCapitulosLidos) {
+      semanasConcluidas.add(semana.semana)
+    } else {
+      // Verificar se ALGUM capítulo foi lido (em progresso)
+      const algumCapituloLido = capitulosDaSemana.some((capId: number) => capitulosLidos.has(capId))
+      if (algumCapituloLido) {
+        semanasEmProgresso.add(semana.semana)
+      }
     }
   }
 
@@ -77,7 +85,7 @@ export default async function LeituraBiblicaPage({
   const params = await searchParams
   const semanaAtual = discipulo.passo_atual || 1
   const semanaSelecionada = params.semana ? Number.parseInt(params.semana) : semanaAtual
-  const leituraAtual = getLeituraPorPasso(semanaSelecionada)
+  const leituraAtual = planoLeitura.find((s) => s.semana === semanaSelecionada)
 
   const temSemanaAnterior = semanaSelecionada > 1
   const temProximaSemana = semanaSelecionada < 52
@@ -148,35 +156,25 @@ export default async function LeituraBiblicaPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {PLANO_LEITURA_ANUAL.map((semana) => {
+              {planoLeitura.map((semana) => {
                 const confirmada = semanasConcluidas.has(semana.semana)
                 const emProgresso = semanasEmProgresso.has(semana.semana)
                 const ehAtual = semana.semana === semanaAtual
                 const isPendente = semana.semana < semanaAtual && !confirmada
 
-                // Lógica de cores:
-                // Verde: 100% completa
-                // Amarelo: atual OU em progresso mas incompleta (pendente)
-                // Azul: semana atual e não iniciada
-                // Outline: não iniciada e futura
-
                 let badgeClass = ""
                 let icon = null
 
                 if (confirmada) {
-                  // Verde: completa
                   badgeClass = "bg-green-100 text-green-700 hover:bg-green-100 border-green-300"
                   icon = <CheckCircle2 className="w-3 h-3" />
                 } else if (isPendente || (ehAtual && emProgresso)) {
-                  // Amarelo: pendente (atrasada) ou atual em progresso
                   badgeClass = "bg-yellow-500 text-white hover:bg-yellow-500"
                   icon = <AlertCircle className="w-3 h-3" />
                 } else if (ehAtual) {
-                  // Azul: semana atual não iniciada
                   badgeClass = "bg-primary text-primary-foreground hover:bg-primary"
                   icon = <Calendar className="w-3 h-3" />
                 } else {
-                  // Outline: não iniciada e futura
                   badgeClass = ""
                 }
 
@@ -184,7 +182,7 @@ export default async function LeituraBiblicaPage({
                   <Link key={semana.semana} href={`/dashboard/leitura-biblica?semana=${semana.semana}`}>
                     <Badge
                       variant={badgeClass ? undefined : "outline"}
-                      className={`gap-1 cursor-pointer hover:opacity-80 transition-opacity ${badgeClass}`}
+                      className={`gap-1 cursor-pointer hover:opacity-80 transition-opacity w-8 h-6 justify-center p-0 ${badgeClass}`}
                     >
                       {icon}
                       {semana.semana}
@@ -229,7 +227,17 @@ export default async function LeituraBiblicaPage({
         {/* Leitura da Semana */}
         {leituraAtual && (
           <LeituraBiblicaClient
-            leituraAtual={leituraAtual}
+            leituraAtual={{
+              semana: leituraAtual.semana,
+              tema: leituraAtual.tema,
+              livro: leituraAtual.livro,
+              capituloInicio: leituraAtual.capitulo_inicio,
+              capituloFim: leituraAtual.capitulo_fim,
+              totalCapitulos: leituraAtual.total_capitulos,
+              fase: leituraAtual.fase,
+              descricao: leituraAtual.descricao,
+              capitulosSemana: leituraAtual.capitulos_semana || [],
+            }}
             discipuloId={discipulo.id}
             leituraJaConfirmada={semanasConcluidas.has(leituraAtual.semana)}
           />

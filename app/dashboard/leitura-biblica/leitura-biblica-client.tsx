@@ -4,10 +4,21 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
-import type { LeituraSemanal } from "@/constants/plano-leitura-biblica"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
+
+interface LeituraSemanal {
+  semana: number
+  tema: string
+  livro: string
+  capituloInicio: number
+  capituloFim: number
+  totalCapitulos: number
+  fase: string
+  descricao: string
+  capitulosSemana: number[] // Array de IDs dos capítulos da semana
+}
 
 interface LeituraBiblicaClientProps {
   leituraAtual: LeituraSemanal
@@ -81,7 +92,7 @@ export default function LeituraBiblicaClient({
         </div>
 
         <div className="space-y-3">
-          <div className="text-sm font-medium">Marque os capítulos lidos:</div>
+          <div className="text-sm font-medium">Clique para acessar os capítulos da semana:</div>
           <ChapterCheckboxList
             livroId={LIVROS_MAP[leituraAtual.livro] || 1}
             capituloInicial={leituraAtual.capituloInicio}
@@ -90,6 +101,7 @@ export default function LeituraBiblicaClient({
             externalCapitulosLidos={capitulosLidos}
             onUltimoCapituloChange={handleUltimoCapituloLido}
             onCapituloClick={abrirCapitulo}
+            capitulosSemana={leituraAtual.capitulosSemana}
           />
         </div>
 
