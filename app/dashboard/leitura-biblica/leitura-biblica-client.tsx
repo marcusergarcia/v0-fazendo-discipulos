@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Book } from "lucide-react"
+import { CheckCircle2 } from "lucide-react"
 import type { LeituraSemanal } from "@/constants/plano-leitura-biblica"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
-import { Button } from "@/components/ui/button"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
 
@@ -21,11 +20,9 @@ export default function LeituraBiblicaClient({
   discipuloId,
   leituraJaConfirmada,
 }: LeituraBiblicaClientProps) {
-  const [mostrarTexto, setMostrarTexto] = useState(false)
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
-
   const [capituloInicial, setCapituloInicial] = useState(leituraAtual.capituloInicio)
 
   useEffect(() => {
@@ -34,12 +31,25 @@ export default function LeituraBiblicaClient({
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
-        setCapitulosLidos(new Set(parsed))
+        const lidosSet = new Set(parsed)
+        setCapitulosLidos(lidosSet)
+
+        const primeiroNaoLido = Array.from({ length: leituraAtual.capituloFim - leituraAtual.capituloInicio + 1 })
+          .map((_, i) => leituraAtual.capituloInicio + i)
+          .find((cap) => !lidosSet.has(cap))
+
+        if (primeiroNaoLido) {
+          setCapituloInicial(primeiroNaoLido)
+        } else if (lidosSet.size > 0) {
+          // Se todos estão lidos, começar no último
+          const maiorCapitulo = Math.max(...Array.from(lidosSet))
+          setCapituloInicial(maiorCapitulo)
+        }
       } catch (e) {
         console.error("[v0] Erro ao carregar capítulos lidos:", e)
       }
     }
-  }, [discipuloId, leituraAtual.semana])
+  }, [discipuloId, leituraAtual.semana, leituraAtual.capituloInicio, leituraAtual.capituloFim])
 
   useEffect(() => {
     if (capitulosLidos.size > 0) {
@@ -48,29 +58,14 @@ export default function LeituraBiblicaClient({
     }
   }, [capitulosLidos, discipuloId, leituraAtual.semana])
 
-  useEffect(() => {
-    const primeiroNaoLido = Array.from({ length: leituraAtual.capituloFim - leituraAtual.capituloInicio + 1 })
-      .map((_, i) => leituraAtual.capituloInicio + i)
-      .find((cap) => !capitulosLidos.has(cap))
-
-    if (primeiroNaoLido) {
-      setCapituloInicial(primeiroNaoLido)
-      // Salvar o último capítulo acessado
-      const storageKey = `ultimo_capitulo_${discipuloId}_${leituraAtual.semana}`
-      localStorage.setItem(storageKey, String(primeiroNaoLido))
-    }
-  }, [capitulosLidos, leituraAtual, discipuloId])
-
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
     setTotalChapters(total)
   }
 
   const handleChapterRead = (chapter: number) => {
-    console.log("[v0] handleChapterRead chamado para capítulo:", chapter)
     setCapitulosLidos((prev) => {
       const newSet = new Set([...prev, chapter])
-      console.log("[v0] Novos capítulos lidos:", Array.from(newSet))
       return newSet
     })
     setChaptersRead((prev) => prev + 1)
@@ -117,23 +112,16 @@ export default function LeituraBiblicaClient({
           />
         </div>
 
-        <Button onClick={() => setMostrarTexto(!mostrarTexto)} variant="outline" className="w-full gap-2">
-          <Book className="w-4 h-4" />
-          {mostrarTexto ? "Ocultar Texto Bíblico" : "Ler Aqui (ACF)"}
-        </Button>
-
-        {mostrarTexto && (
-          <div className="mt-4">
-            <BibleReaderWithAutoCheck
-              bookName={leituraAtual.livro}
-              livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-              startChapter={capituloInicial}
-              endChapter={leituraAtual.capituloFim}
-              capitulosLidos={capitulosLidos}
-              onChapterRead={handleChapterRead}
-            />
-          </div>
-        )}
+        <div className="mt-4">
+          <BibleReaderWithAutoCheck
+            bookName={leituraAtual.livro}
+            livroId={LIVROS_MAP[leituraAtual.livro] || 1}
+            startChapter={capituloInicial}
+            endChapter={leituraAtual.capituloFim}
+            capitulosLidos={capitulosLidos}
+            onChapterRead={handleChapterRead}
+          />
+        </div>
 
         {allChaptersRead && (
           <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3">
