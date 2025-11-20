@@ -1,19 +1,17 @@
-'use client'
+"use client"
 
-import { useState, useEffect } from 'react'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Label } from '@/components/ui/label'
-import {
-  marcarCapituloLido,
-  desmarcarCapituloLido,
-  buscarCapitulosLidos,
-} from '@/app/dashboard/leitura-biblica/actions'
+import { useState, useEffect } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
+import { buscarCapitulosLidos } from "@/app/dashboard/leitura-biblica/actions"
 
 interface ChapterCheckboxListProps {
   livroId: number
   capituloInicial: number
   capituloFinal: number
   onProgressChange?: (lidos: number, total: number) => void
+  externalCapitulosLidos?: Set<number>
+  onCapituloLidoChange?: (capitulo: number, lido: boolean) => void
 }
 
 export function ChapterCheckboxList({
@@ -21,11 +19,10 @@ export function ChapterCheckboxList({
   capituloInicial,
   capituloFinal,
   onProgressChange,
+  externalCapitulosLidos,
+  onCapituloLidoChange,
 }: ChapterCheckboxListProps) {
-  const capitulos = Array.from(
-    { length: capituloFinal - capituloInicial + 1 },
-    (_, i) => capituloInicial + i
-  )
+  const capitulos = Array.from({ length: capituloFinal - capituloInicial + 1 }, (_, i) => capituloInicial + i)
 
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
@@ -33,9 +30,8 @@ export function ChapterCheckboxList({
   useEffect(() => {
     async function carregarLeituras() {
       const { leituras } = await buscarCapitulosLidos(livroId, capitulos)
-      const lidos = new Set(
-        leituras.filter((l) => l.lido).map((l) => l.numero_capitulo)
-      )
+      const lidos = new Set(leituras.filter((l) => l.lido).map((l) => l.numero_capitulo))
+      console.log("[v0] Capítulos carregados do banco:", Array.from(lidos))
       setCapitulosLidos(lidos)
       setLoading(false)
 
@@ -47,26 +43,21 @@ export function ChapterCheckboxList({
     carregarLeituras()
   }, [livroId, capituloInicial, capituloFinal])
 
-  const handleCheckChange = async (capitulo: number, checked: boolean) => {
-    if (checked) {
-      await marcarCapituloLido(livroId, capitulo, 0)
-      setCapitulosLidos((prev) => new Set([...prev, capitulo]))
-    } else {
-      await desmarcarCapituloLido(livroId, capitulo)
-      setCapitulosLidos((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(capitulo)
-        return newSet
-      })
-    }
+  useEffect(() => {
+    if (externalCapitulosLidos && externalCapitulosLidos.size > 0) {
+      console.log("[v0] Sincronizando com externalCapitulosLidos:", Array.from(externalCapitulosLidos))
 
-    if (onProgressChange) {
-      const novoTotal = checked
-        ? capitulosLidos.size + 1
-        : capitulosLidos.size - 1
-      onProgressChange(novoTotal, capitulos.length)
+      // Criar novo Set combinando capítulos do banco + externos
+      const merged = new Set([...capitulosLidos, ...externalCapitulosLidos])
+      console.log("[v0] Capítulos após merge:", Array.from(merged))
+
+      setCapitulosLidos(merged)
+
+      if (onProgressChange) {
+        onProgressChange(merged.size, capitulos.length)
+      }
     }
-  }
+  }, [externalCapitulosLidos])
 
   if (loading) {
     return <div className="text-sm text-muted-foreground">Carregando...</div>
@@ -79,14 +70,10 @@ export function ChapterCheckboxList({
           <Checkbox
             id={`cap-${livroId}-${cap}`}
             checked={capitulosLidos.has(cap)}
-            onCheckedChange={(checked) =>
-              handleCheckChange(cap, checked as boolean)
-            }
+            disabled={true}
+            className="cursor-not-allowed"
           />
-          <Label
-            htmlFor={`cap-${livroId}-${cap}`}
-            className="text-sm font-medium cursor-pointer"
-          >
+          <Label htmlFor={`cap-${livroId}-${cap}`} className="text-sm font-medium cursor-not-allowed opacity-70">
             {cap}
           </Label>
         </div>

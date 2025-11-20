@@ -1,19 +1,25 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, Book } from 'lucide-react'
-import type { LeituraSemanal } from '@/constants/plano-leitura-biblica'
-import { ChapterCheckboxList } from '@/components/chapter-checkbox-list'
-import { Button } from '@/components/ui/button'
-import { BibleReaderWithAutoCheck } from '@/components/bible-reader-with-auto-check'
-import { LIVROS_MAP } from '@/lib/livros-map'
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { CheckCircle2, Book } from "lucide-react"
+import type { LeituraSemanal } from "@/constants/plano-leitura-biblica"
+import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
+import { Button } from "@/components/ui/button"
+import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
+import { LIVROS_MAP } from "@/lib/livros-map"
+
+interface LeituraBiblicaClientProps {
+  leituraAtual: LeituraSemanal
+  discipuloId: string
+  leituraJaConfirmada: boolean
+}
 
 export default function LeituraBiblicaClient({
   leituraAtual,
   discipuloId,
-  leituraJaConfirmada
+  leituraJaConfirmada,
 }: LeituraBiblicaClientProps) {
   const [mostrarTexto, setMostrarTexto] = useState(false)
   const [chaptersRead, setChaptersRead] = useState(0)
@@ -26,9 +32,13 @@ export default function LeituraBiblicaClient({
   }
 
   const handleChapterRead = (chapter: number) => {
-    setCapitulosLidos(prev => new Set([...prev, chapter]))
-    // Atualizar contagem
-    setChaptersRead(prev => prev + 1)
+    console.log("[v0] handleChapterRead chamado para capítulo:", chapter)
+    setCapitulosLidos((prev) => {
+      const newSet = new Set([...prev, chapter])
+      console.log("[v0] Novos capítulos lidos:", Array.from(newSet))
+      return newSet
+    })
+    setChaptersRead((prev) => prev + 1)
   }
 
   const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
@@ -52,10 +62,10 @@ export default function LeituraBiblicaClient({
           </div>
           <div className="text-muted-foreground">{leituraAtual.descricao}</div>
           <div className="text-sm text-muted-foreground mt-2">
-            📚 Total: {totalChapters} capítulo{totalChapters > 1 ? 's' : ''}
+            📚 Total: {totalChapters} capítulo{totalChapters > 1 ? "s" : ""}
             {chaptersRead > 0 && (
               <span className="ml-2 text-primary font-semibold">
-                • {chaptersRead} lido{chaptersRead > 1 ? 's' : ''}
+                • {chaptersRead} lido{chaptersRead > 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -68,16 +78,13 @@ export default function LeituraBiblicaClient({
             capituloInicial={leituraAtual.capituloInicio}
             capituloFinal={leituraAtual.capituloFim}
             onProgressChange={handleProgressChange}
+            externalCapitulosLidos={capitulosLidos}
           />
         </div>
 
-        <Button
-          onClick={() => setMostrarTexto(!mostrarTexto)}
-          variant="outline"
-          className="w-full gap-2"
-        >
+        <Button onClick={() => setMostrarTexto(!mostrarTexto)} variant="outline" className="w-full gap-2">
           <Book className="w-4 h-4" />
-          {mostrarTexto ? 'Ocultar Texto Bíblico' : 'Ler Aqui (ACF)'}
+          {mostrarTexto ? "Ocultar Texto Bíblico" : "Ler Aqui (ACF)"}
         </Button>
 
         {mostrarTexto && (
@@ -106,7 +113,7 @@ export default function LeituraBiblicaClient({
         )}
 
         <div className="text-xs text-muted-foreground text-center">
-          💡 Dica: Role até o fim de cada capítulo e aguarde 3 minutos para marcar automaticamente
+          💡 Dica: Role até o fim de cada capítulo e aguarde 5 minutos para marcar automaticamente
         </div>
       </CardContent>
     </Card>
