@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,7 +31,7 @@ const HIGHLIGHT_COLORS = [
   { name: "Roxo", value: "purple", class: "bg-purple-200 dark:bg-purple-900/30" },
 ]
 
-const MIN_READ_TIME_MS = 300000 // 5 minutos em milissegundos
+const MIN_READ_TIME_MS = 180000 // 3 minutos em milissegundos para testes mais rápidos
 
 export function BibleReaderWithAutoCheck({
   bookName,
@@ -100,29 +98,50 @@ export function BibleReaderWithAutoCheck({
   }, [loading, chapterData, currentChapter, capitulosLidos])
 
   useEffect(() => {
-    const shouldAutoMark =
-      scrolledToBottom && timeElapsed >= MIN_READ_TIME_MS && !autoMarked && !capitulosLidos.has(currentChapter)
+    const handleScroll = () => {
+      const scrollContainer = scrollAreaRef.current?.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      ) as HTMLDivElement
 
-    console.log("[v0] Verificando auto-check:", {
-      scrolledToBottom,
-      timeElapsed,
-      MIN_READ_TIME_MS,
-      tempoSuficiente: timeElapsed >= MIN_READ_TIME_MS,
-      autoMarked,
-      jaLido: capitulosLidos.has(currentChapter),
-      shouldAutoMark,
-    })
+      if (scrollContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+        // Considera "lido" quando está a 20px do fim (mesma lógica do cadastro)
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 20
 
-    if (shouldAutoMark) {
+        if (isAtBottom && !scrolledToBottom) {
+          console.log("[v0] ✅ Usuário rolou até o fim do capítulo!")
+          setScrolledToBottom(true)
+        }
+      }
+    }
+
+    const scrollContainer = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll)
+      // Verificar se já está no final (caso o conteúdo seja pequeno)
+      handleScroll()
+
+      return () => scrollContainer.removeEventListener("scroll", handleScroll)
+    }
+  }, [loading, chapterData, currentChapter])
+
+  useEffect(() => {
+    if (
+      scrolledToBottom &&
+      timeElapsed >= MIN_READ_TIME_MS &&
+      !autoMarked &&
+      !capitulosLidos.has(currentChapter) &&
+      !loading
+    ) {
+      console.log("[v0] ✅ TODAS AS CONDIÇÕES ATENDIDAS! Auto-marcando agora...")
       handleAutoMarkAsRead()
     }
-  }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos])
+  }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
     setError(null)
-    setReadingStartTime(null)
-    setTimeElapsed(0)
 
     const { data, error: supabaseError } = await supabase
       .from("capitulos_biblia")
@@ -145,45 +164,20 @@ export function BibleReaderWithAutoCheck({
     setLoading(false)
   }
 
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const target = event.target as HTMLDivElement
-    const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 50
-
-    if (isAtBottom && !scrolledToBottom) {
-      console.log("[v0] Usuário rolou até o fim do capítulo")
-      setScrolledToBottom(true)
-    }
-  }
-
   const handleAutoMarkAsRead = async () => {
-    console.log("[v0] ========================================")
     console.log("[v0] AUTO-MARCANDO CAPÍTULO COMO LIDO!")
-    console.log("[v0] Capítulo atual:", currentChapter)
-    console.log("[v0] Livro ID:", livroId)
-    console.log("[v0] Tempo decorrido:", formatTime(timeElapsed))
-    console.log("[v0] ========================================")
+    console.log("[v0] Capítulo:", currentChapter, "Livro ID:", livroId, "Tempo:", formatTime(timeElapsed))
 
     setAutoMarked(true)
 
     const result = await marcarCapituloLido(livroId, currentChapter, timeElapsed)
-
-    console.log("[v0] ========================================")
-    console.log("[v0] RESULTADO DA MARCAÇÃO:", result)
-    console.log("[v0] Success:", result.success)
-    console.log("[v0] XP Ganho:", result.xpGanho)
-    console.log("[v0] ========================================")
 
     if (result.success && result.xpGanho && result.xpGanho > 0) {
       alert(`🎉 Capítulo ${currentChapter} concluído! +${result.xpGanho} XP`)
     }
 
     if (result.success) {
-      console.log("[v0] ========================================")
-      console.log("[v0] CHAMANDO onChapterRead!")
-      console.log("[v0] onChapterRead existe?", !!onChapterRead)
-      console.log("[v0] Passando capítulo:", currentChapter)
-      console.log("[v0] ========================================")
-
+      console.log("[v0] Chamando onChapterRead para atualizar checkbox!")
       onChapterRead?.(currentChapter)
 
       if (timerRef.current) {
@@ -316,11 +310,6 @@ export function BibleReaderWithAutoCheck({
     })
   }
 
-  const handleForceMarkAsRead = () => {
-    console.log("[v0] FORÇANDO MARCAÇÃO MANUAL VIA BOTÃO DE TESTE")
-    handleAutoMarkAsRead()
-  }
-
   if (!isMounted) {
     return (
       <Card className="w-full">
@@ -404,7 +393,7 @@ export function BibleReaderWithAutoCheck({
             <p className="text-muted-foreground">{error}</p>
           </div>
         ) : (
-          <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollAreaRef} onScroll={handleScroll}>
+          <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollAreaRef}>
             <div
               className={cn(
                 "text-base leading-relaxed whitespace-pre-wrap",
@@ -432,12 +421,6 @@ export function BibleReaderWithAutoCheck({
           <span className="text-sm text-muted-foreground">
             {currentChapter} / {endChapter}
           </span>
-
-          {!capitulosLidos.has(currentChapter) && !loading && (
-            <Button variant="secondary" size="sm" onClick={handleForceMarkAsRead}>
-              [DEBUG] Marcar
-            </Button>
-          )}
 
           <Button
             variant="outline"

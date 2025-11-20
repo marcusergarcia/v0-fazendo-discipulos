@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Book } from "lucide-react"
@@ -25,6 +25,18 @@ export default function LeituraBiblicaClient({
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
+
+  const [capituloInicial, setCapituloInicial] = useState(leituraAtual.capituloInicio)
+
+  useEffect(() => {
+    const primeiroNaoLido = Array.from({ length: leituraAtual.capituloFim - leituraAtual.capituloInicio + 1 })
+      .map((_, i) => leituraAtual.capituloInicio + i)
+      .find((cap) => !capitulosLidos.has(cap))
+
+    if (primeiroNaoLido) {
+      setCapituloInicial(primeiroNaoLido)
+    }
+  }, [capitulosLidos, leituraAtual])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
@@ -92,7 +104,7 @@ export default function LeituraBiblicaClient({
             <BibleReaderWithAutoCheck
               bookName={leituraAtual.livro}
               livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-              startChapter={leituraAtual.capituloInicio}
+              startChapter={capituloInicial}
               endChapter={leituraAtual.capituloFim}
               capitulosLidos={capitulosLidos}
               onChapterRead={handleChapterRead}
@@ -113,7 +125,7 @@ export default function LeituraBiblicaClient({
         )}
 
         <div className="text-xs text-muted-foreground text-center">
-          💡 Dica: Role até o fim de cada capítulo e aguarde 5 minutos para marcar automaticamente
+          💡 Dica: Role até o fim de cada capítulo e aguarde 3 minutos para marcar automaticamente
         </div>
       </CardContent>
     </Card>
