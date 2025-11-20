@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Loader2, BookOpen, Highlighter, Check } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2, BookOpen, Highlighter, Check, PlayCircle } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import { marcarCapituloLido } from "@/app/dashboard/leitura-biblica/actions"
 import { cn } from "@/lib/utils"
@@ -31,7 +31,7 @@ const HIGHLIGHT_COLORS = [
   { name: "Roxo", value: "purple", class: "bg-purple-200 dark:bg-purple-900/30" },
 ]
 
-const MIN_READ_TIME_MS = 180000 // 3 minutos em milissegundos para testes mais rápidos
+const MIN_READ_TIME_MS = 180000 // 3 minutos
 
 export function BibleReaderWithAutoCheck({
   bookName,
@@ -45,6 +45,8 @@ export function BibleReaderWithAutoCheck({
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [rastreamentoAtivo, setRastreamentoAtivo] = useState(false)
 
   const [scrolledToBottom, setScrolledToBottom] = useState(false)
   const [readingStartTime, setReadingStartTime] = useState<number | null>(null)
@@ -70,11 +72,16 @@ export function BibleReaderWithAutoCheck({
   }, [])
 
   useEffect(() => {
+    setCurrentChapter(startChapter)
+  }, [startChapter])
+
+  useEffect(() => {
     loadChapter(currentChapter)
+    setRastreamentoAtivo(false)
   }, [currentChapter, livroId])
 
   useEffect(() => {
-    if (!loading && chapterData && !capitulosLidos.has(currentChapter)) {
+    if (!loading && chapterData && !capitulosLidos.has(currentChapter) && rastreamentoAtivo) {
       const startTime = Date.now()
       setReadingStartTime(startTime)
       setScrolledToBottom(false)
@@ -95,9 +102,11 @@ export function BibleReaderWithAutoCheck({
         clearInterval(timerRef.current)
       }
     }
-  }, [loading, chapterData, currentChapter, capitulosLidos])
+  }, [loading, chapterData, currentChapter, capitulosLidos, rastreamentoAtivo])
 
   useEffect(() => {
+    if (!rastreamentoAtivo) return
+
     const handleScroll = () => {
       const scrollContainer = scrollAreaRef.current?.querySelector(
         "[data-radix-scroll-area-viewport]",
@@ -105,11 +114,9 @@ export function BibleReaderWithAutoCheck({
 
       if (scrollContainer) {
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-        // Considera "lido" quando está a 20px do fim (mesma lógica do cadastro)
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 20
 
         if (isAtBottom && !scrolledToBottom) {
-          console.log("[v0] ✅ Usuário rolou até o fim do capítulo!")
           setScrolledToBottom(true)
         }
       }
@@ -119,12 +126,11 @@ export function BibleReaderWithAutoCheck({
 
     if (scrollContainer) {
       scrollContainer.addEventListener("scroll", handleScroll)
-      // Verificar se já está no final (caso o conteúdo seja pequeno)
       handleScroll()
 
       return () => scrollContainer.removeEventListener("scroll", handleScroll)
     }
-  }, [loading, chapterData, currentChapter])
+  }, [loading, chapterData, currentChapter, rastreamentoAtivo])
 
   useEffect(() => {
     if (
@@ -132,12 +138,12 @@ export function BibleReaderWithAutoCheck({
       timeElapsed >= MIN_READ_TIME_MS &&
       !autoMarked &&
       !capitulosLidos.has(currentChapter) &&
-      !loading
+      !loading &&
+      rastreamentoAtivo
     ) {
-      console.log("[v0] ✅ TODAS AS CONDIÇÕES ATENDIDAS! Auto-marcando agora...")
       handleAutoMarkAsRead()
     }
-  }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading])
+  }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
@@ -157,7 +163,6 @@ export function BibleReaderWithAutoCheck({
       })
       await loadHighlights(chapter)
     } else {
-      console.error("[v0] Erro ao buscar capítulo:", supabaseError)
       setError("Texto do capítulo não encontrado no banco de dados")
     }
 
@@ -165,9 +170,6 @@ export function BibleReaderWithAutoCheck({
   }
 
   const handleAutoMarkAsRead = async () => {
-    console.log("[v0] AUTO-MARCANDO CAPÍTULO COMO LIDO!")
-    console.log("[v0] Capítulo:", currentChapter, "Livro ID:", livroId, "Tempo:", formatTime(timeElapsed))
-
     setAutoMarked(true)
 
     const result = await marcarCapituloLido(livroId, currentChapter, timeElapsed)
@@ -177,7 +179,6 @@ export function BibleReaderWithAutoCheck({
     }
 
     if (result.success) {
-      console.log("[v0] Chamando onChapterRead para atualizar checkbox!")
       onChapterRead?.(currentChapter)
 
       if (timerRef.current) {
@@ -185,6 +186,10 @@ export function BibleReaderWithAutoCheck({
         timerRef.current = null
       }
     }
+  }
+
+  const iniciarRastreamento = () => {
+    setRastreamentoAtivo(true)
   }
 
   const handlePrevChapter = () => {
@@ -239,7 +244,6 @@ export function BibleReaderWithAutoCheck({
       alert("✨ Texto marcado com sucesso!")
       selection.removeAllRanges()
     } else {
-      console.error("[v0] Erro ao salvar highlight:", insertError)
       alert("Erro ao salvar marcação")
     }
   }
@@ -342,6 +346,12 @@ export function BibleReaderWithAutoCheck({
             {capitulosLidos.has(currentChapter) && <Check className="w-5 h-5 text-green-500" />}
           </div>
           <div className="flex items-center gap-2">
+            {!capitulosLidos.has(currentChapter) && !loading && !rastreamentoAtivo && (
+              <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
+                <PlayCircle className="w-4 h-4" />
+                Ler Agora
+              </Button>
+            )}
             <Button
               variant={highlightMode ? "default" : "outline"}
               size="sm"
@@ -352,7 +362,7 @@ export function BibleReaderWithAutoCheck({
           </div>
         </div>
 
-        {!capitulosLidos.has(currentChapter) && !loading && (
+        {!capitulosLidos.has(currentChapter) && !loading && rastreamentoAtivo && (
           <div className="mt-3 space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{scrolledToBottom ? "✓ Rolou até o fim" : "Role até o fim do capítulo"}</span>

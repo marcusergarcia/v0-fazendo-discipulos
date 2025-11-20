@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
@@ -23,40 +23,8 @@ export default function LeituraBiblicaClient({
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
-  const [capituloInicial, setCapituloInicial] = useState(leituraAtual.capituloInicio)
-
-  useEffect(() => {
-    const storageKey = `capitulos_lidos_${discipuloId}_${leituraAtual.semana}`
-    const saved = localStorage.getItem(storageKey)
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        const lidosSet = new Set(parsed)
-        setCapitulosLidos(lidosSet)
-
-        const primeiroNaoLido = Array.from({ length: leituraAtual.capituloFim - leituraAtual.capituloInicio + 1 })
-          .map((_, i) => leituraAtual.capituloInicio + i)
-          .find((cap) => !lidosSet.has(cap))
-
-        if (primeiroNaoLido) {
-          setCapituloInicial(primeiroNaoLido)
-        } else if (lidosSet.size > 0) {
-          // Se todos estão lidos, começar no último
-          const maiorCapitulo = Math.max(...Array.from(lidosSet))
-          setCapituloInicial(maiorCapitulo)
-        }
-      } catch (e) {
-        console.error("[v0] Erro ao carregar capítulos lidos:", e)
-      }
-    }
-  }, [discipuloId, leituraAtual.semana, leituraAtual.capituloInicio, leituraAtual.capituloFim])
-
-  useEffect(() => {
-    if (capitulosLidos.size > 0) {
-      const storageKey = `capitulos_lidos_${discipuloId}_${leituraAtual.semana}`
-      localStorage.setItem(storageKey, JSON.stringify(Array.from(capitulosLidos)))
-    }
-  }, [capitulosLidos, discipuloId, leituraAtual.semana])
+  const [leitorAberto, setLeitorAberto] = useState(false)
+  const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
@@ -69,6 +37,17 @@ export default function LeituraBiblicaClient({
       return newSet
     })
     setChaptersRead((prev) => prev + 1)
+  }
+
+  const handleUltimoCapituloLido = (numeroCapitulo: number) => {
+    if (numeroCapitulo >= leituraAtual.capituloInicio && numeroCapitulo < leituraAtual.capituloFim) {
+      setCapituloSelecionado(numeroCapitulo + 1)
+    }
+  }
+
+  const abrirCapitulo = (numeroCapitulo: number) => {
+    setCapituloSelecionado(numeroCapitulo)
+    setLeitorAberto(true)
   }
 
   const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
@@ -109,19 +88,23 @@ export default function LeituraBiblicaClient({
             capituloFinal={leituraAtual.capituloFim}
             onProgressChange={handleProgressChange}
             externalCapitulosLidos={capitulosLidos}
+            onUltimoCapituloChange={handleUltimoCapituloLido}
+            onCapituloClick={abrirCapitulo}
           />
         </div>
 
-        <div className="mt-4">
-          <BibleReaderWithAutoCheck
-            bookName={leituraAtual.livro}
-            livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-            startChapter={capituloInicial}
-            endChapter={leituraAtual.capituloFim}
-            capitulosLidos={capitulosLidos}
-            onChapterRead={handleChapterRead}
-          />
-        </div>
+        {leitorAberto && (
+          <div className="mt-4">
+            <BibleReaderWithAutoCheck
+              bookName={leituraAtual.livro}
+              livroId={LIVROS_MAP[leituraAtual.livro] || 1}
+              startChapter={capituloSelecionado}
+              endChapter={leituraAtual.capituloFim}
+              capitulosLidos={capitulosLidos}
+              onChapterRead={handleChapterRead}
+            />
+          </div>
+        )}
 
         {allChaptersRead && (
           <div className="bg-accent/10 border border-accent rounded-lg p-4 flex items-center gap-3">
@@ -136,7 +119,8 @@ export default function LeituraBiblicaClient({
         )}
 
         <div className="text-xs text-muted-foreground text-center">
-          💡 Dica: Role até o fim de cada capítulo e aguarde 3 minutos para marcar automaticamente
+          💡 Dica: Clique no número do capítulo para visualizar o texto, depois clique em "Ler Agora" para iniciar o
+          rastreamento
         </div>
       </CardContent>
     </Card>

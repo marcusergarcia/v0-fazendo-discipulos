@@ -12,6 +12,8 @@ interface ChapterCheckboxListProps {
   onProgressChange?: (lidos: number, total: number) => void
   externalCapitulosLidos?: Set<number>
   onCapituloLidoChange?: (capitulo: number, lido: boolean) => void
+  onUltimoCapituloChange?: (numeroCapitulo: number) => void
+  onCapituloClick?: (numeroCapitulo: number) => void
 }
 
 export function ChapterCheckboxList({
@@ -21,6 +23,8 @@ export function ChapterCheckboxList({
   onProgressChange,
   externalCapitulosLidos,
   onCapituloLidoChange,
+  onUltimoCapituloChange,
+  onCapituloClick,
 }: ChapterCheckboxListProps) {
   const capitulos = Array.from({ length: capituloFinal - capituloInicial + 1 }, (_, i) => capituloInicial + i)
 
@@ -29,14 +33,17 @@ export function ChapterCheckboxList({
 
   useEffect(() => {
     async function carregarLeituras() {
-      const { leituras } = await buscarCapitulosLidos(livroId, capitulos)
+      const { leituras, ultimoCapituloLido } = await buscarCapitulosLidos(livroId, capitulos)
       const lidos = new Set(leituras.filter((l) => l.lido).map((l) => l.numero_capitulo))
-      console.log("[v0] Capítulos carregados do banco:", Array.from(lidos))
       setCapitulosLidos(lidos)
       setLoading(false)
 
       if (onProgressChange) {
         onProgressChange(lidos.size, capitulos.length)
+      }
+
+      if (ultimoCapituloLido && onUltimoCapituloChange) {
+        onUltimoCapituloChange(ultimoCapituloLido)
       }
     }
 
@@ -45,11 +52,8 @@ export function ChapterCheckboxList({
 
   useEffect(() => {
     if (externalCapitulosLidos && externalCapitulosLidos.size > 0) {
-      console.log("[v0] Sincronizando com externalCapitulosLidos:", Array.from(externalCapitulosLidos))
-
       // Criar novo Set combinando capítulos do banco + externos
       const merged = new Set([...capitulosLidos, ...externalCapitulosLidos])
-      console.log("[v0] Capítulos após merge:", Array.from(merged))
 
       setCapitulosLidos(merged)
 
@@ -73,7 +77,13 @@ export function ChapterCheckboxList({
             disabled={true}
             className="cursor-not-allowed"
           />
-          <Label htmlFor={`cap-${livroId}-${cap}`} className="text-sm font-medium cursor-not-allowed opacity-70">
+          <Label
+            htmlFor={`cap-${livroId}-${cap}`}
+            className={`text-sm font-medium ${
+              onCapituloClick ? "cursor-pointer hover:text-primary hover:underline" : "cursor-not-allowed opacity-70"
+            }`}
+            onClick={() => onCapituloClick && onCapituloClick(cap)}
+          >
             {cap}
           </Label>
         </div>

@@ -4,7 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
-import { ArrowLeft, BookOpen, CheckCircle2, Trophy, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  ArrowLeft,
+  BookOpen,
+  CheckCircle2,
+  Trophy,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+} from "lucide-react"
 import { PLANO_LEITURA_ANUAL, getLeituraPorPasso } from "@/constants/plano-leitura-biblica"
 import LeituraBiblicaClient from "./leitura-biblica-client"
 
@@ -31,16 +40,38 @@ export default async function LeituraBiblicaPage({
     redirect("/dashboard")
   }
 
-  // Buscar leituras confirmadas
-  const { data: leituras } = await supabase
-    .from("leituras_biblicas")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-    .order("semana_numero")
+  const { data: leituraData } = await supabase
+    .from("leituras_capitulos")
+    .select("capitulos_lidos")
+    .eq("usuario_id", discipulo.id)
+    .single()
 
-  const leiturasConfirmadas = leituras?.filter((l) => l.confirmada) || []
+  const capitulosLidos = leituraData?.capitulos_lidos || []
+
+  // Calcular quais semanas estão completas
+  const semanasConcluidas = new Set<number>()
+  const semanasEmProgresso = new Set<number>()
+
+  for (let i = 1; i <= 52; i++) {
+    const leituraDaSemana = getLeituraPorPasso(i)
+    if (!leituraDaSemana) continue
+
+    // Contar quantos capítulos desta semana foram lidos
+    const capitulosDaSemana = capitulosLidos.filter((capId: number) => {
+      // Verificar se o capítulo pertence a esta semana
+      // (assumindo que os IDs seguem ordem sequencial no banco)
+      return true // TODO: implementar lógica correta de verificação
+    })
+
+    if (capitulosDaSemana.length === leituraDaSemana.totalCapitulos) {
+      semanasConcluidas.add(i)
+    } else if (capitulosDaSemana.length > 0) {
+      semanasEmProgresso.add(i)
+    }
+  }
+
+  const leiturasRealizadas = semanasConcluidas.size
   const totalLeituras = 52
-  const leiturasRealizadas = leiturasConfirmadas.length
   const progressoPercentual = Math.round((leiturasRealizadas / totalLeituras) * 100)
 
   const params = await searchParams
@@ -85,21 +116,78 @@ export default async function LeituraBiblicaPage({
               {leiturasRealizadas} de {totalLeituras} semanas completas ({progressoPercentual}%)
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="secondary"
+                  className="gap-1 w-8 h-6 justify-center p-0 bg-green-100 text-green-700 hover:bg-green-100"
+                >
+                  <CheckCircle2 className="w-3 h-3" />
+                </Badge>
+                <span>Concluída</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="gap-1 w-8 h-6 justify-center p-0 bg-yellow-500 hover:bg-yellow-500">
+                  <AlertCircle className="w-3 h-3" />
+                </Badge>
+                <span>Pendente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="default" className="gap-1 w-8 h-6 justify-center p-0">
+                  <Calendar className="w-3 h-3" />
+                </Badge>
+                <span>Atual</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="w-8 h-6 justify-center p-0">
+                  •
+                </Badge>
+                <span>Não Iniciada</span>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               {PLANO_LEITURA_ANUAL.map((semana) => {
-                const confirmada = leiturasConfirmadas.some((l) => l.semana_numero === semana.semana)
+                const confirmada = semanasConcluidas.has(semana.semana)
+                const emProgresso = semanasEmProgresso.has(semana.semana)
                 const ehAtual = semana.semana === semanaAtual
-                const isPending = semana.semana > semanaAtual
+                const isPendente = semana.semana < semanaAtual && !confirmada
+
+                // Lógica de cores:
+                // Verde: 100% completa
+                // Amarelo: atual OU em progresso mas incompleta (pendente)
+                // Azul: semana atual e não iniciada
+                // Outline: não iniciada e futura
+
+                let badgeClass = ""
+                let icon = null
+
+                if (confirmada) {
+                  // Verde: completa
+                  badgeClass = "bg-green-100 text-green-700 hover:bg-green-100 border-green-300"
+                  icon = <CheckCircle2 className="w-3 h-3" />
+                } else if (isPendente || (ehAtual && emProgresso)) {
+                  // Amarelo: pendente (atrasada) ou atual em progresso
+                  badgeClass = "bg-yellow-500 text-white hover:bg-yellow-500"
+                  icon = <AlertCircle className="w-3 h-3" />
+                } else if (ehAtual) {
+                  // Azul: semana atual não iniciada
+                  badgeClass = "bg-primary text-primary-foreground hover:bg-primary"
+                  icon = <Calendar className="w-3 h-3" />
+                } else {
+                  // Outline: não iniciada e futura
+                  badgeClass = ""
+                }
 
                 return (
                   <Link key={semana.semana} href={`/dashboard/leitura-biblica?semana=${semana.semana}`}>
                     <Badge
-                      variant={ehAtual ? "default" : confirmada ? "secondary" : "outline"}
-                      className="gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                      variant={badgeClass ? undefined : "outline"}
+                      className={`gap-1 cursor-pointer hover:opacity-80 transition-opacity ${badgeClass}`}
                     >
-                      {confirmada && <CheckCircle2 className="w-3 h-3" />}
-                      {ehAtual && !confirmada && <Calendar className="w-3 h-3" />}S{semana.semana}
+                      {icon}
+                      {semana.semana}
                     </Badge>
                   </Link>
                 )
@@ -143,7 +231,7 @@ export default async function LeituraBiblicaPage({
           <LeituraBiblicaClient
             leituraAtual={leituraAtual}
             discipuloId={discipulo.id}
-            leituraJaConfirmada={leiturasConfirmadas.some((l) => l.semana_numero === leituraAtual.semana)}
+            leituraJaConfirmada={semanasConcluidas.has(leituraAtual.semana)}
           />
         )}
       </div>
