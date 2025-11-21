@@ -148,9 +148,15 @@ export function BibleReaderWithAutoCheck({
   useEffect(() => {
     const jaLido = capitulosLidos.has(currentChapter)
 
-    const resultado = currentChapter === startChapter ? capituloInicialJaLido : jaLido
+    console.log("[v0] Verificando se capítulo está lido:", {
+      currentChapter,
+      jaLido,
+      capitulosLidosArray: Array.from(capitulosLidos),
+      startChapter,
+      capituloInicialJaLido,
+    })
 
-    setCapituloAtualJaLido(resultado)
+    setCapituloAtualJaLido(jaLido)
   }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido])
 
   const loadChapter = async (chapter: number) => {
@@ -204,6 +210,12 @@ export function BibleReaderWithAutoCheck({
 
   const handlePrevChapter = () => {
     if (currentChapter > startChapter) {
+      console.log("[v0] Botão Anterior clicado:", {
+        currentChapter,
+        proximoCapitulo: currentChapter - 1,
+        capitulosLidos: Array.from(capitulosLidos),
+      })
+
       setCurrentChapter(currentChapter - 1)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
@@ -215,6 +227,12 @@ export function BibleReaderWithAutoCheck({
 
   const handleNextChapter = () => {
     if (currentChapter < endChapter) {
+      console.log("[v0] Botão Próximo clicado:", {
+        currentChapter,
+        proximoCapitulo: currentChapter + 1,
+        capitulosLidos: Array.from(capitulosLidos),
+      })
+
       setCurrentChapter(currentChapter + 1)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
