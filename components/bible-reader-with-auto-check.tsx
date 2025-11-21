@@ -63,6 +63,8 @@ export function BibleReaderWithAutoCheck({
 
   const [isMounted, setIsMounted] = useState(false)
 
+  const [capituloAtualJaLido, setCapituloAtualJaLido] = useState(false)
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -145,6 +147,15 @@ export function BibleReaderWithAutoCheck({
       handleAutoMarkAsRead()
     }
   }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
+
+  useEffect(() => {
+    const jaLido = capitulosLidos.has(currentChapter)
+    console.log("[v0] BibleReader: Verificando se capítulo", currentChapter, "está lido")
+    console.log("[v0] BibleReader: capitulosLidos prop:", Array.from(capitulosLidos))
+    console.log("[v0] BibleReader: Resultado:", jaLido ? "JÁ LIDO" : "NÃO LIDO")
+
+    setCapituloAtualJaLido(jaLido)
+  }, [currentChapter, capitulosLidos])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
@@ -352,17 +363,31 @@ export function BibleReaderWithAutoCheck({
             <CardTitle>
               {bookName} {currentChapter}
             </CardTitle>
-            {capitulosLidos.has(currentChapter) && <Check className="w-5 h-5 text-green-500" />}
+            {capituloAtualJaLido && <Check className="w-5 h-5 text-green-500" />}
           </div>
           <div className="flex items-center gap-2">
-            {!capitulosLidos.has(currentChapter) && !loading && !rastreamentoAtivo && (
-              <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
-                <PlayCircle className="w-4 h-4" />
-                Ler Agora
-              </Button>
-            )}
-            {(rastreamentoAtivo || capitulosLidos.has(currentChapter)) && (
+            {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
               <>
+                {console.log(
+                  "[v0] BibleReader: Renderizando botão Ler Agora. capituloAtualJaLido:",
+                  capituloAtualJaLido,
+                  "rastreamentoAtivo:",
+                  rastreamentoAtivo,
+                )}
+                <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
+                  <PlayCircle className="w-4 h-4" />
+                  Ler Agora
+                </Button>
+              </>
+            )}
+            {(rastreamentoAtivo || capituloAtualJaLido) && (
+              <>
+                {console.log(
+                  "[v0] BibleReader: Renderizando marcador. capituloAtualJaLido:",
+                  capituloAtualJaLido,
+                  "rastreamentoAtivo:",
+                  rastreamentoAtivo,
+                )}
                 <div className="flex gap-1.5">
                   {HIGHLIGHT_COLORS.map((color) => (
                     <button
@@ -392,7 +417,7 @@ export function BibleReaderWithAutoCheck({
           </div>
         </div>
 
-        {!capitulosLidos.has(currentChapter) && !loading && rastreamentoAtivo && (
+        {!capituloAtualJaLido && !loading && rastreamentoAtivo && (
           <div className="mt-3 space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{scrolledToBottom ? "✓ Rolou até o fim" : "Role até o fim do capítulo"}</span>

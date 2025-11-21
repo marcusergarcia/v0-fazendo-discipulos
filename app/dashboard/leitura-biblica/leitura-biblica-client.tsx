@@ -7,6 +7,7 @@ import { CheckCircle2 } from "lucide-react"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
+import { createBrowserClient } from "@supabase/ssr"
 
 interface LeituraSemanal {
   semana: number
@@ -24,25 +25,48 @@ interface LeituraBiblicaClientProps {
   leituraAtual: LeituraSemanal
   discipuloId: string
   leituraJaConfirmada: boolean
-  capitulosLidosInicial: number[]
 }
 
 export default function LeituraBiblicaClient({
   leituraAtual,
   discipuloId,
   leituraJaConfirmada,
-  capitulosLidosInicial,
 }: LeituraBiblicaClientProps) {
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
-  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
+  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
+  const [carregandoCapitulos, setCarregandoCapitulos] = useState(true)
 
   useEffect(() => {
-    const capitulosLidosDaSemana = leituraAtual.capitulosSemana.filter((capId) => capitulosLidos.has(capId))
-    setChaptersRead(capitulosLidosDaSemana.length)
-  }, [capitulosLidos, leituraAtual.capitulosSemana])
+    const carregarCapitulosLidos = async () => {
+      setCarregandoCapitulos(true)
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
+
+      const { data, error } = await supabase
+        .from("leituras_capitulos")
+        .select("capitulos_lidos")
+        .eq("usuario_id", discipuloId)
+        .single()
+
+      if (data && !error) {
+        const capitulosLidosArray = data.capitulos_lidos || []
+        setCapitulosLidos(new Set(capitulosLidosArray))
+
+        const capitulosDaSemana = leituraAtual.capitulosSemana || []
+        const lidosDaSemana = capitulosLidosArray.filter((id: number) => capitulosDaSemana.includes(id))
+        setChaptersRead(lidosDaSemana.length)
+      }
+
+      setCarregandoCapitulos(false)
+    }
+
+    carregarCapitulosLidos()
+  }, [discipuloId, leituraAtual.capitulosSemana])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
@@ -64,6 +88,10 @@ export default function LeituraBiblicaClient({
   }
 
   const abrirCapitulo = (numeroCapitulo: number) => {
+    console.log("[v0] Cliente: abrirCapitulo chamado para capítulo", numeroCapitulo)
+    console.log("[v0] Cliente: capitulosLidos atual:", Array.from(capitulosLidos))
+    console.log("[v0] Cliente: capítulo está lido?", capitulosLidos.has(numeroCapitulo))
+
     setCapituloSelecionado(numeroCapitulo)
     setLeitorAberto(true)
   }
@@ -98,31 +126,35 @@ export default function LeituraBiblicaClient({
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="text-sm font-medium">Clique para acessar os capítulos da semana:</div>
-          <ChapterCheckboxList
-            livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-            capituloInicial={leituraAtual.capituloInicio}
-            capituloFinal={leituraAtual.capituloFim}
-            onProgressChange={handleProgressChange}
-            externalCapitulosLidos={capitulosLidos}
-            onUltimoCapituloChange={handleUltimoCapituloLido}
-            onCapituloClick={abrirCapitulo}
-            capitulosSemana={leituraAtual.capitulosSemana}
-          />
-        </div>
+        {!carregandoCapitulos && (
+          <>
+            <div className="space-y-3">
+              <div className="text-sm font-medium">Clique para acessar os capítulos da semana:</div>
+              <ChapterCheckboxList
+                livroId={LIVROS_MAP[leituraAtual.livro] || 1}
+                capituloInicial={leituraAtual.capituloInicio}
+                capituloFinal={leituraAtual.capituloFim}
+                onProgressChange={handleProgressChange}
+                externalCapitulosLidos={capitulosLidos}
+                onUltimoCapituloChange={handleUltimoCapituloLido}
+                onCapituloClick={abrirCapitulo}
+                capitulosSemana={leituraAtual.capitulosSemana}
+              />
+            </div>
 
-        {leitorAberto && (
-          <div className="mt-4">
-            <BibleReaderWithAutoCheck
-              bookName={leituraAtual.livro}
-              livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-              startChapter={capituloSelecionado}
-              endChapter={leituraAtual.capituloFim}
-              capitulosLidos={capitulosLidos}
-              onChapterRead={handleChapterRead}
-            />
-          </div>
+            {leitorAberto && (
+              <div className="mt-4">
+                <BibleReaderWithAutoCheck
+                  bookName={leituraAtual.livro}
+                  livroId={LIVROS_MAP[leituraAtual.livro] || 1}
+                  startChapter={capituloSelecionado}
+                  endChapter={leituraAtual.capituloFim}
+                  capitulosLidos={capitulosLidos}
+                  onChapterRead={handleChapterRead}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {allChaptersRead && (

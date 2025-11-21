@@ -35,15 +35,17 @@ export function ChapterCheckboxList({
 
   useEffect(() => {
     async function carregarLeituras() {
+      console.log("[v0] ChapterCheckboxList: Carregando capítulos lidos para livro", livroId, "capítulos", capitulos)
+
       const { leituras, ultimoCapituloLido } = await buscarCapitulosLidos(livroId, capitulos)
       const lidos = new Set(leituras.filter((l) => l.lido).map((l) => l.numero_capitulo))
+
+      console.log("[v0] ChapterCheckboxList: Capítulos lidos carregados:", Array.from(lidos))
+
       setCapitulosLidos(lidos)
       setLoading(false)
 
-      if (onProgressChange && capitulosSemana.length > 0) {
-        const capitulosLidosDaSemana = Array.from(lidos).filter((capId) => capitulosSemana.includes(capId))
-        onProgressChange(capitulosLidosDaSemana.length, capitulos.length)
-      } else if (onProgressChange) {
+      if (onProgressChange) {
         onProgressChange(lidos.size, capitulos.length)
       }
 
@@ -61,10 +63,7 @@ export function ChapterCheckboxList({
 
       setCapitulosLidos(merged)
 
-      if (onProgressChange && capitulosSemana.length > 0) {
-        const capitulosLidosDaSemana = Array.from(merged).filter((capId) => capitulosSemana.includes(capId))
-        onProgressChange(capitulosLidosDaSemana.length, capitulos.length)
-      } else if (onProgressChange) {
+      if (onProgressChange) {
         onProgressChange(merged.size, capitulos.length)
       }
     }
@@ -82,7 +81,10 @@ export function ChapterCheckboxList({
         return (
           <button
             key={cap}
-            onClick={() => onCapituloClick && onCapituloClick(cap)}
+            onClick={() => {
+              console.log("[v0] ChapterCheckboxList: Clicou no capítulo", cap, "isLido:", isLido)
+              onCapituloClick && onCapituloClick(cap)
+            }}
             disabled={!onCapituloClick}
             className={cn(
               "relative flex items-center justify-center w-10 h-10 rounded-md border-2 transition-all",
