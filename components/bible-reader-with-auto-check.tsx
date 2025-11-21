@@ -147,13 +147,8 @@ export function BibleReaderWithAutoCheck({
 
   useEffect(() => {
     const jaLido = capitulosLidos.has(currentChapter)
-    console.log("[v0] BibleReader: Verificando se capítulo", currentChapter, "está lido")
-    console.log("[v0] BibleReader: capitulosLidos prop:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: capituloInicialJaLido prop:", capituloInicialJaLido)
-    console.log("[v0] BibleReader: currentChapter === startChapter:", currentChapter === startChapter)
 
     const resultado = currentChapter === startChapter ? capituloInicialJaLido : jaLido
-    console.log("[v0] BibleReader: Resultado:", resultado ? "JÁ LIDO" : "NÃO LIDO")
 
     setCapituloAtualJaLido(resultado)
   }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido])
@@ -368,44 +363,28 @@ export function BibleReaderWithAutoCheck({
           </div>
           <div className="flex items-center gap-2">
             {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
-              <>
-                {console.log(
-                  "[v0] BibleReader: Renderizando botão Ler Agora. capituloAtualJaLido:",
-                  capituloAtualJaLido,
-                  "rastreamentoAtivo:",
-                  rastreamentoAtivo,
-                )}
-                <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
-                  <PlayCircle className="w-4 h-4" />
-                  Ler Agora
-                </Button>
-              </>
+              <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
+                <PlayCircle className="w-4 h-4" />
+                Ler Agora
+              </Button>
             )}
             {(rastreamentoAtivo || capituloAtualJaLido) && (
-              <>
-                {console.log(
-                  "[v0] BibleReader: Renderizando marcador. capituloAtualJaLido:",
-                  capituloAtualJaLido,
-                  "rastreamentoAtivo:",
-                  rastreamentoAtivo,
-                )}
-                <div className="flex gap-1.5">
-                  {HIGHLIGHT_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => {
-                        setSelectedColor(color.value)
-                        setHighlightMode(true)
-                      }}
-                      className={cn(
-                        "w-7 h-7 rounded border-2 transition-all hover:scale-110",
-                        color.class,
-                        selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
-                      )}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
+              <div className="flex gap-1.5">
+                {HIGHLIGHT_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => {
+                      setSelectedColor(color.value)
+                      setHighlightMode(true)
+                    }}
+                    className={cn(
+                      "w-7 h-7 rounded border-2 transition-all hover:scale-110",
+                      color.class,
+                      selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
+                    )}
+                    title={color.name}
+                  />
+                ))}
                 <Button
                   variant={highlightMode ? "default" : "outline"}
                   size="sm"
@@ -413,7 +392,7 @@ export function BibleReaderWithAutoCheck({
                 >
                   <Highlighter className="w-4 h-4" />
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>

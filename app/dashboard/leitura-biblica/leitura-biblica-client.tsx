@@ -89,10 +89,6 @@ export default function LeituraBiblicaClient({
   }
 
   const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
-    console.log("[v0] Cliente: abrirCapitulo chamado para capítulo", numeroCapitulo)
-    console.log("[v0] Cliente: isLido recebido:", isLido)
-    console.log("[v0] Cliente: capitulosLidos atual:", Array.from(capitulosLidos))
-
     setCapituloSelecionado(numeroCapitulo)
     setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
