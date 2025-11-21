@@ -13,7 +13,7 @@ interface ChapterCheckboxListProps {
   externalCapitulosLidos?: Set<number>
   onCapituloLidoChange?: (capitulo: number, lido: boolean) => void
   onUltimoCapituloChange?: (numeroCapitulo: number) => void
-  onCapituloClick?: (numeroCapitulo: number) => void
+  onCapituloClick?: (numeroCapitulo: number, isLido: boolean) => void
   capitulosSemana?: number[]
 }
 
@@ -83,7 +83,7 @@ export function ChapterCheckboxList({
             key={cap}
             onClick={() => {
               console.log("[v0] ChapterCheckboxList: Clicou no capítulo", cap, "isLido:", isLido)
-              onCapituloClick && onCapituloClick(cap)
+              onCapituloClick && onCapituloClick(cap, isLido)
             }}
             disabled={!onCapituloClick}
             className={cn(

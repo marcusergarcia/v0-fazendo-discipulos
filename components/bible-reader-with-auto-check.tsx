@@ -17,11 +17,7 @@ interface BibleReaderWithAutoCheckProps {
   endChapter: number
   capitulosLidos: Set<number>
   onChapterRead?: (chapter: number) => void
-}
-
-interface Highlight {
-  texto_selecionado: string
-  cor: string
+  capituloInicialJaLido?: boolean
 }
 
 const HIGHLIGHT_COLORS = [
@@ -41,6 +37,7 @@ export function BibleReaderWithAutoCheck({
   endChapter,
   capitulosLidos,
   onChapterRead,
+  capituloInicialJaLido = false,
 }: BibleReaderWithAutoCheckProps) {
   const [currentChapter, setCurrentChapter] = useState(startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
@@ -152,10 +149,14 @@ export function BibleReaderWithAutoCheck({
     const jaLido = capitulosLidos.has(currentChapter)
     console.log("[v0] BibleReader: Verificando se capítulo", currentChapter, "está lido")
     console.log("[v0] BibleReader: capitulosLidos prop:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: Resultado:", jaLido ? "JÁ LIDO" : "NÃO LIDO")
+    console.log("[v0] BibleReader: capituloInicialJaLido prop:", capituloInicialJaLido)
+    console.log("[v0] BibleReader: currentChapter === startChapter:", currentChapter === startChapter)
 
-    setCapituloAtualJaLido(jaLido)
-  }, [currentChapter, capitulosLidos])
+    const resultado = currentChapter === startChapter ? capituloInicialJaLido : jaLido
+    console.log("[v0] BibleReader: Resultado:", resultado ? "JÁ LIDO" : "NÃO LIDO")
+
+    setCapituloAtualJaLido(resultado)
+  }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)

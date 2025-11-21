@@ -37,6 +37,7 @@ export default function LeituraBiblicaClient({
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
+  const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(true)
 
   useEffect(() => {
@@ -87,12 +88,13 @@ export default function LeituraBiblicaClient({
     }
   }
 
-  const abrirCapitulo = (numeroCapitulo: number) => {
+  const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
     console.log("[v0] Cliente: abrirCapitulo chamado para capítulo", numeroCapitulo)
+    console.log("[v0] Cliente: isLido recebido:", isLido)
     console.log("[v0] Cliente: capitulosLidos atual:", Array.from(capitulosLidos))
-    console.log("[v0] Cliente: capítulo está lido?", capitulosLidos.has(numeroCapitulo))
 
     setCapituloSelecionado(numeroCapitulo)
+    setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
   }
 
@@ -151,6 +153,7 @@ export default function LeituraBiblicaClient({
                   endChapter={leituraAtual.capituloFim}
                   capitulosLidos={capitulosLidos}
                   onChapterRead={handleChapterRead}
+                  capituloInicialJaLido={capituloSelecionadoJaLido}
                 />
               </div>
             )}
