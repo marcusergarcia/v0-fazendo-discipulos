@@ -40,7 +40,10 @@ export function ChapterCheckboxList({
       setCapitulosLidos(lidos)
       setLoading(false)
 
-      if (onProgressChange) {
+      if (onProgressChange && capitulosSemana.length > 0) {
+        const capitulosLidosDaSemana = Array.from(lidos).filter((capId) => capitulosSemana.includes(capId))
+        onProgressChange(capitulosLidosDaSemana.length, capitulos.length)
+      } else if (onProgressChange) {
         onProgressChange(lidos.size, capitulos.length)
       }
 
@@ -58,7 +61,10 @@ export function ChapterCheckboxList({
 
       setCapitulosLidos(merged)
 
-      if (onProgressChange) {
+      if (onProgressChange && capitulosSemana.length > 0) {
+        const capitulosLidosDaSemana = Array.from(merged).filter((capId) => capitulosSemana.includes(capId))
+        onProgressChange(capitulosLidosDaSemana.length, capitulos.length)
+      } else if (onProgressChange) {
         onProgressChange(merged.size, capitulos.length)
       }
     }

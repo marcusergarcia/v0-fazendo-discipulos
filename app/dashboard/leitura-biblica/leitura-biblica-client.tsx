@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
@@ -24,18 +24,25 @@ interface LeituraBiblicaClientProps {
   leituraAtual: LeituraSemanal
   discipuloId: string
   leituraJaConfirmada: boolean
+  capitulosLidosInicial: number[]
 }
 
 export default function LeituraBiblicaClient({
   leituraAtual,
   discipuloId,
   leituraJaConfirmada,
+  capitulosLidosInicial,
 }: LeituraBiblicaClientProps) {
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
-  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
+  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
+
+  useEffect(() => {
+    const capitulosLidosDaSemana = leituraAtual.capitulosSemana.filter((capId) => capitulosLidos.has(capId))
+    setChaptersRead(capitulosLidosDaSemana.length)
+  }, [capitulosLidos, leituraAtual.capitulosSemana])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)

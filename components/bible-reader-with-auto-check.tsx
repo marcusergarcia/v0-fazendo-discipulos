@@ -32,7 +32,7 @@ const HIGHLIGHT_COLORS = [
   { name: "Roxo", value: "purple", class: "bg-purple-200 dark:bg-purple-900/30" },
 ]
 
-const MIN_READ_TIME_MS = 180000 // 3 minutos
+const MIN_READ_TIME_MS = 120000 // 2 minutos
 
 export function BibleReaderWithAutoCheck({
   bookName,

@@ -240,6 +240,7 @@ export default async function LeituraBiblicaPage({
             }}
             discipuloId={discipulo.id}
             leituraJaConfirmada={semanasConcluidas.has(leituraAtual.semana)}
+            capitulosLidosInicial={Array.from(capitulosLidos)}
           />
         )}
       </div>
