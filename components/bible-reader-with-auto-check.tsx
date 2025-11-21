@@ -210,13 +210,18 @@ export function BibleReaderWithAutoCheck({
 
   const handlePrevChapter = () => {
     if (currentChapter > startChapter) {
+      const proximoCapitulo = currentChapter - 1
+      const proximoJaLido = capitulosLidos.has(proximoCapitulo)
+
       console.log("[v0] Botão Anterior clicado:", {
         currentChapter,
-        proximoCapitulo: currentChapter - 1,
+        proximoCapitulo,
+        proximoJaLido,
         capitulosLidos: Array.from(capitulosLidos),
       })
 
-      setCurrentChapter(currentChapter - 1)
+      setCurrentChapter(proximoCapitulo)
+      setCapituloAtualJaLido(proximoJaLido)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
       setReadingStartTime(null)
@@ -227,13 +232,18 @@ export function BibleReaderWithAutoCheck({
 
   const handleNextChapter = () => {
     if (currentChapter < endChapter) {
+      const proximoCapitulo = currentChapter + 1
+      const proximoJaLido = capitulosLidos.has(proximoCapitulo)
+
       console.log("[v0] Botão Próximo clicado:", {
         currentChapter,
-        proximoCapitulo: currentChapter + 1,
+        proximoCapitulo,
+        proximoJaLido,
         capitulosLidos: Array.from(capitulosLidos),
       })
 
-      setCurrentChapter(currentChapter + 1)
+      setCurrentChapter(proximoCapitulo)
+      setCapituloAtualJaLido(proximoJaLido)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
       setReadingStartTime(null)
