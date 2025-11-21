@@ -59,6 +59,9 @@ export default async function LeituraBiblicaPage({
   const semanasConcluidas = new Set<number>()
   const semanasEmProgresso = new Set<number>()
 
+  console.log("[v0] Calculando progresso das semanas...")
+  console.log("[v0] Capítulos lidos total:", Array.from(capitulosLidos))
+
   for (const semana of planoLeitura) {
     const capitulosDaSemana = semana.capitulos_semana || []
 
@@ -66,6 +69,14 @@ export default async function LeituraBiblicaPage({
 
     // Verificar se TODOS os capítulos da semana foram lidos
     const todosCapitulosLidos = capitulosDaSemana.every((capId: number) => capitulosLidos.has(capId))
+
+    if (semana.semana <= 3) {
+      console.log(`[v0] Semana ${semana.semana}:`, {
+        capitulosDaSemana,
+        capitulosLidosDaSemana: capitulosDaSemana.filter((id: number) => capitulosLidos.has(id)),
+        todosCapitulosLidos,
+      })
+    }
 
     if (todosCapitulosLidos) {
       semanasConcluidas.add(semana.semana)
@@ -77,6 +88,9 @@ export default async function LeituraBiblicaPage({
       }
     }
   }
+
+  console.log("[v0] Semanas concluídas:", Array.from(semanasConcluidas))
+  console.log("[v0] Semanas em progresso:", Array.from(semanasEmProgresso))
 
   const leiturasRealizadas = semanasConcluidas.size
   const totalLeituras = 52
@@ -162,18 +176,32 @@ export default async function LeituraBiblicaPage({
                 const ehAtual = semana.semana === semanaAtual
                 const isPendente = semana.semana < semanaAtual && !confirmada
 
+                if (semana.semana <= 3) {
+                  console.log(`[v0] Badge Semana ${semana.semana}:`, {
+                    confirmada,
+                    emProgresso,
+                    ehAtual,
+                    isPendente,
+                  })
+                }
+
                 let badgeClass = ""
                 let icon = null
 
                 if (confirmada) {
                   badgeClass = "bg-green-100 text-green-700 hover:bg-green-100 border-green-300"
                   icon = <CheckCircle2 className="w-3 h-3" />
-                } else if (isPendente || (ehAtual && emProgresso)) {
+                } else if (isPendente) {
                   badgeClass = "bg-yellow-500 text-white hover:bg-yellow-500"
                   icon = <AlertCircle className="w-3 h-3" />
                 } else if (ehAtual) {
-                  badgeClass = "bg-primary text-primary-foreground hover:bg-primary"
-                  icon = <Calendar className="w-3 h-3" />
+                  if (emProgresso) {
+                    badgeClass = "bg-yellow-500 text-white hover:bg-yellow-500"
+                    icon = <AlertCircle className="w-3 h-3" />
+                  } else {
+                    badgeClass = "bg-primary text-primary-foreground hover:bg-primary"
+                    icon = <Calendar className="w-3 h-3" />
+                  }
                 } else {
                   badgeClass = ""
                 }
