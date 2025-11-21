@@ -205,12 +205,22 @@ export function BibleReaderWithAutoCheck({
   const handlePrevChapter = () => {
     if (currentChapter > startChapter) {
       setCurrentChapter(currentChapter - 1)
+      setRastreamentoAtivo(false)
+      setScrolledToBottom(false)
+      setReadingStartTime(null)
+      setTimeElapsed(0)
+      setAutoMarked(false)
     }
   }
 
   const handleNextChapter = () => {
     if (currentChapter < endChapter) {
       setCurrentChapter(currentChapter + 1)
+      setRastreamentoAtivo(false)
+      setScrolledToBottom(false)
+      setReadingStartTime(null)
+      setTimeElapsed(0)
+      setAutoMarked(false)
     }
   }
 
