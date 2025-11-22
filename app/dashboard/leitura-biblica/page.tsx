@@ -51,7 +51,7 @@ export default async function LeituraBiblicaPage({
   const { data: leituraData } = await supabase
     .from("leituras_capitulos")
     .select("capitulos_lidos")
-    .eq("usuario_id", discipulo.id)
+    .eq("discipulo_id", discipulo.id)
     .single()
 
   const capitulosLidosArray = leituraData?.capitulos_lidos || []
@@ -59,6 +59,7 @@ export default async function LeituraBiblicaPage({
 
   console.log("[v0] [SERVER] Capítulos lidos carregados do banco:", capitulosLidosArray)
   console.log("[v0] [SERVER] Discípulo ID:", discipulo.id)
+  console.log("[v0] [SERVER] leituraData completa:", leituraData)
 
   const semanasConcluidas = new Set<number>()
   const semanasEmProgresso = new Set<number>()

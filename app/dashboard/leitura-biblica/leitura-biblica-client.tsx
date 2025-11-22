@@ -17,7 +17,7 @@ interface LeituraSemanal {
   totalCapitulos: number
   fase: string
   descricao: string
-  capitulosSemana: number[] // Array de IDs dos capítulos da semana
+  capitulosSemana: number[]
 }
 
 interface LeituraBiblicaClientProps {
@@ -43,6 +43,7 @@ export default function LeituraBiblicaClient({
 
   useEffect(() => {
     console.log("[v0] Cliente: capitulosLidosInicial recebidos:", capitulosLidosInicial)
+    console.log("[v0] Cliente: discipuloId:", discipuloId)
 
     if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {
       setCapitulosLidos(new Set(capitulosLidosInicial))
@@ -53,7 +54,7 @@ export default function LeituraBiblicaClient({
 
       console.log("[v0] Cliente: capitulosLidos Set criado:", Array.from(new Set(capitulosLidosInicial)))
     }
-  }, [capitulosLidosInicial, leituraAtual.capitulosSemana])
+  }, [capitulosLidosInicial, leituraAtual.capitulosSemana, discipuloId])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
