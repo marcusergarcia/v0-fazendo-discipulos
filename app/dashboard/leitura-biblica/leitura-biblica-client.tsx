@@ -7,7 +7,6 @@ import { CheckCircle2 } from "lucide-react"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
-import { createBrowserClient } from "@supabase/ssr"
 
 interface LeituraSemanal {
   semana: number
@@ -25,49 +24,32 @@ interface LeituraBiblicaClientProps {
   leituraAtual: LeituraSemanal
   discipuloId: string
   leituraJaConfirmada: boolean
+  capitulosLidosInicial?: number[]
 }
 
 export default function LeituraBiblicaClient({
   leituraAtual,
   discipuloId,
   leituraJaConfirmada,
+  capitulosLidosInicial = [],
 }: LeituraBiblicaClientProps) {
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
-  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
+  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
   const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
-  const [carregandoCapitulos, setCarregandoCapitulos] = useState(true)
+  const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
 
   useEffect(() => {
-    const carregarCapitulosLidos = async () => {
-      setCarregandoCapitulos(true)
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
+    if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {
+      setCapitulosLidos(new Set(capitulosLidosInicial))
 
-      const { data, error } = await supabase
-        .from("leituras_capitulos")
-        .select("capitulos_lidos")
-        .eq("usuario_id", discipuloId)
-        .single()
-
-      if (data && !error) {
-        const capitulosLidosArray = data.capitulos_lidos || []
-        setCapitulosLidos(new Set(capitulosLidosArray))
-
-        const capitulosDaSemana = leituraAtual.capitulosSemana || []
-        const lidosDaSemana = capitulosLidosArray.filter((id: number) => capitulosDaSemana.includes(id))
-        setChaptersRead(lidosDaSemana.length)
-      }
-
-      setCarregandoCapitulos(false)
+      const capitulosDaSemana = leituraAtual.capitulosSemana || []
+      const lidosDaSemana = capitulosLidosInicial.filter((id: number) => capitulosDaSemana.includes(id))
+      setChaptersRead(lidosDaSemana.length)
     }
-
-    carregarCapitulosLidos()
-  }, [discipuloId, leituraAtual.capitulosSemana])
+  }, [capitulosLidosInicial, leituraAtual.capitulosSemana])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)

@@ -54,6 +54,7 @@ export default async function LeituraBiblicaPage({
     .eq("usuario_id", discipulo.id)
     .single()
 
+  const capitulosLidosArray = leituraData?.capitulos_lidos || []
   const capitulosLidos = new Set(leituraData?.capitulos_lidos || [])
 
   const semanasConcluidas = new Set<number>()
@@ -240,6 +241,7 @@ export default async function LeituraBiblicaPage({
             }}
             discipuloId={discipulo.id}
             leituraJaConfirmada={semanasConcluidas.has(leituraAtual.semana)}
+            capitulosLidosInicial={capitulosLidosArray}
           />
         )}
       </div>
