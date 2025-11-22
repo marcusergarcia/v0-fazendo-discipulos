@@ -232,7 +232,7 @@ export default function PassoClient({
       totalConteudos: todosConteudos.length,
       status: todosConteudos.map((c) => ({
         titulo: c.titulo,
-        status: c.reflexao_status,
+        situacao: c.reflexao_situacao,
         tipo: c.tipo,
       })),
     })
@@ -240,7 +240,7 @@ export default function PassoClient({
     // Se não houver conteúdos, retorna false
     if (todosConteudos.length === 0) return false
 
-    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_status?.toLowerCase() === "aprovada")
+    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovada")
 
     console.log("[v0] Todas reflexões aprovadas?", todasAprovadas)
 
