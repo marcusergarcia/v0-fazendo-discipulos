@@ -17,7 +17,7 @@ interface LeituraSemanal {
   totalCapitulos: number
   fase: string
   descricao: string
-  capitulosSemana: number[] // Array de IDs dos capítulos da semana
+  capitulosSemana: number[]
 }
 
 interface LeituraBiblicaClientProps {
@@ -40,7 +40,6 @@ export default function LeituraBiblicaClient({
   )
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
-  const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
 
   console.log("[v0] Cliente: inicializado com capítulos lidos:", {
@@ -76,7 +75,6 @@ export default function LeituraBiblicaClient({
     })
 
     setCapituloSelecionado(numeroCapitulo)
-    setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
   }
 
@@ -135,7 +133,6 @@ export default function LeituraBiblicaClient({
                   endChapter={leituraAtual.capituloFim}
                   capitulosLidos={capitulosLidos}
                   onChapterRead={handleChapterRead}
-                  capituloInicialJaLido={capituloSelecionadoJaLido}
                 />
               </div>
             )}
