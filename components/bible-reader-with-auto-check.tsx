@@ -190,12 +190,16 @@ export function BibleReaderWithAutoCheck({
 
     const idReal = getCapituloIdReal(chapter)
 
+    console.log("[v0] BibleReader: loadChapter chamado para capítulo", chapter)
+    console.log("[v0] BibleReader: ID real a ser buscado:", idReal)
+
     const { data, error: supabaseError } = await supabase
       .from("capitulos_biblia")
-      .select("texto, numero_capitulo")
-      .eq("livro_id", livroId)
-      .eq("numero_capitulo", idReal)
+      .select("texto, numero_capitulo, id")
+      .eq("id", idReal) // Buscar pelo ID único
       .single()
+
+    console.log("[v0] BibleReader: Query result:", { data, error: supabaseError })
 
     if (data && !supabaseError) {
       setChapterData({
@@ -204,6 +208,7 @@ export function BibleReaderWithAutoCheck({
       })
       await loadHighlights(chapter)
     } else {
+      console.error("[v0] BibleReader: Erro ao buscar texto:", supabaseError)
       setError("Texto do capítulo não encontrado no banco de dados")
     }
 
