@@ -4,8 +4,8 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { CheckCircle, XCircle, Loader2 } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -39,9 +39,10 @@ export function AprovarTarefaForm({
         const { error: updateError } = await supabase
           .from("progresso_fases")
           .update({
-            status_validacao: "aprovado",
+            enviado_para_validacao: false,
+            completado: true,
             feedback_discipulador: feedback,
-            data_validacao: new Date().toISOString(),
+            data_atualizacao: new Date().toISOString(),
             xp_ganho: xpBase,
           })
           .eq("id", tarefaId)
@@ -49,11 +50,7 @@ export function AprovarTarefaForm({
         if (updateError) throw updateError
 
         // Adicionar XP ao discípulo
-        const { data: discipulo } = await supabase
-          .from("discipulos")
-          .select("xp_total")
-          .eq("id", discipuloId)
-          .single()
+        const { data: discipulo } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
 
         if (discipulo) {
           await supabase
@@ -64,15 +61,40 @@ export function AprovarTarefaForm({
 
         toast.success(`Missão aprovada! +${xpBase} XP concedido`)
       } else {
-        // Para reflexões, apenas salvar o feedback (não há sistema de validação formal ainda)
-        toast.success("Feedback enviado com sucesso!")
+        const { error: updateError } = await supabase
+          .from("reflexoes_conteudo")
+          .update({
+            situacao: "aprovado",
+            feedback_discipulador: feedback,
+            xp_ganho: xpBase,
+          })
+          .eq("id", tarefaId)
+
+        if (updateError) throw updateError
+
+        const { error: deleteNotifError } = await supabase.from("notificacoes").delete().eq("reflexao_id", tarefaId)
+
+        if (deleteNotifError) {
+          console.error("[v0] Erro ao deletar notificação:", deleteNotifError)
+        }
+
+        // Adicionar XP ao discípulo
+        const { data: discipulo } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
+
+        if (discipulo) {
+          await supabase
+            .from("discipulos")
+            .update({ xp_total: (discipulo.xp_total || 0) + xpBase })
+            .eq("id", discipuloId)
+        }
+
+        toast.success(`Reflexão aprovada! +${xpBase} XP concedido`)
       }
 
-      router.refresh()
+      window.location.reload()
     } catch (error) {
       console.error("Erro ao aprovar:", error)
       toast.error("Erro ao aprovar tarefa")
-    } finally {
       setLoading(false)
     }
   }
@@ -90,21 +112,32 @@ export function AprovarTarefaForm({
         const { error } = await supabase
           .from("progresso_fases")
           .update({
-            status_validacao: "rejeitado",
+            enviado_para_validacao: false,
             feedback_discipulador: feedback,
-            data_validacao: new Date().toISOString(),
+            data_atualizacao: new Date().toISOString(),
           })
           .eq("id", tarefaId)
 
         if (error) throw error
+      } else {
+        const { error } = await supabase
+          .from("reflexoes_conteudo")
+          .update({
+            situacao: "reprovado",
+            feedback_discipulador: feedback,
+          })
+          .eq("id", tarefaId)
+
+        if (error) throw error
+
+        await supabase.from("notificacoes").delete().eq("reflexao_id", tarefaId)
       }
 
       toast.success("Feedback de rejeição enviado")
-      router.refresh()
+      window.location.reload()
     } catch (error) {
       console.error("Erro ao rejeitar:", error)
       toast.error("Erro ao rejeitar tarefa")
-    } finally {
       setLoading(false)
     }
   }
@@ -124,19 +157,11 @@ export function AprovarTarefaForm({
       </div>
       <div className="flex gap-2">
         <Button onClick={handleAprovar} disabled={loading} className="flex-1">
-          {loading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <CheckCircle className="w-4 h-4 mr-2" />
-          )}
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
           Aprovar {tipo === "progresso" && `(+${xpBase} XP)`}
         </Button>
         <Button onClick={handleRejeitar} disabled={loading} variant="destructive" className="flex-1">
-          {loading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <XCircle className="w-4 h-4 mr-2" />
-          )}
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <XCircle className="w-4 h-4 mr-2" />}
           Solicitar Revisão
         </Button>
       </div>
