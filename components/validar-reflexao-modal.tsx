@@ -204,7 +204,6 @@ export function ValidarReflexaoModal({
           toast.error("Erro ao deletar notificação: " + deleteNotifError.message)
         } else {
           console.log("[v0] ✓ Notificação deletada com sucesso!")
-          toast.success("Notificação removida")
         }
       } else {
         console.log("[v0] ⚠ Nenhuma notificação encontrada para esta reflexão")

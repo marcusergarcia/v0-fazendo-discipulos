@@ -424,6 +424,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
+        discipulo_id: discipulo.id, // ID de quem enviou
         tipo: "reflexao",
         titulo: "Nova reflexão de vídeo",
         mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão no Passo ${numero}.`,
@@ -436,6 +437,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
       console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+      console.log("[v0] SERVER: Discipulo ID:", discipulo.id)
+      console.log("[v0] SERVER: Discipulador ID:", discipulo.discipulador_id)
       notificacaoId = novaNotificacao.id
     }
   }
@@ -466,15 +469,21 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
 
       if (notificacaoId) {
-        const { error: updateError } = await supabaseAdmin
+        console.log("[v0] SERVER: Atualizando notificação...")
+        console.log("[v0] SERVER: - Notificação ID:", notificacaoId)
+        console.log("[v0] SERVER: - Reflexão ID para vincular:", novaReflexao.id)
+
+        const { data: notifAtualizada, error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
+          .select()
 
         if (updateError) {
-          console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
+          console.error("[v0] SERVER: ❌ Erro ao atualizar notificação:", updateError)
         } else {
           console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
+          console.log("[v0] SERVER: Notificação atualizada:", JSON.stringify(notifAtualizada, null, 2))
         }
       }
     }
@@ -574,6 +583,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
+        discipulo_id: discipulo.id, // ID de quem enviou
         tipo: "reflexao",
         titulo: "Nova reflexão de artigo",
         mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão no Passo ${numero}.`,
@@ -586,6 +596,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
       console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+      console.log("[v0] SERVER: Discipulo ID:", discipulo.id)
+      console.log("[v0] SERVER: Discipulador ID:", discipulo.discipulador_id)
       notificacaoId = novaNotificacao.id
     }
   }
@@ -616,15 +628,21 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
 
       if (notificacaoId) {
-        const { error: updateError } = await supabaseAdmin
+        console.log("[v0] SERVER: Atualizando notificação de artigo...")
+        console.log("[v0] SERVER: - Notificação ID:", notificacaoId)
+        console.log("[v0] SERVER: - Reflexão ID para vincular:", novaReflexao.id)
+
+        const { data: notifAtualizada, error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
+          .select()
 
         if (updateError) {
-          console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
+          console.error("[v0] SERVER: ❌ Erro ao atualizar notificação:", updateError)
         } else {
           console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
+          console.log("[v0] SERVER: Notificação atualizada:", JSON.stringify(notifAtualizada, null, 2))
         }
       }
     }
