@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import { redirect } from 'next/navigation'
+import { redirect } from "next/navigation"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -22,15 +22,6 @@ export async function salvarRascunho(numero: number, formData: FormData) {
 
   if (!discipulo) return
 
-  await supabase
-    .from("progresso_fases")
-    .update({
-      rascunho_resposta: JSON.stringify({ pergunta: respostaPergunta, missao: respostaMissao }),
-    })
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
-
   redirect(`/dashboard/passo/${numero}?saved=true`)
 }
 
@@ -42,11 +33,16 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       persistSession: false,
     },
   })
-  
+
   const respostaPergunta = formData.get("resposta_pergunta") as string
   const respostaMissao = formData.get("resposta_missao") as string
 
-  if (!respostaPergunta || !respostaMissao || respostaPergunta.trim().length < 10 || respostaMissao.trim().length < 10) {
+  if (
+    !respostaPergunta ||
+    !respostaMissao ||
+    respostaPergunta.trim().length < 10 ||
+    respostaMissao.trim().length < 10
+  ) {
     throw new Error("Por favor, preencha ambas as respostas com pelo menos 10 caracteres")
   }
 
@@ -74,7 +70,7 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
       })
       .select("id")
       .single()
-    
+
     if (novaNotificacao) {
       notificacaoId = novaNotificacao.id
     }
@@ -85,7 +81,7 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
     discipulador_id: discipulo.discipulador_id,
     fase_numero: discipulo.fase_atual || 1,
     passo_numero: numero,
-    tipo_resposta: 'pergunta',
+    tipo_resposta: "pergunta",
     resposta: respostaPergunta,
     situacao: "enviado",
     notificacao_id: notificacaoId,
@@ -102,10 +98,10 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
     discipulador_id: discipulo.discipulador_id,
     fase_numero: discipulo.fase_atual || 1,
     passo_numero: numero,
-    tipo_resposta: 'missao',
+    tipo_resposta: "missao",
     resposta: respostaMissao,
     situacao: "enviado",
-    notificacao_id: null, // Não duplicar notificação
+    notificacao_id: null,
     data_envio: new Date().toISOString(),
   })
 
@@ -117,9 +113,6 @@ export async function enviarParaValidacao(numero: number, formData: FormData) {
   await supabase
     .from("progresso_fases")
     .update({
-      resposta_pergunta: respostaPergunta,
-      resposta_missao: respostaMissao,
-      status_validacao: "pendente",
       enviado_para_validacao: true,
     })
     .eq("discipulo_id", discipulo.id)
@@ -197,15 +190,15 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
 
 export async function buscarReflexoesParaReset(numero: number) {
   console.log("[v0] SERVER: buscarReflexoesParaReset iniciada - Passo:", numero)
-  
+
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  
+
   console.log("[v0] SERVER: User ID:", user?.id)
-  
+
   if (!user) {
     console.error("[v0] SERVER: Erro - Usuário não autenticado")
     return []
@@ -218,7 +211,7 @@ export async function buscarReflexoesParaReset(numero: number) {
     .single()
 
   console.log("[v0] SERVER: Discípulo encontrado:", discipulo?.id)
-  
+
   if (discipuloError || !discipulo) {
     console.error("[v0] SERVER: Erro ao buscar discípulo:", discipuloError)
     return []
@@ -229,19 +222,19 @@ export async function buscarReflexoesParaReset(numero: number) {
     .from("reflexoes_conteudo")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-  
+
   console.log("[v0] SERVER: Total de reflexões no banco:", todasReflexoes?.length || 0)
   if (todasReflexoes && todasReflexoes.length > 0) {
     console.log("[v0] SERVER: Exemplo de reflexão:", {
       id: todasReflexoes[0].id,
       fase_numero: todasReflexoes[0].fase_numero,
       passo_numero: todasReflexoes[0].passo_numero,
-      tipo: todasReflexoes[0].tipo
+      tipo: todasReflexoes[0].tipo,
     })
   }
 
   console.log("[v0] SERVER: Buscando reflexões - discipulo_id:", discipulo.id, "passo:", numero)
-  
+
   const { data: reflexoes, error } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
@@ -255,12 +248,15 @@ export async function buscarReflexoesParaReset(numero: number) {
 
   console.log("[v0] SERVER: Reflexões do passo", numero, "encontradas:", reflexoes?.length || 0)
   if (reflexoes && reflexoes.length > 0) {
-    console.log("[v0] SERVER: Detalhes das reflexões:", reflexoes.map(r => ({
-      id: r.id,
-      titulo: r.titulo,
-      tipo: r.tipo,
-      notificacao_id: r.notificacao_id
-    })))
+    console.log(
+      "[v0] SERVER: Detalhes das reflexões:",
+      reflexoes.map((r) => ({
+        id: r.id,
+        titulo: r.titulo,
+        tipo: r.tipo,
+        notificacao_id: r.notificacao_id,
+      })),
+    )
   }
 
   return reflexoes || []
@@ -270,7 +266,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
   console.log("[v0] ===== INICIANDO RESET DE PROGRESSO =====")
   console.log("[v0] Passo número:", numero)
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
-  
+
   try {
     const supabase = await createClient()
     const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
@@ -282,9 +278,9 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
 
     const {
       data: { user },
-      error: userError
+      error: userError,
     } = await supabase.auth.getUser()
-    
+
     if (userError || !user) {
       console.log("[v0] ERRO: Usuário não autenticado", userError)
       return { success: false, error: "Usuário não autenticado" }
@@ -316,18 +312,13 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         console.log("[v0] ERRO ao buscar reflexões:", errorBuscar)
       } else {
         console.log("[v0] Reflexões encontradas:", reflexoes)
-        
+
         // Coletar IDs das notificações
-        const notificacoesIds = reflexoes
-          ?.filter(r => r.notificacao_id)
-          .map(r => r.notificacao_id) || []
-        
+        const notificacoesIds = reflexoes?.filter((r) => r.notificacao_id).map((r) => r.notificacao_id) || []
+
         if (notificacoesIds.length > 0) {
           console.log("[v0] Excluindo", notificacoesIds.length, "notificações...")
-          const { error: errorNotif } = await supabaseAdmin
-            .from("notificacoes")
-            .delete()
-            .in("id", notificacoesIds)
+          const { error: errorNotif } = await supabaseAdmin.from("notificacoes").delete().in("id", notificacoesIds)
 
           if (errorNotif) {
             console.error("[v0] ERRO ao excluir notificações:", errorNotif)
@@ -341,16 +332,13 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       }
 
       console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
-      const { error: errorExcluir } = await supabaseAdmin
-        .from("reflexoes_conteudo")
-        .delete()
-        .in("id", reflexoesIds)
+      const { error: errorExcluir } = await supabaseAdmin.from("reflexoes_conteudo").delete().in("id", reflexoesIds)
 
       if (errorExcluir) {
         console.error("[v0] ERRO ao excluir reflexões:", errorExcluir)
         return { success: false, error: "Erro ao excluir reflexões" }
       }
-      
+
       console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
     }
 
@@ -362,10 +350,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         artigos_lidos: [],
         completado: false,
         enviado_para_validacao: false,
-        status_validacao: null,
-        resposta_pergunta: null,
-        resposta_missao: null,
-        rascunho_resposta: null,
         data_completado: null,
       })
       .eq("discipulo_id", discipulo.id)
@@ -390,7 +374,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
 export async function concluirVideoComReflexao(numero: number, videoId: string, titulo: string, reflexao: string) {
   console.log("[v0] SERVER: concluirVideoComReflexao iniciada")
   console.log("[v0] SERVER: Params:", { numero, videoId, titulo, reflexao: reflexao.substring(0, 50) })
-  
+
   const supabase = await createClient()
   const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
     auth: {
@@ -402,7 +386,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  
+
   console.log("[v0] SERVER: User ID:", user?.id)
   if (!user) {
     console.log("[v0] SERVER: Usuário não encontrado!")
@@ -410,7 +394,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  
+
   console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
   console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
   if (!discipulo) {
@@ -432,10 +416,10 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
 
   let notificacaoId: string | null = null
-  
+
   if (!reflexaoExistente && discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
-    
+
     const { data: novaNotificacao, error: notifError } = await supabaseAdmin
       .from("notificacoes")
       .insert({
@@ -447,7 +431,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       })
       .select("id")
       .single()
-    
+
     if (notifError) {
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
@@ -470,23 +454,23 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         titulo: titulo,
         reflexao: reflexao,
         notificacao_id: notificacaoId,
-        situacao: 'enviado', // Marcar como enviado
+        situacao: "enviado", // Marcar como enviado
       })
       .select("id")
       .single()
-    
+
     if (reflexaoError) {
       console.error("[v0] SERVER: Erro ao inserir reflexão:", reflexaoError)
       throw new Error("Erro ao salvar reflexão")
     } else {
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
-      
+
       if (notificacaoId) {
         const { error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
-        
+
         if (updateError) {
           console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
         } else {
@@ -525,7 +509,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         .eq("discipulo_id", discipulo.id)
         .eq("fase_numero", 1)
         .eq("passo_numero", numero)
-        
+
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
       } else {
@@ -540,7 +524,7 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
 export async function concluirArtigoComReflexao(numero: number, artigoId: string, titulo: string, reflexao: string) {
   console.log("[v0] SERVER: concluirArtigoComReflexao iniciada")
   console.log("[v0] SERVER: Params:", { numero, artigoId, titulo, reflexao: reflexao.substring(0, 50) })
-  
+
   const supabase = await createClient()
   const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
     auth: {
@@ -552,7 +536,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  
+
   console.log("[v0] SERVER: User ID:", user?.id)
   if (!user) {
     console.log("[v0] SERVER: Usuário não encontrado!")
@@ -560,7 +544,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   }
 
   const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  
+
   console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
   console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
   if (!discipulo) {
@@ -582,10 +566,10 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
 
   let notificacaoId: string | null = null
-  
+
   if (!reflexaoExistente && discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
-    
+
     const { data: novaNotificacao, error: notifError } = await supabaseAdmin
       .from("notificacoes")
       .insert({
@@ -597,7 +581,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       })
       .select("id")
       .single()
-    
+
     if (notifError) {
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
@@ -620,23 +604,23 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         titulo: titulo,
         reflexao: reflexao,
         notificacao_id: notificacaoId,
-        situacao: 'enviado', // Marcar como enviado
+        situacao: "enviado", // Marcar como enviado
       })
       .select("id")
       .single()
-    
+
     if (reflexaoError) {
       console.error("[v0] SERVER: Erro ao inserir reflexão:", reflexaoError)
       throw new Error("Erro ao salvar reflexão")
     } else {
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
-      
+
       if (notificacaoId) {
         const { error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
-        
+
         if (updateError) {
           console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
         } else {
@@ -675,7 +659,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         .eq("discipulo_id", discipulo.id)
         .eq("fase_numero", 1)
         .eq("passo_numero", numero)
-        
+
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
       } else {
@@ -693,7 +677,7 @@ export async function verificarConclusaoPasso(numero: number) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  
+
   if (!user) return { completo: false }
 
   const { data: discipulo } = await supabase
@@ -713,9 +697,8 @@ export async function verificarConclusaoPasso(numero: number) {
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
-  const todasReflexoesAprovadas = reflexoes && reflexoes.length > 0 
-    ? reflexoes.every(r => r.situacao === 'aprovado')
-    : false
+  const todasReflexoesAprovadas =
+    reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
 
   // Verificar respostas do passo
   const { data: respostas } = await supabase
@@ -726,9 +709,7 @@ export async function verificarConclusaoPasso(numero: number) {
     .order("created_at", { ascending: false })
     .limit(1)
 
-  const respostasAprovadas = respostas && respostas.length > 0
-    ? respostas[0].situacao === 'aprovado'
-    : false
+  const respostasAprovadas = respostas && respostas.length > 0 ? respostas[0].situacao === "aprovado" : false
 
   const passoCompleto = todasReflexoesAprovadas && respostasAprovadas
 
@@ -745,14 +726,10 @@ export async function liberarProximoPasso() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  
+
   if (!user) return { success: false, error: "Usuário não autenticado" }
 
-  const { data: discipulo } = await supabase
-    .from("discipulos")
-    .select("*")
-    .eq("user_id", user.id)
-    .single()
+  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
   if (!discipulo) {
     return { success: false, error: "Discípulo não encontrado" }
@@ -775,10 +752,7 @@ export async function liberarProximoPasso() {
     return { success: false, error: "Você já completou todos os passos!" }
   }
 
-  const { error } = await supabase
-    .from("discipulos")
-    .update({ passo_atual: proximoPasso })
-    .eq("id", discipulo.id)
+  const { error } = await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", discipulo.id)
 
   if (error) {
     return { success: false, error: "Erro ao liberar próximo passo" }

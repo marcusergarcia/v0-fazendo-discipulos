@@ -72,9 +72,8 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         return
       }
 
-      // Marcar notificação como lida
       if (resposta.notificacao_id) {
-        await supabase.from("notificacoes").update({ lida: true }).eq("id", resposta.notificacao_id)
+        await supabase.from("notificacoes").delete().eq("id", resposta.notificacao_id)
       }
 
       const { data: progresso } = await supabase

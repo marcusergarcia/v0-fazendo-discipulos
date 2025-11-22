@@ -142,7 +142,6 @@ export function ValidarReflexaoModal({
           .eq("id", discipuloId)
       }
 
-      // Marcar notificação como lida
       const { data: notificacao } = await supabase
         .from("notificacoes")
         .select("id")
@@ -150,7 +149,7 @@ export function ValidarReflexaoModal({
         .maybeSingle()
 
       if (notificacao) {
-        await supabase.from("notificacoes").update({ lida: true }).eq("id", notificacao.id)
+        await supabase.from("notificacoes").delete().eq("id", notificacao.id)
       }
 
       const { data: discipuloInfo } = await supabase
