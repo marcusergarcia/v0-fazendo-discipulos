@@ -1,10 +1,22 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Loader2, BookOpen, Highlighter, Check, PlayCircle } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  BookOpen,
+  Highlighter,
+  Check,
+  PlayCircle,
+  Undo2,
+  Redo2,
+} from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import { marcarCapituloLido } from "@/app/dashboard/leitura-biblica/actions"
 import { cn } from "@/lib/utils"
@@ -22,8 +34,20 @@ interface BibleReaderWithAutoCheckProps {
 }
 
 interface Highlight {
-  texto_selecionado: string
+  id: number
+  texto: string
   cor: string
+}
+
+interface HighlightData {
+  id: number
+  marcacoes: Highlight[]
+}
+
+interface HistoryAction {
+  type: "add" | "remove"
+  highlight: Highlight
+  timestamp: number
 }
 
 const HIGHLIGHT_COLORS = [
@@ -44,7 +68,7 @@ export function BibleReaderWithAutoCheck({
   capitulosLidos,
   onChapterRead,
   capituloInicialJaLido = false,
-  capitulosSemana = [], // Array de IDs reais
+  capitulosSemana = [],
 }: BibleReaderWithAutoCheckProps) {
   const [currentChapter, setCurrentChapter] = useState(startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
@@ -60,7 +84,12 @@ export function BibleReaderWithAutoCheck({
 
   const [highlightMode, setHighlightMode] = useState(false)
   const [selectedColor, setSelectedColor] = useState("yellow")
+
+  const [highlightData, setHighlightData] = useState<HighlightData | null>(null)
   const [highlights, setHighlights] = useState<Highlight[]>([])
+
+  const [history, setHistory] = useState<HistoryAction[]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
 
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
@@ -76,19 +105,13 @@ export function BibleReaderWithAutoCheck({
 
   const getCapituloIdReal = (numeroCapitulo: number): number => {
     if (!capitulosSemana || capitulosSemana.length === 0) {
-      console.log("[v0] BibleReader: capitulosSemana não disponível, usando número diretamente")
       return numeroCapitulo
     }
 
-    // O índice no array corresponde ao número do capítulo menos o startChapter
     const index = numeroCapitulo - startChapter
     const idReal = capitulosSemana[index]
 
-    console.log("[v0] BibleReader: Mapeando número", numeroCapitulo, "-> ID real", idReal)
-    console.log("[v0] BibleReader: capitulosSemana:", capitulosSemana)
-    console.log("[v0] BibleReader: índice calculado:", index)
-
-    return idReal || numeroCapitulo
+    return idReal
   }
 
   useEffect(() => {
@@ -173,14 +196,6 @@ export function BibleReaderWithAutoCheck({
     const idReal = getCapituloIdReal(currentChapter)
     const jaLido = capitulosLidos.has(idReal)
 
-    console.log("[v0] BibleReader: verificando se capítulo está lido")
-    console.log("[v0] BibleReader: currentChapter (número):", currentChapter)
-    console.log("[v0] BibleReader: ID real do capítulo:", idReal)
-    console.log("[v0] BibleReader: capitulosLidos prop:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: capituloInicialJaLido prop:", capituloInicialJaLido)
-    console.log("[v0] BibleReader: capitulosLidos.has(idReal):", jaLido)
-    console.log("[v0] BibleReader: Resultado capituloAtualJaLido:", jaLido)
-
     setCapituloAtualJaLido(jaLido)
   }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido, capitulosSemana])
 
@@ -190,16 +205,11 @@ export function BibleReaderWithAutoCheck({
 
     const idReal = getCapituloIdReal(chapter)
 
-    console.log("[v0] BibleReader: loadChapter chamado para capítulo", chapter)
-    console.log("[v0] BibleReader: ID real a ser buscado:", idReal)
-
     const { data, error: supabaseError } = await supabase
       .from("capitulos_biblia")
       .select("texto, numero_capitulo, id")
-      .eq("id", idReal) // Buscar pelo ID único
+      .eq("id", idReal)
       .single()
-
-    console.log("[v0] BibleReader: Query result:", { data, error: supabaseError })
 
     if (data && !supabaseError) {
       setChapterData({
@@ -242,12 +252,6 @@ export function BibleReaderWithAutoCheck({
 
   const handlePrevChapter = () => {
     const idRealAnterior = getCapituloIdReal(currentChapter - 1)
-    console.log("[v0] BibleReader: handlePrevChapter chamado")
-    console.log("[v0] BibleReader: currentChapter antes:", currentChapter)
-    console.log("[v0] BibleReader: próximo capítulo será:", currentChapter - 1)
-    console.log("[v0] BibleReader: ID real do capítulo anterior:", idRealAnterior)
-    console.log("[v0] BibleReader: capitulosLidos:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: capítulo anterior está lido?", capitulosLidos.has(idRealAnterior))
 
     if (currentChapter > startChapter) {
       setCurrentChapter(currentChapter - 1)
@@ -261,12 +265,6 @@ export function BibleReaderWithAutoCheck({
 
   const handleNextChapter = () => {
     const idRealProximo = getCapituloIdReal(currentChapter + 1)
-    console.log("[v0] BibleReader: handleNextChapter chamado")
-    console.log("[v0] BibleReader: currentChapter antes:", currentChapter)
-    console.log("[v0] BibleReader: próximo capítulo será:", currentChapter + 1)
-    console.log("[v0] BibleReader: ID real do próximo capítulo:", idRealProximo)
-    console.log("[v0] BibleReader: capitulosLidos:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: próximo capítulo está lido?", capitulosLidos.has(idRealProximo))
 
     if (currentChapter < endChapter) {
       setCurrentChapter(currentChapter + 1)
@@ -306,25 +304,142 @@ export function BibleReaderWithAutoCheck({
 
     const selectedText = selection.toString()
 
-    const { error: insertError } = await supabase.from("highlights_biblia").insert({
-      usuario_id: user.id,
-      livro_id: livroId,
-      numero_capitulo: currentChapter,
-      numero_versiculo: 1,
-      texto_selecionado: selectedText,
-      cor: selectedColor,
-    })
+    const { data: existing } = await supabase
+      .from("highlights_biblia")
+      .select("id, marcacoes")
+      .eq("usuario_id", user.id)
+      .eq("livro_id", livroId)
+      .eq("numero_capitulo", currentChapter)
+      .single()
 
-    if (!insertError) {
-      await loadHighlights(currentChapter)
-      toast.success("Texto marcado com sucesso!", {
-        duration: 2000,
-      })
-      selection.removeAllRanges()
+    const newHighlight: Highlight = {
+      id: Date.now(), // ID temporário único
+      texto: selectedText,
+      cor: selectedColor,
+    }
+
+    let updatedMarcacoes: Highlight[] = []
+
+    if (existing) {
+      updatedMarcacoes = [...(existing.marcacoes || []), newHighlight]
+
+      const { error: updateError } = await supabase
+        .from("highlights_biblia")
+        .update({ marcacoes: updatedMarcacoes })
+        .eq("id", existing.id)
+
+      if (updateError) {
+        toast.error("Erro ao salvar marcação", { duration: 2000 })
+        return
+      }
     } else {
-      toast.error("Erro ao salvar marcação", {
-        duration: 2000,
+      updatedMarcacoes = [newHighlight]
+
+      const { error: insertError } = await supabase.from("highlights_biblia").insert({
+        usuario_id: user.id,
+        livro_id: livroId,
+        numero_capitulo: currentChapter,
+        marcacoes: updatedMarcacoes,
       })
+
+      if (insertError) {
+        toast.error("Erro ao salvar marcação", { duration: 2000 })
+        return
+      }
+    }
+
+    const newAction: HistoryAction = {
+      type: "add",
+      highlight: {
+        texto_selecionado: selectedText,
+        cor: selectedColor,
+        id: newHighlight.id,
+      },
+      timestamp: Date.now(),
+    }
+
+    const newHistory = history.slice(0, historyIndex + 1)
+    setHistory([...newHistory, newAction])
+    setHistoryIndex(historyIndex + 1)
+
+    await loadHighlights(currentChapter)
+    toast.success("Texto marcado com sucesso!", { duration: 2000 })
+    selection.removeAllRanges()
+  }
+
+  const handleUndo = async () => {
+    if (historyIndex < 0) return
+
+    const action = history[historyIndex]
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+
+    if (action.type === "add" && action.highlight.id) {
+      const { data: existing } = await supabase
+        .from("highlights_biblia")
+        .select("id, marcacoes")
+        .eq("usuario_id", user.id)
+        .eq("livro_id", livroId)
+        .eq("numero_capitulo", currentChapter)
+        .single()
+
+      if (existing) {
+        const updatedMarcacoes = (existing.marcacoes || []).filter((h: Highlight) => h.id !== action.highlight.id)
+
+        const { error } = await supabase
+          .from("highlights_biblia")
+          .update({ marcacoes: updatedMarcacoes })
+          .eq("id", existing.id)
+
+        if (!error) {
+          setHistoryIndex(historyIndex - 1)
+          await loadHighlights(currentChapter)
+          toast.success("Marcação desfeita", { duration: 1500 })
+        }
+      }
+    }
+  }
+
+  const handleRedo = async () => {
+    if (historyIndex >= history.length - 1) return
+
+    const action = history[historyIndex + 1]
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+
+    if (action.type === "add") {
+      const { data: existing } = await supabase
+        .from("highlights_biblia")
+        .select("id, marcacoes")
+        .eq("usuario_id", user.id)
+        .eq("livro_id", livroId)
+        .eq("numero_capitulo", currentChapter)
+        .single()
+
+      if (existing) {
+        const newHighlight: Highlight = {
+          id: action.highlight.id || Date.now(),
+          texto: action.highlight.texto_selecionado,
+          cor: action.highlight.cor,
+        }
+
+        const updatedMarcacoes = [...(existing.marcacoes || []), newHighlight]
+
+        const { error } = await supabase
+          .from("highlights_biblia")
+          .update({ marcacoes: updatedMarcacoes })
+          .eq("id", existing.id)
+
+        if (!error) {
+          setHistoryIndex(historyIndex + 1)
+          await loadHighlights(currentChapter)
+          toast.success("Marcação refeita", { duration: 1500 })
+        }
+      }
     }
   }
 
@@ -333,64 +448,55 @@ export function BibleReaderWithAutoCheck({
       data: { user },
     } = await supabase.auth.getUser()
 
-    console.log("[v0] loadHighlights: chapter recebido:", chapter)
-    console.log("[v0] loadHighlights: livroId:", livroId)
-    console.log("[v0] loadHighlights: user:", user?.id)
-
     if (!user) return
 
     const { data, error: highlightError } = await supabase
       .from("highlights_biblia")
-      .select("texto_selecionado, cor")
+      .select("id, marcacoes")
       .eq("usuario_id", user.id)
       .eq("livro_id", livroId)
       .eq("numero_capitulo", chapter)
-
-    console.log("[v0] loadHighlights: query result data:", data)
-    console.log("[v0] loadHighlights: query result error:", highlightError)
+      .single()
 
     if (data && !highlightError) {
-      setHighlights(data)
-      console.log("[v0] loadHighlights: highlights setados:", data)
+      setHighlightData(data)
+      setHighlights(data.marcacoes || [])
     } else {
+      setHighlightData(null)
       setHighlights([])
-      console.log("[v0] loadHighlights: nenhum highlight encontrado")
     }
   }
 
-  const renderTextWithHighlights = (text: string) => {
-    console.log("[v0] renderTextWithHighlights: chamado com", highlights.length, "highlights")
-
+  const renderTextWithHighlights = (text: string, highlights: Highlight[]): React.ReactNode => {
     if (highlights.length === 0) {
       return text
     }
 
-    const highlightedText = text
     const parts: { text: string; color?: string }[] = []
     let lastIndex = 0
 
     const sortedHighlights = [...highlights].sort((a, b) => {
-      const indexA = text.indexOf(a.texto_selecionado)
-      const indexB = text.indexOf(b.texto_selecionado)
+      const indexA = text.indexOf(a.texto)
+      const indexB = text.indexOf(b.texto)
       return indexA - indexB
     })
 
     sortedHighlights.forEach((highlight) => {
-      const index = highlightedText.indexOf(highlight.texto_selecionado, lastIndex)
+      const index = text.indexOf(highlight.texto, lastIndex)
       if (index !== -1) {
         if (index > lastIndex) {
-          parts.push({ text: highlightedText.slice(lastIndex, index) })
+          parts.push({ text: text.slice(lastIndex, index) })
         }
         parts.push({
-          text: highlight.texto_selecionado,
+          text: highlight.texto,
           color: highlight.cor,
         })
-        lastIndex = index + highlight.texto_selecionado.length
+        lastIndex = index + highlight.texto.length
       }
     })
 
-    if (lastIndex < highlightedText.length) {
-      parts.push({ text: highlightedText.slice(lastIndex) })
+    if (lastIndex < text.length) {
+      parts.push({ text: text.slice(lastIndex) })
     }
 
     return parts.map((part, index) => {
@@ -439,52 +545,57 @@ export function BibleReaderWithAutoCheck({
           </div>
           <div className="flex items-center gap-2">
             {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
-              <>
-                {console.log(
-                  "[v0] BibleReader: Renderizando botão Ler Agora. capituloAtualJaLido:",
-                  capituloAtualJaLido,
-                  "rastreamentoAtivo:",
-                  rastreamentoAtivo,
-                )}
-                <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
-                  <PlayCircle className="w-4 h-4" />
-                  Ler Agora
-                </Button>
-              </>
+              <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
+                <PlayCircle className="w-4 h-4" />
+                Ler Agora
+              </Button>
             )}
             {(rastreamentoAtivo || capituloAtualJaLido) && (
-              <>
-                {console.log(
-                  "[v0] BibleReader: Renderizando marcador. capituloAtualJaLido:",
-                  capituloAtualJaLido,
-                  "rastreamentoAtivo:",
-                  rastreamentoAtivo,
-                )}
-                <div className="flex gap-1.5">
-                  {HIGHLIGHT_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => {
-                        setSelectedColor(color.value)
-                        setHighlightMode(true)
-                      }}
-                      className={cn(
-                        "w-7 h-7 rounded border-2 transition-all hover:scale-110",
-                        color.class,
-                        selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
-                      )}
-                      title={color.name}
-                    />
-                  ))}
-                  <Button
-                    variant={highlightMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setHighlightMode(!highlightMode)}
-                  >
-                    <Highlighter className="w-4 h-4" />
-                  </Button>
-                </div>
-              </>
+              <div className="flex gap-1.5">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUndo}
+                  disabled={historyIndex < 0}
+                  title="Desfazer"
+                  className="h-7 w-7 p-0 bg-transparent"
+                >
+                  <Undo2 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRedo}
+                  disabled={historyIndex >= history.length - 1}
+                  title="Refazer"
+                  className="h-7 w-7 p-0"
+                >
+                  <Redo2 className="w-4 h-4" />
+                </Button>
+
+                {HIGHLIGHT_COLORS.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => {
+                      setSelectedColor(color.value)
+                      setHighlightMode(true)
+                    }}
+                    className={cn(
+                      "w-7 h-7 rounded border-2 transition-all hover:scale-110",
+                      color.class,
+                      selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
+                    )}
+                    title={color.name}
+                  />
+                ))}
+                <Button
+                  variant={highlightMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setHighlightMode(!highlightMode)}
+                >
+                  <Highlighter className="w-4 h-4" />
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -522,7 +633,7 @@ export function BibleReaderWithAutoCheck({
               style={{ userSelect: highlightMode ? "text" : "auto" }}
               onMouseUp={handleTextSelection}
             >
-              {renderTextWithHighlights(chapterData?.text || "")}
+              {renderTextWithHighlights(chapterData?.text || "", highlights)}
             </div>
           </ScrollArea>
         )}
