@@ -317,37 +317,39 @@ export default async function DiscipuladorPage() {
                   {/* Card do Discípulo */}
                   <Card>
                     <CardContent className="py-6">
-                      <div className="flex items-center gap-4 mb-6">
-                        <div className="relative">
-                          <Avatar className="w-20 h-20">
-                            <AvatarImage src={foto || "/placeholder.svg"} alt={nome} />
-                            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                              {iniciais}
-                            </AvatarFallback>
-                          </Avatar>
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="relative">
+                            <Avatar className="w-20 h-20">
+                              <AvatarImage src={foto || "/placeholder.svg"} alt={nome} />
+                              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                                {iniciais}
+                              </AvatarFallback>
+                            </Avatar>
 
-                          <div className="absolute -bottom-1 -right-1 bg-background border-2 border-background rounded-full px-2.5 py-1">
-                            <p className="text-xs font-bold">P{discipulo.passo_atual}</p>
+                            <div className="absolute -bottom-1 -right-1 bg-background border-2 border-background rounded-full px-2.5 py-1">
+                              <p className="text-xs font-bold">P{discipulo.passo_atual}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h2 className="text-2xl font-bold">{nome}</h2>
+                              <Badge variant="outline">{discipulo.nivel_atual}</Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span>Fase {discipulo.fase_atual}</span>
+                              <span>Passo {discipulo.passo_atual}/10</span>
+                              <span>{discipulo.xp_total} XP</span>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <h2 className="text-2xl font-bold">{nome}</h2>
-                            <Badge variant="outline">{discipulo.nivel_atual}</Badge>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>Fase {discipulo.fase_atual}</span>
-                            <span>Passo {discipulo.passo_atual}/10</span>
-                            <span>{discipulo.xp_total} XP</span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                           <CopiarLinkBoasVindas />
 
-                          <Link href={`/discipulador/chat/${discipulo.id}`}>
-                            <Button className="w-full sm:w-auto">
+                          <Link href={`/discipulador/chat/${discipulo.id}`} className="w-full sm:w-auto">
+                            <Button className="w-full">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
                             </Button>
