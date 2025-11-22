@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -24,6 +24,16 @@ export function AprovarTarefaForm({
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    console.log("[v0] 🔷 AprovarTarefaForm MONTADO")
+    console.log("[v0] Dados:", {
+      tipo,
+      tarefaId,
+      discipuloId,
+      xpBase,
+    })
+  }, [tipo, tarefaId, discipuloId, xpBase])
 
   async function handleAprovar() {
     if (!feedback.trim()) {
