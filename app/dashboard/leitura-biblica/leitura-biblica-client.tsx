@@ -42,12 +42,16 @@ export default function LeituraBiblicaClient({
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
 
   useEffect(() => {
+    console.log("[v0] Cliente: capitulosLidosInicial recebidos:", capitulosLidosInicial)
+
     if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {
       setCapitulosLidos(new Set(capitulosLidosInicial))
 
       const capitulosDaSemana = leituraAtual.capitulosSemana || []
       const lidosDaSemana = capitulosLidosInicial.filter((id: number) => capitulosDaSemana.includes(id))
       setChaptersRead(lidosDaSemana.length)
+
+      console.log("[v0] Cliente: capitulosLidos Set criado:", Array.from(new Set(capitulosLidosInicial)))
     }
   }, [capitulosLidosInicial, leituraAtual.capitulosSemana])
 
@@ -71,6 +75,11 @@ export default function LeituraBiblicaClient({
   }
 
   const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
+    console.log("[v0] Cliente: abrirCapitulo chamado")
+    console.log("[v0] Cliente: numeroCapitulo:", numeroCapitulo)
+    console.log("[v0] Cliente: isLido:", isLido)
+    console.log("[v0] Cliente: capitulosLidos atual:", Array.from(capitulosLidos))
+
     setCapituloSelecionado(numeroCapitulo)
     setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)

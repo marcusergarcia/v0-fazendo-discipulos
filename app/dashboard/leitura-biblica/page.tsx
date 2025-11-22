@@ -57,6 +57,9 @@ export default async function LeituraBiblicaPage({
   const capitulosLidosArray = leituraData?.capitulos_lidos || []
   const capitulosLidos = new Set(leituraData?.capitulos_lidos || [])
 
+  console.log("[v0] [SERVER] Capítulos lidos carregados do banco:", capitulosLidosArray)
+  console.log("[v0] [SERVER] Discípulo ID:", discipulo.id)
+
   const semanasConcluidas = new Set<number>()
   const semanasEmProgresso = new Set<number>()
 
