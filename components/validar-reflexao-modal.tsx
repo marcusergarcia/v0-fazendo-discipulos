@@ -166,47 +166,17 @@ export function ValidarReflexaoModal({
           .eq("id", discipuloId)
       }
 
-      console.log("[v0] ===== BUSCANDO NOTIFICAÇÃO PARA DELETAR =====")
-      console.log("[v0] Buscando notificação com reflexao_id:", reflexao.id)
-
-      const { data: notificacao, error: selectNotifError } = await supabase
+      const { data: notificacao } = await supabase
         .from("notificacoes")
-        .select("*")
+        .select("id")
         .eq("reflexao_id", reflexao.id)
         .maybeSingle()
 
-      console.log("[v0] Resultado da busca de notificação:")
-      console.log("[v0] - Notificação encontrada:", notificacao)
-      console.log("[v0] - Erro na busca?", selectNotifError)
-
-      if (selectNotifError) {
-        console.error("[v0] ERRO ao buscar notificação:", selectNotifError)
-        toast.error("Erro ao buscar notificação: " + selectNotifError.message)
-      }
+      console.log("[v0] Notificação encontrada:", notificacao)
 
       if (notificacao) {
-        console.log("[v0] ===== DELETANDO NOTIFICAÇÃO =====")
-        console.log("[v0] ID da notificação a deletar:", notificacao.id)
-        console.log("[v0] Dados completos da notificação:", JSON.stringify(notificacao, null, 2))
-
-        const { data: deletedData, error: deleteNotifError } = await supabase
-          .from("notificacoes")
-          .delete()
-          .eq("id", notificacao.id)
-          .select()
-
-        console.log("[v0] Resultado do DELETE:")
-        console.log("[v0] - Dados deletados:", deletedData)
-        console.log("[v0] - Erro no DELETE?", deleteNotifError)
-
-        if (deleteNotifError) {
-          console.error("[v0] ERRO ao deletar notificação:", deleteNotifError)
-          toast.error("Erro ao deletar notificação: " + deleteNotifError.message)
-        } else {
-          console.log("[v0] ✓ Notificação deletada com sucesso!")
-        }
-      } else {
-        console.log("[v0] ⚠ Nenhuma notificação encontrada para esta reflexão")
+        const { error: deleteNotifError } = await supabase.from("notificacoes").delete().eq("id", notificacao.id)
+        console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
       }
 
       const { data: discipuloInfo } = await supabase

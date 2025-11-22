@@ -348,6 +348,8 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       .update({
         videos_assistidos: [],
         artigos_lidos: [],
+        reflexoes_concluidas: 0,
+        pontuacao_total: 0,
         completado: false,
         enviado_para_validacao: false,
         data_completado: null,
@@ -424,7 +426,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
-        discipulo_id: discipulo.id, // ID de quem enviou
         tipo: "reflexao",
         titulo: "Nova reflexão de vídeo",
         mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão no Passo ${numero}.`,
@@ -437,8 +438,6 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
       console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
-      console.log("[v0] SERVER: Discipulo ID:", discipulo.id)
-      console.log("[v0] SERVER: Discipulador ID:", discipulo.discipulador_id)
       notificacaoId = novaNotificacao.id
     }
   }
@@ -469,21 +468,15 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
 
       if (notificacaoId) {
-        console.log("[v0] SERVER: Atualizando notificação...")
-        console.log("[v0] SERVER: - Notificação ID:", notificacaoId)
-        console.log("[v0] SERVER: - Reflexão ID para vincular:", novaReflexao.id)
-
-        const { data: notifAtualizada, error: updateError } = await supabaseAdmin
+        const { error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
-          .select()
 
         if (updateError) {
-          console.error("[v0] SERVER: ❌ Erro ao atualizar notificação:", updateError)
+          console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
         } else {
           console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
-          console.log("[v0] SERVER: Notificação atualizada:", JSON.stringify(notifAtualizada, null, 2))
         }
       }
     }
@@ -504,6 +497,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       passo_numero: numero,
       videos_assistidos: [videoId],
       artigos_lidos: [],
+      reflexoes_concluidas: 1, // Incrementar reflexões concluídas
+      pontuacao_total: 10, // Adicionar pontuação total
       completado: false,
       enviado_para_validacao: false,
       data_inicio: new Date().toISOString(),
@@ -514,7 +509,11 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
       videosAtuais.push(videoId)
       const { error: progressoError } = await supabase
         .from("progresso_fases")
-        .update({ videos_assistidos: videosAtuais })
+        .update({
+          videos_assistidos: videosAtuais,
+          reflexoes_concluidas: progressoExistente.reflexoes_concluidas + 1, // Incrementar reflexões concluídas
+          pontuacao_total: progressoExistente.pontuacao_total + 10, // Adicionar pontuação total
+        })
         .eq("discipulo_id", discipulo.id)
         .eq("fase_numero", 1)
         .eq("passo_numero", numero)
@@ -583,7 +582,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
-        discipulo_id: discipulo.id, // ID de quem enviou
         tipo: "reflexao",
         titulo: "Nova reflexão de artigo",
         mensagem: `Seu discípulo leu o artigo "${titulo}" e fez uma reflexão no Passo ${numero}.`,
@@ -596,8 +594,6 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
       console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
-      console.log("[v0] SERVER: Discipulo ID:", discipulo.id)
-      console.log("[v0] SERVER: Discipulador ID:", discipulo.discipulador_id)
       notificacaoId = novaNotificacao.id
     }
   }
@@ -628,21 +624,15 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
 
       if (notificacaoId) {
-        console.log("[v0] SERVER: Atualizando notificação de artigo...")
-        console.log("[v0] SERVER: - Notificação ID:", notificacaoId)
-        console.log("[v0] SERVER: - Reflexão ID para vincular:", novaReflexao.id)
-
-        const { data: notifAtualizada, error: updateError } = await supabaseAdmin
+        const { error: updateError } = await supabaseAdmin
           .from("notificacoes")
           .update({ reflexao_id: novaReflexao.id })
           .eq("id", notificacaoId)
-          .select()
 
         if (updateError) {
-          console.error("[v0] SERVER: ❌ Erro ao atualizar notificação:", updateError)
+          console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
         } else {
           console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
-          console.log("[v0] SERVER: Notificação atualizada:", JSON.stringify(notifAtualizada, null, 2))
         }
       }
     }
@@ -663,6 +653,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       passo_numero: numero,
       videos_assistidos: [],
       artigos_lidos: [artigoId],
+      reflexoes_concluidas: 1, // Incrementar reflexões concluídas
+      pontuacao_total: 10, // Adicionar pontuação total
       completado: false,
       enviado_para_validacao: false,
       data_inicio: new Date().toISOString(),
@@ -673,7 +665,11 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       artigosAtuais.push(artigoId)
       const { error: progressoError } = await supabase
         .from("progresso_fases")
-        .update({ artigos_lidos: artigosAtuais })
+        .update({
+          artigos_lidos: artigosAtuais,
+          reflexoes_concluidas: progressoExistente.reflexoes_concluidas + 1, // Incrementar reflexões concluídas
+          pontuacao_total: progressoExistente.pontuacao_total + 10, // Adicionar pontuação total
+        })
         .eq("discipulo_id", discipulo.id)
         .eq("fase_numero", 1)
         .eq("passo_numero", numero)
