@@ -535,7 +535,7 @@ export function BibleReaderWithAutoCheck({
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-primary" />
             <CardTitle>
@@ -543,7 +543,7 @@ export function BibleReaderWithAutoCheck({
             </CardTitle>
             {capituloAtualJaLido && <Check className="w-5 h-5 text-green-500" />}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
               <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
                 <PlayCircle className="w-4 h-4" />
@@ -551,47 +551,53 @@ export function BibleReaderWithAutoCheck({
               </Button>
             )}
             {(rastreamentoAtivo || capituloAtualJaLido) && (
-              <div className="flex gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUndo}
-                  disabled={historyIndex < 0}
-                  title="Desfazer"
-                  className="h-7 w-7 p-0 bg-transparent"
-                >
-                  <Undo2 className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRedo}
-                  disabled={historyIndex >= history.length - 1}
-                  title="Refazer"
-                  className="h-7 w-7 p-0"
-                >
-                  <Redo2 className="w-4 h-4" />
-                </Button>
+              <div className="flex flex-wrap gap-1.5 items-center justify-end sm:justify-start w-full sm:w-auto">
+                <div className="flex gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUndo}
+                    disabled={historyIndex < 0}
+                    title="Desfazer"
+                    className="h-7 w-7 p-0 bg-transparent"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRedo}
+                    disabled={historyIndex >= history.length - 1}
+                    title="Refazer"
+                    className="h-7 w-7 p-0"
+                  >
+                    <Redo2 className="w-4 h-4" />
+                  </Button>
+                </div>
 
-                {HIGHLIGHT_COLORS.map((color) => (
-                  <button
-                    key={color.value}
-                    onClick={() => {
-                      setSelectedColor(color.value)
-                      setHighlightMode(true)
-                    }}
-                    className={cn(
-                      "w-7 h-7 rounded border-2 transition-all hover:scale-110",
-                      color.class,
-                      selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
-                    )}
-                    title={color.name}
-                  />
-                ))}
+                <div className="flex gap-1.5">
+                  {HIGHLIGHT_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => {
+                        setSelectedColor(color.value)
+                        setHighlightMode(true)
+                      }}
+                      className={cn(
+                        "w-7 h-7 rounded border-2 transition-all hover:scale-110",
+                        color.class,
+                        selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
+                      )}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+
                 <Button
                   variant={highlightMode ? "default" : "outline"}
                   size="sm"
                   onClick={() => setHighlightMode(!highlightMode)}
+                  className="h-7 px-2"
                 >
                   <Highlighter className="w-4 h-4" />
                 </Button>
