@@ -51,10 +51,11 @@ export default async function LeituraBiblicaPage({
   const { data: leituraData } = await supabase
     .from("leituras_capitulos")
     .select("capitulos_lidos")
-    .eq("usuario_id", discipulo.id)
+    .eq("usuario_id", user.id)
     .single()
 
   console.log("[v0] Page.tsx: DEBUG leituraData:", {
+    userId: user.id,
     discipuloId: discipulo.id,
     leituraData,
     capitulosLidosRaw: leituraData?.capitulos_lidos,
