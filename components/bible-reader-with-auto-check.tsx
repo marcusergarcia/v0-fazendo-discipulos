@@ -146,6 +146,22 @@ export function BibleReaderWithAutoCheck({
     }
   }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
 
+  useEffect(() => {
+    console.log("[v0] BibleReader: verificando se capítulo está lido:", {
+      currentChapter,
+      jaLido: capitulosLidos.has(currentChapter),
+      capitulosLidosArray: Array.from(capitulosLidos),
+      startChapter,
+      capituloInicialJaLido,
+    })
+
+    const isLido = capitulosLidos.has(currentChapter)
+    console.log("[v0] BibleReader: resultado da verificação:", { isLido })
+
+    setCapituloAtualJaLido(isLido)
+    setRastreamentoAtivo(false)
+  }, [currentChapter, capitulosLidos, capituloInicialJaLido, startChapter])
+
   const loadChapter = async (chapter: number) => {
     setLoading(true)
     setError(null)
@@ -374,6 +390,11 @@ export function BibleReaderWithAutoCheck({
       </Card>
     )
   }
+
+  console.log("[v0] BibleReader: renderizando botão Ler Agora, capituloAtualJaLido:", {
+    capituloAtualJaLido,
+    rastreamentoAtivo: false,
+  })
 
   return (
     <Card className="w-full">

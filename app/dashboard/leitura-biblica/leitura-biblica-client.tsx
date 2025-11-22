@@ -35,11 +35,18 @@ export default function LeituraBiblicaClient({
 }: LeituraBiblicaClientProps) {
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
-  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
+  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(
+    new Set(capitulosLidosInicial.map((id) => (typeof id === "string" ? Number.parseInt(id, 10) : id))),
+  )
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
   const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
+
+  console.log("[v0] Cliente: inicializado com capítulos lidos:", {
+    capitulosLidosInicial,
+    capitulosLidosSet: Array.from(capitulosLidos),
+  })
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
@@ -65,7 +72,7 @@ export default function LeituraBiblicaClient({
       numeroCapitulo,
       isLido,
       capitulosLidosAtual: Array.from(capitulosLidos),
-      "capitulo está lido?": capitulosLidos.has(numeroCapitulo),
+      "capítulo está lido?": capitulosLidos.has(numeroCapitulo),
     })
 
     setCapituloSelecionado(numeroCapitulo)

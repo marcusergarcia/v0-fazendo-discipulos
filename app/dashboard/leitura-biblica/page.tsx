@@ -54,7 +54,15 @@ export default async function LeituraBiblicaPage({
     .eq("usuario_id", discipulo.id)
     .single()
 
-  const capitulosLidos = new Set(leituraData?.capitulos_lidos || [])
+  const capitulosLidosArray = (leituraData?.capitulos_lidos || []).map((id: any) =>
+    typeof id === "string" ? Number.parseInt(id, 10) : id,
+  )
+  const capitulosLidos = new Set(capitulosLidosArray)
+
+  console.log("[v0] Page.tsx: capítulos lidos carregados do banco:", {
+    capitulosLidosArray,
+    capitulosLidosSet: Array.from(capitulosLidos),
+  })
 
   const semanasConcluidas = new Set<number>()
   const semanasEmProgresso = new Set<number>()
