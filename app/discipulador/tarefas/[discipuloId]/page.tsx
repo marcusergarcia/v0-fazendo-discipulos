@@ -7,7 +7,6 @@ import { ArrowLeft, CheckCircle, FileText, Video } from "lucide-react"
 import Link from "next/link"
 import { AprovarTarefaForm } from "./aprovar-tarefa-form"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ReflexoesClient } from "../../discipulador-reflexoes-client"
 
 export default async function TarefasDiscipuloPage({
   params,
@@ -22,9 +21,8 @@ export default async function TarefasDiscipuloPage({
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  console.log("[v0] ===== PÁGINA INDIVIDUAL DO DISCÍPULO =====")
-  console.log("[v0] User ID (discipulador):", user.id)
-  console.log("[v0] Discipulo ID buscado:", discipuloId)
+  console.log("[v0] TarefasDiscipuloPage - User ID:", user.id)
+  console.log("[v0] TarefasDiscipuloPage - Discipulo ID buscado:", discipuloId)
 
   // Buscar informações do discípulo
   const { data: discipulo, error: discipuloError } = await supabase
@@ -52,29 +50,10 @@ export default async function TarefasDiscipuloPage({
     .eq("enviado_para_validacao", true)
     .order("created_at", { ascending: false })
 
-  console.log("[v0] Progressos pendentes encontrados:", progressos?.length || 0)
+  console.log("[v0] Progressos pendentes:", progressos?.length || 0)
   if (progressosError) console.log("[v0] Erro ao buscar progressos:", progressosError)
 
-  console.log("[v0] ===== BUSCANDO TODAS AS REFLEXÕES DO DISCÍPULO =====")
-  const { data: todasReflexoes, error: todasReflexoesError } = await supabase
-    .from("reflexoes_conteudo")
-    .select("*")
-    .eq("discipulo_id", discipuloId)
-    .order("data_criacao", { ascending: false })
-
-  console.log("[v0] Total de reflexões no banco (todas):", todasReflexoes?.length || 0)
-  console.log(
-    "[v0] Detalhes de TODAS as reflexões:",
-    todasReflexoes?.map((r) => ({
-      id: r.id.substring(0, 8),
-      titulo: r.titulo?.substring(0, 30),
-      situacao: r.situacao,
-      xp_ganho: r.xp_ganho,
-      data_aprovacao: r.data_aprovacao,
-    })) || [],
-  )
-
-  console.log("[v0] ===== FILTRANDO APENAS REFLEXÕES PENDENTES =====")
+  // Filtrar apenas reflexões com situação 'enviado' (pendentes de aprovação)
   const { data: reflexoes, error: reflexoesError } = await supabase
     .from("reflexoes_conteudo")
     .select("*")
@@ -82,19 +61,12 @@ export default async function TarefasDiscipuloPage({
     .eq("situacao", "enviado")
     .order("data_criacao", { ascending: false })
 
-  console.log("[v0] Reflexões ENVIADAS (pendentes) encontradas:", reflexoes?.length || 0)
+  console.log("[v0] Reflexões enviadas encontradas:", reflexoes?.length || 0)
   console.log(
-    "[v0] Detalhes das reflexões PENDENTES:",
-    reflexoes?.map((r) => ({
-      id: r.id.substring(0, 8),
-      titulo: r.titulo?.substring(0, 30),
-      situacao: r.situacao,
-      tipo: r.tipo,
-      fase: r.fase_numero,
-      passo: r.passo_numero,
-    })) || [],
+    "[v0] Detalhes das reflexões:",
+    reflexoes?.map((r) => ({ id: r.id, titulo: r.titulo, situacao: r.situacao })) || [],
   )
-  if (reflexoesError) console.log("[v0] Erro ao buscar reflexões enviadas:", reflexoesError)
+  if (reflexoesError) console.log("[v0] Erro ao buscar reflexões:", reflexoesError)
 
   const nome =
     discipulo.profile?.nome_completo ||
@@ -108,9 +80,6 @@ export default async function TarefasDiscipuloPage({
     .join("")
     .substring(0, 2)
     .toUpperCase()
-
-  console.log("[v0] Nome do discípulo:", nome)
-  console.log("[v0] ===== RENDERIZANDO PÁGINA =====")
 
   return (
     <div className="min-h-screen bg-background">
@@ -200,15 +169,7 @@ export default async function TarefasDiscipuloPage({
                         <p className="text-sm whitespace-pre-wrap">{reflexao.reflexao}</p>
                       </div>
                     </div>
-                    <div className="flex justify-end">
-                      <ReflexoesClient
-                        reflexao={reflexao}
-                        discipuloId={discipuloId}
-                        discipuloNome={nome}
-                        xp={reflexao.xp_ganho}
-                        situacao={reflexao.situacao}
-                      />
-                    </div>
+                    <AprovarTarefaForm tipo="reflexao" tarefaId={reflexao.id} discipuloId={discipuloId} xpBase={20} />
                   </CardContent>
                 </Card>
               ))}
