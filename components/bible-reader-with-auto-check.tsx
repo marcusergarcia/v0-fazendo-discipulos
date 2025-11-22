@@ -72,7 +72,6 @@ export function BibleReaderWithAutoCheck({
   }, [])
 
   useEffect(() => {
-    console.log("[v0] BibleReader: startChapter mudou:", { startChapter })
     setCurrentChapter(startChapter)
   }, [startChapter])
 
@@ -82,18 +81,83 @@ export function BibleReaderWithAutoCheck({
   }, [currentChapter, livroId])
 
   useEffect(() => {
-    const isLido = capitulosLidos.has(currentChapter)
-    console.log("[v0] BibleReader: verificando se capítulo está lido:", {
-      currentChapter,
-      jaLido: isLido,
-      capitulosLidosArray: Array.from(capitulosLidos),
-    })
-    setCapituloAtualJaLido(isLido)
+    if (!loading && chapterData && !capitulosLidos.has(currentChapter) && rastreamentoAtivo) {
+      const startTime = Date.now()
+      setReadingStartTime(startTime)
+      setScrolledToBottom(false)
+      setAutoMarked(false)
+      setTimeElapsed(0)
 
-    if (isLido) {
-      setRastreamentoAtivo(false)
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+
+      timerRef.current = setInterval(() => {
+        setTimeElapsed(Date.now() - startTime)
+      }, 1000)
     }
-  }, [currentChapter, capitulosLidos])
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+    }
+  }, [loading, chapterData, currentChapter, capitulosLidos, rastreamentoAtivo])
+
+  useEffect(() => {
+    if (!rastreamentoAtivo) return
+
+    const handleScroll = () => {
+      const scrollContainer = scrollAreaRef.current?.querySelector(
+        "[data-radix-scroll-area-viewport]",
+      ) as HTMLDivElement
+
+      if (scrollContainer) {
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 20
+
+        if (isAtBottom && !scrolledToBottom) {
+          setScrolledToBottom(true)
+        }
+      }
+    }
+
+    const scrollContainer = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener("scroll", handleScroll)
+      handleScroll()
+
+      return () => scrollContainer.removeEventListener("scroll", handleScroll)
+    }
+  }, [loading, chapterData, currentChapter, rastreamentoAtivo])
+
+  useEffect(() => {
+    if (
+      scrolledToBottom &&
+      timeElapsed >= MIN_READ_TIME_MS &&
+      !autoMarked &&
+      !capitulosLidos.has(currentChapter) &&
+      !loading &&
+      rastreamentoAtivo
+    ) {
+      handleAutoMarkAsRead()
+    }
+  }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
+
+  useEffect(() => {
+    const jaLido = capitulosLidos.has(currentChapter)
+
+    console.log("[v0] Verificando se capítulo está lido:", {
+      currentChapter,
+      jaLido,
+      capitulosLidosArray: Array.from(capitulosLidos),
+      startChapter,
+      capituloInicialJaLido,
+    })
+
+    setCapituloAtualJaLido(jaLido)
+  }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
@@ -141,23 +205,18 @@ export function BibleReaderWithAutoCheck({
   }
 
   const iniciarRastreamento = () => {
-    console.log("[v0] BibleReader: iniciando rastreamento")
     setRastreamentoAtivo(true)
   }
 
   const handlePrevChapter = () => {
     if (currentChapter > startChapter) {
-      const proximoCapitulo = currentChapter - 1
-      const proximoJaLido = capitulosLidos.has(proximoCapitulo)
-
       console.log("[v0] Botão Anterior clicado:", {
         currentChapter,
-        proximoCapitulo,
-        proximoJaLido,
+        proximoCapitulo: currentChapter - 1,
         capitulosLidos: Array.from(capitulosLidos),
       })
 
-      setCurrentChapter(proximoCapitulo)
+      setCurrentChapter(currentChapter - 1)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
       setReadingStartTime(null)
@@ -168,17 +227,13 @@ export function BibleReaderWithAutoCheck({
 
   const handleNextChapter = () => {
     if (currentChapter < endChapter) {
-      const proximoCapitulo = currentChapter + 1
-      const proximoJaLido = capitulosLidos.has(proximoCapitulo)
-
       console.log("[v0] Botão Próximo clicado:", {
         currentChapter,
-        proximoCapitulo,
-        proximoJaLido,
+        proximoCapitulo: currentChapter + 1,
         capitulosLidos: Array.from(capitulosLidos),
       })
 
-      setCurrentChapter(proximoCapitulo)
+      setCurrentChapter(currentChapter + 1)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
       setReadingStartTime(null)
@@ -323,12 +378,6 @@ export function BibleReaderWithAutoCheck({
     )
   }
 
-  console.log("[v0] BibleReader: renderizando botão Ler Agora:", {
-    capituloAtualJaLido,
-    rastreamentoAtivo,
-    mostraBotao: !capituloAtualJaLido && !loading && !rastreamentoAtivo,
-  })
-
   return (
     <Card className="w-full">
       <CardHeader>
@@ -442,9 +491,4 @@ export function BibleReaderWithAutoCheck({
       </CardContent>
     </Card>
   )
-}
-
-type Highlight = {
-  texto_selecionado: string
-  cor: string
 }

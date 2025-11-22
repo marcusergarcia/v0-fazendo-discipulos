@@ -51,27 +51,10 @@ export default async function LeituraBiblicaPage({
   const { data: leituraData } = await supabase
     .from("leituras_capitulos")
     .select("capitulos_lidos")
-    .eq("usuario_id", user.id)
+    .eq("usuario_id", discipulo.id)
     .single()
 
-  console.log("[v0] Page.tsx: DEBUG leituraData:", {
-    userId: user.id,
-    discipuloId: discipulo.id,
-    leituraData,
-    capitulosLidosRaw: leituraData?.capitulos_lidos,
-    tipoDeDado: typeof leituraData?.capitulos_lidos,
-    ehArray: Array.isArray(leituraData?.capitulos_lidos),
-  })
-
-  const capitulosLidosArray = (leituraData?.capitulos_lidos || []).map((id: any) =>
-    typeof id === "string" ? Number.parseInt(id, 10) : id,
-  )
-  const capitulosLidos = new Set(capitulosLidosArray)
-
-  console.log("[v0] Page.tsx: capítulos lidos carregados do banco:", {
-    capitulosLidosArray,
-    capitulosLidosSet: Array.from(capitulosLidos),
-  })
+  const capitulosLidos = new Set(leituraData?.capitulos_lidos || [])
 
   const semanasConcluidas = new Set<number>()
   const semanasEmProgresso = new Set<number>()
@@ -257,7 +240,6 @@ export default async function LeituraBiblicaPage({
             }}
             discipuloId={discipulo.id}
             leituraJaConfirmada={semanasConcluidas.has(leituraAtual.semana)}
-            capitulosLidosInicial={Array.from(capitulosLidos)}
           />
         )}
       </div>

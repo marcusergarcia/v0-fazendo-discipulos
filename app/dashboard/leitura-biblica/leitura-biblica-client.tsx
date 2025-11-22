@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
+import { createBrowserClient } from "@supabase/ssr"
 
 interface LeituraSemanal {
   semana: number
@@ -17,35 +18,56 @@ interface LeituraSemanal {
   totalCapitulos: number
   fase: string
   descricao: string
-  capitulosSemana: number[]
+  capitulosSemana: number[] // Array de IDs dos capítulos da semana
 }
 
 interface LeituraBiblicaClientProps {
   leituraAtual: LeituraSemanal
   discipuloId: string
   leituraJaConfirmada: boolean
-  capitulosLidosInicial?: number[]
 }
 
 export default function LeituraBiblicaClient({
   leituraAtual,
   discipuloId,
   leituraJaConfirmada,
-  capitulosLidosInicial = [],
 }: LeituraBiblicaClientProps) {
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
-  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(
-    new Set(capitulosLidosInicial.map((id) => (typeof id === "string" ? Number.parseInt(id, 10) : id))),
-  )
+  const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
   const [leitorAberto, setLeitorAberto] = useState(false)
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
-  const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
+  const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
+  const [carregandoCapitulos, setCarregandoCapitulos] = useState(true)
 
-  console.log("[v0] Cliente: inicializado com capítulos lidos:", {
-    capitulosLidosInicial,
-    capitulosLidosSet: Array.from(capitulosLidos),
-  })
+  useEffect(() => {
+    const carregarCapitulosLidos = async () => {
+      setCarregandoCapitulos(true)
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
+
+      const { data, error } = await supabase
+        .from("leituras_capitulos")
+        .select("capitulos_lidos")
+        .eq("usuario_id", discipuloId)
+        .single()
+
+      if (data && !error) {
+        const capitulosLidosArray = data.capitulos_lidos || []
+        setCapitulosLidos(new Set(capitulosLidosArray))
+
+        const capitulosDaSemana = leituraAtual.capitulosSemana || []
+        const lidosDaSemana = capitulosLidosArray.filter((id: number) => capitulosDaSemana.includes(id))
+        setChaptersRead(lidosDaSemana.length)
+      }
+
+      setCarregandoCapitulos(false)
+    }
+
+    carregarCapitulosLidos()
+  }, [discipuloId, leituraAtual.capitulosSemana])
 
   const handleProgressChange = (lidos: number, total: number) => {
     setChaptersRead(lidos)
@@ -67,14 +89,8 @@ export default function LeituraBiblicaClient({
   }
 
   const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
-    console.log("[v0] Cliente: abrirCapitulo chamado para capítulo:", {
-      numeroCapitulo,
-      isLido,
-      capitulosLidosAtual: Array.from(capitulosLidos),
-      "capítulo está lido?": capitulosLidos.has(numeroCapitulo),
-    })
-
     setCapituloSelecionado(numeroCapitulo)
+    setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
   }
 
@@ -133,6 +149,7 @@ export default function LeituraBiblicaClient({
                   endChapter={leituraAtual.capituloFim}
                   capitulosLidos={capitulosLidos}
                   onChapterRead={handleChapterRead}
+                  capituloInicialJaLido={capituloSelecionadoJaLido}
                 />
               </div>
             )}
