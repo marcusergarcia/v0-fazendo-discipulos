@@ -109,7 +109,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   let temaSemana = ""
   let descricaoSemana = ""
 
-  if (numero === 1 || numero === 2) {
+  if (numero === 1 || numero === 2 || numero === 3) {
     // Buscar capítulos lidos do discípulo
     const { data: leituraCapitulos } = await supabase
       .from("leituras_capitulos")

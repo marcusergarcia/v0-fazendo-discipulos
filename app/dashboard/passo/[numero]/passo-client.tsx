@@ -425,8 +425,9 @@ export default function PassoClient({
             <CardContent className="space-y-3">
               {passo.videos.map((video: any) => {
                 const assistido = videosAssistidos.includes(video.id)
-                const reflexaoInfo =
-                  video.reflexao_situacao === "aprovado" ? { situacao: "aprovado", xp: video.reflexao_xp || 0 } : null
+                const temReflexao = video.reflexao_situacao !== null && video.reflexao_situacao !== undefined
+                const reflexaoAprovada = video.reflexao_situacao === "aprovado"
+                const reflexaoPendente = temReflexao && !reflexaoAprovada
 
                 return (
                   <div
@@ -452,15 +453,15 @@ export default function PassoClient({
                         <Play className="w-4 h-4 mr-1" />
                         Assistir
                       </Button>
-                      {reflexaoInfo?.situacao === "aprovado" ? (
+                      {reflexaoAprovada ? (
                         <Badge className="bg-green-600 text-white justify-center sm:justify-start whitespace-nowrap">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Aprovado {reflexaoInfo.xp}XP
+                          Aprovado {video.reflexao_xp}XP
                         </Badge>
-                      ) : assistido ? (
-                        <Badge className="bg-accent text-accent-foreground justify-center sm:justify-start whitespace-nowrap">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Missão Cumprida
+                      ) : reflexaoPendente ? (
+                        <Badge className="bg-yellow-600 text-white justify-center sm:justify-start whitespace-nowrap">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Aguardando Aprovação
                         </Badge>
                       ) : (
                         <Button
@@ -498,8 +499,9 @@ export default function PassoClient({
             <CardContent className="space-y-3">
               {passo.artigos.map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
-                const reflexaoInfo =
-                  artigo.reflexao_situacao === "aprovado" ? { situacao: "aprovado", xp: artigo.reflexao_xp || 0 } : null
+                const temReflexao = artigo.reflexao_situacao !== null && artigo.reflexao_situacao !== undefined
+                const reflexaoAprovada = artigo.reflexao_situacao === "aprovado"
+                const reflexaoPendente = temReflexao && !reflexaoAprovada
 
                 return (
                   <div
@@ -523,15 +525,15 @@ export default function PassoClient({
                         <ExternalLink className="w-4 h-4 mr-1" />
                         Ler
                       </Button>
-                      {reflexaoInfo?.situacao === "aprovado" ? (
+                      {reflexaoAprovada ? (
                         <Badge className="bg-green-600 text-white justify-center sm:justify-start">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Aprovado {reflexaoInfo.xp}XP
+                          Aprovado {artigo.reflexao_xp}XP
                         </Badge>
-                      ) : lido ? (
-                        <Badge className="bg-accent text-accent-foreground justify-center sm:justify-start">
-                          <CheckCheck className="w-3 h-3 mr-1" />
-                          Missão Cumprida
+                      ) : reflexaoPendente ? (
+                        <Badge className="bg-yellow-600 text-white justify-center sm:justify-start">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Aguardando Aprovação
                         </Badge>
                       ) : (
                         <Button

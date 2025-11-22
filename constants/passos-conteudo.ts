@@ -70,16 +70,17 @@ export const PASSOS_CONTEUDO = {
       "Esse amor é constante, imutável e demonstrado através de suas ações na história.",
       "O maior ato desse amor foi enviar Seu Filho Jesus Cristo para restaurar nossa relação com Ele.",
       "Base bíblica:",
-      "• João 3:16 — \"Porque Deus amou o mundo de tal maneira…\"",
-      "• Romanos 5:8 — \"Mas Deus prova o seu amor para conosco…\"",
-      "• 1 João 4:7–10 — \"Deus é amor.\"",
+      '• João 3:16 — "Porque Deus amou o mundo de tal maneira…"',
+      '• Romanos 5:8 — "Mas Deus prova o seu amor para conosco…"',
+      '• 1 João 4:7–10 — "Deus é amor."',
       "O discipulado não começa com medo, pressão ou religião, mas com amor.",
     ],
     versiculos: [
-      { 
-        texto: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.", 
-        referencia: "João 3:16" 
-      }
+      {
+        texto:
+          "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.",
+        referencia: "João 3:16",
+      },
     ],
     videos: [
       {
@@ -125,9 +126,89 @@ export const PASSOS_CONTEUDO = {
       },
     ],
     perguntaChave: "Como você descreveria o amor de Deus por você, de forma pessoal?",
-    missao: 'Escrever uma pequena carta (5 a 10 linhas) respondendo: "Como o amor de Deus pode mudar a forma como eu vivo hoje?"',
+    missao:
+      'Escrever uma pequena carta (5 a 10 linhas) respondendo: "Como o amor de Deus pode mudar a forma como eu vivo hoje?"',
     recompensa: "Amado por Deus",
     icone: "❤️",
     xp: 100,
   },
+  3: {
+    titulo: "O Pecado Entrou no Mundo",
+    fase: "FASE 1: O Evangelho",
+    conteudo: [
+      "O pecado não é apenas 'errar'; é romper o padrão e o propósito de Deus.",
+      "Quando o pecado entrou no mundo, ele trouxe:",
+      "• Distância espiritual",
+      "• Vergonha",
+      "• Culpa",
+      "• Rejeição da presença de Deus",
+      "O ser humano perdeu intimidade, direção e comunhão com Deus.",
+      "Base bíblica:",
+      '• Romanos 3:23 — "Todos pecaram e carecem da glória de Deus."',
+      "• Gênesis 3 — A queda da humanidade.",
+      '• Isaías 59:2 — "O pecado faz separação entre nós e Deus."',
+    ],
+    versiculos: [
+      {
+        texto: "Porque todos pecaram e destituídos estão da glória de Deus.",
+        referencia: "Romanos 3:23",
+      },
+      {
+        texto:
+          "Mas as vossas iniquidades fazem separação entre vós e o vosso Deus; e os vossos pecados encobrem o seu rosto de vós, para que não vos ouça.",
+        referencia: "Isaías 59:2",
+      },
+    ],
+    videos: [
+      {
+        id: "video-p3-1",
+        titulo: "O que é pecado?",
+        canal: "Douglas Gonçalves",
+        duracao: "3:00",
+        url: "https://www.youtube.com/watch?v=y9MZ9E9I0lU",
+      },
+      {
+        id: "video-p3-2",
+        titulo: "A Queda",
+        canal: "BibleProject Português",
+        duracao: "6:17",
+        url: "https://www.youtube.com/watch?v=BhY6O85v0aI",
+      },
+      {
+        id: "video-p3-3",
+        titulo: "Por que Deus Permite o Pecado?",
+        canal: "Primo Cast",
+        duracao: "8:15",
+        url: "https://www.youtube.com/watch?v=fJtPbDyb5hE",
+      },
+    ],
+    artigos: [
+      {
+        id: "artigo-p3-1",
+        titulo: "Pecado",
+        fonte: "Wikipédia",
+        url: "https://pt.wikipedia.org/wiki/Pecado",
+      },
+      {
+        id: "artigo-p3-2",
+        titulo: "Queda do Homem",
+        fonte: "Wikipédia",
+        url: "https://pt.wikipedia.org/wiki/Queda_do_Homem",
+      },
+      {
+        id: "artigo-p3-3",
+        titulo: "O que é Pecado segundo a Bíblia?",
+        fonte: "Respostas Bíblicas",
+        url: "https://www.respostas.com.br/o-que-e-pecado/",
+      },
+    ],
+    perguntaChave: "Por que o pecado causa separação entre o homem e Deus?",
+    missao:
+      "Identifique uma área da sua vida onde você precisa de mudança e explique por que. (Exemplos: relacionamentos, temperamento, vida espiritual, rotina/hábitos, pureza/pensamentos, obediência a Deus)",
+    recompensa: "Reconhecimento da Verdade",
+    icone: "👁️",
+    xp: 100,
+  },
 }
+
+export type PassoNumero = keyof typeof PASSOS_CONTEUDO

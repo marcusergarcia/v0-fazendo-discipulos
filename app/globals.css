@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -89,241 +90,55 @@
   --sidebar-ring: oklch(0.6 0.18 250);
 }
 
-/* Removido @theme com var() que causava erro, movido para @theme inline sem var() */
 @theme inline {
-  /* Corrigindo fontes para usar valores literais sem aspas */
-  --font-sans: Geist, Geist Fallback;
-  --font-mono: Geist Mono, Geist Mono Fallback;
-  
-  --color-background: oklch(0.98 0.005 264);
-  --color-foreground: oklch(0.15 0.01 270);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.15 0.01 270);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.15 0.01 270);
-  --color-primary: oklch(0.55 0.15 250);
-  --color-primary-foreground: oklch(0.99 0 0);
-  --color-secondary: oklch(0.75 0.12 85);
-  --color-secondary-foreground: oklch(0.15 0.01 270);
-  --color-muted: oklch(0.95 0.005 264);
-  --color-muted-foreground: oklch(0.5 0.01 270);
-  --color-accent: oklch(0.65 0.15 160);
-  --color-accent-foreground: oklch(0.99 0 0);
-  --color-destructive: oklch(0.55 0.22 25);
-  --color-destructive-foreground: oklch(0.99 0 0);
-  --color-border: oklch(0.9 0.01 264);
-  --color-input: oklch(0.9 0.01 264);
-  --color-ring: oklch(0.55 0.15 250);
-  --color-chart-1: oklch(0.55 0.15 250);
-  --color-chart-2: oklch(0.65 0.15 160);
-  --color-chart-3: oklch(0.75 0.12 85);
-  --color-chart-4: oklch(0.6 0.18 300);
-  --color-chart-5: oklch(0.7 0.12 40);
-  
-  --radius-sm: 0.5rem;
-  --radius-md: 0.625rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  
-  --color-sidebar: oklch(0.98 0.005 264);
-  --color-sidebar-foreground: oklch(0.15 0.01 270);
-  --color-sidebar-primary: oklch(0.55 0.15 250);
-  --color-sidebar-primary-foreground: oklch(0.99 0 0);
-  --color-sidebar-accent: oklch(0.95 0.005 264);
-  --color-sidebar-accent-foreground: oklch(0.15 0.01 270);
-  --color-sidebar-border: oklch(0.9 0.01 264);
-  --color-sidebar-ring: oklch(0.55 0.15 250);
+  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 button {
   cursor: pointer;
-}
-
-/* Adicionando keyframes e utilities de animação necessárias para os componentes UI */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes zoom-in {
-  from {
-    transform: scale(0.95);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-@keyframes zoom-out {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(0.95);
-  }
-}
-
-@keyframes slide-in-from-top {
-  from {
-    transform: translateY(-0.5rem);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-from-bottom {
-  from {
-    transform: translateY(0.5rem);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes slide-in-from-left {
-  from {
-    transform: translateX(-0.5rem);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-in-from-right {
-  from {
-    transform: translateX(0.5rem);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-out-to-top {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-0.5rem);
-  }
-}
-
-@keyframes slide-out-to-bottom {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(0.5rem);
-  }
-}
-
-@keyframes slide-out-to-left {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-0.5rem);
-  }
-}
-
-@keyframes slide-out-to-right {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(0.5rem);
-  }
-}
-
-/* Utilities de animação */
-.animate-in {
-  animation-duration: 150ms;
-  animation-fill-mode: both;
-}
-
-.animate-out {
-  animation-duration: 150ms;
-  animation-fill-mode: both;
-}
-
-.fade-in-0 {
-  animation-name: fade-in;
-}
-
-.fade-out-0 {
-  animation-name: fade-out;
-}
-
-.zoom-in-95 {
-  animation-name: zoom-in;
-}
-
-.zoom-out-95 {
-  animation-name: zoom-out;
-}
-
-.slide-in-from-top-2 {
-  animation-name: slide-in-from-top;
-}
-
-.slide-in-from-bottom-2 {
-  animation-name: slide-in-from-bottom;
-}
-
-.slide-in-from-left-2 {
-  animation-name: slide-in-from-left;
-}
-
-.slide-in-from-right-2 {
-  animation-name: slide-in-from-right;
-}
-
-.slide-in-from-left-1\/2 {
-  animation-name: slide-in-from-left;
-}
-
-.slide-in-from-top-\[48\%\] {
-  animation-name: slide-in-from-top;
-}
-
-.slide-in-from-top-full {
-  animation-name: slide-in-from-top;
-}
-
-.slide-out-to-top {
-  animation-name: slide-out-to-top;
-}
-
-.slide-out-to-left-1\/2 {
-  animation-name: slide-out-to-left;
-}
-
-.slide-out-to-top-\[48\%\] {
-  animation-name: slide-out-to-top;
-}
-
-.slide-out-to-right-full {
-  animation-name: slide-out-to-right;
-}
-
-/* Suporte para data attributes */
-[data-state="open"].animate-in {
-  animation-play-state: running;
-}
-
-[data-state="closed"].animate-out {
-  animation-play-state: running;
 }

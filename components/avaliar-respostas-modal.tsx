@@ -128,8 +128,8 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         const todasReflexoesAprovadas =
           reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
 
-        // Calcular qual semana corresponde ao passo atual (cada fase tem semanas específicas)
-        const semanaCorrespondente = calcularSemanaParaPasso(resposta.fase_numero, resposta.passo_numero)
+        // Calcular qual semana corresponde ao passo atual
+        const semanaCorrespondente = resposta.passo_numero // Passo 1 = Semana 1, Passo 2 = Semana 2, etc.
 
         // Buscar se todos os capítulos da semana foram lidos
         const { data: planoSemana } = await supabase
@@ -152,10 +152,19 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
 
           // Verificar se todos os capítulos da semana foram lidos
           leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
+
+          console.log("[v0] Verificação leitura bíblica:", {
+            semana: semanaCorrespondente,
+            capitulosSemana,
+            capitulosLidos: Array.from(capitulosLidos),
+            leituraConcluida: leituraBiblicaConcluida,
+          })
         }
 
         // Se tudo aprovado E leitura bíblica concluída, marcar passo como completado
         if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas && leituraBiblicaConcluida) {
+          console.log("[v0] Todas as condições atendidas! Liberando próximo passo...")
+
           // Marcar passo como completado
           await supabase
             .from("progresso_fases")
@@ -165,25 +174,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
             })
             .eq("discipulo_id", resposta.discipulo_id)
             .eq("passo_numero", resposta.passo_numero)
-
-          // Registrar semana de leitura como concluída no progresso
-          const { data: progressoAtual } = await supabase
-            .from("progresso_fases")
-            .select("leituras_semanais_concluidas")
-            .eq("discipulo_id", resposta.discipulo_id)
-            .eq("passo_numero", resposta.passo_numero)
-            .single()
-
-          const semanasJaConcluidas = progressoAtual?.leituras_semanais_concluidas || []
-          if (!semanasJaConcluidas.includes(semanaCorrespondente)) {
-            await supabase
-              .from("progresso_fases")
-              .update({
-                leituras_semanais_concluidas: [...semanasJaConcluidas, semanaCorrespondente],
-              })
-              .eq("discipulo_id", resposta.discipulo_id)
-              .eq("passo_numero", resposta.passo_numero)
-          }
 
           const insigniaNome = getInsigniaNome(resposta.passo_numero)
           await supabase.from("recompensas").insert({
@@ -200,10 +190,43 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
           if (proximoPasso <= 10) {
             await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", resposta.discipulo_id)
 
+            const { data: progressoExistente } = await supabase
+              .from("progresso_fases")
+              .select("id")
+              .eq("discipulo_id", resposta.discipulo_id)
+              .eq("passo_numero", proximoPasso)
+              .maybeSingle()
+
+            if (!progressoExistente) {
+              await supabase.from("progresso_fases").insert({
+                discipulo_id: resposta.discipulo_id,
+                fase_numero: resposta.fase_numero,
+                passo_numero: proximoPasso,
+                pontuacao_total: 0,
+                completado: false,
+                videos_assistidos: [],
+                artigos_lidos: [],
+                reflexoes_concluidas: 0,
+                data_inicio: new Date().toISOString(),
+                dias_no_passo: 0,
+                alertado_tempo_excessivo: false,
+                enviado_para_validacao: false,
+              })
+            }
+
             console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
           }
-        } else if (!leituraBiblicaConcluida) {
-          setError("O discípulo ainda precisa completar a leitura bíblica da semana " + semanaCorrespondente)
+        } else {
+          console.log("[v0] Condições não atendidas:", {
+            perguntaAprovada,
+            missaoAprovada,
+            todasReflexoesAprovadas,
+            leituraBiblicaConcluida,
+          })
+
+          if (!leituraBiblicaConcluida) {
+            setError("O discípulo ainda precisa completar a leitura bíblica da semana " + semanaCorrespondente)
+          }
         }
       }
 
@@ -295,23 +318,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
       </Dialog>
     </>
   )
-}
-
-function calcularSemanaParaPasso(faseNumero: number, passoNumero: number): number {
-  // Cada fase tem aproximadamente 11-13 semanas
-  // Fase 1: Semanas 1-11
-  // Fase 2: Semanas 12-22
-  // Fase 3: Semanas 23-33
-  // Fase 4: Semanas 34-52
-  const semanaPorFase: Record<number, number> = {
-    1: 0, // Fase 1 começa na semana 1
-    2: 11, // Fase 2 começa na semana 12
-    3: 22, // Fase 3 começa na semana 23
-    4: 33, // Fase 4 começa na semana 34
-  }
-
-  const semanaBase = semanaPorFase[faseNumero] || 0
-  return semanaBase + passoNumero
 }
 
 function getInsigniaNome(passo: number): string {

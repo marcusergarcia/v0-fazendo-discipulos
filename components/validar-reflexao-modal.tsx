@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle, Loader2, HelpCircle, Target } from 'lucide-react'
+import { Clock, CheckCircle, Loader2, HelpCircle, Target } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -28,13 +28,13 @@ interface ValidarReflexaoModalProps {
   respostaMissao?: string | null
 }
 
-export function ValidarReflexaoModal({ 
-  reflexao, 
-  discipuloId, 
-  discipuloNome, 
+export function ValidarReflexaoModal({
+  reflexao,
+  discipuloId,
+  discipuloNome,
   onAprovado,
   respostaPergunta,
-  respostaMissao
+  respostaMissao,
 }: ValidarReflexaoModalProps) {
   const [open, setOpen] = useState(false)
   const [feedback, setFeedback] = useState("")
@@ -51,7 +51,7 @@ export function ValidarReflexaoModal({
     setLoading(true)
 
     try {
-      if (reflexao.situacao === 'aprovado') {
+      if (reflexao.situacao === "aprovado") {
         toast.error("Esta reflexão já foi aprovada anteriormente")
         setLoading(false)
         setOpen(false)
@@ -64,7 +64,7 @@ export function ValidarReflexaoModal({
         .eq("id", reflexao.id)
         .single()
 
-      if (reflexaoAtual && reflexaoAtual.situacao === 'aprovado') {
+      if (reflexaoAtual && reflexaoAtual.situacao === "aprovado") {
         toast.error("Esta reflexão já foi aprovada por outro processo")
         setLoading(false)
         setOpen(false)
@@ -77,7 +77,7 @@ export function ValidarReflexaoModal({
           feedback_discipulador: feedback,
           xp_ganho: xpConcedido,
           data_aprovacao: new Date().toISOString(),
-          situacao: 'aprovado'
+          situacao: "aprovado",
         })
         .eq("id", reflexao.id)
         .select()
@@ -105,36 +105,35 @@ export function ValidarReflexaoModal({
         let videos_assistidos = progresso.videos_assistidos || []
         let artigos_lidos = progresso.artigos_lidos || []
         let pontuacaoAtual = progresso.pontuacao_total || 0
+        let reflexoesConcluidas = progresso.reflexoes_concluidas || 0
 
-        if (reflexao.tipo === 'video') {
-          videos_assistidos = videos_assistidos.map((v: any) => 
-            v.id === reflexao.conteudo_id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v
+        if (reflexao.tipo === "video") {
+          videos_assistidos = videos_assistidos.map((v: any) =>
+            v.id === reflexao.conteudo_id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v,
           )
         } else {
-          artigos_lidos = artigos_lidos.map((a: any) => 
-            a.id === reflexao.conteudo_id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a
+          artigos_lidos = artigos_lidos.map((a: any) =>
+            a.id === reflexao.conteudo_id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a,
           )
         }
 
         // Adicionar XP à pontuação total do passo
         pontuacaoAtual += xpConcedido
+        reflexoesConcluidas += 1
 
         await supabase
           .from("progresso_fases")
           .update({
-            videos_assistidos: reflexao.tipo === 'video' ? videos_assistidos : progresso.videos_assistidos,
-            artigos_lidos: reflexao.tipo === 'artigo' ? artigos_lidos : progresso.artigos_lidos,
+            videos_assistidos: reflexao.tipo === "video" ? videos_assistidos : progresso.videos_assistidos,
+            artigos_lidos: reflexao.tipo === "artigo" ? artigos_lidos : progresso.artigos_lidos,
             pontuacao_total: pontuacaoAtual,
+            reflexoes_concluidas: reflexoesConcluidas,
           })
           .eq("id", progresso.id)
       }
 
       // Atualizar XP total do discípulo
-      const { data: disc } = await supabase
-        .from("discipulos")
-        .select("xp_total")
-        .eq("id", discipuloId)
-        .single()
+      const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
 
       if (disc) {
         await supabase
@@ -151,10 +150,7 @@ export function ValidarReflexaoModal({
         .maybeSingle()
 
       if (notificacao) {
-        await supabase
-          .from("notificacoes")
-          .update({ lida: true })
-          .eq("id", notificacao.id)
+        await supabase.from("notificacoes").update({ lida: true }).eq("id", notificacao.id)
       }
 
       const { data: discipuloInfo } = await supabase
@@ -173,9 +169,8 @@ export function ValidarReflexaoModal({
           .eq("discipulo_id", discipuloId)
           .eq("passo_numero", passoAtual)
 
-        const todasReflexoesAprovadas = todasReflexoes && todasReflexoes.length > 0
-          ? todasReflexoes.every(r => r.situacao === 'aprovado')
-          : false
+        const todasReflexoesAprovadas =
+          todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
 
         // Verificar se pergunta e missão estão aprovadas
         const { data: respostas } = await supabase
@@ -184,11 +179,48 @@ export function ValidarReflexaoModal({
           .eq("discipulo_id", discipuloId)
           .eq("passo_numero", passoAtual)
 
-        const perguntaAprovada = respostas?.some(r => r.tipo_resposta === 'pergunta' && r.situacao === 'aprovado')
-        const missaoAprovada = respostas?.some(r => r.tipo_resposta === 'missao' && r.situacao === 'aprovado')
+        const perguntaAprovada = respostas?.some((r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado")
+        const missaoAprovada = respostas?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
 
         // Se tudo aprovado, marcar passo como completado e liberar próximo
         if (todasReflexoesAprovadas && perguntaAprovada && missaoAprovada) {
+          console.log("[v0] Todas as reflexões, pergunta e missão aprovadas! Verificando leitura bíblica...")
+
+          const semanaCorrespondente = passoAtual // Passo 1 = Semana 1, Passo 2 = Semana 2, etc.
+
+          const { data: planoSemana } = await supabase
+            .from("plano_leitura_biblica")
+            .select("capitulos_semana")
+            .eq("semana", semanaCorrespondente)
+            .single()
+
+          let leituraBiblicaConcluida = false
+          if (planoSemana && planoSemana.capitulos_semana) {
+            const { data: leiturasDiscipulo } = await supabase
+              .from("leituras_capitulos")
+              .select("capitulos_lidos")
+              .eq("discipulo_id", discipuloId)
+              .single()
+
+            const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
+            const capitulosSemana = planoSemana.capitulos_semana
+            leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
+
+            console.log("[v0] Verificação leitura bíblica:", {
+              semana: semanaCorrespondente,
+              capitulosSemana,
+              capitulosLidos: Array.from(capitulosLidos),
+              leituraConcluida: leituraBiblicaConcluida,
+            })
+          }
+
+          if (!leituraBiblicaConcluida) {
+            toast.warning(`Leitura bíblica da semana ${semanaCorrespondente} ainda não foi concluída`)
+            setLoading(false)
+            setOpen(false)
+            return
+          }
+
           // Marcar passo como completado
           await supabase
             .from("progresso_fases")
@@ -199,26 +231,44 @@ export function ValidarReflexaoModal({
             .eq("discipulo_id", discipuloId)
             .eq("passo_numero", passoAtual)
 
-          // Criar insígnia como recompensa
-          const insigniaNome = getInsigniaNome(passoAtual)
-          await supabase
-            .from("recompensas")
-            .insert({
-              discipulo_id: discipuloId,
-              tipo_recompensa: 'insignia',
-              nome_recompensa: insigniaNome,
-              descricao: `Insígnia conquistada ao completar o Passo ${passoAtual}`,
-              conquistado_em: new Date().toISOString(),
-            })
-
           // Liberar próximo passo
           const proximoPasso = passoAtual + 1
-          
+
           if (proximoPasso <= 10) {
-            await supabase
-              .from("discipulos")
-              .update({ passo_atual: proximoPasso })
-              .eq("id", discipuloId)
+            await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", discipuloId)
+
+            const { data: progressoExistente } = await supabase
+              .from("progresso_fases")
+              .select("id")
+              .eq("discipulo_id", discipuloId)
+              .eq("passo_numero", proximoPasso)
+              .maybeSingle()
+
+            if (!progressoExistente) {
+              const { data: progressoAtualCompleto } = await supabase
+                .from("progresso_fases")
+                .select("fase_numero")
+                .eq("discipulo_id", discipuloId)
+                .eq("passo_numero", passoAtual)
+                .single()
+
+              const faseNumero = progressoAtualCompleto?.fase_numero || 1
+
+              await supabase.from("progresso_fases").insert({
+                discipulo_id: discipuloId,
+                fase_numero: faseNumero,
+                passo_numero: proximoPasso,
+                pontuacao_total: 0,
+                completado: false,
+                videos_assistidos: [],
+                artigos_lidos: [],
+                reflexoes_concluidas: 0,
+                data_inicio: new Date().toISOString(),
+                dias_no_passo: 0,
+                alertado_tempo_excessivo: false,
+                enviado_para_validacao: false,
+              })
+            }
 
             console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
             toast.success(`Parabéns! Passo ${passoAtual} concluído. Passo ${proximoPasso} liberado!`)
@@ -228,7 +278,7 @@ export function ValidarReflexaoModal({
 
       toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
       setOpen(false)
-      
+
       if (onAprovado) {
         onAprovado(xpConcedido)
       }
@@ -242,9 +292,9 @@ export function ValidarReflexaoModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <Button 
-        size="sm" 
-        variant="outline" 
+      <Button
+        size="sm"
+        variant="outline"
         className="bg-yellow-50 border-yellow-300 hover:bg-yellow-100"
         onClick={() => setOpen(true)}
       >
@@ -262,7 +312,9 @@ export function ValidarReflexaoModal({
         <div className="space-y-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Badge variant="outline" className="capitalize">{reflexao.tipo}</Badge>
+              <Badge variant="outline" className="capitalize">
+                {reflexao.tipo}
+              </Badge>
               <h3 className="font-semibold">{reflexao.titulo}</h3>
             </div>
           </div>
@@ -328,23 +380,11 @@ export function ValidarReflexaoModal({
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button 
-              onClick={handleAprovar} 
-              disabled={loading || !feedback.trim()} 
-              className="flex-1"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4 mr-2" />
-              )}
+            <Button onClick={handleAprovar} disabled={loading || !feedback.trim()} className="flex-1">
+              {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
               Aprovar e Conceder {xpConcedido} XP
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancelar
             </Button>
           </div>
