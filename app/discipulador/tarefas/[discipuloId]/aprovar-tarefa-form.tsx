@@ -32,6 +32,10 @@ export function AprovarTarefaForm({
     }
 
     setLoading(true)
+    console.log("[v0] === INÍCIO DA APROVAÇÃO ===")
+    console.log("[v0] Tipo:", tipo)
+    console.log("[v0] Tarefa ID:", tarefaId)
+    console.log("[v0] Discípulo ID:", discipuloId)
 
     try {
       if (tipo === "progresso") {
@@ -61,6 +65,27 @@ export function AprovarTarefaForm({
 
         toast.success(`Missão aprovada! +${xpBase} XP concedido`)
       } else {
+        console.log("[v0] 📹 Aprovando reflexão...")
+
+        const { data: reflexao, error: fetchError } = await supabase
+          .from("reflexoes_conteudo")
+          .select("*")
+          .eq("id", tarefaId)
+          .single()
+
+        console.log("[v0] Reflexão encontrada:", reflexao ? "SIM" : "NÃO")
+        if (reflexao) {
+          console.log("[v0] Dados da reflexão:", {
+            id: reflexao.id,
+            discipulo_id: reflexao.discipulo_id,
+            situacao: reflexao.situacao,
+            titulo: reflexao.titulo,
+          })
+        }
+        if (fetchError) {
+          console.error("[v0] ❌ Erro ao buscar reflexão:", fetchError)
+        }
+
         const { error: updateError } = await supabase
           .from("reflexoes_conteudo")
           .update({
@@ -70,12 +95,62 @@ export function AprovarTarefaForm({
           })
           .eq("id", tarefaId)
 
-        if (updateError) throw updateError
+        if (updateError) {
+          console.error("[v0] ❌ Erro ao atualizar reflexão:", updateError)
+          throw updateError
+        }
+        console.log("[v0] ✅ Reflexão atualizada para 'aprovado'")
 
-        const { error: deleteNotifError } = await supabase.from("notificacoes").delete().eq("reflexao_id", tarefaId)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-        if (deleteNotifError) {
-          console.error("[v0] Erro ao deletar notificação:", deleteNotifError)
+        console.log("[v0] User ID do discipulador:", user?.id)
+
+        if (user) {
+          console.log("[v0] 🔍 Buscando notificação para deletar...")
+          console.log("[v0] Filtros: user_id =", user.id, "discipulo_id =", discipuloId, "reflexao_id =", tarefaId)
+
+          const { data: notificacoes, error: fetchNotifError } = await supabase
+            .from("notificacoes")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("discipulo_id", discipuloId)
+            .eq("reflexao_id", tarefaId)
+
+          console.log("[v0] Notificações encontradas:", notificacoes?.length || 0)
+          if (notificacoes && notificacoes.length > 0) {
+            notificacoes.forEach((notif) => {
+              console.log("[v0] Notificação:", {
+                id: notif.id,
+                user_id: notif.user_id,
+                discipulo_id: notif.discipulo_id,
+                reflexao_id: notif.reflexao_id,
+                tipo: notif.tipo,
+              })
+            })
+          }
+          if (fetchNotifError) {
+            console.error("[v0] ❌ Erro ao buscar notificações:", fetchNotifError)
+          }
+
+          if (notificacoes && notificacoes.length > 0) {
+            console.log("[v0] 🗑️ Deletando", notificacoes.length, "notificação(ões)...")
+            const { error: deleteNotifError } = await supabase
+              .from("notificacoes")
+              .delete()
+              .eq("user_id", user.id)
+              .eq("discipulo_id", discipuloId)
+              .eq("reflexao_id", tarefaId)
+
+            if (deleteNotifError) {
+              console.error("[v0] ❌ Erro ao deletar notificação:", deleteNotifError)
+            } else {
+              console.log("[v0] ✅ Notificação deletada com sucesso!")
+            }
+          } else {
+            console.log("[v0] ⚠️ Nenhuma notificação encontrada para deletar")
+          }
         }
 
         // Adicionar XP ao discípulo
@@ -91,6 +166,7 @@ export function AprovarTarefaForm({
         toast.success(`Reflexão aprovada! +${xpBase} XP concedido`)
       }
 
+      console.log("[v0] === FIM DA APROVAÇÃO - RECARREGANDO PÁGINA ===")
       window.location.reload()
     } catch (error) {
       console.error("Erro ao aprovar:", error)
@@ -106,6 +182,9 @@ export function AprovarTarefaForm({
     }
 
     setLoading(true)
+    console.log("[v0] === INÍCIO DA REJEIÇÃO ===")
+    console.log("[v0] Tipo:", tipo)
+    console.log("[v0] Tarefa ID:", tarefaId)
 
     try {
       if (tipo === "progresso") {
@@ -120,6 +199,8 @@ export function AprovarTarefaForm({
 
         if (error) throw error
       } else {
+        console.log("[v0] 📹 Rejeitando reflexão...")
+
         const { error } = await supabase
           .from("reflexoes_conteudo")
           .update({
@@ -129,11 +210,31 @@ export function AprovarTarefaForm({
           .eq("id", tarefaId)
 
         if (error) throw error
+        console.log("[v0] ✅ Reflexão marcada como reprovada")
 
-        await supabase.from("notificacoes").delete().eq("reflexao_id", tarefaId)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (user) {
+          console.log("[v0] 🗑️ Deletando notificação após rejeição...")
+          const { error: deleteNotifError } = await supabase
+            .from("notificacoes")
+            .delete()
+            .eq("user_id", user.id)
+            .eq("discipulo_id", discipuloId)
+            .eq("reflexao_id", tarefaId)
+
+          if (deleteNotifError) {
+            console.error("[v0] ❌ Erro ao deletar notificação:", deleteNotifError)
+          } else {
+            console.log("[v0] ✅ Notificação deletada!")
+          }
+        }
       }
 
       toast.success("Feedback de rejeição enviado")
+      console.log("[v0] === FIM DA REJEIÇÃO - RECARREGANDO PÁGINA ===")
       window.location.reload()
     } catch (error) {
       console.error("Erro ao rejeitar:", error)

@@ -42,6 +42,27 @@ export default async function TarefasDiscipuloPage({
     redirect("/discipulador")
   }
 
+  const { data: notificacoesDebug, error: notifDebugError } = await supabase
+    .from("notificacoes")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("discipulo_id", discipuloId)
+
+  console.log("[v0] 🔔 NOTIFICAÇÕES EXISTENTES para este discípulo:", notificacoesDebug?.length || 0)
+  if (notificacoesDebug && notificacoesDebug.length > 0) {
+    notificacoesDebug.forEach((notif) => {
+      console.log("[v0] Notificação:", {
+        id: notif.id,
+        tipo: notif.tipo,
+        reflexao_id: notif.reflexao_id,
+        discipulo_id: notif.discipulo_id,
+        user_id: notif.user_id,
+        lida: notif.lida,
+      })
+    })
+  }
+  if (notifDebugError) console.log("[v0] Erro ao buscar notificações debug:", notifDebugError)
+
   // Buscar progresso com missão ou pergunta enviadas para validação
   const { data: progressos, error: progressosError } = await supabase
     .from("progresso_fases")
@@ -61,7 +82,7 @@ export default async function TarefasDiscipuloPage({
     .eq("situacao", "enviado")
     .order("data_criacao", { ascending: false })
 
-  console.log("[v0] Reflexões enviadas encontradas:", reflexoes?.length || 0)
+  console.log("[v0] 📹 Reflexões enviadas encontradas:", reflexoes?.length || 0)
   console.log(
     "[v0] Detalhes das reflexões:",
     reflexoes?.map((r) => ({ id: r.id, titulo: r.titulo, situacao: r.situacao })) || [],
