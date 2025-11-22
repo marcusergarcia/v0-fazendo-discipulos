@@ -52,6 +52,8 @@ type PassoClientProps = {
   artigosLidos: string[]
   status: "pendente" | "aguardando" | "validado"
   discipuladorId: string | null // Adicionar discipuladorId
+  semana1Concluida?: boolean
+  semana2Concluida?: boolean
 }
 
 export default function PassoClient({
@@ -63,7 +65,9 @@ export default function PassoClient({
   videosAssistidos,
   artigosLidos,
   status,
-  discipuladorId, // Receber discipuladorId
+  discipuladorId,
+  semana1Concluida = false,
+  semana2Concluida = false,
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -294,10 +298,12 @@ export default function PassoClient({
         {(numero === 1 || numero === 2) && (
           <Card className="mb-6 border-accent/30 bg-gradient-to-br from-accent/5 to-primary/5">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-accent" />📖 Leitura Bíblica da Semana {numero}
-              </CardTitle>
-              <CardDescription>Parte do plano de leitura em 1 ano — complete para avançar!</CardDescription>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-accent" />📖 Leitura Bíblica da Semana {numero}
+                </CardTitle>
+                <CardDescription>Parte do plano de leitura em 1 ano — complete para avançar!</CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -316,12 +322,28 @@ export default function PassoClient({
                         <span className="text-muted-foreground">7 capítulos</span>
                       </div>
                     </div>
-                    <Link href="/dashboard/leitura-biblica?semana=1">
-                      <Button className="w-full" variant="default">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        Iniciar Leitura da Semana 1
-                      </Button>
-                    </Link>
+                    {semana1Concluida ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Parabéns! Leitura concluída 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Continue se alimentando da Palavra de Deus diariamente. Sua jornada está apenas começando!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=1">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Iniciar Leitura da Semana 1
+                        </Button>
+                      </Link>
+                    )}
                   </>
                 )}
                 {numero === 2 && (
@@ -338,12 +360,28 @@ export default function PassoClient({
                         <span className="text-muted-foreground">7 capítulos</span>
                       </div>
                     </div>
-                    <Link href="/dashboard/leitura-biblica?semana=2">
-                      <Button className="w-full" variant="default">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        Iniciar Leitura da Semana 2
-                      </Button>
-                    </Link>
+                    {semana2Concluida ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Excelente! Mais uma semana concluída 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Você está se aprofundando na Palavra! Que Deus continue iluminando sua mente e coração.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=2">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          Iniciar Leitura da Semana 2
+                        </Button>
+                      </Link>
+                    )}
                   </>
                 )}
               </div>

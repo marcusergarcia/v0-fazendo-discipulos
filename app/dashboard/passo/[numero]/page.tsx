@@ -1,8 +1,9 @@
-import { notFound } from 'next/navigation'
-import { redirect } from 'next/navigation'
+import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
+import { verificarSemanaConcluida } from "@/app/dashboard/leitura-biblica/actions"
 
 export default async function PassoPage({ params }: { params: Promise<{ numero: string }> }) {
   const { numero: numeroParam } = await params
@@ -33,11 +34,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     redirect("/dashboard")
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("nome_completo")
-    .eq("id", user.id)
-    .single()
+  const { data: profile } = await supabase.from("profiles").select("nome_completo").eq("id", user.id).single()
 
   const nomeDiscipulo = profile?.nome_completo || "Sem nome"
 
@@ -74,7 +71,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       })
       .select()
       .single()
-    
+
     progressoAtual = novoProgresso
   }
 
@@ -109,11 +106,23 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
+  let semana1Concluida = false
+  let semana2Concluida = false
+
+  if (numero === 1 || numero === 2) {
+    const resultadoSemana = await verificarSemanaConcluida(discipulo.id, numero)
+    if (numero === 1) {
+      semana1Concluida = resultadoSemana.concluida
+    } else if (numero === 2) {
+      semana2Concluida = resultadoSemana.concluida
+    }
+  }
+
   // Adicionar informações de situação aos vídeos e artigos
   const passoComReflexoes = {
     ...passo,
     videos: passo.videos?.map((video: any) => {
-      const reflexao = reflexoesPasso?.find(r => r.conteudo_id === video.id && r.tipo === 'video')
+      const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === video.id && r.tipo === "video")
       return {
         ...video,
         reflexao_situacao: reflexao?.situacao || null,
@@ -121,7 +130,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       }
     }),
     artigos: passo.artigos?.map((artigo: any) => {
-      const reflexao = reflexoesPasso?.find(r => r.conteudo_id === artigo.id && r.tipo === 'artigo')
+      const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === artigo.id && r.tipo === "artigo")
       return {
         ...artigo,
         reflexao_situacao: reflexao?.situacao || null,
@@ -134,13 +143,15 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     <PassoClient
       numero={numero}
       passo={passoComReflexoes}
-      discipulo={{...discipulo, nome_completo: nomeDiscipulo}}
+      discipulo={{ ...discipulo, nome_completo: nomeDiscipulo }}
       progresso={progressoAtual}
       passosCompletados={passosCompletados}
       videosAssistidos={videosAssistidos}
       artigosLidos={artigosLidos}
       status={status}
       discipuladorId={discipuladorId}
+      semana1Concluida={semana1Concluida}
+      semana2Concluida={semana2Concluida}
     />
   )
 }
