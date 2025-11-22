@@ -233,14 +233,13 @@ export default function PassoClient({
       status: todosConteudos.map((c) => ({
         titulo: c.titulo,
         situacao: c.reflexao_situacao,
-        tipo: c.tipo,
       })),
     })
 
     // Se não houver conteúdos, retorna false
     if (todosConteudos.length === 0) return false
 
-    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovada")
+    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
 
     console.log("[v0] Todas reflexões aprovadas?", todasAprovadas)
 
@@ -587,7 +586,7 @@ export default function PassoClient({
             <Textarea
               name="resposta_pergunta"
               id="resposta_pergunta"
-              placeholder="Escreva com suas palavras..."
+              placeholder="Escreva com suas próprias palavras..."
               className="min-h-32 text-base"
               value={respostaPergunta}
               onChange={(e) => setRespostaPergunta(e.target.value)}
