@@ -51,6 +51,13 @@ export function ValidarReflexaoModal({
     setLoading(true)
 
     try {
+      console.log("[v0] ===== INICIANDO APROVAÇÃO DE REFLEXÃO =====")
+      console.log("[v0] Reflexão ID:", reflexao.id)
+      console.log("[v0] Discípulo ID:", discipuloId)
+      console.log("[v0] Tipo:", reflexao.tipo)
+      console.log("[v0] Conteúdo ID:", reflexao.conteudo_id)
+      console.log("[v0] Situação atual:", reflexao.situacao)
+
       if (reflexao.situacao === "aprovado") {
         toast.error("Esta reflexão já foi aprovada anteriormente")
         setLoading(false)
@@ -58,19 +65,30 @@ export function ValidarReflexaoModal({
         return
       }
 
-      const { data: reflexaoAtual } = await supabase
+      const { data: reflexaoAtual, error: selectError } = await supabase
         .from("reflexoes_conteudo")
-        .select("situacao, xp_ganho")
+        .select("id, situacao, xp_ganho")
         .eq("id", reflexao.id)
         .single()
 
-      if (reflexaoAtual && reflexaoAtual.situacao === "aprovado") {
+      console.log("[v0] Reflexão encontrada no banco:", reflexaoAtual)
+
+      if (selectError || !reflexaoAtual) {
+        console.error("[v0] ERRO: Reflexão não encontrada!", selectError)
+        toast.error("Erro: Reflexão não encontrada no banco de dados")
+        setLoading(false)
+        return
+      }
+
+      if (reflexaoAtual.situacao === "aprovado") {
+        console.log("[v0] Reflexão já aprovada, cancelando")
         toast.error("Esta reflexão já foi aprovada por outro processo")
         setLoading(false)
         setOpen(false)
         return
       }
 
+      console.log("[v0] Atualizando reflexão para aprovado...")
       const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
         .from("reflexoes_conteudo")
         .update({
@@ -83,12 +101,16 @@ export function ValidarReflexaoModal({
         .select()
 
       if (updateReflexaoError) {
+        console.error("[v0] ERRO ao atualizar reflexão:", updateReflexaoError)
         toast.error("Erro ao atualizar reflexão: " + updateReflexaoError.message)
         setLoading(false)
         return
       }
 
+      console.log("[v0] Reflexão atualizada com sucesso:", reflexaoAtualizada)
+
       if (!reflexaoAtualizada || reflexaoAtualizada.length === 0) {
+        console.error("[v0] ERRO: Nenhuma linha foi atualizada!")
         toast.error("Erro: Nenhuma reflexão foi atualizada")
         setLoading(false)
         return
@@ -100,6 +122,8 @@ export function ValidarReflexaoModal({
         .eq("discipulo_id", discipuloId)
         .eq("passo_numero", reflexao.passo_numero)
         .single()
+
+      console.log("[v0] Progresso encontrado:", progresso)
 
       if (progresso) {
         let videos_assistidos = progresso.videos_assistidos || []
@@ -142,14 +166,48 @@ export function ValidarReflexaoModal({
           .eq("id", discipuloId)
       }
 
-      const { data: notificacao } = await supabase
+      console.log("[v0] ===== BUSCANDO NOTIFICAÇÃO PARA DELETAR =====")
+      console.log("[v0] Buscando notificação com reflexao_id:", reflexao.id)
+
+      const { data: notificacao, error: selectNotifError } = await supabase
         .from("notificacoes")
-        .select("id")
+        .select("*")
         .eq("reflexao_id", reflexao.id)
         .maybeSingle()
 
+      console.log("[v0] Resultado da busca de notificação:")
+      console.log("[v0] - Notificação encontrada:", notificacao)
+      console.log("[v0] - Erro na busca?", selectNotifError)
+
+      if (selectNotifError) {
+        console.error("[v0] ERRO ao buscar notificação:", selectNotifError)
+        toast.error("Erro ao buscar notificação: " + selectNotifError.message)
+      }
+
       if (notificacao) {
-        await supabase.from("notificacoes").delete().eq("id", notificacao.id)
+        console.log("[v0] ===== DELETANDO NOTIFICAÇÃO =====")
+        console.log("[v0] ID da notificação a deletar:", notificacao.id)
+        console.log("[v0] Dados completos da notificação:", JSON.stringify(notificacao, null, 2))
+
+        const { data: deletedData, error: deleteNotifError } = await supabase
+          .from("notificacoes")
+          .delete()
+          .eq("id", notificacao.id)
+          .select()
+
+        console.log("[v0] Resultado do DELETE:")
+        console.log("[v0] - Dados deletados:", deletedData)
+        console.log("[v0] - Erro no DELETE?", deleteNotifError)
+
+        if (deleteNotifError) {
+          console.error("[v0] ERRO ao deletar notificação:", deleteNotifError)
+          toast.error("Erro ao deletar notificação: " + deleteNotifError.message)
+        } else {
+          console.log("[v0] ✓ Notificação deletada com sucesso!")
+          toast.success("Notificação removida")
+        }
+      } else {
+        console.log("[v0] ⚠ Nenhuma notificação encontrada para esta reflexão")
       }
 
       const { data: discipuloInfo } = await supabase
@@ -275,6 +333,7 @@ export function ValidarReflexaoModal({
         }
       }
 
+      console.log("[v0] ===== APROVAÇÃO CONCLUÍDA COM SUCESSO =====")
       toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
       setOpen(false)
 

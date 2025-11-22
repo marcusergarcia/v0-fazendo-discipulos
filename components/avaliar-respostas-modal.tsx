@@ -43,6 +43,11 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
   const textoPergunta = resposta.tipo_resposta === "pergunta" ? conteudoPasso?.perguntaChave : conteudoPasso?.missao
 
   const handleAprovar = async () => {
+    console.log("[v0] ===== INICIANDO APROVAÇÃO DE RESPOSTA =====")
+    console.log("[v0] Resposta ID:", resposta.id)
+    console.log("[v0] Tipo:", resposta.tipo_resposta)
+    console.log("[v0] Situação atual:", resposta.situacao)
+
     if (resposta.situacao === "aprovado") {
       setError("Esta resposta já foi aprovada anteriormente.")
       return
@@ -51,193 +56,194 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
     setLoading(true)
     setError(null)
 
-    try {
-      const supabase = createClient()
+    const supabase = createClient()
 
-      // Aprovar a resposta
-      const { error: updateError } = await supabase
-        .from("historico_respostas_passo")
-        .update({
-          situacao: "aprovado",
-          xp_ganho: xp,
-          feedback_discipulador: feedback,
-          data_aprovacao: new Date().toISOString(),
-        })
-        .eq("id", resposta.id)
+    console.log("[v0] Atualizando resposta para aprovado...")
+    const { error: updateError } = await supabase
+      .from("historico_respostas_passo")
+      .update({
+        situacao: "aprovado",
+        xp_ganho: xp,
+        feedback_discipulador: feedback,
+        data_aprovacao: new Date().toISOString(),
+      })
+      .eq("id", resposta.id)
 
-      if (updateError) {
-        console.error("[v0] Erro ao atualizar resposta:", updateError)
-        setError("Erro ao aprovar resposta")
-        setLoading(false)
-        return
-      }
+    if (updateError) {
+      console.error("[v0] ERRO ao atualizar resposta:", updateError)
+      setError("Erro ao aprovar resposta")
+      setLoading(false)
+      return
+    }
 
-      if (resposta.notificacao_id) {
-        await supabase.from("notificacoes").delete().eq("id", resposta.notificacao_id)
-      }
+    console.log("[v0] Resposta atualizada com sucesso")
 
-      const { data: progresso } = await supabase
+    console.log("[v0] Deletando notificação...")
+    if (resposta.notificacao_id) {
+      const { error: deleteNotifError } = await supabase.from("notificacoes").delete().eq("id", resposta.notificacao_id)
+      console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
+    }
+
+    console.log("[v0] ===== APROVAÇÃO DE RESPOSTA CONCLUÍDA =====")
+
+    if (resposta.notificacao_id) {
+      await supabase.from("notificacoes").delete().eq("id", resposta.notificacao_id)
+    }
+
+    const { data: progresso } = await supabase
+      .from("progresso_fases")
+      .select("pontuacao_total")
+      .eq("discipulo_id", resposta.discipulo_id)
+      .eq("passo_numero", resposta.passo_numero)
+      .single()
+
+    if (progresso) {
+      const novaPontuacao = (progresso.pontuacao_total || 0) + xp
+      await supabase
         .from("progresso_fases")
-        .select("pontuacao_total")
+        .update({ pontuacao_total: novaPontuacao })
         .eq("discipulo_id", resposta.discipulo_id)
         .eq("passo_numero", resposta.passo_numero)
-        .single()
+    }
 
-      if (progresso) {
-        const novaPontuacao = (progresso.pontuacao_total || 0) + xp
-        await supabase
-          .from("progresso_fases")
-          .update({ pontuacao_total: novaPontuacao })
-          .eq("discipulo_id", resposta.discipulo_id)
-          .eq("passo_numero", resposta.passo_numero)
-      }
+    const { data: discipulo } = await supabase
+      .from("discipulos")
+      .select("xp_total, passo_atual")
+      .eq("id", resposta.discipulo_id)
+      .single()
 
-      const { data: discipulo } = await supabase
+    if (discipulo) {
+      await supabase
         .from("discipulos")
-        .select("xp_total, passo_atual")
+        .update({ xp_total: (discipulo.xp_total || 0) + xp })
         .eq("id", resposta.discipulo_id)
+
+      const { data: respostasPassoAtual } = await supabase
+        .from("historico_respostas_passo")
+        .select("situacao, tipo_resposta")
+        .eq("discipulo_id", resposta.discipulo_id)
+        .eq("passo_numero", resposta.passo_numero)
+        .eq("fase_numero", resposta.fase_numero)
+
+      const perguntaAprovada = respostasPassoAtual?.some(
+        (r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado",
+      )
+      const missaoAprovada = respostasPassoAtual?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
+
+      const { data: reflexoes } = await supabase
+        .from("reflexoes_conteudo")
+        .select("situacao")
+        .eq("discipulo_id", resposta.discipulo_id)
+        .eq("passo_numero", resposta.passo_numero)
+
+      const todasReflexoesAprovadas =
+        reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
+
+      // Calcular qual semana corresponde ao passo atual
+      const semanaCorrespondente = resposta.passo_numero // Passo 1 = Semana 1, Passo 2 = Semana 2, etc.
+
+      // Buscar se todos os capítulos da semana foram lidos
+      const { data: planoSemana } = await supabase
+        .from("plano_leitura_biblica")
+        .select("capitulos_semana")
+        .eq("semana", semanaCorrespondente)
         .single()
 
-      if (discipulo) {
-        await supabase
-          .from("discipulos")
-          .update({ xp_total: (discipulo.xp_total || 0) + xp })
-          .eq("id", resposta.discipulo_id)
-
-        const { data: respostasPassoAtual } = await supabase
-          .from("historico_respostas_passo")
-          .select("situacao, tipo_resposta")
+      let leituraBiblicaConcluida = false
+      if (planoSemana && planoSemana.capitulos_semana) {
+        // Buscar capítulos lidos do discípulo
+        const { data: leiturasDiscipulo } = await supabase
+          .from("leituras_capitulos")
+          .select("capitulos_lidos")
           .eq("discipulo_id", resposta.discipulo_id)
-          .eq("passo_numero", resposta.passo_numero)
-          .eq("fase_numero", resposta.fase_numero)
-
-        const perguntaAprovada = respostasPassoAtual?.some(
-          (r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado",
-        )
-        const missaoAprovada = respostasPassoAtual?.some(
-          (r) => r.tipo_resposta === "missao" && r.situacao === "aprovado",
-        )
-
-        const { data: reflexoes } = await supabase
-          .from("reflexoes_conteudo")
-          .select("situacao")
-          .eq("discipulo_id", resposta.discipulo_id)
-          .eq("passo_numero", resposta.passo_numero)
-
-        const todasReflexoesAprovadas =
-          reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
-
-        // Calcular qual semana corresponde ao passo atual
-        const semanaCorrespondente = resposta.passo_numero // Passo 1 = Semana 1, Passo 2 = Semana 2, etc.
-
-        // Buscar se todos os capítulos da semana foram lidos
-        const { data: planoSemana } = await supabase
-          .from("plano_leitura_biblica")
-          .select("capitulos_semana")
-          .eq("semana", semanaCorrespondente)
           .single()
 
-        let leituraBiblicaConcluida = false
-        if (planoSemana && planoSemana.capitulos_semana) {
-          // Buscar capítulos lidos do discípulo
-          const { data: leiturasDiscipulo } = await supabase
-            .from("leituras_capitulos")
-            .select("capitulos_lidos")
-            .eq("discipulo_id", resposta.discipulo_id)
-            .single()
+        const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
+        const capitulosSemana = planoSemana.capitulos_semana
 
-          const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
-          const capitulosSemana = planoSemana.capitulos_semana
+        // Verificar se todos os capítulos da semana foram lidos
+        leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
 
-          // Verificar se todos os capítulos da semana foram lidos
-          leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
-
-          console.log("[v0] Verificação leitura bíblica:", {
-            semana: semanaCorrespondente,
-            capitulosSemana,
-            capitulosLidos: Array.from(capitulosLidos),
-            leituraConcluida: leituraBiblicaConcluida,
-          })
-        }
-
-        // Se tudo aprovado E leitura bíblica concluída, marcar passo como completado
-        if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas && leituraBiblicaConcluida) {
-          console.log("[v0] Todas as condições atendidas! Liberando próximo passo...")
-
-          // Marcar passo como completado
-          await supabase
-            .from("progresso_fases")
-            .update({
-              completado: true,
-              data_completado: new Date().toISOString(),
-            })
-            .eq("discipulo_id", resposta.discipulo_id)
-            .eq("passo_numero", resposta.passo_numero)
-
-          const insigniaNome = getInsigniaNome(resposta.passo_numero)
-          await supabase.from("recompensas").insert({
-            discipulo_id: resposta.discipulo_id,
-            tipo_recompensa: "insignia",
-            nome_recompensa: insigniaNome,
-            descricao: `Insígnia conquistada ao completar o Passo ${resposta.passo_numero}`,
-            conquistado_em: new Date().toISOString(),
-          })
-
-          // Liberar próximo passo
-          const proximoPasso = resposta.passo_numero + 1
-
-          if (proximoPasso <= 10) {
-            await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", resposta.discipulo_id)
-
-            const { data: progressoExistente } = await supabase
-              .from("progresso_fases")
-              .select("id")
-              .eq("discipulo_id", resposta.discipulo_id)
-              .eq("passo_numero", proximoPasso)
-              .maybeSingle()
-
-            if (!progressoExistente) {
-              await supabase.from("progresso_fases").insert({
-                discipulo_id: resposta.discipulo_id,
-                fase_numero: resposta.fase_numero,
-                passo_numero: proximoPasso,
-                pontuacao_total: 0,
-                completado: false,
-                videos_assistidos: [],
-                artigos_lidos: [],
-                reflexoes_concluidas: 0,
-                data_inicio: new Date().toISOString(),
-                dias_no_passo: 0,
-                alertado_tempo_excessivo: false,
-                enviado_para_validacao: false,
-              })
-            }
-
-            console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
-          }
-        } else {
-          console.log("[v0] Condições não atendidas:", {
-            perguntaAprovada,
-            missaoAprovada,
-            todasReflexoesAprovadas,
-            leituraBiblicaConcluida,
-          })
-
-          if (!leituraBiblicaConcluida) {
-            setError("O discípulo ainda precisa completar a leitura bíblica da semana " + semanaCorrespondente)
-          }
-        }
+        console.log("[v0] Verificação leitura bíblica:", {
+          semana: semanaCorrespondente,
+          capitulosSemana,
+          capitulosLidos: Array.from(capitulosLidos),
+          leituraConcluida: leituraBiblicaConcluida,
+        })
       }
 
-      setOpen(false)
-      onAprovado?.(xp)
-      window.location.reload()
-    } catch (error: any) {
-      console.error("[v0] Erro:", error)
-      setError(error.message || "Erro ao aprovar resposta")
-    } finally {
-      setLoading(false)
+      // Se tudo aprovado E leitura bíblica concluída, marcar passo como completado
+      if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas && leituraBiblicaConcluida) {
+        console.log("[v0] Todas as condições atendidas! Liberando próximo passo...")
+
+        // Marcar passo como completado
+        await supabase
+          .from("progresso_fases")
+          .update({
+            completado: true,
+            data_completado: new Date().toISOString(),
+          })
+          .eq("discipulo_id", resposta.discipulo_id)
+          .eq("passo_numero", resposta.passo_numero)
+
+        const insigniaNome = getInsigniaNome(resposta.passo_numero)
+        await supabase.from("recompensas").insert({
+          discipulo_id: resposta.discipulo_id,
+          tipo_recompensa: "insignia",
+          nome_recompensa: insigniaNome,
+          descricao: `Insígnia conquistada ao completar o Passo ${resposta.passo_numero}`,
+          conquistado_em: new Date().toISOString(),
+        })
+
+        // Liberar próximo passo
+        const proximoPasso = resposta.passo_numero + 1
+
+        if (proximoPasso <= 10) {
+          await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", resposta.discipulo_id)
+
+          const { data: progressoExistente } = await supabase
+            .from("progresso_fases")
+            .select("id")
+            .eq("discipulo_id", resposta.discipulo_id)
+            .eq("passo_numero", proximoPasso)
+            .maybeSingle()
+
+          if (!progressoExistente) {
+            await supabase.from("progresso_fases").insert({
+              discipulo_id: resposta.discipulo_id,
+              fase_numero: resposta.fase_numero,
+              passo_numero: proximoPasso,
+              pontuacao_total: 0,
+              completado: false,
+              videos_assistidos: [],
+              artigos_lidos: [],
+              reflexoes_concluidas: 0,
+              data_inicio: new Date().toISOString(),
+              dias_no_passo: 0,
+              alertado_tempo_excessivo: false,
+              enviado_para_validacao: false,
+            })
+          }
+
+          console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
+        }
+      } else {
+        console.log("[v0] Condições não atendidas:", {
+          perguntaAprovada,
+          missaoAprovada,
+          todasReflexoesAprovadas,
+          leituraBiblicaConcluida,
+        })
+
+        if (!leituraBiblicaConcluida) {
+          setError("O discípulo ainda precisa completar a leitura bíblica da semana " + semanaCorrespondente)
+        }
+      }
     }
+
+    setOpen(false)
+    onAprovado?.(xp)
+    window.location.reload()
   }
 
   const titulo = resposta.tipo_resposta === "pergunta" ? "Pergunta para Responder" : "Missão Prática"
