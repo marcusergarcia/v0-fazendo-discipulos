@@ -52,8 +52,9 @@ type PassoClientProps = {
   artigosLidos: string[]
   status: "pendente" | "aguardando" | "validado"
   discipuladorId: string | null // Adicionar discipuladorId
-  semana1Concluida?: boolean
-  semana2Concluida?: boolean
+  statusLeituraSemana?: "nao_iniciada" | "pendente" | "concluida"
+  temaSemana?: string
+  descricaoSemana?: string
 }
 
 export default function PassoClient({
@@ -66,8 +67,9 @@ export default function PassoClient({
   artigosLidos,
   status,
   discipuladorId,
-  semana1Concluida = false,
-  semana2Concluida = false,
+  statusLeituraSemana = "nao_iniciada",
+  temaSemana = "",
+  descricaoSemana = "",
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -161,7 +163,7 @@ export default function PassoClient({
         setErroSenha("Erro ao resetar progresso")
         setResetando(false)
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("[v0] CLIENT: ERRO:", error)
       setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
@@ -220,6 +222,29 @@ export default function PassoClient({
     const temArtigos = artigosLidos.length > 0
     const temResposta = progresso?.resposta_pergunta || progresso?.resposta_missao
     return temVideos || temArtigos || temResposta
+  }
+
+  const todasReflexoesAprovadas = () => {
+    // Verifica se todos os 6 conteúdos (vídeos + artigos) têm reflexões aprovadas
+    const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
+
+    console.log("[v0] Verificando reflexões aprovadas:", {
+      totalConteudos: todosConteudos.length,
+      status: todosConteudos.map((c) => ({
+        titulo: c.titulo,
+        status: c.reflexao_status,
+        tipo: c.tipo,
+      })),
+    })
+
+    // Se não houver conteúdos, retorna false
+    if (todosConteudos.length === 0) return false
+
+    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_status?.toLowerCase() === "aprovada")
+
+    console.log("[v0] Todas reflexões aprovadas?", todasAprovadas)
+
+    return todasAprovadas
   }
 
   return (
@@ -310,10 +335,10 @@ export default function PassoClient({
                 {numero === 1 && (
                   <>
                     <div className="rounded-lg bg-card border p-4">
-                      <h4 className="font-semibold text-lg mb-2">O Verbo que se fez carne</h4>
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "O Verbo que se fez carne"}</h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Comece conhecendo Jesus através do Evangelho de João. Descubra quem Ele é e por que veio ao
-                        mundo.
+                        {descricaoSemana ||
+                          "Comece conhecendo Jesus através do Evangelho de João. Descubra quem Ele é e por que veio ao mundo."}
                       </p>
                       <div className="flex items-center gap-2 text-sm">
                         <Badge variant="outline" className="font-mono">
@@ -322,7 +347,7 @@ export default function PassoClient({
                         <span className="text-muted-foreground">7 capítulos</span>
                       </div>
                     </div>
-                    {semana1Concluida ? (
+                    {statusLeituraSemana === "concluida" ? (
                       <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
                         <div className="flex items-start gap-3">
                           <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
@@ -340,7 +365,9 @@ export default function PassoClient({
                       <Link href="/dashboard/leitura-biblica?semana=1">
                         <Button className="w-full" variant="default">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          Iniciar Leitura da Semana 1
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 1"
+                            : "Iniciar Leitura da Semana 1"}
                         </Button>
                       </Link>
                     )}
@@ -349,9 +376,10 @@ export default function PassoClient({
                 {numero === 2 && (
                   <>
                     <div className="rounded-lg bg-card border p-4">
-                      <h4 className="font-semibold text-lg mb-2">Sinais e ensinamentos de Jesus</h4>
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "Sinais e ensinamentos de Jesus"}</h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        Continue em João e veja os milagres e ensinamentos que revelam o amor de Deus por nós.
+                        {descricaoSemana ||
+                          "Continue em João e veja os milagres e ensinamentos que revelam o amor de Deus por nós."}
                       </p>
                       <div className="flex items-center gap-2 text-sm">
                         <Badge variant="outline" className="font-mono">
@@ -360,7 +388,7 @@ export default function PassoClient({
                         <span className="text-muted-foreground">7 capítulos</span>
                       </div>
                     </div>
-                    {semana2Concluida ? (
+                    {statusLeituraSemana === "concluida" ? (
                       <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
                         <div className="flex items-start gap-3">
                           <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
@@ -378,7 +406,9 @@ export default function PassoClient({
                       <Link href="/dashboard/leitura-biblica?semana=2">
                         <Button className="w-full" variant="default">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          Iniciar Leitura da Semana 2
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 2"
+                            : "Iniciar Leitura da Semana 2"}
                         </Button>
                       </Link>
                     )}
@@ -535,7 +565,8 @@ export default function PassoClient({
         )}
 
         {((passo.videos && passo.videos.length > 0) || (passo.artigos && passo.artigos.length > 0)) &&
-          temProgressoParaResetar() && (
+          temProgressoParaResetar() &&
+          !todasReflexoesAprovadas() && (
             <div className="mb-6 flex justify-end">
               <Button type="button" variant="outline" onClick={handleResetarProgresso} disabled={carregandoReflexoes}>
                 <RotateCcw className="w-4 h-4 mr-2" />

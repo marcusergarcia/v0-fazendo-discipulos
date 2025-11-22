@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
-import { verificarSemanaConcluida } from "@/app/dashboard/leitura-biblica/actions"
 
 export default async function PassoPage({ params }: { params: Promise<{ numero: string }> }) {
   const { numero: numeroParam } = await params
@@ -106,15 +105,44 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
-  let semana1Concluida = false
-  let semana2Concluida = false
+  let statusLeituraSemana: "nao_iniciada" | "pendente" | "concluida" = "nao_iniciada"
+  let temaSemana = ""
+  let descricaoSemana = ""
 
   if (numero === 1 || numero === 2) {
-    const resultadoSemana = await verificarSemanaConcluida(discipulo.id, numero)
-    if (numero === 1) {
-      semana1Concluida = resultadoSemana.concluida
-    } else if (numero === 2) {
-      semana2Concluida = resultadoSemana.concluida
+    // Buscar capítulos lidos do discípulo
+    const { data: leituraCapitulos } = await supabase
+      .from("leituras_capitulos")
+      .select("capitulos_lidos")
+      .eq("discipulo_id", discipulo.id)
+      .single()
+
+    // Buscar capítulos da semana específica no plano de leitura
+    const { data: planoSemana } = await supabase
+      .from("plano_leitura_biblica")
+      .select("semana, tema, descricao, capitulos_semana")
+      .eq("semana", numero)
+      .single()
+
+    if (leituraCapitulos && planoSemana) {
+      const capitulosLidos = leituraCapitulos.capitulos_lidos || []
+      const capitulosSemana = planoSemana.capitulos_semana || []
+
+      temaSemana = planoSemana.tema || ""
+      descricaoSemana = planoSemana.descricao || ""
+
+      // Verificar se TODOS os capítulos da semana foram lidos
+      const todosLidos = capitulosSemana.every((cap: number) => capitulosLidos.includes(cap))
+      // Verificar se ALGUM capítulo foi lido
+      const algumLido = capitulosSemana.some((cap: number) => capitulosLidos.includes(cap))
+
+      if (todosLidos) {
+        statusLeituraSemana = "concluida"
+      } else if (algumLido) {
+        statusLeituraSemana = "pendente"
+      } else {
+        statusLeituraSemana = "nao_iniciada"
+      }
     }
   }
 
@@ -150,8 +178,9 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       artigosLidos={artigosLidos}
       status={status}
       discipuladorId={discipuladorId}
-      semana1Concluida={semana1Concluida}
-      semana2Concluida={semana2Concluida}
+      statusLeituraSemana={statusLeituraSemana}
+      temaSemana={temaSemana}
+      descricaoSemana={descricaoSemana}
     />
   )
 }
