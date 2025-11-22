@@ -332,25 +332,35 @@ export function BibleReaderWithAutoCheck({
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    if (!user) return
 
-    const idReal = getCapituloIdReal(chapter)
+    console.log("[v0] loadHighlights: chapter recebido:", chapter)
+    console.log("[v0] loadHighlights: livroId:", livroId)
+    console.log("[v0] loadHighlights: user:", user?.id)
+
+    if (!user) return
 
     const { data, error: highlightError } = await supabase
       .from("highlights_biblia")
       .select("texto_selecionado, cor")
       .eq("usuario_id", user.id)
       .eq("livro_id", livroId)
-      .eq("numero_capitulo", idReal)
+      .eq("numero_capitulo", chapter)
+
+    console.log("[v0] loadHighlights: query result data:", data)
+    console.log("[v0] loadHighlights: query result error:", highlightError)
 
     if (data && !highlightError) {
       setHighlights(data)
+      console.log("[v0] loadHighlights: highlights setados:", data)
     } else {
       setHighlights([])
+      console.log("[v0] loadHighlights: nenhum highlight encontrado")
     }
   }
 
   const renderTextWithHighlights = (text: string) => {
+    console.log("[v0] renderTextWithHighlights: chamado com", highlights.length, "highlights")
+
     if (highlights.length === 0) {
       return text
     }

@@ -228,22 +228,12 @@ export default function PassoClient({
     // Verifica se todos os 6 conteúdos (vídeos + artigos) têm reflexões aprovadas
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
-    console.log("[v0] Verificando reflexões aprovadas:", {
-      totalConteudos: todosConteudos.length,
-      status: todosConteudos.map((c) => ({
-        titulo: c.titulo,
-        situacao: c.reflexao_situacao,
-      })),
-    })
-
     // Se não houver conteúdos, retorna false
     if (todosConteudos.length === 0) return false
 
     const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
 
-    console.log("[v0] Todas reflexões aprovadas?", todasAprovadas)
-
-    return todasAprovadas
+    return todasAprovadas && todosConteudos.length === 6
   }
 
   return (
