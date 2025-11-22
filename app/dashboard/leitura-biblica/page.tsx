@@ -54,6 +54,14 @@ export default async function LeituraBiblicaPage({
     .eq("usuario_id", discipulo.id)
     .single()
 
+  console.log("[v0] Page.tsx: DEBUG leituraData:", {
+    discipuloId: discipulo.id,
+    leituraData,
+    capitulosLidosRaw: leituraData?.capitulos_lidos,
+    tipoDeDado: typeof leituraData?.capitulos_lidos,
+    ehArray: Array.isArray(leituraData?.capitulos_lidos),
+  })
+
   const capitulosLidosArray = (leituraData?.capitulos_lidos || []).map((id: any) =>
     typeof id === "string" ? Number.parseInt(id, 10) : id,
   )
