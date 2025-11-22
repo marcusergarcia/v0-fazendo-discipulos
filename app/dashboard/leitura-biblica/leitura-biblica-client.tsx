@@ -142,6 +142,7 @@ export default function LeituraBiblicaClient({
                   capitulosLidos={capitulosLidos}
                   onChapterRead={handleChapterRead}
                   capituloInicialJaLido={capituloSelecionadoJaLido}
+                  capitulosSemana={leituraAtual.capitulosSemana}
                 />
               </div>
             )}

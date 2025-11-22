@@ -18,6 +18,12 @@ interface BibleReaderWithAutoCheckProps {
   capitulosLidos: Set<number>
   onChapterRead?: (chapter: number) => void
   capituloInicialJaLido?: boolean
+  capitulosSemana?: number[] // Adicionando array de IDs reais dos capítulos
+}
+
+interface Highlight {
+  texto_selecionado: string
+  cor: string
 }
 
 const HIGHLIGHT_COLORS = [
@@ -38,6 +44,7 @@ export function BibleReaderWithAutoCheck({
   capitulosLidos,
   onChapterRead,
   capituloInicialJaLido = false,
+  capitulosSemana = [], // Array de IDs reais
 }: BibleReaderWithAutoCheckProps) {
   const [currentChapter, setCurrentChapter] = useState(startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
@@ -66,6 +73,23 @@ export function BibleReaderWithAutoCheck({
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
+
+  const getCapituloIdReal = (numeroCapitulo: number): number => {
+    if (!capitulosSemana || capitulosSemana.length === 0) {
+      console.log("[v0] BibleReader: capitulosSemana não disponível, usando número diretamente")
+      return numeroCapitulo
+    }
+
+    // O índice no array corresponde ao número do capítulo menos o startChapter
+    const index = numeroCapitulo - startChapter
+    const idReal = capitulosSemana[index]
+
+    console.log("[v0] BibleReader: Mapeando número", numeroCapitulo, "-> ID real", idReal)
+    console.log("[v0] BibleReader: capitulosSemana:", capitulosSemana)
+    console.log("[v0] BibleReader: índice calculado:", index)
+
+    return idReal || numeroCapitulo
+  }
 
   useEffect(() => {
     setIsMounted(true)
@@ -146,27 +170,31 @@ export function BibleReaderWithAutoCheck({
   }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
 
   useEffect(() => {
-    const jaLido = capitulosLidos.has(currentChapter)
+    const idReal = getCapituloIdReal(currentChapter)
+    const jaLido = capitulosLidos.has(idReal)
 
     console.log("[v0] BibleReader: verificando se capítulo está lido")
-    console.log("[v0] BibleReader: currentChapter:", currentChapter)
+    console.log("[v0] BibleReader: currentChapter (número):", currentChapter)
+    console.log("[v0] BibleReader: ID real do capítulo:", idReal)
     console.log("[v0] BibleReader: capitulosLidos prop:", Array.from(capitulosLidos))
     console.log("[v0] BibleReader: capituloInicialJaLido prop:", capituloInicialJaLido)
-    console.log("[v0] BibleReader: capitulosLidos.has(currentChapter):", jaLido)
+    console.log("[v0] BibleReader: capitulosLidos.has(idReal):", jaLido)
     console.log("[v0] BibleReader: Resultado capituloAtualJaLido:", jaLido)
 
     setCapituloAtualJaLido(jaLido)
-  }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido])
+  }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido, capitulosSemana])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
     setError(null)
 
+    const idReal = getCapituloIdReal(chapter)
+
     const { data, error: supabaseError } = await supabase
       .from("capitulos_biblia")
       .select("texto, numero_capitulo")
       .eq("livro_id", livroId)
-      .eq("numero_capitulo", chapter)
+      .eq("numero_capitulo", idReal)
       .single()
 
     if (data && !supabaseError) {
@@ -208,11 +236,13 @@ export function BibleReaderWithAutoCheck({
   }
 
   const handlePrevChapter = () => {
+    const idRealAnterior = getCapituloIdReal(currentChapter - 1)
     console.log("[v0] BibleReader: handlePrevChapter chamado")
     console.log("[v0] BibleReader: currentChapter antes:", currentChapter)
     console.log("[v0] BibleReader: próximo capítulo será:", currentChapter - 1)
+    console.log("[v0] BibleReader: ID real do capítulo anterior:", idRealAnterior)
     console.log("[v0] BibleReader: capitulosLidos:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: capítulo anterior está lido?", capitulosLidos.has(currentChapter - 1))
+    console.log("[v0] BibleReader: capítulo anterior está lido?", capitulosLidos.has(idRealAnterior))
 
     if (currentChapter > startChapter) {
       setCurrentChapter(currentChapter - 1)
@@ -225,11 +255,13 @@ export function BibleReaderWithAutoCheck({
   }
 
   const handleNextChapter = () => {
+    const idRealProximo = getCapituloIdReal(currentChapter + 1)
     console.log("[v0] BibleReader: handleNextChapter chamado")
     console.log("[v0] BibleReader: currentChapter antes:", currentChapter)
     console.log("[v0] BibleReader: próximo capítulo será:", currentChapter + 1)
+    console.log("[v0] BibleReader: ID real do próximo capítulo:", idRealProximo)
     console.log("[v0] BibleReader: capitulosLidos:", Array.from(capitulosLidos))
-    console.log("[v0] BibleReader: próximo capítulo está lido?", capitulosLidos.has(currentChapter + 1))
+    console.log("[v0] BibleReader: próximo capítulo está lido?", capitulosLidos.has(idRealProximo))
 
     if (currentChapter < endChapter) {
       setCurrentChapter(currentChapter + 1)
@@ -297,12 +329,14 @@ export function BibleReaderWithAutoCheck({
     } = await supabase.auth.getUser()
     if (!user) return
 
+    const idReal = getCapituloIdReal(chapter)
+
     const { data, error: highlightError } = await supabase
       .from("highlights_biblia")
       .select("texto_selecionado, cor")
       .eq("usuario_id", user.id)
       .eq("livro_id", livroId)
-      .eq("numero_capitulo", chapter)
+      .eq("numero_capitulo", idReal)
 
     if (data && !highlightError) {
       setHighlights(data)
