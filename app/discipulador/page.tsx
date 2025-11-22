@@ -343,11 +343,11 @@ export default async function DiscipuladorPage() {
                           </div>
                         </div>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                           <CopiarLinkBoasVindas />
 
                           <Link href={`/discipulador/chat/${discipulo.id}`}>
-                            <Button>
+                            <Button className="w-full sm:w-auto">
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Conversar
                             </Button>

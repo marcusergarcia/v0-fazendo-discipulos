@@ -1,7 +1,7 @@
-'use client'
+"use client"
 
 import { Button } from "@/components/ui/button"
-import { Gift, Copy, Check } from 'lucide-react'
+import { Gift, Check } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -17,7 +17,7 @@ export function CopiarLinkBoasVindas() {
   }
 
   return (
-    <Button variant="outline" onClick={copiarLink}>
+    <Button variant="outline" onClick={copiarLink} className="w-full sm:w-auto bg-transparent">
       {copiado ? (
         <>
           <Check className="w-4 h-4 mr-2" />
