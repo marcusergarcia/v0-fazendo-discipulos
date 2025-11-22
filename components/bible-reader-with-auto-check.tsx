@@ -60,7 +60,7 @@ export function BibleReaderWithAutoCheck({
 
   const [isMounted, setIsMounted] = useState(false)
 
-  const [capituloAtualJaLido, setCapituloAtualJaLido] = useState(false)
+  const [capituloAtualJaLido, setCapituloAtualJaLido] = useState(capituloInicialJaLido)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,7 +73,8 @@ export function BibleReaderWithAutoCheck({
 
   useEffect(() => {
     setCurrentChapter(startChapter)
-  }, [startChapter])
+    setCapituloAtualJaLido(capituloInicialJaLido)
+  }, [startChapter, capituloInicialJaLido])
 
   useEffect(() => {
     loadChapter(currentChapter)
@@ -145,12 +146,6 @@ export function BibleReaderWithAutoCheck({
     }
   }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
 
-  useEffect(() => {
-    const jaLido = capitulosLidos.has(currentChapter)
-
-    setCapituloAtualJaLido(jaLido)
-  }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido])
-
   const loadChapter = async (chapter: number) => {
     setLoading(true)
     setError(null)
@@ -205,6 +200,13 @@ export function BibleReaderWithAutoCheck({
       const proximoCapitulo = currentChapter - 1
       const proximoJaLido = capitulosLidos.has(proximoCapitulo)
 
+      console.log("[v0] Botão Anterior clicado:", {
+        currentChapter,
+        proximoCapitulo,
+        proximoJaLido,
+        capitulosLidos: Array.from(capitulosLidos),
+      })
+
       setCurrentChapter(proximoCapitulo)
       setCapituloAtualJaLido(proximoJaLido)
       setRastreamentoAtivo(false)
@@ -219,6 +221,13 @@ export function BibleReaderWithAutoCheck({
     if (currentChapter < endChapter) {
       const proximoCapitulo = currentChapter + 1
       const proximoJaLido = capitulosLidos.has(proximoCapitulo)
+
+      console.log("[v0] Botão Próximo clicado:", {
+        currentChapter,
+        proximoCapitulo,
+        proximoJaLido,
+        capitulosLidos: Array.from(capitulosLidos),
+      })
 
       setCurrentChapter(proximoCapitulo)
       setCapituloAtualJaLido(proximoJaLido)
