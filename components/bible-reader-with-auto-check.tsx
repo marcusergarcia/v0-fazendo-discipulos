@@ -489,3 +489,8 @@ export function BibleReaderWithAutoCheck({
     </Card>
   )
 }
+
+type Highlight = {
+  texto_selecionado: string
+  cor: string
+}
