@@ -196,3 +196,59 @@ export async function obterXpAcumuladoLeitura() {
 
   return { xpAcumulado: leitura?.xp_acumulado_leitura || 0 }
 }
+
+export async function marcarSemanaComoConcluida(
+  discipuloId: string,
+  faseNumero: number,
+  passoNumero: number,
+  semanaNumero: number,
+) {
+  const supabase = await createClient()
+
+  // Chamar a função do PostgreSQL que verifica e marca a semana
+  const { data, error } = await supabase.rpc("marcar_semana_concluida", {
+    p_discipulo_id: discipuloId,
+    p_fase_numero: faseNumero,
+    p_passo_numero: passoNumero,
+    p_semana_numero: semanaNumero,
+  })
+
+  if (error) {
+    console.error("[v0] Erro ao marcar semana concluída:", error)
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, data }
+}
+
+export async function verificarSemanaConcluida(discipuloId: string, semanaNumero: number) {
+  const supabase = await createClient()
+
+  // Chamar a função do PostgreSQL que verifica se a semana foi concluída
+  const { data, error } = await supabase.rpc("verificar_semana_leitura_concluida_real", {
+    p_discipulo_id: discipuloId,
+    p_semana_numero: semanaNumero,
+  })
+
+  if (error) {
+    console.error("[v0] Erro ao verificar semana concluída:", error)
+    return { success: false, concluida: false }
+  }
+
+  return { success: true, concluida: data }
+}
+
+export async function obterXpLeituraDiscipulo(discipuloId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc("obter_xp_leitura", {
+    p_discipulo_id: discipuloId,
+  })
+
+  if (error) {
+    console.error("[v0] Erro ao obter XP de leitura:", error)
+    return { xp: 0 }
+  }
+
+  return { xp: data || 0 }
+}

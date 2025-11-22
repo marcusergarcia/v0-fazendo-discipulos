@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 
@@ -23,7 +23,7 @@ type AvaliarRespostasModalProps = {
     discipulo_id: string
     fase_numero: number
     passo_numero: number
-    tipo_resposta: 'pergunta' | 'missao'
+    tipo_resposta: "pergunta" | "missao"
     resposta: string // Usar campo unificado 'resposta'
     situacao: string
     notificacao_id: string | null
@@ -32,11 +32,7 @@ type AvaliarRespostasModalProps = {
   onAprovado?: (xp: number) => void
 }
 
-export default function AvaliarRespostasModal({
-  resposta,
-  discipuloNome,
-  onAprovado,
-}: AvaliarRespostasModalProps) {
+export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprovado }: AvaliarRespostasModalProps) {
   const [open, setOpen] = useState(false)
   const [xp, setXp] = useState(10)
   const [feedback, setFeedback] = useState("")
@@ -44,9 +40,7 @@ export default function AvaliarRespostasModal({
   const [error, setError] = useState<string | null>(null)
 
   const conteudoPasso = PASSOS_CONTEUDO[resposta.passo_numero as keyof typeof PASSOS_CONTEUDO]
-  const textoPergunta = resposta.tipo_resposta === 'pergunta' 
-    ? conteudoPasso?.perguntaChave 
-    : conteudoPasso?.missao
+  const textoPergunta = resposta.tipo_resposta === "pergunta" ? conteudoPasso?.perguntaChave : conteudoPasso?.missao
 
   const handleAprovar = async () => {
     if (resposta.situacao === "aprovado") {
@@ -80,10 +74,7 @@ export default function AvaliarRespostasModal({
 
       // Marcar notificação como lida
       if (resposta.notificacao_id) {
-        await supabase
-          .from("notificacoes")
-          .update({ lida: true })
-          .eq("id", resposta.notificacao_id)
+        await supabase.from("notificacoes").update({ lida: true }).eq("id", resposta.notificacao_id)
       }
 
       const { data: progresso } = await supabase
@@ -122,10 +113,10 @@ export default function AvaliarRespostasModal({
           .eq("fase_numero", resposta.fase_numero)
 
         const perguntaAprovada = respostasPassoAtual?.some(
-          r => r.tipo_resposta === 'pergunta' && r.situacao === 'aprovado'
+          (r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado",
         )
         const missaoAprovada = respostasPassoAtual?.some(
-          r => r.tipo_resposta === 'missao' && r.situacao === 'aprovado'
+          (r) => r.tipo_resposta === "missao" && r.situacao === "aprovado",
         )
 
         const { data: reflexoes } = await supabase
@@ -134,12 +125,37 @@ export default function AvaliarRespostasModal({
           .eq("discipulo_id", resposta.discipulo_id)
           .eq("passo_numero", resposta.passo_numero)
 
-        const todasReflexoesAprovadas = reflexoes && reflexoes.length > 0
-          ? reflexoes.every(r => r.situacao === 'aprovado')
-          : false
+        const todasReflexoesAprovadas =
+          reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
 
-        // Se tudo aprovado, marcar passo como completado e liberar próximo
-        if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas) {
+        // Calcular qual semana corresponde ao passo atual (cada fase tem semanas específicas)
+        const semanaCorrespondente = calcularSemanaParaPasso(resposta.fase_numero, resposta.passo_numero)
+
+        // Buscar se todos os capítulos da semana foram lidos
+        const { data: planoSemana } = await supabase
+          .from("plano_leitura_biblica")
+          .select("capitulos_semana")
+          .eq("semana", semanaCorrespondente)
+          .single()
+
+        let leituraBiblicaConcluida = false
+        if (planoSemana && planoSemana.capitulos_semana) {
+          // Buscar capítulos lidos do discípulo
+          const { data: leiturasDiscipulo } = await supabase
+            .from("leituras_capitulos")
+            .select("capitulos_lidos")
+            .eq("discipulo_id", resposta.discipulo_id)
+            .single()
+
+          const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
+          const capitulosSemana = planoSemana.capitulos_semana
+
+          // Verificar se todos os capítulos da semana foram lidos
+          leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
+        }
+
+        // Se tudo aprovado E leitura bíblica concluída, marcar passo como completado
+        if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas && leituraBiblicaConcluida) {
           // Marcar passo como completado
           await supabase
             .from("progresso_fases")
@@ -150,28 +166,44 @@ export default function AvaliarRespostasModal({
             .eq("discipulo_id", resposta.discipulo_id)
             .eq("passo_numero", resposta.passo_numero)
 
+          // Registrar semana de leitura como concluída no progresso
+          const { data: progressoAtual } = await supabase
+            .from("progresso_fases")
+            .select("leituras_semanais_concluidas")
+            .eq("discipulo_id", resposta.discipulo_id)
+            .eq("passo_numero", resposta.passo_numero)
+            .single()
+
+          const semanasJaConcluidas = progressoAtual?.leituras_semanais_concluidas || []
+          if (!semanasJaConcluidas.includes(semanaCorrespondente)) {
+            await supabase
+              .from("progresso_fases")
+              .update({
+                leituras_semanais_concluidas: [...semanasJaConcluidas, semanaCorrespondente],
+              })
+              .eq("discipulo_id", resposta.discipulo_id)
+              .eq("passo_numero", resposta.passo_numero)
+          }
+
           const insigniaNome = getInsigniaNome(resposta.passo_numero)
-          await supabase
-            .from("recompensas")
-            .insert({
-              discipulo_id: resposta.discipulo_id,
-              tipo_recompensa: 'insignia',
-              nome_recompensa: insigniaNome,
-              descricao: `Insígnia conquistada ao completar o Passo ${resposta.passo_numero}`,
-              conquistado_em: new Date().toISOString(),
-            })
+          await supabase.from("recompensas").insert({
+            discipulo_id: resposta.discipulo_id,
+            tipo_recompensa: "insignia",
+            nome_recompensa: insigniaNome,
+            descricao: `Insígnia conquistada ao completar o Passo ${resposta.passo_numero}`,
+            conquistado_em: new Date().toISOString(),
+          })
 
           // Liberar próximo passo
           const proximoPasso = resposta.passo_numero + 1
-          
+
           if (proximoPasso <= 10) {
-            await supabase
-              .from("discipulos")
-              .update({ passo_atual: proximoPasso })
-              .eq("id", resposta.discipulo_id)
+            await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", resposta.discipulo_id)
 
             console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
           }
+        } else if (!leituraBiblicaConcluida) {
+          setError("O discípulo ainda precisa completar a leitura bíblica da semana " + semanaCorrespondente)
         }
       }
 
@@ -186,15 +218,11 @@ export default function AvaliarRespostasModal({
     }
   }
 
-  const titulo = resposta.tipo_resposta === 'pergunta' ? 'Pergunta para Responder' : 'Missão Prática'
+  const titulo = resposta.tipo_resposta === "pergunta" ? "Pergunta para Responder" : "Missão Prática"
 
   return (
     <>
-      <Button
-        size="sm"
-        onClick={() => setOpen(true)}
-        className="bg-primary"
-      >
+      <Button size="sm" onClick={() => setOpen(true)} className="bg-primary">
         <CheckCircle className="w-4 h-4 mr-1" />
         Avaliar
       </Button>
@@ -206,23 +234,15 @@ export default function AvaliarRespostasModal({
               <CheckCircle className="w-6 h-6 text-primary" />
               Avaliar {titulo} - Passo {resposta.passo_numero}
             </DialogTitle>
-            <DialogDescription>
-              Discípulo: {discipuloNome}
-            </DialogDescription>
+            <DialogDescription>Discípulo: {discipuloNome}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6 py-4">
             <div className="border rounded-lg p-4 bg-muted/30">
-              <h3 className="font-semibold text-base mb-2 text-secondary">
-                {titulo}
-              </h3>
-              <p className="text-sm font-medium mb-3 text-muted-foreground">
-                {textoPergunta}
-              </p>
+              <h3 className="font-semibold text-base mb-2 text-secondary">{titulo}</h3>
+              <p className="text-sm font-medium mb-3 text-muted-foreground">{textoPergunta}</p>
               <div className="bg-background rounded-md p-3 border">
-                <p className="text-sm whitespace-pre-wrap">
-                  {resposta.resposta}
-                </p>
+                <p className="text-sm whitespace-pre-wrap">{resposta.resposta}</p>
               </div>
             </div>
 
@@ -236,12 +256,10 @@ export default function AvaliarRespostasModal({
                 min="0"
                 max="50"
                 value={xp}
-                onChange={(e) => setXp(parseInt(e.target.value) || 0)}
+                onChange={(e) => setXp(Number.parseInt(e.target.value) || 0)}
                 className="mt-2"
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Recomendado: 10 XP por resposta
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Recomendado: 10 XP por resposta</p>
             </div>
 
             <div>
@@ -266,19 +284,10 @@ export default function AvaliarRespostasModal({
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancelar
             </Button>
-            <Button
-              type="button"
-              onClick={handleAprovar}
-              disabled={loading || xp <= 0}
-            >
+            <Button type="button" onClick={handleAprovar} disabled={loading || xp <= 0}>
               {loading ? "Aprovando..." : "Aprovar e Conceder XP"}
             </Button>
           </DialogFooter>
@@ -286,6 +295,23 @@ export default function AvaliarRespostasModal({
       </Dialog>
     </>
   )
+}
+
+function calcularSemanaParaPasso(faseNumero: number, passoNumero: number): number {
+  // Cada fase tem aproximadamente 11-13 semanas
+  // Fase 1: Semanas 1-11
+  // Fase 2: Semanas 12-22
+  // Fase 3: Semanas 23-33
+  // Fase 4: Semanas 34-52
+  const semanaPorFase: Record<number, number> = {
+    1: 0, // Fase 1 começa na semana 1
+    2: 11, // Fase 2 começa na semana 12
+    3: 22, // Fase 3 começa na semana 23
+    4: 33, // Fase 4 começa na semana 34
+  }
+
+  const semanaBase = semanaPorFase[faseNumero] || 0
+  return semanaBase + passoNumero
 }
 
 function getInsigniaNome(passo: number): string {
