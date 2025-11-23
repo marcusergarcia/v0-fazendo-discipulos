@@ -33,6 +33,17 @@ export default function LeituraBiblicaClient({
   leituraJaConfirmada,
   capitulosLidosInicial = [],
 }: LeituraBiblicaClientProps) {
+  console.log("[v0] 🔵 LeituraBiblicaClient: COMPONENTE CARREGADO")
+  console.log("[v0] Dados recebidos:", {
+    semana: leituraAtual.semana,
+    livro: leituraAtual.livro,
+    capituloInicio: leituraAtual.capituloInicio,
+    capituloFim: leituraAtual.capituloFim,
+    discipuloId,
+    capitulosLidosInicial,
+    capitulosSemana: leituraAtual.capitulosSemana,
+  })
+
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
@@ -42,8 +53,9 @@ export default function LeituraBiblicaClient({
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
 
   useEffect(() => {
-    console.log("[v0] Cliente: capitulosLidosInicial recebidos:", capitulosLidosInicial)
-    console.log("[v0] Cliente: discipuloId:", discipuloId)
+    console.log("[v0] 🟢 USEEFFECT: Inicializando capítulos lidos")
+    console.log("[v0] capitulosLidosInicial recebidos:", capitulosLidosInicial)
+    console.log("[v0] discipuloId:", discipuloId)
 
     if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {
       setCapitulosLidos(new Set(capitulosLidosInicial))
@@ -52,38 +64,46 @@ export default function LeituraBiblicaClient({
       const lidosDaSemana = capitulosLidosInicial.filter((id: number) => capitulosDaSemana.includes(id))
       setChaptersRead(lidosDaSemana.length)
 
-      console.log("[v0] Cliente: capitulosLidos Set criado:", Array.from(new Set(capitulosLidosInicial)))
+      console.log("[v0] Set de capítulos lidos criado:", Array.from(new Set(capitulosLidosInicial)))
+      console.log("[v0] Capítulos lidos DA SEMANA:", lidosDaSemana.length, "/", capitulosDaSemana.length)
     }
   }, [capitulosLidosInicial, leituraAtual.capitulosSemana, discipuloId])
 
   const handleProgressChange = (lidos: number, total: number) => {
+    console.log("[v0] 📊 handleProgressChange chamado - lidos:", lidos, "total:", total)
     setChaptersRead(lidos)
     setTotalChapters(total)
   }
 
   const handleChapterRead = (chapter: number) => {
+    console.log("[v0] ✅ handleChapterRead chamado - capítulo ID:", chapter)
     setCapitulosLidos((prev) => {
       const newSet = new Set([...prev, chapter])
+      console.log("[v0] Novo Set de capítulos lidos:", Array.from(newSet))
       return newSet
     })
     setChaptersRead((prev) => prev + 1)
   }
 
   const handleUltimoCapituloLido = (numeroCapitulo: number) => {
+    console.log("[v0] 📖 handleUltimoCapituloLido chamado - número:", numeroCapitulo)
     if (numeroCapitulo >= leituraAtual.capituloInicio && numeroCapitulo < leituraAtual.capituloFim) {
       setCapituloSelecionado(numeroCapitulo + 1)
+      console.log("[v0] Próximo capítulo selecionado:", numeroCapitulo + 1)
     }
   }
 
   const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
-    console.log("[v0] Cliente: abrirCapitulo chamado")
-    console.log("[v0] Cliente: numeroCapitulo:", numeroCapitulo)
-    console.log("[v0] Cliente: isLido:", isLido)
-    console.log("[v0] Cliente: capitulosLidos atual:", Array.from(capitulosLidos))
+    console.log("[v0] 📘 abrirCapitulo CHAMADO")
+    console.log("[v0] numeroCapitulo:", numeroCapitulo)
+    console.log("[v0] isLido:", isLido)
+    console.log("[v0] capitulosLidos atual (Set):", Array.from(capitulosLidos))
 
     setCapituloSelecionado(numeroCapitulo)
     setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
+
+    console.log("[v0] Leitor bíblico ABERTO para capítulo", numeroCapitulo)
   }
 
   const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
@@ -137,12 +157,13 @@ export default function LeituraBiblicaClient({
                 <BibleReaderWithAutoCheck
                   bookName={leituraAtual.livro}
                   livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-                  startChapter={capituloSelecionado}
+                  startChapter={leituraAtual.capituloInicio}
                   endChapter={leituraAtual.capituloFim}
                   capitulosLidos={capitulosLidos}
                   onChapterRead={handleChapterRead}
                   capituloInicialJaLido={capituloSelecionadoJaLido}
                   capitulosSemana={leituraAtual.capitulosSemana}
+                  initialChapter={capituloSelecionado}
                 />
               </div>
             )}

@@ -30,7 +30,8 @@ interface BibleReaderWithAutoCheckProps {
   capitulosLidos: Set<number>
   onChapterRead?: (chapter: number) => void
   capituloInicialJaLido?: boolean
-  capitulosSemana?: number[] // Adicionando array de IDs reais dos capítulos
+  capitulosSemana?: number[]
+  initialChapter?: number
 }
 
 interface Highlight {
@@ -69,8 +70,9 @@ export function BibleReaderWithAutoCheck({
   onChapterRead,
   capituloInicialJaLido = false,
   capitulosSemana = [],
+  initialChapter,
 }: BibleReaderWithAutoCheckProps) {
-  const [currentChapter, setCurrentChapter] = useState(startChapter)
+  const [currentChapter, setCurrentChapter] = useState(initialChapter || startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,12 +106,21 @@ export function BibleReaderWithAutoCheck({
   )
 
   const getCapituloIdReal = (numeroCapitulo: number): number => {
-    if (!capitulosSemana || capitulosSemana.length === 0) {
-      return numeroCapitulo
-    }
+    // numeroCapitulo é o número real do capítulo (ex: 8, 9, 10...)
+    // Precisamos pegar sua posição no array capitulosSemana
+    const indexNoArray = numeroCapitulo - startChapter
+    const idReal = capitulosSemana?.[indexNoArray] || 0
 
-    const index = numeroCapitulo - startChapter
-    const idReal = capitulosSemana[index]
+    console.log(
+      "[v0] 🔍 getCapituloIdReal - numeroCapitulo:",
+      numeroCapitulo,
+      "startChapter:",
+      startChapter,
+      "index:",
+      indexNoArray,
+      "ID real:",
+      idReal,
+    )
 
     return idReal
   }
@@ -119,8 +130,8 @@ export function BibleReaderWithAutoCheck({
   }, [])
 
   useEffect(() => {
-    setCurrentChapter(startChapter)
-  }, [startChapter])
+    setCurrentChapter(initialChapter || startChapter)
+  }, [initialChapter, startChapter])
 
   useEffect(() => {
     loadChapter(currentChapter)
@@ -152,14 +163,10 @@ export function BibleReaderWithAutoCheck({
   }, [loading, chapterData, currentChapter, capitulosLidos, rastreamentoAtivo])
 
   useEffect(() => {
-    if (!rastreamentoAtivo) return
+    const scrollContainer = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement
 
-    const handleScroll = () => {
-      const scrollContainer = scrollAreaRef.current?.querySelector(
-        "[data-radix-scroll-area-viewport]",
-      ) as HTMLDivElement
-
-      if (scrollContainer) {
+    if (scrollContainer) {
+      const handleScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 20
 
@@ -167,11 +174,7 @@ export function BibleReaderWithAutoCheck({
           setScrolledToBottom(true)
         }
       }
-    }
 
-    const scrollContainer = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement
-
-    if (scrollContainer) {
       scrollContainer.addEventListener("scroll", handleScroll)
       handleScroll()
 
@@ -193,11 +196,19 @@ export function BibleReaderWithAutoCheck({
   }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
 
   useEffect(() => {
-    const idReal = getCapituloIdReal(currentChapter)
+    const indexAtual = currentChapter - startChapter
+    const idReal = capitulosSemana?.[indexAtual] || 0
     const jaLido = capitulosLidos.has(idReal)
 
+    console.log("[v0] 🔄 VERIFICANDO STATUS DO CAPÍTULO:", currentChapter)
+    console.log("[v0] startChapter:", startChapter)
+    console.log("[v0] indexAtual:", indexAtual)
+    console.log("[v0] ID real:", idReal)
+    console.log("[v0] Status isLido:", jaLido)
+    console.log("[v0] capitulosLidos Set:", Array.from(capitulosLidos))
+
     setCapituloAtualJaLido(jaLido)
-  }, [currentChapter, capitulosLidos, startChapter, capituloInicialJaLido, capitulosSemana])
+  }, [currentChapter, capitulosLidos, startChapter, capitulosSemana])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
@@ -247,32 +258,64 @@ export function BibleReaderWithAutoCheck({
   }
 
   const iniciarRastreamento = () => {
+    console.log("[v0] 🟢 BOTÃO 'LER AGORA' CLICADO")
+    console.log("[v0] Capítulo atual:", currentChapter)
+    console.log("[v0] Livro ID:", livroId)
+    console.log("[v0] Capítulo inicial já lido?", capituloInicialJaLido)
+    console.log("[v0] Rastreamento INICIADO")
+
     setRastreamentoAtivo(true)
   }
 
   const handlePrevChapter = () => {
-    const idRealAnterior = getCapituloIdReal(currentChapter - 1)
+    console.log("[v0] ⬅️ BOTÃO 'ANTERIOR' CLICADO")
+    console.log("[v0] Capítulo atual:", currentChapter)
+    console.log("[v0] Capítulo anterior será:", currentChapter - 1)
 
     if (currentChapter > startChapter) {
-      setCurrentChapter(currentChapter - 1)
+      const novoCapitulo = currentChapter - 1
+      const idRealAnterior = getCapituloIdReal(novoCapitulo)
+      const jaLidoAnterior = capitulosLidos.has(idRealAnterior)
+
+      console.log("[v0] ID real do capítulo anterior:", idRealAnterior)
+      console.log("[v0] Capítulo anterior já lido?", jaLidoAnterior)
+
+      setCurrentChapter(novoCapitulo)
+      setCapituloAtualJaLido(jaLidoAnterior)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
       setReadingStartTime(null)
       setTimeElapsed(0)
       setAutoMarked(false)
+      console.log("[v0] Mudança para capítulo anterior CONCLUÍDA")
+    } else {
+      console.log("[v0] ⚠ Já está no primeiro capítulo da semana")
     }
   }
 
   const handleNextChapter = () => {
-    const idRealProximo = getCapituloIdReal(currentChapter + 1)
+    console.log("[v0] ➡️ BOTÃO 'PROSSEGUIR' CLICADO")
+    console.log("[v0] Capítulo atual:", currentChapter)
+    console.log("[v0] Próximo capítulo será:", currentChapter + 1)
 
     if (currentChapter < endChapter) {
-      setCurrentChapter(currentChapter + 1)
+      const novoCapitulo = currentChapter + 1
+      const idRealProximo = getCapituloIdReal(novoCapitulo)
+      const jaLidoProximo = capitulosLidos.has(idRealProximo)
+
+      console.log("[v0] ID real do próximo capítulo:", idRealProximo)
+      console.log("[v0] Próximo capítulo já lido?", jaLidoProximo)
+
+      setCurrentChapter(novoCapitulo)
+      setCapituloAtualJaLido(jaLidoProximo)
       setRastreamentoAtivo(false)
       setScrolledToBottom(false)
       setReadingStartTime(null)
       setTimeElapsed(0)
       setAutoMarked(false)
+      console.log("[v0] Mudança para próximo capítulo CONCLUÍDA")
+    } else {
+      console.log("[v0] ⚠ Já está no último capítulo da semana")
     }
   }
 

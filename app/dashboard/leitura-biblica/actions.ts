@@ -33,7 +33,7 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
 
   const capituloId = capitulo.id
 
-  console.log("[v0] marcarCapituloLido - discipulo.id:", discipulo.id, "capituloId:", capituloId)
+  console.log("[v0] marcarCapituloLido - user.id:", user.id, "discipulo.id:", discipulo.id, "capituloId:", capituloId)
 
   const { data: leitura, error: fetchError } = await supabase
     .from("leituras_capitulos")
@@ -62,6 +62,7 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
 
   const { error } = await supabase.from("leituras_capitulos").upsert(
     {
+      usuario_id: user.id,
       discipulo_id: discipulo.id,
       capitulos_lidos: novosCapitulosLidos,
       xp_acumulado_leitura: novoXpAcumulado,
@@ -76,8 +77,9 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
     return { success: false, error: error.message }
   }
 
-  // Atualizar XP total do discípulo
-  const novoXpTotal = (discipulo.xp_total || 0) + 5
+  const { data: discipuloAtual } = await supabase.from("discipulos").select("xp_total").eq("id", discipulo.id).single()
+
+  const novoXpTotal = (discipuloAtual?.xp_total || 0) + 5
   await supabase.from("discipulos").update({ xp_total: novoXpTotal }).eq("id", discipulo.id)
 
   return { success: true, xpGanho: 5, jaLido: false }

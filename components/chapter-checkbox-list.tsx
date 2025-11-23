@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
-import { buscarCapitulosLidos } from "@/app/dashboard/leitura-biblica/actions"
 import { cn } from "@/lib/utils"
 
 interface ChapterCheckboxListProps {
@@ -28,45 +27,56 @@ export function ChapterCheckboxList({
   onCapituloClick,
   capitulosSemana = [],
 }: ChapterCheckboxListProps) {
+  console.log("[v0] 🔷 ChapterCheckboxList: COMPONENTE RENDERIZADO")
+  console.log("[v0] Props recebidos:", {
+    livroId,
+    capituloInicial,
+    capituloFinal,
+    capitulosSemana,
+    externalCapitulosLidos: externalCapitulosLidos ? Array.from(externalCapitulosLidos) : [],
+  })
+
   const capitulos = Array.from({ length: capituloFinal - capituloInicial + 1 }, (_, i) => capituloInicial + i)
 
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function carregarLeituras() {
-      const { leituras, ultimoCapituloLido } = await buscarCapitulosLidos(livroId, capitulos)
-      const lidos = new Set(leituras.filter((l) => l.lido).map((l) => l.numero_capitulo))
+    console.log("[v0] 🟡 ChapterCheckboxList USEEFFECT: Inicializando")
 
-      setCapitulosLidos(lidos)
+    if (externalCapitulosLidos && externalCapitulosLidos.size > 0) {
+      console.log("[v0] externalCapitulosLidos (IDs):", Array.from(externalCapitulosLidos))
+      console.log("[v0] capitulosSemana (IDs esperados):", capitulosSemana)
+
+      setCapitulosLidos(externalCapitulosLidos)
       setLoading(false)
 
-      if (onProgressChange) {
-        onProgressChange(lidos.size, capitulos.length)
-      }
-
-      if (ultimoCapituloLido && onUltimoCapituloChange) {
-        onUltimoCapituloChange(ultimoCapituloLido)
-      }
-    }
-
-    carregarLeituras()
-  }, [livroId, capituloInicial, capituloFinal])
-
-  useEffect(() => {
-    if (externalCapitulosLidos && externalCapitulosLidos.size > 0) {
-      const merged = new Set([...capitulosLidos, ...externalCapitulosLidos])
-
-      setCapitulosLidos(merged)
+      // Contar quantos IDs da semana estão no Set
+      const lidosDaSemana = capitulosSemana.filter((id) => externalCapitulosLidos.has(id))
+      console.log("[v0] Capítulos LIDOS desta semana:", lidosDaSemana.length, "/", capitulos.length)
+      console.log("[v0] IDs lidos da semana:", lidosDaSemana)
 
       if (onProgressChange) {
-        onProgressChange(merged.size, capitulos.length)
+        onProgressChange(lidosDaSemana.length, capitulos.length)
       }
+    } else {
+      console.log("[v0] ⚠ Nenhum capítulo lido encontrado")
+      setLoading(false)
     }
-  }, [externalCapitulosLidos])
+  }, [externalCapitulosLidos, capitulosSemana])
 
   const handleCapituloClick = (cap: number) => {
-    const isLido = capitulosLidos.has(cap)
+    const indice = cap - capituloInicial
+    const capituloId = capitulosSemana[indice]
+    const isLido = capituloId ? capitulosLidos.has(capituloId) : false
+
+    console.log("[v0] 🖱 CLICK no capítulo")
+    console.log("[v0] Número do capítulo:", cap)
+    console.log("[v0] Índice no array:", indice)
+    console.log("[v0] ID do capítulo (da tabela):", capituloId)
+    console.log("[v0] Status isLido:", isLido)
+    console.log("[v0] capitulosLidos Set completo:", Array.from(capitulosLidos))
+
     onCapituloClick && onCapituloClick(cap, isLido)
   }
 
@@ -76,8 +86,9 @@ export function ChapterCheckboxList({
 
   return (
     <div className="flex flex-wrap gap-3">
-      {capitulos.map((cap) => {
-        const isLido = capitulosLidos.has(cap)
+      {capitulos.map((cap, index) => {
+        const capituloId = capitulosSemana[index]
+        const isLido = capituloId ? capitulosLidos.has(capituloId) : false
 
         return (
           <button
