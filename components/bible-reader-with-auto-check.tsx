@@ -355,41 +355,25 @@ export function BibleReaderWithAutoCheck({
     })
   }
 
-  const applyHighlightWithColor = async (color: string) => {
-    console.log("[v0] 🎨 Aplicando highlight com cor:", color)
-    console.log("[v0] 🎨 Seleção atual:", currentSelection)
-
-    if (!currentSelection || !currentSelection.text) {
-      console.log("[v0] ⚠️ Sem seleção para aplicar")
-      return
-    }
-
-    setSelectedColor(color)
-    setHighlightMode(true)
-
-    // Aguardar um frame para garantir que selectedColor foi atualizado
-    await new Promise((resolve) => setTimeout(resolve, 0))
-
-    await handleTextSelection()
-
-    // Limpar seleção visual
-    setTimeout(() => {
-      const selection = window.getSelection()
-      if (selection) {
-        selection.removeAllRanges()
-        console.log("[v0] 🧹 Seleção visual removida")
-      }
-      setCurrentSelection(null)
-    }, 150)
-  }
-
-  const handleTextSelection = async () => {
+  const handleTextSelection = async (overrideColor?: string) => {
     if (!highlightMode) return
 
-    if (!currentSelection || !currentSelection.text) {
-      console.log("[v0] ⚠️ Nenhuma seleção armazenada")
+    const selection = window.getSelection()
+    if (!selection || selection.rangeCount === 0) {
+      console.log("[v0] ⚠️ Nenhuma seleção encontrada")
       return
     }
+
+    const range = selection.getRangeAt(0)
+    const selectedText = selection.toString().trim()
+
+    if (!selectedText || selectedText.length < 3) {
+      console.log("[v0] ⚠️ Texto muito curto, ignorando")
+      return
+    }
+
+    const colorToUse = overrideColor || selectedColor
+    console.log("[v0] 🎨 Cor selecionada para highlight:", colorToUse)
 
     const {
       data: { user },
@@ -401,8 +385,11 @@ export function BibleReaderWithAutoCheck({
       return
     }
 
-    const selectedText = currentSelection.text
-    console.log("[v0] 💾 Salvando highlight:", selectedText, "cor:", selectedColor)
+    const newHighlight: Highlight = {
+      id: Date.now(),
+      texto: selectedText,
+      cor: colorToUse,
+    }
 
     const { data: existing } = await supabase
       .from("highlights_biblia")
@@ -411,12 +398,6 @@ export function BibleReaderWithAutoCheck({
       .eq("livro_id", livroId)
       .eq("numero_capitulo", currentChapter)
       .single()
-
-    const newHighlight: Highlight = {
-      id: Date.now(),
-      texto: selectedText,
-      cor: selectedColor,
-    }
 
     let updatedMarcacoes: Highlight[] = []
 
@@ -452,7 +433,7 @@ export function BibleReaderWithAutoCheck({
       type: "add",
       highlight: {
         texto_selecionado: selectedText,
-        cor: selectedColor,
+        cor: colorToUse,
         id: newHighlight.id,
       },
       timestamp: Date.now(),
@@ -466,11 +447,33 @@ export function BibleReaderWithAutoCheck({
     toast.success("Texto marcado com sucesso!", { duration: 2000 })
 
     setCurrentSelection(null)
-    const selection = window.getSelection()
-    if (selection) {
-      selection.removeAllRanges()
-    }
+    selection.removeAllRanges()
     console.log("[v0] ✅ Highlight aplicado e seleção limpa")
+  }
+
+  const applyHighlightWithColor = async (color: string) => {
+    console.log("[v0] 🎨 Aplicando highlight com cor:", color)
+    console.log("[v0] 🎨 Seleção atual:", currentSelection)
+
+    if (!currentSelection || !currentSelection.text) {
+      console.log("[v0] ⚠️ Sem seleção para aplicar")
+      return
+    }
+
+    setSelectedColor(color)
+    setHighlightMode(true)
+
+    await handleTextSelection(color)
+
+    // Limpar seleção visual
+    setTimeout(() => {
+      const selection = window.getSelection()
+      if (selection) {
+        selection.removeAllRanges()
+        console.log("[v0] 🧹 Seleção visual removida")
+      }
+      setCurrentSelection(null)
+    }, 100)
   }
 
   const handleUndo = async () => {
