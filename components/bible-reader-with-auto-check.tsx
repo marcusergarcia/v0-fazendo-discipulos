@@ -105,6 +105,8 @@ export function BibleReaderWithAutoCheck({
     range: Range | null
   } | null>(null)
 
+  const [fontSize, setFontSize] = useState(16)
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -335,7 +337,7 @@ export function BibleReaderWithAutoCheck({
     const selectedText = selection.toString().trim()
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null
 
-    console.log("[v0] Seleção capturada:", selectedText)
+    console.log("[v0] 📝 Seleção capturada:", selectedText)
     setCurrentSelection({
       text: selectedText,
       range,
@@ -346,7 +348,7 @@ export function BibleReaderWithAutoCheck({
     if (!highlightMode) return
 
     if (!currentSelection || !currentSelection.text) {
-      console.log("[v0] Nenhuma seleção armazenada")
+      console.log("[v0] ⚠️ Nenhuma seleção armazenada")
       return
     }
 
@@ -361,7 +363,7 @@ export function BibleReaderWithAutoCheck({
     }
 
     const selectedText = currentSelection.text
-    console.log("[v0] Salvando highlight:", selectedText, "cor:", selectedColor)
+    console.log("[v0] 💾 Salvando highlight:", selectedText, "cor:", selectedColor)
 
     const { data: existing } = await supabase
       .from("highlights_biblia")
@@ -372,7 +374,7 @@ export function BibleReaderWithAutoCheck({
       .single()
 
     const newHighlight: Highlight = {
-      id: Date.now(), // ID temporário único
+      id: Date.now(),
       texto: selectedText,
       cor: selectedColor,
     }
@@ -643,13 +645,19 @@ export function BibleReaderWithAutoCheck({
                   {HIGHLIGHT_COLORS.map((color) => (
                     <button
                       key={color.value}
-                      onClick={async () => {
-                        console.log("[v0] Paleta clicada:", color.value)
+                      onClick={async (e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+
+                        console.log("[v0] 🎨 Paleta clicada:", color.value)
                         setSelectedColor(color.value)
                         setHighlightMode(true)
 
                         if (currentSelection && currentSelection.text) {
+                          console.log("[v0] ✅ Aplicando highlight imediatamente")
                           await handleTextSelection()
+                        } else {
+                          console.log("[v0] ⏳ Aguardando seleção de texto")
                         }
                       }}
                       className={cn(
@@ -702,12 +710,17 @@ export function BibleReaderWithAutoCheck({
           <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollAreaRef}>
             <div
               className={cn(
-                "prose prose-sm dark:prose-invert max-w-none text-justify leading-relaxed px-1",
-                highlightMode && "select-text cursor-text",
+                "prose prose-sm sm:prose max-w-none leading-relaxed",
+                highlightMode && "cursor-text select-text",
               )}
-              style={{ userSelect: highlightMode ? "text" : "auto" }}
               onMouseUp={captureSelection}
               onTouchEnd={captureSelection}
+              style={{
+                fontSize: `${fontSize}px`,
+                lineHeight: "1.8",
+                userSelect: highlightMode ? "text" : "auto",
+                WebkitUserSelect: highlightMode ? "text" : "auto",
+              }}
             >
               {renderTextWithHighlights(chapterData?.text || "", highlights)}
             </div>
