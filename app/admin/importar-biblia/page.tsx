@@ -78,7 +78,7 @@ const livrosMap: Record<string, number> = {
 
 // Mapeamento de abreviações do banco para abreviações da API
 const abreviacaoAPIMap: Record<string, string> = {
-  at: "acts", // Atos no banco é "at", na API é "acts"
+  at: "atos", // Atos no banco é "at", na API é "atos"
   // Adicione outros se necessário
 }
 
@@ -88,7 +88,16 @@ async function baixarBibliaJSON(): Promise<any> {
   if (!response.ok) {
     throw new Error(`Erro ao baixar Bíblia: ${response.status}`)
   }
-  return response.json()
+  const data = await response.json()
+  console.log(
+    "[v0] Livros da API:",
+    data.map((l: any) => ({ abbrev: l.abbrev, name: l.name })),
+  )
+  console.log(
+    "[v0] Procurando Atos - abreviacoes encontradas:",
+    data.filter((l: any) => l.name?.toLowerCase().includes("atos") || l.abbrev?.toLowerCase().includes("at")),
+  )
+  return data
 }
 
 export default function ImportarBibliaPage() {
