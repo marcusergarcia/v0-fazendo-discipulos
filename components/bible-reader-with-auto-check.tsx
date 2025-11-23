@@ -431,6 +431,7 @@ export function BibleReaderWithAutoCheck({
     if (selection) {
       selection.removeAllRanges()
     }
+    console.log("[v0] ✅ Highlight aplicado e seleção limpa")
   }
 
   const handleUndo = async () => {
@@ -656,6 +657,15 @@ export function BibleReaderWithAutoCheck({
                         if (currentSelection && currentSelection.text) {
                           console.log("[v0] ✅ Aplicando highlight imediatamente")
                           await handleTextSelection()
+
+                          setTimeout(() => {
+                            const selection = window.getSelection()
+                            if (selection) {
+                              selection.removeAllRanges()
+                            }
+                            setCurrentSelection(null)
+                            console.log("[v0] 🧹 Seleção limpa no mobile")
+                          }, 100)
                         } else {
                           console.log("[v0] ⏳ Aguardando seleção de texto")
                         }
