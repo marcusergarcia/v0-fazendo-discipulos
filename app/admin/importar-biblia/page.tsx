@@ -4,8 +4,13 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { atualizarCapitulo, buscarCapitulosVazios, diagnosticarCapitulos, buscarCapitulosPreenchidos } from "./actions"
-import { supabaseAdmin } from "@/lib/supabase-admin"
+import {
+  atualizarCapitulo,
+  buscarCapitulosVazios,
+  diagnosticarCapitulos,
+  buscarCapitulosPreenchidos,
+  buscarTodosCapitulos,
+} from "./actions"
 
 // Mapeamento de abreviações para IDs dos livros
 const livrosMap: Record<string, number> = {
@@ -332,19 +337,7 @@ export default function ImportarBibliaPage() {
 
       addLog("🔍 Buscando TODOS os capítulos para forçar quebras de linha...")
 
-      // Buscar TODOS os capítulos, incluindo os que já têm números
-      const { data: capitulos, error } = await supabaseAdmin
-        .from("capitulos_biblia")
-        .select("id, livro_id, numero_capitulo, texto, livros_biblia(abreviacao, nome)")
-        .not("texto", "is", null)
-        .order("livro_id")
-        .order("numero_capitulo")
-
-      if (error) {
-        addLog(`❌ Erro ao buscar capítulos: ${error.message}`)
-        setImporting(false)
-        return
-      }
+      const capitulos = await buscarTodosCapitulos()
 
       setTotal(capitulos.length)
       addLog(`✅ Encontrados ${capitulos.length} capítulos para atualizar`)

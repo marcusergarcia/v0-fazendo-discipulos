@@ -125,5 +125,36 @@ export async function buscarCapitulosPreenchidos() {
   return capitulos
 }
 
-// Exportando supabaseAdmin para uso em outros lugares
-export { supabaseAdmin }
+export async function buscarTodosCapitulos() {
+  let allCapitulos: any[] = []
+  let from = 0
+  const batchSize = 1000
+  let hasMore = true
+
+  while (hasMore) {
+    const { data, error } = await supabaseAdmin
+      .from("capitulos_biblia")
+      .select("id, livro_id, numero_capitulo, texto, livros_biblia(abreviacao, nome)")
+      .not("texto", "is", null)
+      .order("livro_id")
+      .order("numero_capitulo")
+      .range(from, from + batchSize - 1)
+
+    if (error) {
+      throw new Error(error.message)
+    }
+
+    if (data && data.length > 0) {
+      allCapitulos = [...allCapitulos, ...data]
+      from += batchSize
+
+      if (data.length < batchSize) {
+        hasMore = false
+      }
+    } else {
+      hasMore = false
+    }
+  }
+
+  return allCapitulos
+}
