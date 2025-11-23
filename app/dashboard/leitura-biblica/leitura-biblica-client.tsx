@@ -101,13 +101,17 @@ export default function LeituraBiblicaClient({
     console.log("[v0] 📘 abrirCapitulo CHAMADO")
     console.log("[v0] numeroCapitulo:", numeroCapitulo)
     console.log("[v0] isLido:", isLido)
-    console.log("[v0] capitulosLidos atual (Set):", Array.from(capitulosLidos))
 
     setCapituloSelecionado(numeroCapitulo)
     setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
 
     console.log("[v0] Leitor bíblico ABERTO para capítulo", numeroCapitulo)
+  }
+
+  const fecharLeitor = () => {
+    console.log("[v0] 🔴 Fechando leitor bíblico")
+    setLeitorAberto(false)
   }
 
   const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
@@ -168,6 +172,7 @@ export default function LeituraBiblicaClient({
                   capituloInicialJaLido={capituloSelecionadoJaLido}
                   capitulosSemana={leituraAtual.capitulosSemana}
                   initialChapter={capituloSelecionado}
+                  onClose={fecharLeitor}
                 />
               </div>
             )}

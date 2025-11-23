@@ -16,6 +16,7 @@ import {
   PlayCircle,
   Undo2,
   Redo2,
+  X,
 } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import { marcarCapituloLido } from "@/app/dashboard/leitura-biblica/actions"
@@ -32,6 +33,7 @@ interface BibleReaderWithAutoCheckProps {
   capituloInicialJaLido?: boolean
   capitulosSemana?: number[]
   initialChapter?: number
+  onClose?: () => void
 }
 
 interface Highlight {
@@ -71,6 +73,7 @@ export function BibleReaderWithAutoCheck({
   capituloInicialJaLido = false,
   capitulosSemana = [],
   initialChapter,
+  onClose,
 }: BibleReaderWithAutoCheckProps) {
   const [currentChapter, setCurrentChapter] = useState(initialChapter || startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
@@ -112,14 +115,7 @@ export function BibleReaderWithAutoCheck({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-  const getCapituloIdReal = (numeroCapitulo: number): number => {
-    const index = numeroCapitulo - startChapter
-    const idReal = capitulosSemana[index]
-    console.log(
-      `[v0] 🔍 getCapituloIdReal - numeroCapitulo: ${numeroCapitulo} startChapter: ${startChapter} index: ${index} ID real: ${idReal}`,
-    )
-    return idReal || numeroCapitulo
-  }
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     setIsMounted(true)
@@ -203,6 +199,15 @@ export function BibleReaderWithAutoCheck({
     console.log("[v0] capitulosLidos Set:", Array.from(capitulosLidos))
     setCapituloAtualJaLido(isLido)
   }, [currentChapter, capitulosLidos, startChapter, capitulosSemana])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const loadChapter = async (chapter: number) => {
     setLoading(true)
@@ -579,6 +584,15 @@ export function BibleReaderWithAutoCheck({
     })
   }
 
+  const getCapituloIdReal = (numeroCapitulo: number): number => {
+    const index = numeroCapitulo - startChapter
+    const idReal = capitulosSemana[index]
+    console.log(
+      `[v0] 🔍 getCapituloIdReal - numeroCapitulo: ${numeroCapitulo} startChapter: ${startChapter} index: ${index} ID real: ${idReal}`,
+    )
+    return idReal || numeroCapitulo
+  }
+
   if (!isMounted) {
     return (
       <Card className="w-full">
@@ -599,6 +613,196 @@ export function BibleReaderWithAutoCheck({
     )
   }
 
+  if (isMobile) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        {/* Header com botão voltar */}
+        <div className="flex items-center justify-between p-4 border-b bg-card">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold">
+              {bookName} {currentChapter}
+            </h2>
+            {capituloAtualJaLido && <Check className="w-5 h-5 text-green-500" />}
+          </div>
+          <div className="w-9" />
+        </div>
+
+        {/* Conteúdo do capítulo */}
+        <div className="flex-1 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 px-4">
+              <p className="text-muted-foreground">{error}</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-full" ref={scrollAreaRef}>
+              <div className="p-4">
+                {/* Paleta de cores para highlight */}
+                {(rastreamentoAtivo || capituloAtualJaLido) && (
+                  <div className="mb-4 flex flex-wrap gap-2 items-center justify-center sticky top-0 bg-background/95 backdrop-blur-sm py-3 z-10 border-b">
+                    <div className="flex gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUndo}
+                        disabled={historyIndex < 0}
+                        title="Desfazer"
+                        className="h-8 w-8 p-0 bg-transparent"
+                      >
+                        <Undo2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRedo}
+                        disabled={historyIndex >= history.length - 1}
+                        title="Refazer"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Redo2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex gap-1.5">
+                      {HIGHLIGHT_COLORS.map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setSelectedColor(color.value)
+                            setHighlightMode(true)
+
+                            if (currentSelection && currentSelection.text) {
+                              await handleTextSelection()
+                              setTimeout(() => {
+                                const selection = window.getSelection()
+                                if (selection) {
+                                  selection.removeAllRanges()
+                                }
+                                setCurrentSelection(null)
+                              }, 100)
+                            }
+                          }}
+                          className={cn(
+                            "w-8 h-8 rounded border-2 transition-all active:scale-95",
+                            color.class,
+                            selectedColor === color.value && highlightMode
+                              ? "border-primary scale-110"
+                              : "border-gray-300",
+                          )}
+                          title={color.name}
+                        />
+                      ))}
+                    </div>
+
+                    <Button
+                      variant={highlightMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setHighlightMode(!highlightMode)}
+                      className="h-8 px-3"
+                    >
+                      <Highlighter className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Texto do capítulo */}
+                <div
+                  className={cn(
+                    "prose prose-sm max-w-none leading-relaxed",
+                    highlightMode && "cursor-text select-text",
+                  )}
+                  onMouseUp={captureSelection}
+                  onTouchEnd={captureSelection}
+                  style={{
+                    fontSize: `${fontSize}px`,
+                    lineHeight: "1.8",
+                    userSelect: highlightMode ? "text" : "auto",
+                    WebkitUserSelect: highlightMode ? "text" : "auto",
+                  }}
+                >
+                  {renderTextWithHighlights(chapterData?.text || "", highlights)}
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </div>
+
+        {/* Footer com botões de navegação e Ler Agora */}
+        <div className="border-t bg-card p-4 space-y-3">
+          {/* Barra de progresso */}
+          {rastreamentoAtivo && !capituloAtualJaLido && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{scrolledToBottom ? "✓ Rolou até o fim" : "Role até o fim"}</span>
+                <span>
+                  {timeElapsed >= MIN_READ_TIME_MS ? "✓ Tempo atingido" : `${formatTime(timeRemaining)} restantes`}
+                </span>
+              </div>
+              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Botão Ler Agora ou Marcador */}
+          {!capituloAtualJaLido && !rastreamentoAtivo && (
+            <Button onClick={iniciarRastreamento} className="w-full gap-2" size="lg">
+              <PlayCircle className="w-5 h-5" />
+              Ler Agora
+            </Button>
+          )}
+
+          {capituloAtualJaLido && (
+            <div className="flex items-center justify-center gap-2 py-2 text-green-600 font-medium">
+              <Check className="w-5 h-5" />
+              <span>Capítulo Lido</span>
+            </div>
+          )}
+
+          {/* Navegação entre capítulos */}
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              variant="outline"
+              onClick={handlePrevChapter}
+              disabled={currentChapter <= startChapter || loading}
+              className="flex-1 bg-transparent"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Anterior
+            </Button>
+
+            <span className="text-sm text-muted-foreground whitespace-nowrap px-2">
+              {currentChapter} / {endChapter}
+            </span>
+
+            <Button
+              variant="outline"
+              onClick={handleNextChapter}
+              disabled={currentChapter >= endChapter || loading}
+              className="flex-1"
+            >
+              Próximo
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Desktop: mantém o Card original
   return (
     <Card className="w-full">
       <CardHeader>
