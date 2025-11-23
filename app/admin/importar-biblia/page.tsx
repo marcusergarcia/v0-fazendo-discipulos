@@ -181,7 +181,7 @@ export default function ImportarBibliaPage() {
         const versiculos = livroJSON.chapters[capituloIndex]
         const textoComVersiculos = versiculos
           .map((versiculo: string, index: number) => `**${index + 1}** ${versiculo}`)
-          .join(" ")
+          .join("\n\n")
 
         if (textoComVersiculos && textoComVersiculos.trim().length > 0) {
           const { data: updateData, error: updateError } = await atualizarCapitulo(cap.id, textoComVersiculos)
@@ -278,7 +278,7 @@ export default function ImportarBibliaPage() {
         const versiculos = livroJSON.chapters[capituloIndex]
         const textoComVersiculos = versiculos
           .map((versiculo: string, index: number) => `**${index + 1}** ${versiculo}`)
-          .join(" ")
+          .join("\n\n")
 
         if (textoComVersiculos && textoComVersiculos.trim().length > 0) {
           const { data: updateData, error: updateError } = await atualizarCapitulo(cap.id, textoComVersiculos)
