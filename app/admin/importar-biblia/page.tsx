@@ -319,15 +319,15 @@ export default function ImportarBibliaPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <Button onClick={diagnosticar} variant="outline" disabled={importing} className="w-full bg-transparent">
+          <div className="flex gap-2">
+            <Button onClick={diagnosticar} variant="outline" disabled={importing}>
               Verificar Status
             </Button>
-            <Button onClick={importarBiblia} disabled={importing} className="w-full">
-              {importing ? "Importando..." : "Iniciar Importação"}
-            </Button>
-            <Button onClick={atualizarNumerosVersiculos} disabled={importing} variant="secondary" className="w-full">
+            <Button onClick={atualizarNumerosVersiculos} disabled={importing} variant="secondary" className="flex-1">
               {importing ? "Atualizando..." : "Adicionar Números aos Versículos"}
+            </Button>
+            <Button onClick={importarBiblia} disabled={importing} size="lg" className="flex-1">
+              {importing ? "Importando..." : "Importar Capítulos Vazios"}
             </Button>
           </div>
 
