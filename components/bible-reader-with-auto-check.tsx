@@ -100,6 +100,11 @@ export function BibleReaderWithAutoCheck({
 
   const [capituloAtualJaLido, setCapituloAtualJaLido] = useState(false)
 
+  const [currentSelection, setCurrentSelection] = useState<{
+    text: string
+    range: Range | null
+  } | null>(null)
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -318,11 +323,32 @@ export function BibleReaderWithAutoCheck({
   const timeRemaining = Math.max(0, MIN_READ_TIME_MS - timeElapsed)
   const progressPercent = Math.min(100, (timeElapsed / MIN_READ_TIME_MS) * 100)
 
-  const handleTextSelection = async () => {
+  const captureSelection = () => {
     if (!highlightMode) return
 
     const selection = window.getSelection()
-    if (!selection || selection.toString().trim() === "") return
+    if (!selection || selection.toString().trim() === "") {
+      setCurrentSelection(null)
+      return
+    }
+
+    const selectedText = selection.toString().trim()
+    const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null
+
+    console.log("[v0] Seleção capturada:", selectedText)
+    setCurrentSelection({
+      text: selectedText,
+      range,
+    })
+  }
+
+  const handleTextSelection = async () => {
+    if (!highlightMode) return
+
+    if (!currentSelection || !currentSelection.text) {
+      console.log("[v0] Nenhuma seleção armazenada")
+      return
+    }
 
     const {
       data: { user },
@@ -334,7 +360,8 @@ export function BibleReaderWithAutoCheck({
       return
     }
 
-    const selectedText = selection.toString()
+    const selectedText = currentSelection.text
+    console.log("[v0] Salvando highlight:", selectedText, "cor:", selectedColor)
 
     const { data: existing } = await supabase
       .from("highlights_biblia")
@@ -396,7 +423,12 @@ export function BibleReaderWithAutoCheck({
 
     await loadHighlights(currentChapter)
     toast.success("Texto marcado com sucesso!", { duration: 2000 })
-    selection.removeAllRanges()
+
+    setCurrentSelection(null)
+    const selection = window.getSelection()
+    if (selection) {
+      selection.removeAllRanges()
+    }
   }
 
   const handleUndo = async () => {
@@ -611,9 +643,14 @@ export function BibleReaderWithAutoCheck({
                   {HIGHLIGHT_COLORS.map((color) => (
                     <button
                       key={color.value}
-                      onClick={() => {
+                      onClick={async () => {
+                        console.log("[v0] Paleta clicada:", color.value)
                         setSelectedColor(color.value)
                         setHighlightMode(true)
+
+                        if (currentSelection && currentSelection.text) {
+                          await handleTextSelection()
+                        }
                       }}
                       className={cn(
                         "w-7 h-7 rounded border-2 transition-all hover:scale-110",
@@ -665,11 +702,12 @@ export function BibleReaderWithAutoCheck({
           <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollAreaRef}>
             <div
               className={cn(
-                "text-base leading-relaxed whitespace-pre-wrap",
+                "prose prose-sm dark:prose-invert max-w-none text-justify leading-relaxed px-1",
                 highlightMode && "select-text cursor-text",
               )}
               style={{ userSelect: highlightMode ? "text" : "auto" }}
-              onMouseUp={handleTextSelection}
+              onMouseUp={captureSelection}
+              onTouchEnd={captureSelection}
             >
               {renderTextWithHighlights(chapterData?.text || "", highlights)}
             </div>
