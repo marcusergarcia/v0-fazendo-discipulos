@@ -52,6 +52,8 @@ export default function LeituraBiblicaClient({
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
   const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
+  const [livroAtual, setLivroAtual] = useState(leituraAtual.livro)
+  const [livroIdAtual, setLivroIdAtual] = useState(LIVROS_MAP[leituraAtual.livro] || 1)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -121,26 +123,43 @@ export default function LeituraBiblicaClient({
   }
 
   const navegarParaCapitulo = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
-    console.log("[v0] 📚 Navegação livre para:", novoLivroNome, "capítulo", novoCapitulo)
+    console.log("[v0] 📚 Navegação livre INICIADA")
+    console.log("[v0] Parâmetros recebidos:", { novoLivroId, novoLivroNome, novoCapitulo })
 
     // Buscar o ID do capítulo na tabela capitulos_biblia
-    const { data: capituloData } = await supabase
+    const { data: capituloData, error: capituloError } = await supabase
       .from("capitulos_biblia")
       .select("id")
       .eq("livro_id", novoLivroId)
       .eq("numero_capitulo", novoCapitulo)
       .single()
 
+    console.log("[v0] Resultado busca capítulo:", { capituloData, capituloError })
+
     if (capituloData) {
       const capituloId = capituloData.id
       const isLido = capitulosLidos.has(capituloId)
 
-      console.log("[v0] Capítulo ID:", capituloId, "| Já lido:", isLido, "| Será considerado para pontuação semanal")
+      console.log("[v0] ✅ Capítulo encontrado!")
+      console.log("[v0] - ID do capítulo:", capituloId)
+      console.log("[v0] - Já lido:", isLido)
+      console.log("[v0] - Livro:", novoLivroNome)
+      console.log("[v0] - Capítulo:", novoCapitulo)
 
-      // Atualiza o estado para abrir o capítulo
+      setLivroAtual(novoLivroNome)
+      setLivroIdAtual(novoLivroId)
       setCapituloSelecionado(novoCapitulo)
       setCapituloSelecionadoJaLido(isLido)
       setLeitorAberto(true)
+
+      console.log("[v0] 📖 Leitor bíblico aberto com:", {
+        livro: novoLivroNome,
+        livroId: novoLivroId,
+        capitulo: novoCapitulo,
+        jaLido: isLido,
+      })
+    } else {
+      console.error("[v0] ❌ Capítulo não encontrado!")
     }
   }
 
@@ -193,14 +212,16 @@ export default function LeituraBiblicaClient({
             {leitorAberto && (
               <div className="mt-4">
                 <BibleReaderWithAutoCheck
-                  bookName={leituraAtual.livro}
-                  livroId={LIVROS_MAP[leituraAtual.livro] || 1}
-                  startChapter={leituraAtual.capituloInicio}
-                  endChapter={leituraAtual.capituloFim}
+                  bookName={livroAtual}
+                  livroId={livroIdAtual}
+                  startChapter={livroAtual === leituraAtual.livro ? leituraAtual.capituloInicio : capituloSelecionado}
+                  endChapter={livroAtual === leituraAtual.livro ? leituraAtual.capituloFim : capituloSelecionado}
                   capitulosLidos={capitulosLidos}
                   onChapterRead={handleChapterRead}
                   capituloInicialJaLido={capituloSelecionadoJaLido}
-                  capitulosSemana={leituraAtual.capitulosSemana}
+                  capitulosSemana={
+                    livroAtual === leituraAtual.livro ? leituraAtual.capitulosSemana : [capituloSelecionado]
+                  }
                   initialChapter={capituloSelecionado}
                   onClose={fecharLeitor}
                   onNavigateToChapter={navegarParaCapitulo}
