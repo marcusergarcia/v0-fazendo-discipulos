@@ -546,7 +546,7 @@ export function BibleReaderWithAutoCheck({
 
   const renderTextWithHighlights = (text: string, highlights: Highlight[]): React.ReactNode => {
     if (highlights.length === 0) {
-      return text
+      return parseMarkdownBold(text)
     }
 
     const parts: { text: string; color?: string }[] = []
@@ -581,11 +581,28 @@ export function BibleReaderWithAutoCheck({
         const colorClass = HIGHLIGHT_COLORS.find((c) => c.value === part.color)?.class || ""
         return (
           <span key={index} className={cn("rounded px-0.5", colorClass)}>
-            {part.text}
+            {parseMarkdownBold(part.text)}
           </span>
         )
       }
-      return <span key={index}>{part.text}</span>
+      return <span key={index}>{parseMarkdownBold(part.text)}</span>
+    })
+  }
+
+  const parseMarkdownBold = (text: string): React.ReactNode => {
+    const parts = text.split(/(\*\*\d+\*\*)/g)
+
+    return parts.map((part, index) => {
+      const match = part.match(/^\*\*(\d+)\*\*$/)
+      if (match) {
+        const numero = match[1]
+        return (
+          <strong key={index} className="text-[0.7em] align-super font-bold mr-0.5">
+            {numero}
+          </strong>
+        )
+      }
+      return part
     })
   }
 
