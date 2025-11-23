@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { atualizarCapitulo, buscarCapitulosVazios, diagnosticarCapitulos, buscarCapitulosPreenchidos } from "./actions"
+import { supabaseAdmin } from "@/lib/supabase-admin"
 
 // Mapeamento de abreviações para IDs dos livros
 const livrosMap: Record<string, number> = {
@@ -318,6 +319,100 @@ export default function ImportarBibliaPage() {
     }
   }
 
+  const forcarQuebraDeLinhas = async () => {
+    setImporting(true)
+    setProgress(0)
+    setLog([])
+
+    try {
+      addLog("📥 Baixando Bíblia ACF completa do GitHub...")
+
+      const bibliaJSON = await baixarBibliaJSON()
+      addLog(`✅ Bíblia baixada: ${bibliaJSON.length} livros`)
+
+      addLog("🔍 Buscando TODOS os capítulos para forçar quebras de linha...")
+
+      // Buscar TODOS os capítulos, incluindo os que já têm números
+      const { data: capitulos, error } = await supabaseAdmin
+        .from("capitulos_biblia")
+        .select("id, livro_id, numero_capitulo, texto, livros_biblia(abreviacao, nome)")
+        .not("texto", "is", null)
+        .order("livro_id")
+        .order("numero_capitulo")
+
+      if (error) {
+        addLog(`❌ Erro ao buscar capítulos: ${error.message}`)
+        setImporting(false)
+        return
+      }
+
+      setTotal(capitulos.length)
+      addLog(`✅ Encontrados ${capitulos.length} capítulos para atualizar`)
+
+      let sucessos = 0
+      let falhas = 0
+
+      for (let i = 0; i < capitulos.length; i++) {
+        const cap = capitulos[i]
+        const livro = cap.livros_biblia as any
+        const abreviacao = livro.abreviacao?.toLowerCase()
+        const nome = livro.nome
+
+        setCurrent(`${nome} ${cap.numero_capitulo}`)
+
+        const abreviacaoAPI = abreviacaoAPIMap[abreviacao] || abreviacao
+        const livroJSON = bibliaJSON.find((l: any) => l.abbrev?.toLowerCase() === abreviacaoAPI)
+
+        if (!livroJSON) {
+          falhas++
+          setProgress(Math.round(((i + 1) / capitulos.length) * 100))
+          continue
+        }
+
+        const capituloIndex = cap.numero_capitulo - 1
+
+        if (!livroJSON.chapters || !livroJSON.chapters[capituloIndex]) {
+          falhas++
+          setProgress(Math.round(((i + 1) / capitulos.length) * 100))
+          continue
+        }
+
+        const versiculos = livroJSON.chapters[capituloIndex]
+        const textoComVersiculos = versiculos
+          .map((versiculo: string, index: number) => `**${index + 1}** ${versiculo}`)
+          .join("\n\n")
+
+        if (textoComVersiculos && textoComVersiculos.trim().length > 0) {
+          const { error: updateError } = await atualizarCapitulo(cap.id, textoComVersiculos)
+
+          if (updateError) {
+            falhas++
+          } else {
+            sucessos++
+          }
+        } else {
+          falhas++
+        }
+
+        setProgress(Math.round(((i + 1) / capitulos.length) * 100))
+
+        if (i % 50 === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+        }
+      }
+
+      addLog("🎉 Atualização concluída!")
+      addLog(`✅ Sucessos: ${sucessos}`)
+      addLog(`❌ Falhas: ${falhas}`)
+    } catch (error) {
+      addLog(`❌ Erro geral: ${error}`)
+      console.error("Erro geral:", error)
+    } finally {
+      setImporting(false)
+      setCurrent("")
+    }
+  }
+
   return (
     <div className="container mx-auto p-8 max-w-4xl">
       <Card>
@@ -334,6 +429,9 @@ export default function ImportarBibliaPage() {
             </Button>
             <Button onClick={atualizarNumerosVersiculos} disabled={importing} variant="secondary" className="flex-1">
               {importing ? "Atualizando..." : "Adicionar Números aos Versículos"}
+            </Button>
+            <Button onClick={forcarQuebraDeLinhas} disabled={importing} variant="default" className="flex-1">
+              {importing ? "Atualizando..." : "Forçar Quebras de Linha"}
             </Button>
             <Button onClick={importarBiblia} disabled={importing} size="lg" className="flex-1">
               {importing ? "Importando..." : "Importar Capítulos Vazios"}

@@ -1,14 +1,6 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
-
-// Usar service role para bypass RLS
-const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
+import { supabaseAdmin } from "@/lib/supabase-admin"
 
 export async function atualizarCapitulo(id: number, texto: string) {
   const { data, error } = await supabaseAdmin.from("capitulos_biblia").update({ texto }).eq("id", id).select()
@@ -132,3 +124,6 @@ export async function buscarCapitulosPreenchidos() {
 
   return capitulos
 }
+
+// Exportando supabaseAdmin para uso em outros lugares
+export { supabaseAdmin }
