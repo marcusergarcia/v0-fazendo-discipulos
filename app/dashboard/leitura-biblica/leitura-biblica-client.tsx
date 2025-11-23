@@ -75,14 +75,18 @@ export default function LeituraBiblicaClient({
     setTotalChapters(total)
   }
 
-  const handleChapterRead = (chapter: number) => {
-    console.log("[v0] ✅ handleChapterRead chamado - capítulo ID:", chapter)
+  const handleChapterRead = (capituloId: number) => {
+    console.log("[v0] ✅ handleChapterRead chamado - capítulo ID real:", capituloId)
     setCapitulosLidos((prev) => {
-      const newSet = new Set([...prev, chapter])
+      const newSet = new Set([...prev, capituloId])
       console.log("[v0] Novo Set de capítulos lidos:", Array.from(newSet))
       return newSet
     })
-    setChaptersRead((prev) => prev + 1)
+
+    const capitulosDaSemana = leituraAtual.capitulosSemana || []
+    const lidosDaSemana = Array.from(capitulosLidos).filter((id) => capitulosDaSemana.includes(id))
+    setChaptersRead(lidosDaSemana.length)
+    console.log("[v0] Capítulos lidos DA SEMANA atualizado:", lidosDaSemana.length, "/", capitulosDaSemana.length)
   }
 
   const handleUltimoCapituloLido = (numeroCapitulo: number) => {

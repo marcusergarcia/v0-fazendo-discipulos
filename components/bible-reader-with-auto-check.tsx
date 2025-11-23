@@ -106,23 +106,12 @@ export function BibleReaderWithAutoCheck({
   )
 
   const getCapituloIdReal = (numeroCapitulo: number): number => {
-    // numeroCapitulo é o número real do capítulo (ex: 8, 9, 10...)
-    // Precisamos pegar sua posição no array capitulosSemana
-    const indexNoArray = numeroCapitulo - startChapter
-    const idReal = capitulosSemana?.[indexNoArray] || 0
-
+    const index = numeroCapitulo - startChapter
+    const idReal = capitulosSemana[index]
     console.log(
-      "[v0] 🔍 getCapituloIdReal - numeroCapitulo:",
-      numeroCapitulo,
-      "startChapter:",
-      startChapter,
-      "index:",
-      indexNoArray,
-      "ID real:",
-      idReal,
+      `[v0] 🔍 getCapituloIdReal - numeroCapitulo: ${numeroCapitulo} startChapter: ${startChapter} index: ${index} ID real: ${idReal}`,
     )
-
-    return idReal
+    return idReal || numeroCapitulo
   }
 
   useEffect(() => {
@@ -196,18 +185,16 @@ export function BibleReaderWithAutoCheck({
   }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
 
   useEffect(() => {
-    const indexAtual = currentChapter - startChapter
-    const idReal = capitulosSemana?.[indexAtual] || 0
-    const jaLido = capitulosLidos.has(idReal)
-
     console.log("[v0] 🔄 VERIFICANDO STATUS DO CAPÍTULO:", currentChapter)
     console.log("[v0] startChapter:", startChapter)
+    const indexAtual = currentChapter - startChapter
     console.log("[v0] indexAtual:", indexAtual)
+    const idReal = capitulosSemana[indexAtual]
     console.log("[v0] ID real:", idReal)
-    console.log("[v0] Status isLido:", jaLido)
+    const isLido = capitulosLidos.has(idReal)
+    console.log("[v0] Status isLido:", isLido)
     console.log("[v0] capitulosLidos Set:", Array.from(capitulosLidos))
-
-    setCapituloAtualJaLido(jaLido)
+    setCapituloAtualJaLido(isLido)
   }, [currentChapter, capitulosLidos, startChapter, capitulosSemana])
 
   const loadChapter = async (chapter: number) => {
@@ -248,7 +235,9 @@ export function BibleReaderWithAutoCheck({
     }
 
     if (result.success) {
-      onChapterRead?.(currentChapter)
+      const idReal = getCapituloIdReal(currentChapter)
+      console.log(`[v0] ✅ Capítulo marcado como lido - número: ${currentChapter}, ID real: ${idReal}`)
+      onChapterRead?.(idReal)
 
       if (timerRef.current) {
         clearInterval(timerRef.current)
