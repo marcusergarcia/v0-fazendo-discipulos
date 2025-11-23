@@ -17,11 +17,14 @@ import {
   Undo2,
   Redo2,
   X,
+  Menu,
 } from "lucide-react"
 import { createBrowserClient } from "@supabase/ssr"
 import { marcarCapituloLido } from "@/app/dashboard/leitura-biblica/actions"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { BibleNavigationMenu } from "@/components/bible-navigation-menu"
 
 interface BibleReaderWithAutoCheckProps {
   bookName: string
@@ -34,6 +37,7 @@ interface BibleReaderWithAutoCheckProps {
   capitulosSemana?: number[]
   initialChapter?: number
   onClose?: () => void
+  onNavigateToChapter?: (livroId: number, livroNome: string, capitulo: number) => void
 }
 
 interface Highlight {
@@ -74,6 +78,7 @@ export function BibleReaderWithAutoCheck({
   capitulosSemana = [],
   initialChapter,
   onClose,
+  onNavigateToChapter,
 }: BibleReaderWithAutoCheckProps) {
   const [currentChapter, setCurrentChapter] = useState(initialChapter || startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
@@ -593,6 +598,45 @@ export function BibleReaderWithAutoCheck({
     return idReal || numeroCapitulo
   }
 
+  const handleNavigateToChapter = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
+    console.log("[v0] 📚 Navegando para:", novoLivroNome, "capítulo", novoCapitulo)
+
+    if (onNavigateToChapter) {
+      onNavigateToChapter(novoLivroId, novoLivroNome, novoCapitulo)
+    } else {
+      // Se não tem callback, atualiza localmente
+      setCurrentChapter(novoCapitulo)
+      setCapituloAtualJaLido(capitulosLidos.has(novoCapitulo))
+      await loadChapter(novoLivroId, novoCapitulo)
+    }
+  }
+
+  const carregarCapitulo = async (novoLivroId: number, novoCapitulo: number) => {
+    setLoading(true)
+    setError(null)
+
+    const idReal = getCapituloIdReal(novoCapitulo)
+
+    const { data, error: supabaseError } = await supabase
+      .from("capitulos_biblia")
+      .select("texto, numero_capitulo, id")
+      .eq("id", idReal)
+      .single()
+
+    if (data && !supabaseError) {
+      setChapterData({
+        chapter: data.numero_capitulo,
+        text: data.texto || "Texto não disponível",
+      })
+      await loadHighlights(novoCapitulo)
+    } else {
+      console.error("[v0] BibleReader: Erro ao buscar texto:", supabaseError)
+      setError("Texto do capítulo não encontrado no banco de dados")
+    }
+
+    setLoading(false)
+  }
+
   if (!isMounted) {
     return (
       <Card className="w-full">
@@ -621,14 +665,25 @@ export function BibleReaderWithAutoCheck({
           <Button variant="ghost" size="sm" onClick={onClose}>
             <X className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="font-semibold">
+          <div className="flex-1 text-center">
+            <h2 className="text-lg font-semibold">
               {bookName} {currentChapter}
             </h2>
-            {capituloAtualJaLido && <Check className="w-5 h-5 text-green-500" />}
           </div>
-          <div className="w-9" />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[85vw] sm:w-[400px] p-0">
+              <BibleNavigationMenu
+                onNavigate={handleNavigateToChapter}
+                currentLivroId={livroId}
+                currentCapitulo={currentChapter}
+              />
+            </SheetContent>
+          </Sheet>
         </div>
 
         {/* Conteúdo do capítulo */}
@@ -757,7 +812,7 @@ export function BibleReaderWithAutoCheck({
           )}
 
           {/* Botão Ler Agora ou Marcador */}
-          {!capituloAtualJaLido && !rastreamentoAtivo && (
+          {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
             <Button onClick={iniciarRastreamento} className="w-full gap-2" size="lg">
               <PlayCircle className="w-5 h-5" />
               Ler Agora
@@ -804,169 +859,96 @@ export function BibleReaderWithAutoCheck({
 
   // Desktop: mantém o Card original
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-start sm:items-center justify-between flex-col sm:flex-row gap-3">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <CardTitle>
-              {bookName} {currentChapter}
-            </CardTitle>
-            {capituloAtualJaLido && <Check className="w-5 h-5 text-green-500" />}
-          </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
-              <Button size="sm" onClick={iniciarRastreamento} className="gap-2">
-                <PlayCircle className="w-4 h-4" />
-                Ler Agora
-              </Button>
-            )}
-            {(rastreamentoAtivo || capituloAtualJaLido) && (
-              <div className="flex flex-wrap gap-1.5 items-center justify-end sm:justify-start w-full sm:w-auto">
-                <div className="flex gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUndo}
-                    disabled={historyIndex < 0}
-                    title="Desfazer"
-                    className="h-7 w-7 p-0 bg-transparent"
-                  >
-                    <Undo2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRedo}
-                    disabled={historyIndex >= history.length - 1}
-                    title="Refazer"
-                    className="h-7 w-7 p-0"
-                  >
-                    <Redo2 className="w-4 h-4" />
-                  </Button>
-                </div>
+    <div className="w-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
+        {/* Menu hamburguer */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[85vw] sm:w-[400px] p-0">
+            <BibleNavigationMenu
+              onNavigate={handleNavigateToChapter}
+              currentLivroId={livroId}
+              currentCapitulo={currentChapter}
+            />
+          </SheetContent>
+        </Sheet>
 
-                <div className="flex gap-1.5">
-                  {HIGHLIGHT_COLORS.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={async (e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
+        <div className="flex-1 text-center">
+          <h2 className="text-lg font-semibold">
+            {bookName} {currentChapter}
+          </h2>
+        </div>
 
-                        console.log("[v0] 🎨 Paleta clicada:", color.value)
-                        setSelectedColor(color.value)
-                        setHighlightMode(true)
+        {onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
 
-                        if (currentSelection && currentSelection.text) {
-                          console.log("[v0] ✅ Aplicando highlight imediatamente")
-                          await handleTextSelection()
-
-                          setTimeout(() => {
-                            const selection = window.getSelection()
-                            if (selection) {
-                              selection.removeAllRanges()
-                            }
-                            setCurrentSelection(null)
-                            console.log("[v0] 🧹 Seleção limpa no mobile")
-                          }, 100)
-                        } else {
-                          console.log("[v0] ⏳ Aguardando seleção de texto")
-                        }
-                      }}
-                      className={cn(
-                        "w-7 h-7 rounded border-2 transition-all hover:scale-110",
-                        color.class,
-                        selectedColor === color.value && highlightMode ? "border-primary scale-110" : "border-gray-300",
-                      )}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-
-                <Button
-                  variant={highlightMode ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setHighlightMode(!highlightMode)}
-                  className="h-7 px-2"
-                >
-                  <Highlighter className="w-4 h-4" />
-                </Button>
+      <Card className="flex-1">
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 space-y-4">
+              <p className="text-muted-foreground">{error}</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollAreaRef}>
+              <div
+                className={cn(
+                  "prose prose-sm sm:prose max-w-none leading-relaxed",
+                  highlightMode && "cursor-text select-text",
+                )}
+                onMouseUp={captureSelection}
+                onTouchEnd={captureSelection}
+                style={{
+                  fontSize: `${fontSize}px`,
+                  lineHeight: "1.8",
+                  userSelect: highlightMode ? "text" : "auto",
+                  WebkitUserSelect: highlightMode ? "text" : "auto",
+                }}
+              >
+                {renderTextWithHighlights(chapterData?.text || "", highlights)}
               </div>
-            )}
-          </div>
-        </div>
+            </ScrollArea>
+          )}
 
-        {!capituloAtualJaLido && !loading && rastreamentoAtivo && (
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{scrolledToBottom ? "✓ Rolou até o fim" : "Role até o fim do capítulo"}</span>
-              <span>
-                {timeElapsed >= MIN_READ_TIME_MS ? "✓ Tempo mínimo atingido" : `${formatTime(timeRemaining)} restantes`}
-              </span>
-            </div>
-            <div className="h-2 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progressPercent}%` }} />
-            </div>
-          </div>
-        )}
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : error ? (
-          <div className="text-center py-12 space-y-4">
-            <p className="text-muted-foreground">{error}</p>
-          </div>
-        ) : (
-          <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollAreaRef}>
-            <div
-              className={cn(
-                "prose prose-sm sm:prose max-w-none leading-relaxed",
-                highlightMode && "cursor-text select-text",
-              )}
-              onMouseUp={captureSelection}
-              onTouchEnd={captureSelection}
-              style={{
-                fontSize: `${fontSize}px`,
-                lineHeight: "1.8",
-                userSelect: highlightMode ? "text" : "auto",
-                WebkitUserSelect: highlightMode ? "text" : "auto",
-              }}
+          <div className="flex items-center justify-between mt-4 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevChapter}
+              disabled={currentChapter <= startChapter || loading}
             >
-              {renderTextWithHighlights(chapterData?.text || "", highlights)}
-            </div>
-          </ScrollArea>
-        )}
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Anterior
+            </Button>
 
-        <div className="flex items-center justify-between mt-4 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrevChapter}
-            disabled={currentChapter <= startChapter || loading}
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Anterior
-          </Button>
+            <span className="text-sm text-muted-foreground">
+              {currentChapter} / {endChapter}
+            </span>
 
-          <span className="text-sm text-muted-foreground">
-            {currentChapter} / {endChapter}
-          </span>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNextChapter}
-            disabled={currentChapter >= endChapter || loading}
-          >
-            Próximo
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextChapter}
+              disabled={currentChapter >= endChapter || loading}
+            >
+              Próximo
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

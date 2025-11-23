@@ -7,6 +7,7 @@ import { CheckCircle2 } from "lucide-react"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
+import { createBrowserClient } from "@supabase/ssr"
 
 interface LeituraSemanal {
   semana: number
@@ -51,6 +52,11 @@ export default function LeituraBiblicaClient({
   const [capituloSelecionado, setCapituloSelecionado] = useState(leituraAtual.capituloInicio)
   const [capituloSelecionadoJaLido, setCapituloSelecionadoJaLido] = useState(false)
   const [carregandoCapitulos, setCarregandoCapitulos] = useState(false)
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  )
 
   useEffect(() => {
     console.log("[v0] 🟢 USEEFFECT: Inicializando capítulos lidos")
@@ -114,6 +120,30 @@ export default function LeituraBiblicaClient({
     setLeitorAberto(false)
   }
 
+  const navegarParaCapitulo = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
+    console.log("[v0] 📚 Navegação livre para:", novoLivroNome, "capítulo", novoCapitulo)
+
+    // Buscar o ID do capítulo na tabela capitulos_biblia
+    const { data: capituloData } = await supabase
+      .from("capitulos_biblia")
+      .select("id")
+      .eq("livro_id", novoLivroId)
+      .eq("numero_capitulo", novoCapitulo)
+      .single()
+
+    if (capituloData) {
+      const capituloId = capituloData.id
+      const isLido = capitulosLidos.has(capituloId)
+
+      console.log("[v0] Capítulo ID:", capituloId, "| Já lido:", isLido, "| Será considerado para pontuação semanal")
+
+      // Atualiza o estado para abrir o capítulo
+      setCapituloSelecionado(novoCapitulo)
+      setCapituloSelecionadoJaLido(isLido)
+      setLeitorAberto(true)
+    }
+  }
+
   const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
 
   return (
@@ -173,6 +203,7 @@ export default function LeituraBiblicaClient({
                   capitulosSemana={leituraAtual.capitulosSemana}
                   initialChapter={capituloSelecionado}
                   onClose={fecharLeitor}
+                  onNavigateToChapter={navegarParaCapitulo}
                 />
               </div>
             )}
