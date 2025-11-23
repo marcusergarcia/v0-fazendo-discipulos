@@ -107,8 +107,6 @@ export function BibleReaderWithAutoCheck({
 
   const [fontSize, setFontSize] = useState(16)
 
-  const [isMobile, setIsMobile] = useState(false)
-
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -125,7 +123,6 @@ export function BibleReaderWithAutoCheck({
 
   useEffect(() => {
     setIsMounted(true)
-    setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
   }, [])
 
   useEffect(() => {
@@ -329,16 +326,10 @@ export function BibleReaderWithAutoCheck({
   const progressPercent = Math.min(100, (timeElapsed / MIN_READ_TIME_MS) * 100)
 
   const captureSelection = () => {
-    console.log("[v0] 📱 captureSelection chamada, highlightMode:", highlightMode)
-
     if (!highlightMode) return
 
     const selection = window.getSelection()
-    console.log("[v0] 📱 Selection object:", selection)
-    console.log("[v0] 📱 Selection text:", selection?.toString())
-
     if (!selection || selection.toString().trim() === "") {
-      console.log("[v0] ⚠️ Nenhuma seleção válida")
       setCurrentSelection(null)
       return
     }
@@ -346,34 +337,20 @@ export function BibleReaderWithAutoCheck({
     const selectedText = selection.toString().trim()
     const range = selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null
 
-    console.log("[v0] ✅ Seleção capturada:", selectedText)
-    console.log("[v0] 📍 Range:", range)
-
+    console.log("[v0] 📝 Seleção capturada:", selectedText)
     setCurrentSelection({
       text: selectedText,
       range,
     })
   }
 
-  const handleTextSelection = async (overrideColor?: string) => {
+  const handleTextSelection = async () => {
     if (!highlightMode) return
 
-    const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) {
-      console.log("[v0] ⚠️ Nenhuma seleção encontrada")
+    if (!currentSelection || !currentSelection.text) {
+      console.log("[v0] ⚠️ Nenhuma seleção armazenada")
       return
     }
-
-    const range = selection.getRangeAt(0)
-    const selectedText = selection.toString().trim()
-
-    if (!selectedText || selectedText.length < 3) {
-      console.log("[v0] ⚠️ Texto muito curto, ignorando")
-      return
-    }
-
-    const colorToUse = overrideColor || selectedColor
-    console.log("[v0] 🎨 Cor selecionada para highlight:", colorToUse)
 
     const {
       data: { user },
@@ -385,11 +362,8 @@ export function BibleReaderWithAutoCheck({
       return
     }
 
-    const newHighlight: Highlight = {
-      id: Date.now(),
-      texto: selectedText,
-      cor: colorToUse,
-    }
+    const selectedText = currentSelection.text
+    console.log("[v0] 💾 Salvando highlight:", selectedText, "cor:", selectedColor)
 
     const { data: existing } = await supabase
       .from("highlights_biblia")
@@ -398,6 +372,12 @@ export function BibleReaderWithAutoCheck({
       .eq("livro_id", livroId)
       .eq("numero_capitulo", currentChapter)
       .single()
+
+    const newHighlight: Highlight = {
+      id: Date.now(),
+      texto: selectedText,
+      cor: selectedColor,
+    }
 
     let updatedMarcacoes: Highlight[] = []
 
@@ -433,7 +413,7 @@ export function BibleReaderWithAutoCheck({
       type: "add",
       highlight: {
         texto_selecionado: selectedText,
-        cor: colorToUse,
+        cor: selectedColor,
         id: newHighlight.id,
       },
       timestamp: Date.now(),
@@ -447,33 +427,11 @@ export function BibleReaderWithAutoCheck({
     toast.success("Texto marcado com sucesso!", { duration: 2000 })
 
     setCurrentSelection(null)
-    selection.removeAllRanges()
-    console.log("[v0] ✅ Highlight aplicado e seleção limpa")
-  }
-
-  const applyHighlightWithColor = async (color: string) => {
-    console.log("[v0] 🎨 Aplicando highlight com cor:", color)
-    console.log("[v0] 🎨 Seleção atual:", currentSelection)
-
-    if (!currentSelection || !currentSelection.text) {
-      console.log("[v0] ⚠️ Sem seleção para aplicar")
-      return
+    const selection = window.getSelection()
+    if (selection) {
+      selection.removeAllRanges()
     }
-
-    setSelectedColor(color)
-    setHighlightMode(true)
-
-    await handleTextSelection(color)
-
-    // Limpar seleção visual
-    setTimeout(() => {
-      const selection = window.getSelection()
-      if (selection) {
-        selection.removeAllRanges()
-        console.log("[v0] 🧹 Seleção visual removida")
-      }
-      setCurrentSelection(null)
-    }, 100)
+    console.log("[v0] ✅ Highlight aplicado e seleção limpa")
   }
 
   const handleUndo = async () => {
@@ -688,28 +646,30 @@ export function BibleReaderWithAutoCheck({
                   {HIGHLIGHT_COLORS.map((color) => (
                     <button
                       key={color.value}
-                      {...(isMobile
-                        ? {
-                            onTouchStart: (e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              console.log("[v0] 📱 TouchStart na cor:", color.value)
-                            },
-                            onTouchEnd: async (e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              console.log("[v0] 📱 TouchEnd na cor:", color.value)
-                              await applyHighlightWithColor(color.value)
-                            },
-                          }
-                        : {
-                            onMouseDown: async (e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              console.log("[v0] 🖱️ MouseDown na cor:", color.value)
-                              await applyHighlightWithColor(color.value)
-                            },
-                          })}
+                      onClick={async (e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+
+                        console.log("[v0] 🎨 Paleta clicada:", color.value)
+                        setSelectedColor(color.value)
+                        setHighlightMode(true)
+
+                        if (currentSelection && currentSelection.text) {
+                          console.log("[v0] ✅ Aplicando highlight imediatamente")
+                          await handleTextSelection()
+
+                          setTimeout(() => {
+                            const selection = window.getSelection()
+                            if (selection) {
+                              selection.removeAllRanges()
+                            }
+                            setCurrentSelection(null)
+                            console.log("[v0] 🧹 Seleção limpa no mobile")
+                          }, 100)
+                        } else {
+                          console.log("[v0] ⏳ Aguardando seleção de texto")
+                        }
+                      }}
                       className={cn(
                         "w-7 h-7 rounded border-2 transition-all hover:scale-110",
                         color.class,
@@ -770,7 +730,6 @@ export function BibleReaderWithAutoCheck({
                 lineHeight: "1.8",
                 userSelect: highlightMode ? "text" : "auto",
                 WebkitUserSelect: highlightMode ? "text" : "auto",
-                WebkitTouchCallout: "none",
               }}
             >
               {renderTextWithHighlights(chapterData?.text || "", highlights)}
