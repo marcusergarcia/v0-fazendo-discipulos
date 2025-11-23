@@ -154,16 +154,8 @@ export function ValidarReflexaoModal({
             reflexoes_concluidas: reflexoesConcluidas,
           })
           .eq("id", progresso.id)
-      }
 
-      // Atualizar XP total do discípulo
-      const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
-
-      if (disc) {
-        await supabase
-          .from("discipulos")
-          .update({ xp_total: (disc.xp_total || 0) + xpConcedido })
-          .eq("id", discipuloId)
+        console.log("[v0] ✅ XP adicionado à pontuação do passo:", xpConcedido)
       }
 
       const { data: notificacao } = await supabase
@@ -188,7 +180,6 @@ export function ValidarReflexaoModal({
       if (discipuloInfo) {
         const passoAtual = discipuloInfo.passo_atual
 
-        // Verificar todas as reflexões do passo
         const { data: todasReflexoes } = await supabase
           .from("reflexoes_conteudo")
           .select("situacao")
@@ -198,7 +189,6 @@ export function ValidarReflexaoModal({
         const todasReflexoesAprovadas =
           todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
 
-        // Verificar se pergunta e missão estão aprovadas
         const { data: respostas } = await supabase
           .from("historico_respostas_passo")
           .select("situacao, tipo_resposta")
@@ -208,11 +198,10 @@ export function ValidarReflexaoModal({
         const perguntaAprovada = respostas?.some((r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado")
         const missaoAprovada = respostas?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
 
-        // Se tudo aprovado, marcar passo como completado e liberar próximo
         if (todasReflexoesAprovadas && perguntaAprovada && missaoAprovada) {
           console.log("[v0] Todas as reflexões, pergunta e missão aprovadas! Verificando leitura bíblica...")
 
-          const semanaCorrespondente = passoAtual // Passo 1 = Semana 1, Passo 2 = Semana 2, etc.
+          const semanaCorrespondente = passoAtual
 
           const { data: planoSemana } = await supabase
             .from("plano_leitura_biblica")
@@ -247,7 +236,15 @@ export function ValidarReflexaoModal({
             return
           }
 
-          // Marcar passo como completado
+          const { data: progressoCompleto } = await supabase
+            .from("progresso_fases")
+            .select("pontuacao_total")
+            .eq("discipulo_id", discipuloId)
+            .eq("passo_numero", passoAtual)
+            .single()
+
+          const pontosDoPassoCompleto = progressoCompleto?.pontuacao_total || 0
+
           await supabase
             .from("progresso_fases")
             .update({
@@ -257,7 +254,17 @@ export function ValidarReflexaoModal({
             .eq("discipulo_id", discipuloId)
             .eq("passo_numero", passoAtual)
 
-          // Liberar próximo passo
+          const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
+
+          if (disc) {
+            await supabase
+              .from("discipulos")
+              .update({ xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto })
+              .eq("id", discipuloId)
+
+            console.log("[v0] ✅ Transferidos", pontosDoPassoCompleto, "XP do passo para xp_total do discípulo")
+          }
+
           const proximoPasso = passoAtual + 1
 
           if (proximoPasso <= 10) {
@@ -303,7 +310,7 @@ export function ValidarReflexaoModal({
       }
 
       console.log("[v0] ===== APROVAÇÃO CONCLUÍDA COM SUCESSO =====")
-      toast.success(`Reflexão aprovada! +${xpConcedido} XP concedido ao discípulo`)
+      toast.success(`Reflexão aprovada! +${xpConcedido} XP será creditado ao completar o passo`)
       setOpen(false)
 
       if (onAprovado) {

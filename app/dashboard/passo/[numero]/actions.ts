@@ -301,6 +301,47 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
 
     console.log("[v0] Discípulo ID:", discipulo.id)
 
+    const { data: progressoAtual, error: progressoError } = await supabase
+      .from("progresso_fases")
+      .select("*")
+      .eq("discipulo_id", discipulo.id)
+      .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
+      .single()
+
+    if (progressoError) {
+      console.log("[v0] Aviso: Progresso não encontrado, criando novo")
+    }
+
+    let pontosMantidos = 0
+
+    const { data: respostas, error: respostasError } = await supabase
+      .from("historico_respostas_passo")
+      .select("xp_ganho, situacao")
+      .eq("discipulo_id", discipulo.id)
+      .eq("fase_numero", 1)
+      .eq("passo_numero", numero)
+      .eq("situacao", "aprovado")
+
+    if (!respostasError && respostas) {
+      pontosMantidos = respostas.reduce((total, r) => total + (r.xp_ganho || 0), 0)
+      console.log("[v0] 📊 Pontos de perguntas/missões a manter:", pontosMantidos)
+    }
+
+    let pontosVideosArtigos = 0
+    if (reflexoesIds.length > 0) {
+      const { data: reflexoesResetadas } = await supabase
+        .from("reflexoes_conteudo")
+        .select("xp_ganho")
+        .in("id", reflexoesIds)
+        .eq("situacao", "aprovado")
+
+      if (reflexoesResetadas) {
+        pontosVideosArtigos = reflexoesResetadas.reduce((total, r) => total + (r.xp_ganho || 0), 0)
+        console.log("[v0] 📊 Pontos de vídeos/artigos a remover:", pontosVideosArtigos)
+      }
+    }
+
     if (reflexoesIds.length > 0) {
       console.log("[v0] Buscando reflexões com seus IDs de notificações...")
       const { data: reflexoes, error: errorBuscar } = await supabase
@@ -313,7 +354,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       } else {
         console.log("[v0] Reflexões encontradas:", reflexoes)
 
-        // Coletar IDs das notificações
         const notificacoesIds = reflexoes?.filter((r) => r.notificacao_id).map((r) => r.notificacao_id) || []
 
         if (notificacoesIds.length > 0) {
@@ -327,11 +367,11 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
             console.log("[v0] ✅ Notificações excluídas com sucesso!")
           }
         } else {
-          console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir (reflexões órfãs)")
+          console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir")
         }
       }
 
-      console.log("[v0] Excluindo", reflexoesIds.length, "reflexões DIRETAMENTE pelo ID...")
+      console.log("[v0] Excluindo", reflexoesIds.length, "reflexões...")
       const { error: errorExcluir } = await supabaseAdmin.from("reflexoes_conteudo").delete().in("id", reflexoesIds)
 
       if (errorExcluir) {
@@ -342,6 +382,30 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
     }
 
+    if (pontosVideosArtigos > 0) {
+      const { error: xpError } = await supabase.rpc("decrement_xp", {
+        discipulo_id: discipulo.id,
+        xp_amount: pontosVideosArtigos,
+      })
+
+      if (xpError) {
+        console.log("[v0] Tentando decrementar XP manualmente...")
+        const { data: discipuloAtual } = await supabase
+          .from("discipulos")
+          .select("xp_total")
+          .eq("id", discipulo.id)
+          .single()
+
+        const novoXp = Math.max(0, (discipuloAtual?.xp_total || 0) - pontosVideosArtigos)
+
+        await supabase.from("discipulos").update({ xp_total: novoXp }).eq("id", discipulo.id)
+
+        console.log("[v0] XP decrementado manualmente:", pontosVideosArtigos, "pontos")
+      } else {
+        console.log("[v0] ✅ XP decrementado via RPC:", pontosVideosArtigos, "pontos")
+      }
+    }
+
     console.log("[v0] Resetando progresso do passo...")
     const { error: errorReset } = await supabase
       .from("progresso_fases")
@@ -349,7 +413,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         videos_assistidos: [],
         artigos_lidos: [],
         reflexoes_concluidas: 0,
-        pontuacao_total: 0,
+        pontuacao_total: pontosMantidos, // Mantém pontos de perguntas/missões
         completado: false,
         enviado_para_validacao: false,
         data_completado: null,
@@ -364,7 +428,8 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
     }
 
     console.log("[v0] ✅ Progresso resetado com sucesso!")
-    console.log("[v0] ===== RESET CONCLUÍDO =====")
+    console.log("[v0] 📊 Pontos mantidos (perguntas/missões):", pontosMantidos)
+    console.log("[v0] 📊 Pontos removidos (vídeos/artigos):", pontosVideosArtigos)
 
     return { success: true, message: "Progresso resetado com sucesso!" }
   } catch (error: any) {
@@ -686,13 +751,18 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
 }
 
 export async function verificarConclusaoPasso(numero: number) {
+  console.log("[v0] 🔍 Verificando conclusão do Passo:", numero)
+
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { completo: false }
+  if (!user) {
+    console.log("[v0] ❌ Usuário não autenticado")
+    return { completo: false }
+  }
 
   const { data: discipulo } = await supabase
     .from("discipulos")
@@ -701,6 +771,7 @@ export async function verificarConclusaoPasso(numero: number) {
     .single()
 
   if (!discipulo || discipulo.passo_atual !== numero) {
+    console.log("[v0] ❌ Discípulo não encontrado ou não está neste passo")
     return { completo: false }
   }
 
@@ -711,26 +782,63 @@ export async function verificarConclusaoPasso(numero: number) {
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
+  console.log("[v0] 📝 Reflexões encontradas:", reflexoes?.length)
+
   const todasReflexoesAprovadas =
     reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
 
-  // Verificar respostas do passo
+  console.log("[v0] ✅ Todas reflexões aprovadas?", todasReflexoesAprovadas)
+
+  // Verificar respostas do passo (pergunta E missão)
   const { data: respostas } = await supabase
     .from("historico_respostas_passo")
-    .select("situacao")
+    .select("situacao, tipo_resposta")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
     .order("created_at", { ascending: false })
-    .limit(1)
 
-  const respostasAprovadas = respostas && respostas.length > 0 ? respostas[0].situacao === "aprovado" : false
+  console.log("[v0] 💬 Respostas encontradas:", respostas?.length)
 
-  const passoCompleto = todasReflexoesAprovadas && respostasAprovadas
+  const respostaPerguntaAprovada = respostas?.some((r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado")
+  const respostaMissaoAprovada = respostas?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
+  const respostasAprovadas = respostaPerguntaAprovada && respostaMissaoAprovada
+
+  console.log("[v0] ❓ Resposta pergunta aprovada?", respostaPerguntaAprovada)
+  console.log("[v0] 🎯 Resposta missão aprovada?", respostaMissaoAprovada)
+
+  const { data: leituraCapitulos } = await supabase
+    .from("leituras_capitulos")
+    .select("capitulos_lidos")
+    .eq("discipulo_id", discipulo.id)
+    .single()
+
+  // Buscar capítulos da semana atual (baseado no passo)
+  const { data: planoLeitura } = await supabase
+    .from("plano_leitura_biblica")
+    .select("capitulos_semana")
+    .eq("fase", 1)
+    .eq("semana", numero)
+    .single()
+
+  const capitulosLidos = leituraCapitulos?.capitulos_lidos || []
+  const capitulosSemana = planoLeitura?.capitulos_semana || []
+
+  // Verificar se TODOS os capítulos da semana foram lidos
+  const leituraSemanalConcluida = capitulosSemana.every((capId: number) => capitulosLidos.includes(capId))
+
+  console.log("[v0] 📖 Capítulos da semana:", capitulosSemana.length)
+  console.log("[v0] ✅ Capítulos lidos:", capitulosLidos.filter((id: number) => capitulosSemana.includes(id)).length)
+  console.log("[v0] 📚 Leitura semanal concluída?", leituraSemanalConcluida)
+
+  const passoCompleto = todasReflexoesAprovadas && respostasAprovadas && leituraSemanalConcluida
+
+  console.log("[v0] 🎉 PASSO COMPLETO?", passoCompleto)
 
   return {
     completo: passoCompleto,
     reflexoesAprovadas: todasReflexoesAprovadas,
     respostasAprovadas: respostasAprovadas,
+    leituraSemanalConcluida: leituraSemanalConcluida,
   }
 }
 

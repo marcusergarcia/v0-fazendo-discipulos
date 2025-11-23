@@ -86,10 +86,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
 
     console.log("[v0] ===== APROVAÇÃO DE RESPOSTA CONCLUÍDA =====")
 
-    if (resposta.notificacao_id) {
-      await supabase.from("notificacoes").delete().eq("id", resposta.notificacao_id)
-    }
-
     const { data: progresso } = await supabase
       .from("progresso_fases")
       .select("pontuacao_total")
@@ -104,6 +100,8 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         .update({ pontuacao_total: novaPontuacao })
         .eq("discipulo_id", resposta.discipulo_id)
         .eq("passo_numero", resposta.passo_numero)
+
+      console.log("[v0] ✅ XP adicionado à pontuação do passo:", xp)
     }
 
     const { data: discipulo } = await supabase
@@ -113,11 +111,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
       .single()
 
     if (discipulo) {
-      await supabase
-        .from("discipulos")
-        .update({ xp_total: (discipulo.xp_total || 0) + xp })
-        .eq("id", resposta.discipulo_id)
-
       const { data: respostasPassoAtual } = await supabase
         .from("historico_respostas_passo")
         .select("situacao, tipo_resposta")
@@ -139,10 +132,8 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
       const todasReflexoesAprovadas =
         reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
 
-      // Calcular qual semana corresponde ao passo atual
-      const semanaCorrespondente = resposta.passo_numero // Passo 1 = Semana 1, Passo 2 = Semana 2, etc.
+      const semanaCorrespondente = resposta.passo_numero
 
-      // Buscar se todos os capítulos da semana foram lidos
       const { data: planoSemana } = await supabase
         .from("plano_leitura_biblica")
         .select("capitulos_semana")
@@ -151,7 +142,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
 
       let leituraBiblicaConcluida = false
       if (planoSemana && planoSemana.capitulos_semana) {
-        // Buscar capítulos lidos do discípulo
         const { data: leiturasDiscipulo } = await supabase
           .from("leituras_capitulos")
           .select("capitulos_lidos")
@@ -161,7 +151,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
         const capitulosSemana = planoSemana.capitulos_semana
 
-        // Verificar se todos os capítulos da semana foram lidos
         leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
 
         console.log("[v0] Verificação leitura bíblica:", {
@@ -172,11 +161,9 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         })
       }
 
-      // Se tudo aprovado E leitura bíblica concluída, marcar passo como completado
       if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas && leituraBiblicaConcluida) {
         console.log("[v0] Todas as condições atendidas! Liberando próximo passo...")
 
-        // Marcar passo como completado
         await supabase
           .from("progresso_fases")
           .update({
@@ -195,7 +182,22 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
           conquistado_em: new Date().toISOString(),
         })
 
-        // Liberar próximo passo
+        const { data: progressoCompleto } = await supabase
+          .from("progresso_fases")
+          .select("pontuacao_total")
+          .eq("discipulo_id", resposta.discipulo_id)
+          .eq("passo_numero", resposta.passo_numero)
+          .single()
+
+        const pontosDoPassoCompleto = progressoCompleto?.pontuacao_total || 0
+
+        await supabase
+          .from("discipulos")
+          .update({ xp_total: (discipulo.xp_total || 0) + pontosDoPassoCompleto })
+          .eq("id", resposta.discipulo_id)
+
+        console.log("[v0] ✅ Transferidos", pontosDoPassoCompleto, "XP do passo para xp_total do discípulo")
+
         const proximoPasso = resposta.passo_numero + 1
 
         if (proximoPasso <= 10) {

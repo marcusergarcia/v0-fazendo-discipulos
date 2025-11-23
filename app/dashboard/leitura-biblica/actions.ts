@@ -13,13 +13,16 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
     return { success: false, error: "Não autenticado" }
   }
 
-  const { data: discipulo } = await supabase.from("discipulos").select("id").eq("user_id", user.id).single()
+  const { data: discipulo } = await supabase
+    .from("discipulos")
+    .select("id, passo_atual")
+    .eq("user_id", user.id)
+    .single()
 
   if (!discipulo) {
     return { success: false, error: "Discípulo não encontrado" }
   }
 
-  // Buscar ID do capítulo
   const { data: capitulo } = await supabase
     .from("capitulos_biblia")
     .select("id")
@@ -54,7 +57,6 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
     return { success: true, xpGanho: 0, jaLido: true }
   }
 
-  // Adicionar capítulo ao array
   const novosCapitulosLidos = [...capitulosLidos, capituloId]
   const novoXpAcumulado = (leitura?.xp_acumulado_leitura || 0) + 5
 
@@ -77,10 +79,22 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
     return { success: false, error: error.message }
   }
 
-  const { data: discipuloAtual } = await supabase.from("discipulos").select("xp_total").eq("id", discipulo.id).single()
+  const { data: progressoAtual } = await supabase
+    .from("progresso_fases")
+    .select("pontuacao_total")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", discipulo.passo_atual)
+    .single()
 
-  const novoXpTotal = (discipuloAtual?.xp_total || 0) + 5
-  await supabase.from("discipulos").update({ xp_total: novoXpTotal }).eq("id", discipulo.id)
+  if (progressoAtual) {
+    await supabase
+      .from("progresso_fases")
+      .update({ pontuacao_total: (progressoAtual.pontuacao_total || 0) + 5 })
+      .eq("discipulo_id", discipulo.id)
+      .eq("passo_numero", discipulo.passo_atual)
+
+    console.log("[v0] +5 XP adicionado ao passo atual")
+  }
 
   return { success: true, xpGanho: 5, jaLido: false }
 }
@@ -96,13 +110,16 @@ export async function desmarcarCapituloLido(livroId: number, numeroCapitulo: num
     return { success: false, error: "Não autenticado" }
   }
 
-  const { data: discipulo } = await supabase.from("discipulos").select("id").eq("user_id", user.id).single()
+  const { data: discipulo } = await supabase
+    .from("discipulos")
+    .select("id, passo_atual")
+    .eq("user_id", user.id)
+    .single()
 
   if (!discipulo) {
     return { success: false, error: "Discípulo não encontrado" }
   }
 
-  // Buscar ID do capítulo
   const { data: capitulo } = await supabase
     .from("capitulos_biblia")
     .select("id")
@@ -126,7 +143,6 @@ export async function desmarcarCapituloLido(livroId: number, numeroCapitulo: num
     return { success: true }
   }
 
-  // Remover capítulo do array
   const novosCapitulosLidos = leitura.capitulos_lidos.filter((id: number) => id !== capituloId)
   const novoXpAcumulado = Math.max(0, (leitura.xp_acumulado_leitura || 0) - 5)
 
@@ -140,6 +156,21 @@ export async function desmarcarCapituloLido(livroId: number, numeroCapitulo: num
 
   if (error) {
     return { success: false, error: error.message }
+  }
+
+  const { data: progressoAtual } = await supabase
+    .from("progresso_fases")
+    .select("pontuacao_total")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", discipulo.passo_atual)
+    .single()
+
+  if (progressoAtual) {
+    await supabase
+      .from("progresso_fases")
+      .update({ pontuacao_total: Math.max(0, (progressoAtual.pontuacao_total || 0) - 5) })
+      .eq("discipulo_id", discipulo.id)
+      .eq("passo_numero", discipulo.passo_atual)
   }
 
   return { success: true }

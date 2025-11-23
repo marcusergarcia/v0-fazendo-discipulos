@@ -55,6 +55,8 @@ type PassoClientProps = {
   statusLeituraSemana?: "nao_iniciada" | "pendente" | "concluida"
   temaSemana?: string
   descricaoSemana?: string
+  respostaPerguntaHistorico?: any
+  respostaMissaoHistorico?: any
 }
 
 export default function PassoClient({
@@ -70,6 +72,8 @@ export default function PassoClient({
   statusLeituraSemana = "nao_iniciada",
   temaSemana = "",
   descricaoSemana = "",
+  respostaPerguntaHistorico,
+  respostaMissaoHistorico,
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -82,8 +86,12 @@ export default function PassoClient({
 
   const rascunho = getRascunho()
 
-  const [respostaPergunta, setRespostaPergunta] = useState(progresso?.resposta_pergunta || rascunho.pergunta || "")
-  const [respostaMissao, setRespostaMissao] = useState(progresso?.resposta_missao || rascunho.missao || "")
+  const [respostaPergunta, setRespostaPergunta] = useState(
+    respostaPerguntaHistorico?.situacao === "aprovado" ? respostaPerguntaHistorico.resposta : rascunho.pergunta || "",
+  )
+  const [respostaMissao, setRespostaMissao] = useState(
+    respostaMissaoHistorico?.situacao === "aprovado" ? respostaMissaoHistorico.resposta : rascunho.missao || "",
+  )
 
   const [modalAberto, setModalAberto] = useState(false)
   const [tipoConteudo, setTipoConteudo] = useState<"video" | "artigo">("video")
@@ -225,10 +233,8 @@ export default function PassoClient({
   }
 
   const todasReflexoesAprovadas = () => {
-    // Verifica se todos os 6 conteúdos (vídeos + artigos) têm reflexões aprovadas
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
-    // Se não houver conteúdos, retorna false
     if (todosConteudos.length === 0) return false
 
     const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
@@ -254,9 +260,15 @@ export default function PassoClient({
                 </p>
               </div>
             </div>
-            <Badge className="bg-primary/10 text-primary border-primary/20 self-start sm:self-auto">
-              <Target className="w-3 h-3 mr-1" />+{passo.xp} XP
-            </Badge>
+            <div className="flex gap-2">
+              <Badge className="bg-accent/10 text-accent border-accent/20 self-start sm:self-auto">
+                <Award className="w-3 h-3 mr-1" />
+                {progresso?.pontuacao_total || 0} XP ganhos
+              </Badge>
+              <Badge className="bg-primary/10 text-primary border-primary/20 self-start sm:self-auto">
+                <Target className="w-3 h-3 mr-1" />+{passo.xp} XP disponível
+              </Badge>
+            </div>
           </div>
           <Progress value={(passosCompletados / 10) * 100} className="h-1 mt-3" />
         </div>
@@ -582,13 +594,13 @@ export default function PassoClient({
               className="min-h-32 text-base"
               value={respostaPergunta}
               onChange={(e) => setRespostaPergunta(e.target.value)}
-              disabled={status === "validado" || status === "aguardando"}
+              disabled={respostaPerguntaHistorico?.situacao === "aprovado" || status === "aguardando"}
             />
-            {status === "validado" && (
+            {respostaPerguntaHistorico?.situacao === "aprovado" && (
               <div className="mt-3 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                 <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                  Pergunta aprovada pelo discipulador!
+                  Pergunta aprovada pelo discipulador! +{respostaPerguntaHistorico.xp_ganho || 0} XP
                 </p>
               </div>
             )}
@@ -612,17 +624,20 @@ export default function PassoClient({
                 className="min-h-24 text-base"
                 value={respostaMissao}
                 onChange={(e) => setRespostaMissao(e.target.value)}
-                disabled={status === "validado" || status === "aguardando"}
+                disabled={respostaMissaoHistorico?.situacao === "aprovado" || status === "aguardando"}
               />
-              {status === "validado" && (
+              {respostaMissaoHistorico?.situacao === "aprovado" && (
                 <div className="mt-2 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
                   <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
                   <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                    Missão aprovada pelo discipulador! +{passo.recompensa}
+                    Missão aprovada pelo discipulador! +{respostaMissaoHistorico.xp_ganho || 0} XP
                   </p>
                 </div>
               )}
-              {status === "aguardando" && (
+              {((respostaPerguntaHistorico?.situacao === "enviado" && !respostaMissaoHistorico) ||
+                (respostaMissaoHistorico?.situacao === "enviado" && !respostaPerguntaHistorico) ||
+                (respostaPerguntaHistorico?.situacao === "enviado" &&
+                  respostaMissaoHistorico?.situacao === "enviado")) && (
                 <div className="mt-2 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                   <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
@@ -630,14 +645,19 @@ export default function PassoClient({
                   </p>
                 </div>
               )}
-              {status === "pendente" && (
+              {(status === "pendente" ||
+                respostaPerguntaHistorico?.situacao !== "aprovado" ||
+                respostaMissaoHistorico?.situacao !== "aprovado") && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     size="lg"
                     className="w-full bg-transparent"
-                    disabled={status === "validado"}
+                    disabled={
+                      respostaPerguntaHistorico?.situacao === "aprovado" &&
+                      respostaMissaoHistorico?.situacao === "aprovado"
+                    }
                     onClick={handleSalvarRascunho}
                   >
                     <Save className="w-4 h-4 mr-2" />
@@ -647,8 +667,8 @@ export default function PassoClient({
                     type="button"
                     size="lg"
                     disabled={
-                      status === "validado" ||
-                      status === "aguardando" ||
+                      (respostaPerguntaHistorico?.situacao === "aprovado" &&
+                        respostaMissaoHistorico?.situacao === "aprovado") ||
                       !respostaPergunta.trim() ||
                       !respostaMissao.trim()
                     }
@@ -693,7 +713,7 @@ export default function PassoClient({
               Voltar ao Dashboard
             </Button>
           </Link>
-          {numero < 10 && status === "validado" && (
+          {numero < 10 && status === "validado" && statusLeituraSemana === "concluida" && (
             <Link href={`/dashboard/passo/${numero + 1}`}>
               <Button>
                 Prosseguir

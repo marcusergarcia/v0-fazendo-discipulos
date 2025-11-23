@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -6,15 +6,26 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Link from "next/link"
 import Image from "next/image"
-import { Trophy, Target, Users, BookOpen, Shield, Award, Lock, CheckCircle2, Clock, Sparkles, LogOut, GitBranch, UserPlus, UsersRound, Book } from 'lucide-react'
+import {
+  Trophy,
+  Target,
+  Users,
+  BookOpen,
+  Shield,
+  Award,
+  Lock,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  LogOut,
+  GitBranch,
+  UserPlus,
+  UsersRound,
+  Book,
+} from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 
 export default async function DashboardPage({
@@ -46,20 +57,18 @@ export default async function DashboardPage({
   console.log("[v0] Profile check - Data:", profile?.id, "Error:", profileError)
 
   // Buscar dados do discípulo
-  const { data: discipulo, error: discipuloError } = await supabase
-    .from("discipulos")
-    .select("*")
-    .eq("user_id", user.id)
-    .single()
+  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
 
-  console.log("[v0] Discipulo check - Data:", discipulo?.id, "Passo atual:", discipulo?.passo_atual, "Error:", discipuloError)
+  if (!discipulo) {
+    redirect("/auth/login")
+  }
 
   // Buscar progresso dos passos
   const { data: progressoFases, error: progressoError } = await supabase
     .from("progresso_fases")
     .select("*")
-    .eq("discipulo_id", discipulo?.id || "")
-    .eq("fase_numero", discipulo?.fase_atual || 1)
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", discipulo.fase_atual || 1)
     .order("passo_numero")
 
   console.log("[v0] Progresso check - Count:", progressoFases?.length, "Error:", progressoError)
@@ -68,31 +77,31 @@ export default async function DashboardPage({
   const { data: recompensas, error: recompensasError } = await supabase
     .from("recompensas")
     .select("*")
-    .eq("discipulo_id", discipulo?.id || "")
+    .eq("discipulo_id", discipulo.id)
     .order("conquistado_em", { ascending: false })
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
   // Calcular XP para próximo nível baseado nos passos completados
   const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
-  const xpAtual = discipulo?.xp_total || 0
+  const xpAtual = discipulo.xp_total || 0
   const xpProximoNivel = 1000
 
   // Nome do nível
-  const nivelNome = discipulo?.nivel_atual || "Explorador"
+  const nivelNome = discipulo.nivel_atual || "Explorador"
 
   // Fase atual
-  const faseNome = `FASE ${discipulo?.fase_atual || 1}: ${getFaseNome(discipulo?.fase_atual || 1)}`
+  const faseNome = `FASE ${discipulo.fase_atual || 1}: ${getFaseNome(discipulo.fase_atual || 1)}`
 
   // Passo atual (primeiro não completado)
-  const passoAtual = discipulo?.passo_atual || 1
+  const passoAtual = discipulo.passo_atual || 1
   const totalPassos = 10
 
   // Calcular insígnias (1 insígnia por passo completado)
   const totalInsignias = passosCompletados
 
   const userData = {
-    name: profile?.nome_completo || user.email?.split("@")[0] || "Discípulo",
+    name: profile?.nome_completo || "Usuário",
     email: user.email || "",
     level: getLevelNumber(nivelNome),
     levelName: nivelNome,
@@ -121,16 +130,27 @@ export default async function DashboardPage({
 
   const idade = calcularIdade()
 
-  const displayAvatarUrl = avatarUrl || generateAvatarUrl({
-    genero: profile?.genero,
-    idade: idade || undefined,
-    etnia: profile?.etnia
-  })
+  const displayAvatarUrl =
+    avatarUrl ||
+    generateAvatarUrl({
+      genero: profile?.genero,
+      idade: idade || undefined,
+      etnia: profile?.etnia,
+    })
 
   const { count: notificationCount } = await supabase
     .from("notificacoes")
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
+
+  // Buscar progresso atual do passo
+  const { data: progressoAtualData } = await supabase
+    .from("progresso_fases")
+    .select("pontuacao_total")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", discipulo.passo_atual)
+    .eq("fase_numero", 1)
+    .maybeSingle()
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,7 +267,9 @@ export default async function DashboardPage({
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="hidden md:inline text-xs sm:text-sm max-w-[80px] truncate">{userData.name}</span>
+                        <span className="hidden md:inline text-xs sm:text-sm max-w-[80px] truncate">
+                          {userData.name}
+                        </span>
                       </Button>
                     </Link>
                   </TooltipTrigger>
@@ -304,10 +326,16 @@ export default async function DashboardPage({
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="font-medium">Experiência</span>
                 <span className="text-muted-foreground">
-                  {userData.xp} / {userData.xpToNext} XP
+                  {userData.xp + (progressoAtualData?.pontuacao_total || 0)} XP Total
                 </span>
               </div>
               <Progress value={(userData.xp / userData.xpToNext) * 100} className="h-2 sm:h-3" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Passo Atual: +{progressoAtualData?.pontuacao_total || 0} XP</span>
+                <span>
+                  {userData.xp} / {userData.xpToNext} XP para próximo nível
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -361,11 +389,7 @@ export default async function DashboardPage({
                 <CardTitle className="text-lg">Estatísticas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <StatItem
-                  icon={<Award />}
-                  label="Insígnias"
-                  value={totalInsignias.toString()}
-                />
+                <StatItem icon={<Award />} label="Insígnias" value={totalInsignias.toString()} />
                 <StatItem
                   icon={<BookOpen />}
                   label="Passos Completos"
@@ -405,7 +429,7 @@ export default async function DashboardPage({
                 const stepProgress = progressoFases?.find((p) => p.passo_numero === stepNumber)
                 const status = stepProgress?.completado
                   ? "completed"
-                  : stepNumber === userData.currentStep
+                  : stepNumber <= userData.currentStep
                     ? "current"
                     : "locked"
 
