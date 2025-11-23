@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -590,19 +590,35 @@ export function BibleReaderWithAutoCheck({
   }
 
   const parseMarkdownBold = (text: string): React.ReactNode => {
-    const parts = text.split(/(\*\*\d+\*\*)/g)
+    const lines = text.split("\n")
 
-    return parts.map((part, index) => {
-      const match = part.match(/^\*\*(\d+)\*\*$/)
-      if (match) {
-        const numero = match[1]
+    return lines.map((line, lineIndex) => {
+      const parts = line.split(/(\*\*\d+\*\*)/g)
+
+      const lineContent = parts.map((part, partIndex) => {
+        const match = part.match(/^\*\*(\d+)\*\*$/)
+        if (match) {
+          const numero = match[1]
+          return (
+            <strong key={`${lineIndex}-${partIndex}`} className="text-[0.7em] align-super font-bold mr-0.5">
+              {numero}
+            </strong>
+          )
+        }
+        return <span key={`${lineIndex}-${partIndex}`}>{part}</span>
+      })
+
+      // Add line break after each line except the last one
+      if (lineIndex < lines.length - 1) {
         return (
-          <strong key={index} className="text-[0.7em] align-super font-bold mr-0.5">
-            {numero}
-          </strong>
+          <React.Fragment key={lineIndex}>
+            {lineContent}
+            <br />
+          </React.Fragment>
         )
       }
-      return part
+
+      return <React.Fragment key={lineIndex}>{lineContent}</React.Fragment>
     })
   }
 
@@ -799,6 +815,7 @@ export function BibleReaderWithAutoCheck({
                     lineHeight: "1.8",
                     userSelect: highlightMode ? "text" : "auto",
                     WebkitUserSelect: highlightMode ? "text" : "auto",
+                    whiteSpace: "pre-line",
                   }}
                 >
                   {renderTextWithHighlights(chapterData?.text || "", highlights)}
@@ -932,6 +949,7 @@ export function BibleReaderWithAutoCheck({
                   lineHeight: "1.8",
                   userSelect: highlightMode ? "text" : "auto",
                   WebkitUserSelect: highlightMode ? "text" : "auto",
+                  whiteSpace: "pre-line",
                 }}
               >
                 {renderTextWithHighlights(chapterData?.text || "", highlights)}
