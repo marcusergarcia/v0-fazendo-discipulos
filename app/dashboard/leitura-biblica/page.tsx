@@ -213,7 +213,7 @@ export default async function LeituraBiblicaPage({
                 {semanaSelecionada !== semanaAtual && (
                   <Link href="/dashboard/leitura-biblica">
                     <Button variant="ghost" size="sm">
-                      Voltar para Semana Atual ({semanaAtual})
+                      Atual ({semanaAtual})
                     </Button>
                   </Link>
                 )}
