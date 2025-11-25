@@ -32,6 +32,8 @@ import {
   Edit,
 } from "lucide-react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { toast } from "@/components/ui/use-toast"
 import {
   salvarRascunho,
   enviarParaValidacao,
@@ -117,6 +119,15 @@ export default function PassoClient({
 
     const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
 
+    console.log("[v0] Verificando reflexões aprovadas:")
+    console.log("[v0] Total de conteúdos:", todosConteudos.length)
+    console.log(
+      "[v0] Situações:",
+      todosConteudos.map((c) => ({ id: c.id, situacao: c.reflexao_situacao })),
+    )
+    console.log("[v0] Todas aprovadas:", todasAprovadas)
+    console.log("[v0] Resultado final:", todasAprovadas && todosConteudos.length === 6)
+
     return todasAprovadas && todosConteudos.length === 6
   }
 
@@ -129,6 +140,13 @@ export default function PassoClient({
     respostaMissaoHistorico?.situacao === "aprovado"
 
   const podeReceberRecompensas = todasTarefasAprovadas && status !== "validado"
+
+  console.log("[v0] Verificando se pode receber recompensas:")
+  console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
+  console.log("[v0] respostaPerguntaHistorico.situacao:", respostaPerguntaHistorico?.situacao)
+  console.log("[v0] respostaMissaoHistorico.situacao:", respostaMissaoHistorico?.situacao)
+  console.log("[v0] status:", status)
+  console.log("[v0] podeReceberRecompensas:", podeReceberRecompensas)
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -150,46 +168,31 @@ export default function PassoClient({
   }
 
   const handleResetarProgresso = async () => {
-    console.log("[v0] CLIENT: handleResetarProgresso iniciado")
     setCarregandoReflexoes(true)
     setErroSenha(null)
 
     try {
-      console.log("[v0] CLIENT: Chamando buscarReflexoesParaReset para passo", numero)
       const reflexoes = await buscarReflexoesParaReset(numero)
-      console.log("[v0] CLIENT: Reflexões retornadas:", reflexoes)
-      console.log("[v0] CLIENT: Total de reflexões:", reflexoes.length)
-
       setReflexoesParaExcluir(reflexoes)
       setModalResetAberto(true)
-
-      console.log("[v0] CLIENT: Modal aberto com sucesso")
     } catch (error: any) {
-      console.error("[v0] CLIENT: ERRO ao buscar reflexões:", error)
-      console.error("[v0] CLIENT: Stack:", error.stack)
+      console.error("ERRO ao buscar reflexões:", error)
+      console.error("Stack:", error.stack)
       setErroSenha(`Erro ao carregar reflexões: ${error.message}`)
-      // Mesmo com erro, abre o modal para permitir reset
       setModalResetAberto(true)
     } finally {
       setCarregandoReflexoes(false)
-      console.log("[v0] CLIENT: Carregamento finalizado")
     }
   }
 
   const confirmarReset = async () => {
-    console.log("[v0] CLIENT: confirmarReset iniciado")
     setResetando(true)
     setErroSenha(null)
 
     try {
       const reflexoesIds = reflexoesParaExcluir.map((r) => r.id)
-      console.log("[v0] CLIENT: Chamando resetarProgresso com IDs:", reflexoesIds)
-
       const resultado = await resetarProgresso(numero, reflexoesIds)
-      console.log("[v0] CLIENT: Resultado:", resultado)
-
       if (resultado.success) {
-        console.log("[v0] CLIENT: Reset bem-sucedido!")
         setModalResetAberto(false)
         window.location.href = `/dashboard/passo/${numero}?reset=true`
       } else {
@@ -197,7 +200,7 @@ export default function PassoClient({
         setResetando(false)
       }
     } catch (error) {
-      console.error("[v0] CLIENT: ERRO:", error)
+      console.error("ERRO:", error)
       setErroSenha(error.message || "Erro ao resetar progresso")
       setResetando(false)
     }
@@ -263,32 +266,55 @@ export default function PassoClient({
     }
 
     setProcessandoRecompensas(true)
-    try {
-      const resultado = await receberRecompensasEAvancar(numero)
 
-      if (resultado.error) {
-        alert("Erro: " + resultado.error)
-        return
+    try {
+      // Se for Pr. Marcus, aprovar automaticamente primeiro
+      if (isPrMarcus) {
+        const { error: aprovacaoError } = await supabase.rpc("aprovar_tarefas_pr_marcus", {
+          p_fase_numero: 1,
+          p_passo_numero: numero,
+        })
+
+        if (aprovacaoError) {
+          console.error("Erro ao aprovar tarefas:", aprovacaoError)
+          toast({
+            title: "Erro ao processar aprovações",
+            description: "Tente novamente ou contate o suporte.",
+            variant: "destructive",
+          })
+          setProcessandoRecompensas(false)
+          return
+        }
       }
 
-      alert(resultado.message)
-      window.location.href = `/dashboard/passo/${resultado.proximoPasso}`
+      // Chamar a função de receber recompensas (atualiza XP e avança)
+      const resultado = await receberRecompensasEAvancar(numero)
+
+      if (resultado.success) {
+        toast({
+          title: "Recompensas recebidas!",
+          description: resultado.message || "Você avançou para o próximo passo!",
+        })
+
+        // Redirecionar para o próximo passo
+        window.location.href = `/dashboard/passo/${numero + 1}`
+      } else {
+        toast({
+          title: "Erro ao receber recompensas",
+          description: resultado.error || "Tente novamente.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
-      console.error("Erro ao processar recompensas:", error)
-      alert("Erro ao processar recompensas")
+      console.error("Erro ao receber recompensas:", error)
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao processar. Tente novamente.",
+        variant: "destructive",
+      })
     } finally {
       setProcessandoRecompensas(false)
     }
-  }
-
-  const irParaPassoAnterior = () => {
-    if (numero > 1) {
-      window.location.href = `/dashboard/passo/${numero - 1}`
-    }
-  }
-
-  const irParaProximoPasso = () => {
-    window.location.href = `/dashboard/passo/${numero + 1}`
   }
 
   return (
@@ -768,24 +794,14 @@ export default function PassoClient({
             )}
 
             {podeReceberRecompensas && (
-              <div className="mt-4">
-                <Button
-                  type="button"
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold"
+              <div className="mt-4 flex justify-center pt-8">
+                <button
                   onClick={handleReceberRecompensas}
                   disabled={processandoRecompensas}
+                  className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {processandoRecompensas ? (
-                    <>Processando...</>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Receber Recompensas e Avançar Próximo Passo
-                      <Sparkles className="w-5 h-5 ml-2" />
-                    </>
-                  )}
-                </Button>
+                  {processandoRecompensas ? "Processando..." : "Receber Recompensas e Avançar Próximo Passo"}
+                </button>
               </div>
             )}
 
@@ -806,32 +822,6 @@ export default function PassoClient({
             )}
           </CardContent>
         </Card>
-
-        {/* Navegação */}
-        <div className="mt-8 flex gap-4 justify-between items-center">
-          {/* Botão Passo Anterior */}
-          <Button onClick={irParaPassoAnterior} disabled={numero === 1} variant="outline">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Passo Anterior
-          </Button>
-
-          {/* Botão Receber Recompensas (aparece quando tudo está aprovado) */}
-          {podeReceberRecompensas && (
-            <Button
-              onClick={handleReceberRecompensas}
-              disabled={processandoRecompensas}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-8 py-6 text-lg shadow-lg"
-            >
-              {processandoRecompensas ? "Processando..." : "🎁 Receber Recompensas e Avançar Próximo Passo"}
-            </Button>
-          )}
-
-          {/* Botão Próximo Passo */}
-          <Button onClick={irParaProximoPasso} variant="outline">
-            Próximo Passo
-            <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-          </Button>
-        </div>
       </div>
 
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
