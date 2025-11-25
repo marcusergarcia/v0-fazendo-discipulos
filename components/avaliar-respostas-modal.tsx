@@ -174,13 +174,7 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
           .eq("passo_numero", resposta.passo_numero)
 
         const insigniaNome = getInsigniaNome(resposta.passo_numero)
-        await supabase.from("recompensas").insert({
-          discipulo_id: resposta.discipulo_id,
-          tipo_recompensa: "insignia",
-          nome_recompensa: insigniaNome,
-          descricao: `Insígnia conquistada ao completar o Passo ${resposta.passo_numero}`,
-          conquistado_em: new Date().toISOString(),
-        })
+        // Esta funcionalidade foi movida para a função receberRecompensasEAvancar
 
         const { data: progressoCompleto } = await supabase
           .from("progresso_fases")

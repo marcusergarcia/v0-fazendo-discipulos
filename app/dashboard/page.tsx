@@ -78,7 +78,7 @@ export default async function DashboardPage({
     .from("recompensas")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .order("conquistado_em", { ascending: false })
+    .order("created_at", { ascending: false })
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 

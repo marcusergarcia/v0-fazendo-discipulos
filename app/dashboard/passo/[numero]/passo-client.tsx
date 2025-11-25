@@ -110,7 +110,7 @@ export default function PassoClient({
   const [carregandoReflexoes, setCarregandoReflexoes] = useState(false)
   const [processandoRecompensas, setProcessandoRecompensas] = useState(false)
 
-  const isPrMarcus = discipulo?.id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
+  const isPrMarcus = discipulo?.user_id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
 
   const todasReflexoesAprovadas = () => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
@@ -139,9 +139,10 @@ export default function PassoClient({
     respostaPerguntaHistorico?.situacao === "aprovado" &&
     respostaMissaoHistorico?.situacao === "aprovado"
 
-  const podeReceberRecompensas = todasTarefasAprovadas && status !== "validado"
+  const podeReceberRecompensas = isPrMarcus ? todasTarefasAprovadas : todasTarefasAprovadas && status !== "validado"
 
   console.log("[v0] Verificando se pode receber recompensas:")
+  console.log("[v0] isPrMarcus:", isPrMarcus)
   console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
   console.log("[v0] respostaPerguntaHistorico.situacao:", respostaPerguntaHistorico?.situacao)
   console.log("[v0] respostaMissaoHistorico.situacao:", respostaMissaoHistorico?.situacao)

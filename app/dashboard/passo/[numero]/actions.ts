@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { redirect } from "next/navigation"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
+import { revalidatePath } from "next/cache"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -416,7 +417,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
         pontuacao_total: pontosMantidos, // Mantém pontos de perguntas/missões
         completado: false,
         enviado_para_validacao: false,
-        data_completado: null,
       })
       .eq("discipulo_id", discipulo.id)
       .eq("fase_numero", 1)
@@ -919,82 +919,209 @@ export async function aprovarTarefasPrMarcusAutomatico(numeroPasso: number) {
 }
 
 export async function receberRecompensasEAvancar(numeroPasso: number) {
+  console.error("[v0 SERVER] ===== INÍCIO receberRecompensasEAvancar =====")
+  console.error("[v0 SERVER] Passo número:", numeroPasso)
+
   const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  console.error("[v0 SERVER] User ID:", user?.id)
+
   if (!user) {
+    console.error("[v0 SERVER] ERRO: Usuário não autenticado")
     return { error: "Usuário não autenticado" }
   }
 
-  // Verificar se é o Pr. Marcus
   const PR_MARCUS_ID = "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
-  if (user.id !== PR_MARCUS_ID) {
-    return { error: "Esta função é apenas para o Pr. Marcus" }
-  }
+  const isPrMarcus = user.id === PR_MARCUS_ID
+
+  console.error("[v0 SERVER] É Pr. Marcus?", isPrMarcus)
 
   try {
-    // 1. Aprovar todas as tarefas automaticamente com 30 XP
-    const resultadoAprovacao = await aprovarTarefasPrMarcusAutomatico(numeroPasso)
+    console.error("[v0 SERVER] Buscando discípulo...")
+    const { data: discipulo, error: discipuloError } = await supabase
+      .from("discipulos")
+      .select("id, xp_total, fase_atual, passo_atual")
+      .eq("user_id", user.id)
+      .single()
 
-    if (resultadoAprovacao.error) {
-      throw new Error(resultadoAprovacao.error)
+    if (discipuloError || !discipulo) {
+      console.error("[v0 SERVER] ERRO ao buscar discípulo:", discipuloError)
+      throw new Error("Discípulo não encontrado")
     }
 
-    // 2. Buscar o progresso atual
+    console.error("[v0 SERVER] Discípulo encontrado:", discipulo.id)
+    console.error("[v0 SERVER] XP atual:", discipulo.xp_total)
+
+    console.error("[v0 SERVER] Buscando progresso do passo...")
     const { data: progresso, error: progressoError } = await supabase
       .from("progresso_fases")
       .select("*")
-      .eq("user_id", user.id)
-      .eq("numero_passo", numeroPasso)
+      .eq("discipulo_id", discipulo.id)
+      .eq("passo_numero", numeroPasso)
       .single()
 
-    if (progressoError) throw progressoError
+    if (progressoError || !progresso) {
+      console.error("[v0 SERVER] ERRO ao buscar progresso:", progressoError)
+      throw new Error("Progresso não encontrado")
+    }
 
-    // 3. Transferir pontos para XP total do discípulo
-    const { error: updateXpError } = await supabase
+    console.error("[v0 SERVER] Progresso encontrado - ID:", progresso.id)
+    console.error("[v0 SERVER] Pontos do passo:", progresso.pontuacao_total)
+    console.error("[v0 SERVER] Completado?", progresso.completado)
+    console.error("[v0 SERVER] Fase atual:", progresso.fase_numero)
+
+    if (isPrMarcus) {
+      console.error("[v0 SERVER] Executando aprovação automática para Pr. Marcus...")
+      const resultadoAprovacao = await aprovarTarefasPrMarcusAutomatico(numeroPasso)
+      if (resultadoAprovacao.error) {
+        console.error("[v0 SERVER] ERRO na aprovação automática:", resultadoAprovacao.error)
+        throw new Error(resultadoAprovacao.error)
+      }
+      console.error("[v0 SERVER] Aprovação automática concluída com sucesso")
+    }
+
+    const faseAtual = progresso.fase_numero
+    const proximoPasso = numeroPasso === 10 ? 1 : numeroPasso + 1
+    const proximaFase = numeroPasso === 10 ? faseAtual + 1 : faseAtual
+
+    console.error("[v0 SERVER] Cálculo próximo passo/fase:")
+    console.error("[v0 SERVER] - Fase atual:", faseAtual)
+    console.error("[v0 SERVER] - Passo atual:", numeroPasso)
+    console.error("[v0 SERVER] - Próxima fase:", proximaFase)
+    console.error("[v0 SERVER] - Próximo passo:", proximoPasso)
+
+    const novoXpTotal = (discipulo.xp_total || 0) + (progresso.pontuacao_total || 0)
+    console.error("[v0 SERVER] Novo XP total:", novoXpTotal)
+
+    console.error("[v0 SERVER] Atualizando discípulo...")
+    const { error: updateDiscipuloError } = await supabase
       .from("discipulos")
       .update({
-        xp_total: supabase.rpc("increment", { x: progresso.pontuacao_total }),
+        xp_total: novoXpTotal,
+        fase_atual: proximaFase,
+        passo_atual: proximoPasso,
       })
-      .eq("id", user.id)
+      .eq("id", discipulo.id)
 
-    if (updateXpError) throw updateXpError
+    if (updateDiscipuloError) {
+      console.error("[v0 SERVER] ERRO ao atualizar discípulo:", updateDiscipuloError)
+      throw updateDiscipuloError
+    }
 
-    // 4. Marcar passo como validado
+    console.error("[v0 SERVER] Discípulo atualizado com sucesso")
+
+    console.error("[v0 SERVER] Marcando progresso como completado...")
     const { error: validarError } = await supabase
       .from("progresso_fases")
       .update({
-        status: "validado",
-        data_conclusao: new Date().toISOString(),
+        completado: true,
+        data_completado: new Date().toISOString(),
       })
       .eq("id", progresso.id)
 
-    if (validarError) throw validarError
+    if (validarError) {
+      console.error("[v0 SERVER] ERRO ao marcar progresso como completado:", validarError)
+      throw validarError
+    }
 
-    // 5. Criar progresso para o próximo passo
-    if (numeroPasso < 10) {
-      const { error: novoProgressoError } = await supabase.from("progresso_fases").insert({
-        user_id: user.id,
-        numero_passo: numeroPasso + 1,
-        status: "pendente",
-        pontuacao_total: 0,
-        videos_assistidos: [],
-        artigos_lidos: [],
+    console.error("[v0 SERVER] Progresso marcado como completado")
+
+    console.error("[v0 SERVER] Atualizando recompensas (array de insígnias)...")
+
+    // Buscar ou criar registro de recompensas
+    const { data: recompensaExistente } = await supabase
+      .from("recompensas")
+      .select("*")
+      .eq("discipulo_id", discipulo.id)
+      .single()
+
+    const novaInsignia = {
+      nome: `Passo ${numeroPasso} Concluído`,
+      descricao: `Você completou o passo ${numeroPasso} e ganhou ${progresso.pontuacao_total} XP!`,
+      passo: numeroPasso,
+      fase: faseAtual,
+    }
+
+    if (recompensaExistente) {
+      // Adicionar insígnia ao array existente
+      const insigniasAtuais = recompensaExistente.insignias || []
+      insigniasAtuais.push(novaInsignia)
+
+      const { error: recompensasError } = await supabase
+        .from("recompensas")
+        .update({
+          insignias: insigniasAtuais,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("discipulo_id", discipulo.id)
+
+      if (recompensasError) {
+        console.error("[v0 SERVER] ERRO ao atualizar recompensas:", recompensasError)
+      } else {
+        console.error("[v0 SERVER] Insígnia adicionada ao array existente")
+      }
+    } else {
+      // Criar novo registro com a primeira insígnia
+      const { error: recompensasError } = await supabase.from("recompensas").insert({
+        discipulo_id: discipulo.id,
+        insignias: [novaInsignia],
+        medalhas: [],
+        armaduras: [],
+        nivel: 1,
       })
 
-      if (novoProgressoError) throw novoProgressoError
+      if (recompensasError) {
+        console.error("[v0 SERVER] ERRO ao criar recompensas:", recompensasError)
+      } else {
+        console.error("[v0 SERVER] Novo registro de recompensas criado com primeira insígnia")
+      }
     }
+
+    console.error("[v0 SERVER] Criando próximo passo:", proximoPasso, "na fase:", proximaFase)
+    const { error: novoProgressoError } = await supabase.from("progresso_fases").upsert(
+      {
+        discipulo_id: discipulo.id,
+        fase_numero: proximaFase,
+        passo_numero: proximoPasso,
+        pontuacao_total: 0,
+        reflexoes_concluidas: 0,
+        videos_assistidos: [],
+        artigos_lidos: [],
+        completado: false,
+        enviado_para_validacao: false,
+        dias_no_passo: 1,
+      },
+      {
+        onConflict: "discipulo_id,fase_numero,passo_numero",
+        ignoreDuplicates: true,
+      },
+    )
+
+    if (novoProgressoError) {
+      console.error("[v0 SERVER] ERRO ao criar próximo passo:", novoProgressoError)
+      throw novoProgressoError
+    }
+    console.error("[v0 SERVER] Próximo passo criado/verificado com sucesso")
+
+    console.error("[v0 SERVER] Revalidando páginas...")
+    revalidatePath(`/dashboard/passo/${numeroPasso}`)
+    revalidatePath(`/dashboard/passo/${proximoPasso}`)
+    revalidatePath("/dashboard")
+
+    console.error("[v0 SERVER] ===== FIM receberRecompensasEAvancar - SUCESSO =====")
 
     return {
       success: true,
-      message: `Recompensas recebidas! +${progresso.pontuacao_total} XP`,
-      proximoPasso: numeroPasso + 1,
+      message: `Você avançou para o passo ${proximoPasso}!`,
     }
   } catch (error) {
-    console.error("Erro ao receber recompensas:", error)
-    return { error: "Erro ao processar recompensas" }
+    console.error("[v0 SERVER] ERRO GERAL:", error)
+    return {
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+    }
   }
 }
