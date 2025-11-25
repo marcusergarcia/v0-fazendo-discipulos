@@ -29,6 +29,7 @@ import {
   ExternalLink,
   RotateCcw,
   CheckCircle,
+  Edit,
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -37,7 +38,8 @@ import {
   concluirVideoComReflexao,
   concluirArtigoComReflexao,
   resetarProgresso,
-  buscarReflexoesParaReset, // Importar nova função
+  buscarReflexoesParaReset,
+  receberRecompensasEAvancar,
 } from "./actions"
 import { useState } from "react"
 import { TextWithBibleLinks } from "@/components/text-with-bible-links"
@@ -104,6 +106,29 @@ export default function PassoClient({
   const [erroSenha, setErroSenha] = useState<string | null>(null)
   const [reflexoesParaExcluir, setReflexoesParaExcluir] = useState<any[]>([])
   const [carregandoReflexoes, setCarregandoReflexoes] = useState(false)
+  const [processandoRecompensas, setProcessandoRecompensas] = useState(false)
+
+  const isPrMarcus = discipulo?.id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
+
+  const todasReflexoesAprovadas = () => {
+    const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
+
+    if (todosConteudos.length === 0) return false
+
+    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
+
+    return todasAprovadas && todosConteudos.length === 6
+  }
+
+  const todasTarefasEnviadas =
+    respostaPerguntaHistorico?.situacao === "enviado" && respostaMissaoHistorico?.situacao === "enviado"
+
+  const todasTarefasAprovadas =
+    todasReflexoesAprovadas() &&
+    respostaPerguntaHistorico?.situacao === "aprovado" &&
+    respostaMissaoHistorico?.situacao === "aprovado"
+
+  const podeReceberRecompensas = todasTarefasAprovadas && status !== "validado"
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -232,14 +257,38 @@ export default function PassoClient({
     return temVideos || temArtigos || temResposta
   }
 
-  const todasReflexoesAprovadas = () => {
-    const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
+  const handleReceberRecompensas = async () => {
+    if (!confirm("Deseja receber suas recompensas e avançar para o próximo passo?")) {
+      return
+    }
 
-    if (todosConteudos.length === 0) return false
+    setProcessandoRecompensas(true)
+    try {
+      const resultado = await receberRecompensasEAvancar(numero)
 
-    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
+      if (resultado.error) {
+        alert("Erro: " + resultado.error)
+        return
+      }
 
-    return todasAprovadas && todosConteudos.length === 6
+      alert(resultado.message)
+      window.location.href = `/dashboard/passo/${resultado.proximoPasso}`
+    } catch (error) {
+      console.error("Erro ao processar recompensas:", error)
+      alert("Erro ao processar recompensas")
+    } finally {
+      setProcessandoRecompensas(false)
+    }
+  }
+
+  const irParaPassoAnterior = () => {
+    if (numero > 1) {
+      window.location.href = `/dashboard/passo/${numero - 1}`
+    }
+  }
+
+  const irParaProximoPasso = () => {
+    window.location.href = `/dashboard/passo/${numero + 1}`
   }
 
   return (
@@ -321,7 +370,8 @@ export default function PassoClient({
           </CardContent>
         </Card>
 
-        {(numero === 1 || numero === 2) && (
+        {/* Leitura Bíblica da Semana */}
+        {(numero === 1 || numero === 2 || numero === 3) && (
           <Card className="mb-6 border-accent/30 bg-gradient-to-br from-accent/5 to-primary/5">
             <CardHeader>
               <div>
@@ -410,6 +460,47 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 2"
                             : "Iniciar Leitura da Semana 2"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {numero === 3 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "Promessas e despedida de Jesus"}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Conheça as últimas palavras de Jesus aos discípulos, Sua ressurreição e promessa do Espírito Santo."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          João 15-21
+                        </Badge>
+                        <span className="text-muted-foreground">7 capítulos</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Maravilhoso! Você completou o Evangelho de João! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Agora você conhece a história completa de Jesus em João. Continue crescendo na fé!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=3">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 3"
+                            : "Iniciar Leitura da Semana 3"}
                         </Button>
                       </Link>
                     )}
@@ -580,8 +671,10 @@ export default function PassoClient({
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-secondary">Pergunta para Responder</CardTitle>
-            <CardDescription>Responda com suas próprias palavras</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-primary" />
+              Suas Respostas
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-lg font-semibold mb-4">
@@ -604,123 +697,140 @@ export default function PassoClient({
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        <Card className="border-primary mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" />
-              Missão Prática
-            </CardTitle>
-            <CardDescription>{passo.missao}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Textarea
-                name="resposta_missao"
-                id="resposta_missao"
-                placeholder='Exemplo: "Existo para glorificar a Deus e viver em comunhão com Ele"'
-                className="min-h-24 text-base"
-                value={respostaMissao}
-                onChange={(e) => setRespostaMissao(e.target.value)}
-                disabled={respostaMissaoHistorico?.situacao === "aprovado" || status === "aguardando"}
-              />
-              {respostaMissaoHistorico?.situacao === "aprovado" && (
-                <div className="mt-2 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
-                  <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                    Missão aprovada pelo discipulador! +{respostaMissaoHistorico.xp_ganho || 0} XP
-                  </p>
-                </div>
-              )}
-              {((respostaPerguntaHistorico?.situacao === "enviado" && !respostaMissaoHistorico) ||
-                (respostaMissaoHistorico?.situacao === "enviado" && !respostaPerguntaHistorico) ||
-                (respostaPerguntaHistorico?.situacao === "enviado" &&
-                  respostaMissaoHistorico?.situacao === "enviado")) && (
-                <div className="mt-2 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                  <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-                    Aguardando validação do discipulador...
-                  </p>
-                </div>
-              )}
-              {(status === "pendente" ||
-                respostaPerguntaHistorico?.situacao !== "aprovado" ||
-                respostaMissaoHistorico?.situacao !== "aprovado") && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="lg"
-                    className="w-full bg-transparent"
-                    disabled={
-                      respostaPerguntaHistorico?.situacao === "aprovado" &&
-                      respostaMissaoHistorico?.situacao === "aprovado"
-                    }
-                    onClick={handleSalvarRascunho}
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="lg"
-                    disabled={
-                      (respostaPerguntaHistorico?.situacao === "aprovado" &&
-                        respostaMissaoHistorico?.situacao === "aprovado") ||
-                      !respostaPergunta.trim() ||
-                      !respostaMissao.trim()
-                    }
-                    onClick={handleEnviarValidacao}
-                  >
-                    {status === "aguardando" ? (
-                      <>Enviando...</>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Enviar ao Discipulador
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+            <Textarea
+              name="resposta_missao"
+              id="resposta_missao"
+              placeholder='Exemplo: "Existo para glorificar a Deus e viver em comunhão com Ele"'
+              className="min-h-24 text-base mt-4"
+              value={respostaMissao}
+              onChange={(e) => setRespostaMissao(e.target.value)}
+              disabled={respostaMissaoHistorico?.situacao === "aprovado" || status === "aguardando"}
+            />
+            {respostaMissaoHistorico?.situacao === "aprovado" && (
+              <div className="mt-2 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
+                <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
+                <p className="text-sm font-medium text-green-700 dark:text-green-300">
+                  Missão aprovada pelo discipulador! +{respostaMissaoHistorico.xp_ganho || 0} XP
+                </p>
+              </div>
+            )}
+            {((respostaPerguntaHistorico?.situacao === "enviado" && !respostaMissaoHistorico) ||
+              (respostaMissaoHistorico?.situacao === "enviado" && !respostaPerguntaHistorico) ||
+              (respostaPerguntaHistorico?.situacao === "enviado" &&
+                respostaMissaoHistorico?.situacao === "enviado")) && (
+              <div className="mt-2 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                  Aguardando validação do discipulador...
+                </p>
+              </div>
+            )}
+            {(status === "pendente" ||
+              respostaPerguntaHistorico?.situacao !== "aprovado" ||
+              respostaMissaoHistorico?.situacao !== "aprovado") && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full bg-transparent"
+                  disabled={
+                    respostaPerguntaHistorico?.situacao === "aprovado" &&
+                    respostaMissaoHistorico?.situacao === "aprovado"
+                  }
+                  onClick={handleSalvarRascunho}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  disabled={
+                    (respostaPerguntaHistorico?.situacao === "aprovado" &&
+                      respostaMissaoHistorico?.situacao === "aprovado") ||
+                    !respostaPergunta.trim() ||
+                    !respostaMissao.trim()
+                  }
+                  onClick={handleEnviarValidacao}
+                >
+                  {status === "aguardando" ? (
+                    <>Enviando...</>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Enviar ao Discipulador
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
-              {discipuladorId ? (
-                <Link href={`/dashboard/chat/com/${discipuladorId}`}>
-                  <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Conversar com meu discipulador
-                  </Button>
-                </Link>
-              ) : (
-                <Link href={`/dashboard/chat`}>
-                  <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
-                    <MessageCircle className="w-4 h-4 mr-2" />
-                    Conversar com meu discipulador
-                  </Button>
-                </Link>
-              )}
-            </div>
+            {podeReceberRecompensas && (
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold"
+                  onClick={handleReceberRecompensas}
+                  disabled={processandoRecompensas}
+                >
+                  {processandoRecompensas ? (
+                    <>Processando...</>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Receber Recompensas e Avançar Próximo Passo
+                      <Sparkles className="w-5 h-5 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {discipuladorId ? (
+              <Link href={`/dashboard/chat/com/${discipuladorId}`}>
+                <Button type="button" variant="outline" size="lg" className="w-full bg-transparent mt-4">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Conversar com meu discipulador
+                </Button>
+              </Link>
+            ) : (
+              <Link href={`/dashboard/chat`}>
+                <Button type="button" variant="outline" size="lg" className="w-full bg-transparent mt-4">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Conversar com meu discipulador
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
 
         {/* Navegação */}
-        <div className="flex justify-between mt-8">
-          <Link href="/dashboard">
-            <Button variant="outline">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar ao Dashboard
+        <div className="mt-8 flex gap-4 justify-between items-center">
+          {/* Botão Passo Anterior */}
+          <Button onClick={irParaPassoAnterior} disabled={numero === 1} variant="outline">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Passo Anterior
+          </Button>
+
+          {/* Botão Receber Recompensas (aparece quando tudo está aprovado) */}
+          {podeReceberRecompensas && (
+            <Button
+              onClick={handleReceberRecompensas}
+              disabled={processandoRecompensas}
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold px-8 py-6 text-lg shadow-lg"
+            >
+              {processandoRecompensas ? "Processando..." : "🎁 Receber Recompensas e Avançar Próximo Passo"}
             </Button>
-          </Link>
-          {numero < 10 && status === "validado" && statusLeituraSemana === "concluida" && (
-            <Link href={`/dashboard/passo/${numero + 1}`}>
-              <Button>
-                Prosseguir
-                <Sparkles className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
           )}
+
+          {/* Botão Próximo Passo */}
+          <Button onClick={irParaProximoPasso} variant="outline">
+            Próximo Passo
+            <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+          </Button>
         </div>
       </div>
 

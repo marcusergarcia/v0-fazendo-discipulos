@@ -20,9 +20,15 @@ interface BibleNavigationMenuProps {
   onNavigate: (livroId: number, livroNome: string, capitulo: number) => void
   currentLivroId?: number
   currentCapitulo?: number
+  onClose?: () => void
 }
 
-export function BibleNavigationMenu({ onNavigate, currentLivroId, currentCapitulo }: BibleNavigationMenuProps) {
+export function BibleNavigationMenu({
+  onNavigate,
+  currentLivroId,
+  currentCapitulo,
+  onClose,
+}: BibleNavigationMenuProps) {
   const [livros, setLivros] = useState<Livro[]>([])
   const [livroSelecionado, setLivroSelecionado] = useState<Livro | null>(null)
   const [busca, setBusca] = useState("")
@@ -100,7 +106,10 @@ export function BibleNavigationMenu({ onNavigate, currentLivroId, currentCapitul
                 key={cap}
                 variant={currentLivroId === livroSelecionado.id && currentCapitulo === cap ? "default" : "outline"}
                 size="sm"
-                onClick={() => onNavigate(livroSelecionado.id, livroSelecionado.nome, cap)}
+                onClick={() => {
+                  onNavigate(livroSelecionado.id, livroSelecionado.nome, cap)
+                  onClose?.()
+                }}
                 className="h-10"
               >
                 {cap}

@@ -101,6 +101,8 @@ export function BibleReaderWithAutoCheck({
   const [history, setHistory] = useState<HistoryAction[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
 
+  const [menuAberto, setMenuAberto] = useState(false)
+
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -703,17 +705,19 @@ export function BibleReaderWithAutoCheck({
               {bookName} {currentChapter}
             </h2>
           </div>
-          <Sheet>
+          <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu className="h-5 w-5" />
+              <Button variant="outline" size="sm">
+                <Menu className="w-4 h-4 mr-2" />
+                Menu
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[85vw] sm:w-[400px] p-0">
+            <SheetContent side="left" className="w-full sm:w-96 p-0">
               <BibleNavigationMenu
                 onNavigate={handleNavigateToChapter}
                 currentLivroId={livroId}
                 currentCapitulo={currentChapter}
+                onClose={() => setMenuAberto(false)}
               />
             </SheetContent>
           </Sheet>
@@ -897,17 +901,19 @@ export function BibleReaderWithAutoCheck({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
         {/* Menu hamburguer */}
-        <Sheet>
+        <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
+            <Button variant="outline" size="sm">
+              <Menu className="w-4 h-4 mr-2" />
+              Menu
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[85vw] sm:w-[400px] p-0">
+          <SheetContent side="left" className="w-full sm:w-96 p-0">
             <BibleNavigationMenu
               onNavigate={handleNavigateToChapter}
               currentLivroId={livroId}
               currentCapitulo={currentChapter}
+              onClose={() => setMenuAberto(false)}
             />
           </SheetContent>
         </Sheet>

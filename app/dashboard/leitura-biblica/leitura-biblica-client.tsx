@@ -120,6 +120,10 @@ export default function LeituraBiblicaClient({
   const fecharLeitor = () => {
     console.log("[v0] 🔴 Fechando leitor bíblico")
     setLeitorAberto(false)
+    setLivroAtual(leituraAtual.livro)
+    setLivroIdAtual(LIVROS_MAP[leituraAtual.livro] || 1)
+    setCapituloSelecionado(leituraAtual.capituloInicio)
+    console.log("[v0] 🔄 Livro resetado para:", leituraAtual.livro)
   }
 
   const navegarParaCapitulo = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {

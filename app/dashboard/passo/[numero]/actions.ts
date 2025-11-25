@@ -885,3 +885,116 @@ export async function liberarProximoPasso() {
     proximoPasso,
   }
 }
+
+export async function aprovarTarefasPrMarcusAutomatico(numeroPasso: number) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "Usuário não autenticado" }
+  }
+
+  // Verificar se é o Pr. Marcus
+  const PR_MARCUS_ID = "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
+  if (user.id !== PR_MARCUS_ID) {
+    return { error: "Esta função é apenas para o Pr. Marcus" }
+  }
+
+  try {
+    // Executar a função SQL que aprova tudo com 30 XP
+    const { data, error } = await supabase.rpc("aprovar_tarefas_pr_marcus", {
+      p_numero_passo: numeroPasso,
+    })
+
+    if (error) throw error
+
+    return { success: true, data }
+  } catch (error) {
+    console.error("Erro ao aprovar tarefas automaticamente:", error)
+    return { error: "Erro ao aprovar tarefas automaticamente" }
+  }
+}
+
+export async function receberRecompensasEAvancar(numeroPasso: number) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return { error: "Usuário não autenticado" }
+  }
+
+  // Verificar se é o Pr. Marcus
+  const PR_MARCUS_ID = "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
+  if (user.id !== PR_MARCUS_ID) {
+    return { error: "Esta função é apenas para o Pr. Marcus" }
+  }
+
+  try {
+    // 1. Aprovar todas as tarefas automaticamente com 30 XP
+    const resultadoAprovacao = await aprovarTarefasPrMarcusAutomatico(numeroPasso)
+
+    if (resultadoAprovacao.error) {
+      throw new Error(resultadoAprovacao.error)
+    }
+
+    // 2. Buscar o progresso atual
+    const { data: progresso, error: progressoError } = await supabase
+      .from("progresso_fases")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("numero_passo", numeroPasso)
+      .single()
+
+    if (progressoError) throw progressoError
+
+    // 3. Transferir pontos para XP total do discípulo
+    const { error: updateXpError } = await supabase
+      .from("discipulos")
+      .update({
+        xp_total: supabase.rpc("increment", { x: progresso.pontuacao_total }),
+      })
+      .eq("id", user.id)
+
+    if (updateXpError) throw updateXpError
+
+    // 4. Marcar passo como validado
+    const { error: validarError } = await supabase
+      .from("progresso_fases")
+      .update({
+        status: "validado",
+        data_conclusao: new Date().toISOString(),
+      })
+      .eq("id", progresso.id)
+
+    if (validarError) throw validarError
+
+    // 5. Criar progresso para o próximo passo
+    if (numeroPasso < 10) {
+      const { error: novoProgressoError } = await supabase.from("progresso_fases").insert({
+        user_id: user.id,
+        numero_passo: numeroPasso + 1,
+        status: "pendente",
+        pontuacao_total: 0,
+        videos_assistidos: [],
+        artigos_lidos: [],
+      })
+
+      if (novoProgressoError) throw novoProgressoError
+    }
+
+    return {
+      success: true,
+      message: `Recompensas recebidas! +${progresso.pontuacao_total} XP`,
+      proximoPasso: numeroPasso + 1,
+    }
+  } catch (error) {
+    console.error("Erro ao receber recompensas:", error)
+    return { error: "Erro ao processar recompensas" }
+  }
+}
