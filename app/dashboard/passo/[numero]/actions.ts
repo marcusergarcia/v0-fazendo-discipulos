@@ -789,22 +789,26 @@ export async function verificarConclusaoPasso(numero: number) {
 
   console.log("[v0] ✅ Todas reflexões aprovadas?", todasReflexoesAprovadas)
 
-  // Verificar respostas do passo (pergunta E missão)
-  const { data: respostas } = await supabase
+  const { data: perguntasReflexivas } = await supabase
     .from("historico_respostas_passo")
-    .select("situacao, tipo_resposta")
+    .select("situacao, tipo_resposta, conteudo_id")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
+    .eq("tipo_resposta", "reflexao_guiada")
     .order("created_at", { ascending: false })
 
-  console.log("[v0] 💬 Respostas encontradas:", respostas?.length)
+  console.log("[v0] 💬 Perguntas reflexivas encontradas:", perguntasReflexivas?.length)
 
-  const respostaPerguntaAprovada = respostas?.some((r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado")
-  const respostaMissaoAprovada = respostas?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
-  const respostasAprovadas = respostaPerguntaAprovada && respostaMissaoAprovada
+  // Verificar se todas as 3 perguntas reflexivas foram aprovadas
+  const pergunta1Aprovada = perguntasReflexivas?.some((r) => r.conteudo_id === 1 && r.situacao === "aprovado")
+  const pergunta2Aprovada = perguntasReflexivas?.some((r) => r.conteudo_id === 2 && r.situacao === "aprovado")
+  const pergunta3Aprovada = perguntasReflexivas?.some((r) => r.conteudo_id === 3 && r.situacao === "aprovado")
+  const todasPerguntasReflexivasAprovadas = pergunta1Aprovada && pergunta2Aprovada && pergunta3Aprovada
 
-  console.log("[v0] ❓ Resposta pergunta aprovada?", respostaPerguntaAprovada)
-  console.log("[v0] 🎯 Resposta missão aprovada?", respostaMissaoAprovada)
+  console.log("[v0] ❓ Pergunta reflexiva 1 aprovada?", pergunta1Aprovada)
+  console.log("[v0] ❓ Pergunta reflexiva 2 aprovada?", pergunta2Aprovada)
+  console.log("[v0] ❓ Pergunta reflexiva 3 aprovada?", pergunta3Aprovada)
+  console.log("[v0] ✅ Todas perguntas reflexivas aprovadas?", todasPerguntasReflexivasAprovadas)
 
   const { data: leituraCapitulos } = await supabase
     .from("leituras_capitulos")
@@ -830,14 +834,14 @@ export async function verificarConclusaoPasso(numero: number) {
   console.log("[v0] ✅ Capítulos lidos:", capitulosLidos.filter((id: number) => capitulosSemana.includes(id)).length)
   console.log("[v0] 📚 Leitura semanal concluída?", leituraSemanalConcluida)
 
-  const passoCompleto = todasReflexoesAprovadas && respostasAprovadas && leituraSemanalConcluida
+  const podeReceberRecompensas = todasReflexoesAprovadas && todasPerguntasReflexivasAprovadas && leituraSemanalConcluida
 
-  console.log("[v0] 🎉 PASSO COMPLETO?", passoCompleto)
+  console.log("[v0] 🎁 Pode receber recompensas?", podeReceberRecompensas)
 
   return {
-    completo: passoCompleto,
+    completo: podeReceberRecompensas,
     reflexoesAprovadas: todasReflexoesAprovadas,
-    respostasAprovadas: respostasAprovadas,
+    perguntasReflexivasAprovadas: todasPerguntasReflexivasAprovadas,
     leituraSemanalConcluida: leituraSemanalConcluida,
   }
 }
