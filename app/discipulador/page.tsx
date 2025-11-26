@@ -59,7 +59,6 @@ export default async function DiscipuladorPage() {
     .from("progresso_fases")
     .select("*")
     .in("discipulo_id", discipuloIds)
-    .eq("status_validacao", "pendente")
 
   const { data: respostasHistorico } = await supabase
     .from("historico_respostas_passo")

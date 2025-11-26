@@ -23,7 +23,7 @@ type AvaliarRespostasModalProps = {
     discipulo_id: string
     fase_numero: number
     passo_numero: number
-    tipo_resposta: "pergunta" | "missao"
+    tipo_resposta: "pergunta" | "missao" | "reflexao_guiada"
     resposta: string // Usar campo unificado 'resposta'
     situacao: string
     notificacao_id: string | null
@@ -118,11 +118,6 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         .eq("passo_numero", resposta.passo_numero)
         .eq("fase_numero", resposta.fase_numero)
 
-      const perguntaAprovada = respostasPassoAtual?.some(
-        (r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado",
-      )
-      const missaoAprovada = respostasPassoAtual?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
-
       const { data: reflexoes } = await supabase
         .from("reflexoes_conteudo")
         .select("situacao")
@@ -130,7 +125,13 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         .eq("passo_numero", resposta.passo_numero)
 
       const todasReflexoesAprovadas =
-        reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
+        reflexoes && reflexoes.length >= 6 ? reflexoes.every((r) => r.situacao === "aprovado") : false
+
+      const reflexoesGuiadasAprovadas =
+        respostasPassoAtual?.filter((r) => r.tipo_resposta === "reflexao_guiada" && r.situacao === "aprovado").length ||
+        0
+
+      const todasReflexoesGuiadasAprovadas = reflexoesGuiadasAprovadas >= 3 // Exigir 3 reflexões guiadas aprovadas
 
       const semanaCorrespondente = resposta.passo_numero
 
@@ -161,7 +162,7 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         })
       }
 
-      if (perguntaAprovada && missaoAprovada && todasReflexoesAprovadas && leituraBiblicaConcluida) {
+      if (todasReflexoesAprovadas && todasReflexoesGuiadasAprovadas && leituraBiblicaConcluida) {
         console.log("[v0] Todas as condições atendidas! Liberando próximo passo...")
 
         await supabase
@@ -225,9 +226,8 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
         }
       } else {
         console.log("[v0] Condições não atendidas:", {
-          perguntaAprovada,
-          missaoAprovada,
           todasReflexoesAprovadas,
+          todasReflexoesGuiadasAprovadas,
           leituraBiblicaConcluida,
         })
 
@@ -242,7 +242,12 @@ export default function AvaliarRespostasModal({ resposta, discipuloNome, onAprov
     window.location.reload()
   }
 
-  const titulo = resposta.tipo_resposta === "pergunta" ? "Pergunta para Responder" : "Missão Prática"
+  const titulo =
+    resposta.tipo_resposta === "pergunta"
+      ? "Pergunta para Responder"
+      : resposta.tipo_resposta === "missao"
+        ? "Missão Prática"
+        : "Reflexão Guiada" // Adicionar título para reflexão guiada
 
   return (
     <>

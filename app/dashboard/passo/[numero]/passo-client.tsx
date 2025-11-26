@@ -21,15 +21,12 @@ import {
   Award,
   Target,
   Send,
-  Save,
   MessageCircle,
   Clock,
-  CheckCheck,
   Play,
   ExternalLink,
   RotateCcw,
   CheckCircle,
-  Edit,
 } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
@@ -45,6 +42,9 @@ import {
 } from "./actions"
 import { useState } from "react"
 import { TextWithBibleLinks } from "@/components/text-with-bible-links"
+import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
+import { getPerguntasPasso } from "@/constants/perguntas-passos"
+import { RESUMOS_GERAIS_PASSOS } from "@/constants/resumos-gerais-passos"
 
 type PassoClientProps = {
   numero: number
@@ -99,7 +99,7 @@ export default function PassoClient({
 
   const [modalAberto, setModalAberto] = useState(false)
   const [tipoConteudo, setTipoConteudo] = useState<"video" | "artigo">("video")
-  const [conteudoAtual, setConteudoAtual] = useState<any>(null)
+  const [conteudoId, setConteudoId] = useState<string>("")
   const [reflexao, setReflexao] = useState("")
   const [enviandoReflexao, setEnviandoReflexao] = useState(false)
 
@@ -109,6 +109,84 @@ export default function PassoClient({
   const [reflexoesParaExcluir, setReflexoesParaExcluir] = useState<any[]>([])
   const [carregandoReflexoes, setCarregandoReflexoes] = useState(false)
   const [processandoRecompensas, setProcessandoRecompensas] = useState(false)
+
+  const [resumoAtual, setResumoAtual] = useState<string>("")
+  const [respostasPerguntasReflexivas, setRespostasPerguntasReflexivas] = useState<string[]>([])
+  const perguntasReflexivas = getPerguntasPasso(numero)
+
+  const [enviandoPerguntasReflexivas, setEnviandoPerguntasReflexivas] = useState(false)
+
+  const handleEnviarPerguntasReflexivas = async () => {
+    // Validar que todas as perguntas foram respondidas
+    if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivas.length && !r?.trim())) {
+      toast({
+        title: "Atenção",
+        description: "Por favor, responda todas as perguntas reflexivas",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setEnviandoPerguntasReflexivas(true)
+
+    try {
+      const supabase = await import("@/lib/supabase").then((m) => m.supabase)
+
+      // Buscar dados do discípulo
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error("Usuário não autenticado")
+
+      const { data: disci } = await supabase
+        .from("discipulos")
+        .select("id, discipulador_id")
+        .eq("user_id", user.id)
+        .single()
+
+      if (!disci) throw new Error("Discípulo não encontrado")
+
+      // Criar notificação para o discipulador
+      const { data: notificacao } = await supabase
+        .from("notificacoes")
+        .insert({
+          discipulador_id: disci.discipulador_id,
+          tipo: "reflexoes_guiadas",
+          mensagem: `${user.email} enviou respostas das perguntas reflexivas do Passo ${numero}`,
+          lida: false,
+        })
+        .select()
+        .single()
+
+      // Inserir as 3 respostas no banco
+      const respostasParaInserir = respostasPerguntasReflexivas.map((resposta, index) => ({
+        discipulo_id: disci.id,
+        discipulador_id: disci.discipulador_id,
+        fase_numero: 1,
+        passo_numero: numero,
+        tipo_resposta: "reflexao_guiada",
+        resposta: `Pergunta ${index + 1}: ${perguntasReflexivas[index]}\n\nResposta: ${resposta}`,
+        situacao: "enviado",
+        notificacao_id: index === 0 ? notificacao?.id : null, // Apenas a primeira recebe notificação
+        data_envio: new Date().toISOString(),
+      }))
+
+      const { error } = await supabase.from("historico_respostas_passo").insert(respostasParaInserir)
+
+      if (error) throw error
+
+      toast({ title: "Sucesso!", description: "Respostas enviadas com sucesso! Aguardando aprovação do discipulador" })
+      setRespostasPerguntasReflexivas([])
+
+      // Recarregar página para atualizar status
+      setTimeout(() => window.location.reload(), 1500)
+    } catch (error) {
+      console.error("[v0] Erro ao enviar perguntas reflexivas:", error)
+      toast({ title: "Erro", description: "Erro ao enviar respostas. Tente novamente.", variant: "destructive" })
+    } finally {
+      setEnviandoPerguntasReflexivas(false)
+    }
+  }
 
   const isPrMarcus = discipulo?.user_id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
 
@@ -207,11 +285,26 @@ export default function PassoClient({
     }
   }
 
-  const abrirModalMissaoCumprida = (tipo: "video" | "artigo", conteudo: any) => {
+  const abrirModal = (tipo: "video" | "artigo", id: string) => {
+    console.log("[v0] Abrindo modal - tipo:", tipo, "id:", id, "passo:", numero)
+
     setTipoConteudo(tipo)
-    setConteudoAtual(conteudo)
-    setReflexao("")
+    setConteudoId(id)
     setModalAberto(true)
+
+    const chave = `passo${numero}-${tipo}-${id}`
+    console.log("[v0] Buscando resumo com chave:", chave)
+    console.log("[v0] RESUMOS_CONTEUDO disponíveis:", Object.keys(RESUMOS_CONTEUDO))
+
+    const resumo = RESUMOS_CONTEUDO[chave]
+    console.log("[v0] Resumo encontrado:", resumo)
+
+    if (resumo) {
+      setResumoAtual(resumo)
+    } else {
+      setResumoAtual("")
+      console.log("[v0] Nenhum resumo encontrado para:", chave)
+    }
   }
 
   const enviarReflexao = async () => {
@@ -224,8 +317,7 @@ export default function PassoClient({
 
     console.log("[v0] === INICIANDO ENVIO DE REFLEXÃO ===")
     console.log("[v0] Tipo:", tipoConteudo)
-    console.log("[v0] Conteúdo ID:", conteudoAtual?.id)
-    console.log("[v0] Título:", conteudoAtual?.titulo)
+    console.log("[v0] Conteúdo ID:", conteudoId)
     console.log("[v0] Reflexão:", reflexao.substring(0, 50) + "...")
     console.log("[v0] Passo número:", numero)
 
@@ -235,10 +327,10 @@ export default function PassoClient({
       let result
       if (tipoConteudo === "video") {
         console.log("[v0] Concluindo vídeo com reflexão...")
-        result = await concluirVideoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
+        result = await concluirVideoComReflexao(numero, conteudoId, reflexao)
       } else {
         console.log("[v0] Concluindo artigo com reflexão...")
-        result = await concluirArtigoComReflexao(numero, conteudoAtual.id, conteudoAtual.titulo, reflexao)
+        result = await concluirArtigoComReflexao(numero, conteudoId, reflexao)
       }
       console.log("[v0] Action executada com sucesso! Resultado:", result)
 
@@ -316,6 +408,27 @@ export default function PassoClient({
     } finally {
       setProcessandoRecompensas(false)
     }
+  }
+
+  const todasReflexoesCompletadas = () => {
+    const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
+
+    if (todosConteudos.length === 0) return false
+
+    const todasCompletadas = todosConteudos.every(
+      (conteudo) => conteudo.reflexao_situacao !== null && conteudo.reflexao_situacao !== undefined,
+    )
+
+    console.log("[v0] Verificando reflexões completadas:")
+    console.log("[v0] Total de conteúdos:", todosConteudos.length)
+    console.log(
+      "[v0] Situações:",
+      todosConteudos.map((c) => ({ id: c.id, situacao: c.reflexao_situacao })),
+    )
+    console.log("[v0] Todas completadas:", todasCompletadas)
+    console.log("[v0] Resultado final:", todasCompletadas && todosConteudos.length === 6)
+
+    return todasCompletadas && todosConteudos.length === 6
   }
 
   return (
@@ -597,7 +710,7 @@ export default function PassoClient({
                         <Button
                           type="button"
                           size="sm"
-                          onClick={() => abrirModalMissaoCumprida("video", video)}
+                          onClick={() => abrirModal("video", video.id)}
                           className="bg-primary w-full sm:w-auto whitespace-nowrap"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -670,7 +783,7 @@ export default function PassoClient({
                           type="button"
                           size="sm"
                           variant="secondary"
-                          onClick={() => abrirModalMissaoCumprida("artigo", artigo)}
+                          onClick={() => abrirModal("artigo", artigo.id)}
                           className="bg-primary w-full sm:w-auto"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
@@ -685,7 +798,87 @@ export default function PassoClient({
           </Card>
         )}
 
-        {((passo.videos && passo.videos.length > 0) || (passo.artigos && passo.artigos.length > 0)) &&
+        {todasReflexoesCompletadas() && (
+          <>
+            {RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS] && (
+              <Card className="mb-6 border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                    {RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS].titulo}
+                  </CardTitle>
+                  <CardDescription>
+                    Parabéns! Você completou todas as reflexões. Aqui está um resumo do que aprendemos:
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS].topicos.map(
+                      (topico, index) => (
+                        <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-primary" />
+                            {topico.titulo}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">{topico.descricao}</p>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Perguntas Reflexivas */}
+            {perguntasReflexivas.length > 0 && (
+              <Card className="mb-6 border-amber-200 bg-amber-50/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-amber-900">
+                    <MessageCircle className="h-5 w-5" />
+                    Perguntas Reflexivas
+                  </CardTitle>
+                  <CardDescription className="text-amber-700">
+                    Reflita profundamente sobre o que você aprendeu e responda às perguntas abaixo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {perguntasReflexivas.map((pergunta, index) => (
+                    <div key={index} className="space-y-3">
+                      <label className="text-sm font-medium text-amber-900 block">
+                        {index + 1}. {pergunta}
+                      </label>
+                      <Textarea
+                        placeholder="Digite sua resposta aqui..."
+                        value={respostasPerguntasReflexivas[index] || ""}
+                        onChange={(e) => {
+                          const novasRespostas = [...respostasPerguntasReflexivas]
+                          novasRespostas[index] = e.target.value
+                          setRespostasPerguntasReflexivas(novasRespostas)
+                        }}
+                        className="min-h-[120px] bg-white border-amber-200 focus:border-amber-400"
+                      />
+                    </div>
+                  ))}
+
+                  <Button
+                    className="w-full bg-amber-600 hover:bg-amber-700"
+                    disabled={
+                      enviandoPerguntasReflexivas ||
+                      respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivas.length && !r?.trim())
+                    }
+                    onClick={handleEnviarPerguntasReflexivas}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {enviandoPerguntasReflexivas ? "Enviando..." : "Enviar Respostas Reflexivas"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        {todasReflexoesCompletadas() &&
+          ((passo.videos && passo.videos.length > 0) || (passo.artigos && passo.artigos.length > 0)) &&
           temProgressoParaResetar() &&
           !todasReflexoesAprovadas() && (
             <div className="mb-6 flex justify-end">
@@ -696,133 +889,39 @@ export default function PassoClient({
             </div>
           )}
 
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Edit className="w-5 h-5 text-primary" />
-              Suas Respostas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold mb-4">
-              <TextWithBibleLinks text={passo.perguntaChave} />
-            </p>
-            <Textarea
-              name="resposta_pergunta"
-              id="resposta_pergunta"
-              placeholder="Escreva com suas próprias palavras..."
-              className="min-h-32 text-base"
-              value={respostaPergunta}
-              onChange={(e) => setRespostaPergunta(e.target.value)}
-              disabled={respostaPerguntaHistorico?.situacao === "aprovado" || status === "aguardando"}
-            />
-            {respostaPerguntaHistorico?.situacao === "aprovado" && (
-              <div className="mt-3 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                  Pergunta aprovada pelo discipulador! +{respostaPerguntaHistorico.xp_ganho || 0} XP
-                </p>
-              </div>
-            )}
+        {/* Seção removida: Card "Suas Respostas" com pergunta única e missão */}
 
-            <Textarea
-              name="resposta_missao"
-              id="resposta_missao"
-              placeholder='Exemplo: "Existo para glorificar a Deus e viver em comunhão com Ele"'
-              className="min-h-24 text-base mt-4"
-              value={respostaMissao}
-              onChange={(e) => setRespostaMissao(e.target.value)}
-              disabled={respostaMissaoHistorico?.situacao === "aprovado" || status === "aguardando"}
-            />
-            {respostaMissaoHistorico?.situacao === "aprovado" && (
-              <div className="mt-2 rounded-lg p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 flex items-center gap-2">
-                <CheckCheck className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5" />
-                <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                  Missão aprovada pelo discipulador! +{respostaMissaoHistorico.xp_ganho || 0} XP
-                </p>
-              </div>
-            )}
-            {((respostaPerguntaHistorico?.situacao === "enviado" && !respostaMissaoHistorico) ||
-              (respostaMissaoHistorico?.situacao === "enviado" && !respostaPerguntaHistorico) ||
-              (respostaPerguntaHistorico?.situacao === "enviado" &&
-                respostaMissaoHistorico?.situacao === "enviado")) && (
-              <div className="mt-2 rounded-lg p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-                  Aguardando validação do discipulador...
-                </p>
-              </div>
-            )}
-            {(status === "pendente" ||
-              respostaPerguntaHistorico?.situacao !== "aprovado" ||
-              respostaMissaoHistorico?.situacao !== "aprovado") && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="w-full bg-transparent"
-                  disabled={
-                    respostaPerguntaHistorico?.situacao === "aprovado" &&
-                    respostaMissaoHistorico?.situacao === "aprovado"
-                  }
-                  onClick={handleSalvarRascunho}
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Salvar
-                </Button>
-                <Button
-                  type="button"
-                  size="lg"
-                  disabled={
-                    (respostaPerguntaHistorico?.situacao === "aprovado" &&
-                      respostaMissaoHistorico?.situacao === "aprovado") ||
-                    !respostaPergunta.trim() ||
-                    !respostaMissao.trim()
-                  }
-                  onClick={handleEnviarValidacao}
-                >
-                  {status === "aguardando" ? (
-                    <>Enviando...</>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Enviar ao Discipulador
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-
-            {podeReceberRecompensas && (
-              <div className="mt-4 flex justify-center pt-8">
+        {podeReceberRecompensas && (
+          <Card className="mb-6 border-primary/50 bg-primary/5">
+            <CardContent className="pt-6">
+              <div className="flex justify-center">
                 <button
                   onClick={handleReceberRecompensas}
                   disabled={processandoRecompensas}
                   className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {processandoRecompensas ? "Processando..." : "Receber Recompensas e Avançar Próximo Passo"}
+                  {processandoRecompensas ? "Processando..." : "🎉 Receber Recompensas e Avançar Próximo Passo"}
                 </button>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        )}
 
-            {discipuladorId ? (
-              <Link href={`/dashboard/chat/com/${discipuladorId}`}>
-                <Button type="button" variant="outline" size="lg" className="w-full bg-transparent mt-4">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Conversar com meu discipulador
-                </Button>
-              </Link>
-            ) : (
-              <Link href={`/dashboard/chat`}>
-                <Button type="button" variant="outline" size="lg" className="w-full bg-transparent mt-4">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Conversar com meu discipulador
-                </Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
+        {discipuladorId ? (
+          <Link href={`/dashboard/chat/com/${discipuladorId}`}>
+            <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Conversar com meu discipulador
+            </Button>
+          </Link>
+        ) : (
+          <Link href={`/dashboard/chat`}>
+            <Button type="button" variant="outline" size="lg" className="w-full bg-transparent">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Conversar com meu discipulador
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
@@ -834,6 +933,18 @@ export default function PassoClient({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {resumoAtual && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-sm mb-2 text-primary">Resumo do Conteúdo:</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{resumoAtual}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <Label htmlFor="reflexao">Sua Reflexão</Label>
               <Textarea
