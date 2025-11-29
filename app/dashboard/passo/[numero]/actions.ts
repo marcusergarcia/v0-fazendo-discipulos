@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { redirect } from "next/navigation"
-import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { revalidatePath } from "next/cache"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -24,103 +23,6 @@ export async function salvarRascunho(numero: number, formData: FormData) {
   if (!discipulo) return
 
   redirect(`/dashboard/passo/${numero}?saved=true`)
-}
-
-export async function enviarParaValidacao(numero: number, formData: FormData) {
-  const supabase = await createClient()
-  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
-
-  const respostaPergunta = formData.get("resposta_pergunta") as string
-  const respostaMissao = formData.get("resposta_missao") as string
-
-  if (
-    !respostaPergunta ||
-    !respostaMissao ||
-    respostaPergunta.trim().length < 10 ||
-    respostaMissao.trim().length < 10
-  ) {
-    throw new Error("Por favor, preencha ambas as respostas com pelo menos 10 caracteres")
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return
-
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) return
-
-  const conteudoPasso = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
-
-  let notificacaoId: string | null = null
-  if (discipulo.discipulador_id) {
-    const { data: novaNotificacao } = await supabaseAdmin
-      .from("notificacoes")
-      .insert({
-        user_id: discipulo.discipulador_id,
-        tipo: "respostas_passo",
-        titulo: "Novas respostas para avaliar",
-        mensagem: `Seu discípulo enviou as respostas do Passo ${numero} para avaliação.`,
-        link: `/discipulador`,
-        lida: false,
-      })
-      .select("id")
-      .single()
-
-    if (novaNotificacao) {
-      notificacaoId = novaNotificacao.id
-    }
-  }
-
-  const { error: perguntaError } = await supabase.from("historico_respostas_passo").insert({
-    discipulo_id: discipulo.id,
-    discipulador_id: discipulo.discipulador_id,
-    fase_numero: discipulo.fase_atual || 1,
-    passo_numero: numero,
-    tipo_resposta: "pergunta",
-    resposta: respostaPergunta,
-    situacao: "enviado",
-    notificacao_id: notificacaoId,
-    data_envio: new Date().toISOString(),
-  })
-
-  if (perguntaError) {
-    console.error("[v0] Erro ao salvar pergunta:", perguntaError)
-    throw new Error("Erro ao enviar pergunta para avaliação")
-  }
-
-  const { error: missaoError } = await supabase.from("historico_respostas_passo").insert({
-    discipulo_id: discipulo.id,
-    discipulador_id: discipulo.discipulador_id,
-    fase_numero: discipulo.fase_atual || 1,
-    passo_numero: numero,
-    tipo_resposta: "missao",
-    resposta: respostaMissao,
-    situacao: "enviado",
-    notificacao_id: null,
-    data_envio: new Date().toISOString(),
-  })
-
-  if (missaoError) {
-    console.error("[v0] Erro ao salvar missão:", missaoError)
-    throw new Error("Erro ao enviar missão para avaliação")
-  }
-
-  await supabase
-    .from("progresso_fases")
-    .update({
-      enviado_para_validacao: true,
-    })
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", discipulo.fase_atual || 1)
-    .eq("passo_numero", numero)
-
-  redirect(`/dashboard/passo/${numero}?sent=true`)
 }
 
 export async function marcarVideoAssistido(numero: number, videoId: string) {
@@ -1129,3 +1031,5 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     }
   }
 }
+
+export async function concluirLeituraBiblica(numero: number, passagem: string) {}
