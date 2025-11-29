@@ -440,7 +440,17 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
 
 export async function concluirVideoComReflexao(numero: number, videoId: string, titulo: string, reflexao: string) {
   console.log("[v0] SERVER: concluirVideoComReflexao iniciada")
-  console.log("[v0] SERVER: Params:", { numero, videoId, titulo, reflexao: reflexao.substring(0, 50) })
+  console.log("[v0] SERVER: Params:", {
+    numero,
+    videoId,
+    titulo,
+    reflexao: reflexao ? reflexao.substring(0, 50) : "undefined",
+  })
+
+  if (!reflexao || reflexao.trim().length < 20) {
+    console.error("[v0] SERVER: Reflexão inválida ou muito curta")
+    throw new Error("A reflexão deve ter pelo menos 20 caracteres")
+  }
 
   const supabase = await createClient()
   const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
@@ -596,7 +606,12 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
 
 export async function concluirArtigoComReflexao(numero: number, artigoId: string, titulo: string, reflexao: string) {
   console.log("[v0] SERVER: concluirArtigoComReflexao iniciada")
-  console.log("[v0] SERVER: Params:", { numero, artigoId, titulo, reflexao: reflexao.substring(0, 50) })
+  console.log("[v0] SERVER: Params:", {
+    numero,
+    artigoId,
+    titulo,
+    reflexao: reflexao ? reflexao.substring(0, 50) : "undefined",
+  })
 
   const supabase = await createClient()
   const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
