@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
-import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
 import { CopiarLinkBoasVindas } from "@/components/copiar-link-boas-vindas"
 import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
 
@@ -61,19 +60,19 @@ export default async function DiscipuladorPage() {
     .select("*")
     .in("discipulo_id", discipuloIds)
 
-  const { data: respostasHistorico } = await supabase
-    .from("historico_respostas_passo")
+  const { data: perguntasReflexivas } = await supabase
+    .from("perguntas_reflexivas")
     .select("*")
     .in("discipulo_id", discipuloIds)
 
-  console.log("[v0] Respostas do histórico:", respostasHistorico)
+  console.log("[v0] Perguntas reflexivas:", perguntasReflexivas)
 
   const dadosPorDiscipulo = await Promise.all(
     discipulosComPerfil.map(async (discipulo) => {
       const reflexoesDiscipulo = todasReflexoes?.filter((r) => r.discipulo_id === discipulo.id) || []
       const progressosDiscipulo = progressosPendentes?.filter((p) => p.discipulo_id === discipulo.id) || []
 
-      const respostasDiscipulo = respostasHistorico?.filter((r) => r.discipulo_id === discipulo.id) || []
+      const perguntasDiscipulo = perguntasReflexivas?.filter((p) => p.discipulo_id === discipulo.id) || []
 
       const { data: progressoAtual } = await supabase
         .from("progresso_fases")
@@ -134,25 +133,33 @@ export default async function DiscipuladorPage() {
           })
         })
 
-        const perguntasReflexivas = PERGUNTAS_POR_PASSO[discipulo.passo_atual as keyof typeof PERGUNTAS_POR_PASSO] || []
+        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[discipulo.passo_atual as keyof typeof PERGUNTAS_POR_PASSO] || []
+        const perguntasResposta = perguntasDiscipulo.find(
+          (p) => p.fase_numero === discipulo.fase_atual && p.passo_numero === discipulo.passo_atual,
+        )
 
-        perguntasReflexivas.forEach((pergunta, index) => {
-          const respostaReflexiva = respostasDiscipulo.find(
-            (r) =>
-              r.passo_numero === discipulo.passo_atual &&
-              r.fase_numero === discipulo.fase_atual &&
-              r.tipo_resposta === "reflexao_guiada" &&
-              r.conteudo_id === (index + 1).toString(),
-          )
+        perguntasPassoAtual.forEach((pergunta, index) => {
+          const respostaEspecifica = perguntasResposta?.respostas?.find((r: any) => r.pergunta_id === index + 1)
+
+          // Adicionando console.log para debugar status das perguntas reflexivas
+          console.log("[v0] DEBUG Pergunta Reflexiva:", {
+            pergunta_id: index + 1,
+            temPerguntasResposta: !!perguntasResposta,
+            situacao: perguntasResposta?.situacao,
+            xp_ganho: perguntasResposta?.xp_ganho,
+            respostaEspecifica: !!respostaEspecifica,
+          })
 
           tarefas.push({
             id: `reflexiva-${index + 1}`,
             tipo: "reflexao_guiada",
             titulo: pergunta,
-            concluido: !!respostaReflexiva?.resposta,
-            resposta: respostaReflexiva || null,
-            xp: respostaReflexiva?.xp_ganho || null,
-            situacao: respostaReflexiva?.situacao || null,
+            concluido: !!respostaEspecifica,
+            perguntasResposta: perguntasResposta,
+            perguntaIndex: index,
+            xp: perguntasResposta?.xp_ganho || null,
+            situacao: perguntasResposta?.situacao || null,
+            respostaIndividual: respostaEspecifica,
           })
         })
       }
@@ -161,7 +168,7 @@ export default async function DiscipuladorPage() {
         discipulo,
         tarefasPendentes:
           reflexoesDiscipulo.filter((r) => r.situacao === "enviado").length +
-          respostasDiscipulo.filter((r) => r.situacao === "enviado").length,
+          perguntasDiscipulo.filter((p) => p.situacao === "enviado").length,
         tarefas,
         progressoAtual,
       }
@@ -384,11 +391,14 @@ export default async function DiscipuladorPage() {
                                       Aprovado {tarefa.xp}XP
                                     </Badge>
                                   ) : tarefa.situacao === "enviado" ? (
-                                    <AvaliarRespostasModal
-                                      resposta={tarefa.resposta}
-                                      discipuloNome={nome}
-                                      onAprovado={() => {}}
-                                    />
+                                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700" asChild>
+                                      <Link
+                                        href={`/discipulador/tarefas/${discipulo.id}?tipo=perguntas_reflexivas&id=${tarefa.perguntasResposta?.id}`}
+                                      >
+                                        <Clock className="w-4 h-4 mr-1" />
+                                        Aguardando Aprovação
+                                      </Link>
+                                    </Button>
                                   ) : (
                                     <Badge variant="outline" className="text-muted-foreground">
                                       Não iniciado

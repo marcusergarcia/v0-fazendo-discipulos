@@ -1,9 +1,9 @@
-import { redirect } from 'next/navigation'
+import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Clock, Sparkles, Trophy, TrendingUp } from 'lucide-react'
+import { MessageCircle, Clock, Sparkles, Trophy, TrendingUp } from "lucide-react"
 import Link from "next/link"
 
 export default async function AguardandoAprovacaoPage() {
@@ -12,7 +12,7 @@ export default async function AguardandoAprovacaoPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  
+
   if (!user) redirect("/auth/login")
 
   const { data: discipulo } = await supabase
@@ -32,17 +32,16 @@ export default async function AguardandoAprovacaoPage() {
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoAtual)
 
-  const { data: respostas } = await supabase
-    .from("historico_respostas_passo")
+  const { data: perguntasReflexivas } = await supabase
+    .from("perguntas_reflexivas")
     .select("situacao")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoAtual)
-    .order("created_at", { ascending: false })
-    .limit(1)
+    .maybeSingle()
 
-  const reflexoesAprovadas = reflexoes?.every(r => r.situacao === 'aprovado') || false
-  const respostasAprovadas = respostas?.[0]?.situacao === 'aprovado' || false
-  const tudoAprovado = reflexoesAprovadas && respostasAprovadas
+  const reflexoesAprovadas = reflexoes?.every((r) => r.situacao === "aprovado") || false
+  const perguntasAprovadas = perguntasReflexivas?.situacao === "aprovado" || false
+  const tudoAprovado = reflexoesAprovadas && perguntasAprovadas
 
   // Se já foi aprovado, redirecionar
   if (tudoAprovado) {
@@ -61,15 +60,11 @@ export default async function AguardandoAprovacaoPage() {
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent mb-6 animate-pulse">
                 <Clock className="w-12 h-12 text-white" />
               </div>
-              
-              <h1 className="text-4xl font-bold mb-4">
-                Parabéns, {nome.split(" ")[0]}!
-              </h1>
-              
-              <p className="text-xl text-muted-foreground mb-2">
-                Você concluiu o Passo {passoAtual}
-              </p>
-              
+
+              <h1 className="text-4xl font-bold mb-4">Parabéns, {nome.split(" ")[0]}!</h1>
+
+              <p className="text-xl text-muted-foreground mb-2">Você concluiu o Passo {passoAtual}</p>
+
               <Badge variant="outline" className="text-lg py-2 px-4">
                 <Trophy className="w-5 h-5 mr-2" />
                 {discipulo.nivel_atual}
@@ -99,12 +94,10 @@ export default async function AguardandoAprovacaoPage() {
                   ))}
                 </div>
               </div>
-              
+
               <div className="text-center">
                 <p className="font-semibold text-lg mb-1">Progresso da Jornada</p>
-                <p className="text-muted-foreground">
-                  {passoAtual} de 10 passos concluídos
-                </p>
+                <p className="text-muted-foreground">{passoAtual} de 10 passos concluídos</p>
               </div>
             </div>
 
@@ -115,15 +108,14 @@ export default async function AguardandoAprovacaoPage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-2">Aguardando Aprovação</h3>
                   <p className="text-muted-foreground mb-3">
-                    Suas respostas e reflexões foram enviadas com sucesso! Seu discipulador está
-                    analisando seu trabalho e em breve liberará o próximo passo.
+                    Suas respostas e reflexões foram enviadas com sucesso! Seu discipulador está analisando seu trabalho
+                    e em breve liberará o próximo passo.
                   </p>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       {reflexoesAprovadas ? (
                         <Badge variant="default" className="bg-green-600">
-                          <CheckCircle className="w-3 h-3 mr-1" />
                           Reflexões Aprovadas
                         </Badge>
                       ) : (
@@ -133,17 +125,16 @@ export default async function AguardandoAprovacaoPage() {
                         </Badge>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
-                      {respostasAprovadas ? (
+                      {perguntasAprovadas ? (
                         <Badge variant="default" className="bg-green-600">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Respostas Aprovadas
+                          Perguntas Aprovadas
                         </Badge>
                       ) : (
                         <Badge variant="outline">
                           <Clock className="w-3 h-3 mr-1" />
-                          Aguardando Respostas
+                          Aguardando Perguntas
                         </Badge>
                       )}
                     </div>
@@ -156,8 +147,8 @@ export default async function AguardandoAprovacaoPage() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-2">Continue Crescendo</h3>
                   <p className="text-muted-foreground">
-                    Enquanto aguarda, você pode reler os conteúdos, conversar com seu discipulador
-                    ou explorar outros recursos disponíveis.
+                    Enquanto aguarda, você pode reler os conteúdos, conversar com seu discipulador ou explorar outros
+                    recursos disponíveis.
                   </p>
                 </div>
               </div>
@@ -188,9 +179,9 @@ export default async function AguardandoAprovacaoPage() {
                   Conversar com Meu Discipulador
                 </Button>
               </Link>
-              
+
               <Link href="/dashboard">
-                <Button size="lg" className="w-full" variant="outline">
+                <Button size="lg" className="w-full bg-transparent" variant="outline">
                   Voltar ao Dashboard
                 </Button>
               </Link>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Clock, CheckCircle, Loader2, HelpCircle, Target } from "lucide-react"
+import { Clock, CheckCircle, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -171,6 +171,8 @@ export function ValidarReflexaoModal({
         console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
       }
 
+      // Agora verifica apenas perguntas_reflexivas e leitura bíblica
+
       const { data: discipuloInfo } = await supabase
         .from("discipulos")
         .select("passo_atual")
@@ -189,17 +191,17 @@ export function ValidarReflexaoModal({
         const todasReflexoesAprovadas =
           todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
 
-        const { data: respostas } = await supabase
-          .from("historico_respostas_passo")
-          .select("situacao, tipo_resposta")
+        const { data: perguntasReflexivas } = await supabase
+          .from("perguntas_reflexivas")
+          .select("situacao")
           .eq("discipulo_id", discipuloId)
           .eq("passo_numero", passoAtual)
+          .maybeSingle()
 
-        const perguntaAprovada = respostas?.some((r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado")
-        const missaoAprovada = respostas?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
+        const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
 
-        if (todasReflexoesAprovadas && perguntaAprovada && missaoAprovada) {
-          console.log("[v0] Todas as reflexões, pergunta e missão aprovadas! Verificando leitura bíblica...")
+        if (todasReflexoesAprovadas && perguntasReflexivasAprovadas) {
+          console.log("[v0] Todas as reflexões e perguntas reflexivas aprovadas! Verificando leitura bíblica...")
 
           const semanaCorrespondente = passoAtual
 
@@ -338,9 +340,7 @@ export function ValidarReflexaoModal({
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Avaliar Reflexão de {discipuloNome}</DialogTitle>
-          <DialogDescription>
-            Leia a reflexão e as respostas do discípulo, depois forneça um feedback construtivo
-          </DialogDescription>
+          <DialogDescription>Leia a reflexão do discípulo e forneça um feedback construtivo</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -360,35 +360,11 @@ export function ValidarReflexaoModal({
             </div>
           </div>
 
-          {respostaPergunta && (
-            <div className="border-t pt-4">
-              <Label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <HelpCircle className="w-4 h-4 text-primary" />
-                Pergunta para Responder
-              </Label>
-              <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                <p className="whitespace-pre-wrap text-sm">{respostaPergunta}</p>
-              </div>
-            </div>
-          )}
-
-          {respostaMissao && (
-            <div className="border-t pt-4">
-              <Label className="text-sm font-medium flex items-center gap-2 mb-2">
-                <Target className="w-4 h-4 text-secondary" />
-                Missão Prática
-              </Label>
-              <div className="p-4 bg-secondary/5 rounded-lg border border-secondary/20">
-                <p className="whitespace-pre-wrap text-sm">{respostaMissao}</p>
-              </div>
-            </div>
-          )}
-
           <div className="border-t pt-4">
             <Label htmlFor="feedback">Seu Feedback (obrigatório)</Label>
             <Textarea
               id="feedback"
-              placeholder="Escreva um feedback construtivo e encorajador sobre a reflexão e as respostas do discípulo..."
+              placeholder="Escreva um feedback construtivo e encorajador sobre a reflexão do discípulo..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               rows={4}
@@ -426,20 +402,4 @@ export function ValidarReflexaoModal({
       </DialogContent>
     </Dialog>
   )
-}
-
-function getInsigniaNome(passo: number): string {
-  const insignias: Record<number, string> = {
-    1: "Insígnia: Criação",
-    2: "Insígnia: Amor Divino",
-    3: "Insígnia: Reconhecimento da Verdade",
-    4: "Insígnia: Consciência",
-    5: "Insígnia: Salvador",
-    6: "Insígnia: Cruz e Ressurreição",
-    7: "Insígnia: Graça",
-    8: "Insígnia: Coração Quebrantado",
-    9: "Insígnia: Confissão",
-    10: "Insígnia: Novo Nascimento",
-  }
-  return insignias[passo] || "Insígnia Especial"
 }

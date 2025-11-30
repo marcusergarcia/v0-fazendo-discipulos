@@ -29,7 +29,8 @@ import {
   CheckCircle,
 } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
+// import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase-browser"
 import { toast } from "@/components/ui/use-toast"
 import {
   salvarRascunho,
@@ -39,8 +40,9 @@ import {
   resetarProgresso,
   buscarReflexoesParaReset,
   receberRecompensasEAvancar,
+  enviarPerguntasReflexivas, // Importar a nova server action
 } from "./actions"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { TextWithBibleLinks } from "@/components/text-with-bible-links"
 import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
@@ -114,7 +116,42 @@ export default function PassoClient({
   const [respostasPerguntasReflexivas, setRespostasPerguntasReflexivas] = useState<string[]>([])
   const perguntasReflexivas = getPerguntasPasso(numero)
 
+  const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<{
+    situacao: string
+    respostas: any[] // Changed to 'any[]' to accommodate the new structure { resposta: string; pergunta_id: number }
+    xp_ganho: number
+  } | null>(null)
+
   const [enviandoPerguntasReflexivas, setEnviandoPerguntasReflexivas] = useState(false)
+
+  useEffect(() => {
+    if (!discipulo) return
+
+    const buscarSubmissaoExistente = async () => {
+      console.log("[v0] Buscando submissão de perguntas reflexivas para discipulo:", discipulo.id, "passo:", numero)
+
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from("perguntas_reflexivas")
+        .select("situacao, respostas, xp_ganho")
+        .eq("discipulo_id", discipulo.id)
+        .eq("passo_numero", numero)
+        .maybeSingle()
+
+      console.log("[v0] Resultado busca perguntas reflexivas - Data:", data, "Error:", error)
+
+      if (data && !error) {
+        console.log("[v0] Submissão encontrada! Situação:", data.situacao, "XP:", data.xp_ganho)
+        setSubmissaoPerguntasReflexivas(data)
+      } else {
+        console.log("[v0] Nenhuma submissão encontrada")
+        setSubmissaoPerguntasReflexivas(null)
+      }
+    }
+
+    buscarSubmissaoExistente()
+  }, [discipulo, numero])
 
   const handleEnviarPerguntasReflexivas = async () => {
     // Validar que todas as perguntas foram respondidas
@@ -130,59 +167,32 @@ export default function PassoClient({
     setEnviandoPerguntasReflexivas(true)
 
     try {
-      const supabase = await import("@/lib/supabase").then((m) => m.supabase)
+      // Chamar server action com as 3 respostas
+      const resultado = await enviarPerguntasReflexivas(numero, {
+        pergunta1: respostasPerguntasReflexivas[0] || "",
+        pergunta2: respostasPerguntasReflexivas[1] || "",
+        pergunta3: respostasPerguntasReflexivas[2] || "",
+      })
 
-      // Buscar dados do discípulo
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error("Usuário não autenticado")
+      if (resultado.error) {
+        throw new Error(resultado.error)
+      }
 
-      const { data: disci } = await supabase
-        .from("discipulos")
-        .select("id, discipulador_id")
-        .eq("user_id", user.id)
-        .single()
-
-      if (!disci) throw new Error("Discípulo não encontrado")
-
-      // Criar notificação para o discipulador
-      const { data: notificacao } = await supabase
-        .from("notificacoes")
-        .insert({
-          discipulador_id: disci.discipulador_id,
-          tipo: "reflexoes_guiadas",
-          mensagem: `${user.email} enviou respostas das perguntas reflexivas do Passo ${numero}`,
-          lida: false,
-        })
-        .select()
-        .single()
-
-      // Inserir as 3 respostas no banco
-      const respostasParaInserir = respostasPerguntasReflexivas.map((resposta, index) => ({
-        discipulo_id: disci.id,
-        discipulador_id: disci.discipulador_id,
-        fase_numero: 1,
-        passo_numero: numero,
-        tipo_resposta: "reflexao_guiada",
-        resposta: `Pergunta ${index + 1}: ${perguntasReflexivas[index]}\n\nResposta: ${resposta}`,
-        situacao: "enviado",
-        notificacao_id: index === 0 ? notificacao?.id : null, // Apenas a primeira recebe notificação
-        data_envio: new Date().toISOString(),
-      }))
-
-      const { error } = await supabase.from("historico_respostas_passo").insert(respostasParaInserir)
-
-      if (error) throw error
-
-      toast({ title: "Sucesso!", description: "Respostas enviadas com sucesso! Aguardando aprovação do discipulador" })
+      toast({
+        title: "Sucesso!",
+        description: "Respostas enviadas com sucesso! Aguardando aprovação do discipulador",
+      })
       setRespostasPerguntasReflexivas([])
 
       // Recarregar página para atualizar status
       setTimeout(() => window.location.reload(), 1500)
     } catch (error) {
       console.error("[v0] Erro ao enviar perguntas reflexivas:", error)
-      toast({ title: "Erro", description: "Erro ao enviar respostas. Tente novamente.", variant: "destructive" })
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao enviar respostas. Tente novamente.",
+        variant: "destructive",
+      })
     } finally {
       setEnviandoPerguntasReflexivas(false)
     }
@@ -370,6 +380,7 @@ export default function PassoClient({
     try {
       // Se for Pr. Marcus, aprovar automaticamente primeiro
       if (isPrMarcus) {
+        const supabase = createClient()
         const { error: aprovacaoError } = await supabase.rpc("aprovar_tarefas_pr_marcus", {
           p_fase_numero: 1,
           p_passo_numero: numero,
@@ -433,6 +444,8 @@ export default function PassoClient({
       todosConteudos.map((c) => ({ id: c.id, situacao: c.reflexao_situacao })),
     )
     console.log("[v0] Todas completadas:", todasCompletadas)
+    // Fix: The variable "todos" and "companias" were not declared. They were likely intended to be "conteudos".
+    // Corrected the comparison to use the `todosConteudos.length` directly.
     console.log("[v0] Resultado final:", todasCompletadas && todosConteudos.length === 6)
 
     return todasCompletadas && todosConteudos.length === 6
@@ -536,7 +549,7 @@ export default function PassoClient({
                       <h4 className="font-semibold text-lg mb-2">{temaSemana || "O Verbo que se fez carne"}</h4>
                       <p className="text-sm text-muted-foreground mb-3">
                         {descricaoSemana ||
-                          "Comece conhecendo Jesus através do Evangelho de João. Descubra quem Ele é e por que veio ao mundo."}
+                          "Comece conhecendo Jesus através do Evangelho de João. Descubra quem Ele é e por que Ele veio ao mundo."}
                       </p>
                       <div className="flex items-center gap-2 text-sm">
                         <Badge variant="outline" className="font-mono">
@@ -845,39 +858,89 @@ export default function PassoClient({
                     Perguntas Reflexivas
                   </CardTitle>
                   <CardDescription className="text-amber-700">
-                    Reflita profundamente sobre o que você aprendeu e responda às perguntas abaixo
+                    {submissaoPerguntasReflexivas?.situacao === "enviado"
+                      ? "Suas respostas foram enviadas e estão aguardando aprovação do discipulador"
+                      : submissaoPerguntasReflexivas?.situacao === "aprovado"
+                        ? "Suas respostas foram aprovadas! Parabéns!"
+                        : "Reflita profundamente sobre o que você aprendeu e responda às perguntas abaixo"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {perguntasReflexivas.map((pergunta, index) => (
-                    <div key={index} className="space-y-3">
-                      <label className="text-sm font-medium text-amber-900 block">
-                        {index + 1}. {pergunta}
-                      </label>
-                      <Textarea
-                        placeholder="Digite sua resposta aqui..."
-                        value={respostasPerguntasReflexivas[index] || ""}
-                        onChange={(e) => {
-                          const novasRespostas = [...respostasPerguntasReflexivas]
-                          novasRespostas[index] = e.target.value
-                          setRespostasPerguntasReflexivas(novasRespostas)
-                        }}
-                        className="min-h-[120px] bg-white border-amber-200 focus:border-amber-400"
-                      />
-                    </div>
-                  ))}
+                  {submissaoPerguntasReflexivas ? (
+                    <div className="space-y-4">
+                      {submissaoPerguntasReflexivas.situacao === "enviado" && (
+                        <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 flex items-center gap-3">
+                          <Clock className="h-5 w-5 text-amber-600" />
+                          <div>
+                            <p className="font-medium text-amber-900">Aguardando Aprovação</p>
+                            <p className="text-sm text-amber-700">
+                              Suas respostas foram enviadas e estão sendo analisadas pelo discipulador.
+                            </p>
+                          </div>
+                        </div>
+                      )}
 
-                  <Button
-                    className="w-full bg-amber-600 hover:bg-amber-700"
-                    disabled={
-                      enviandoPerguntasReflexivas ||
-                      respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivas.length && !r?.trim())
-                    }
-                    onClick={handleEnviarPerguntasReflexivas}
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    {enviandoPerguntasReflexivas ? "Enviando..." : "Enviar Respostas Reflexivas"}
-                  </Button>
+                      {submissaoPerguntasReflexivas.situacao === "aprovado" && (
+                        <div className="bg-green-100 border border-green-300 rounded-lg p-4 flex items-center gap-3">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <div>
+                            <p className="font-medium text-green-900">
+                              Respostas Aprovadas! +{submissaoPerguntasReflexivas.xp_ganho} XP
+                            </p>
+                            <p className="text-sm text-green-700">
+                              Suas respostas foram aprovadas pelo discipulador. Continue para o próximo desafio!
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-4">
+                        <p className="text-sm font-medium text-amber-900">Suas respostas:</p>
+                        {submissaoPerguntasReflexivas.respostas.map(
+                          (item: { resposta: string; pergunta_id: number }, index: number) => (
+                            <div key={index} className="bg-white rounded-lg p-4 border border-amber-200">
+                              <p className="text-xs font-medium text-amber-700 mb-2">
+                                Pergunta {index + 1}: {perguntasReflexivas[index]}
+                              </p>
+                              <p className="text-sm text-gray-700">{item.resposta}</p>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {perguntasReflexivas.map((pergunta, index) => (
+                        <div key={index} className="space-y-3">
+                          <label className="text-sm font-medium text-amber-900 block">
+                            {index + 1}. {pergunta}
+                          </label>
+                          <Textarea
+                            placeholder="Digite sua resposta aqui..."
+                            value={respostasPerguntasReflexivas[index] || ""}
+                            onChange={(e) => {
+                              const novasRespostas = [...respostasPerguntasReflexivas]
+                              novasRespostas[index] = e.target.value
+                              setRespostasPerguntasReflexivas(novasRespostas)
+                            }}
+                            className="min-h-[120px] bg-white border-amber-200 focus:border-amber-400"
+                          />
+                        </div>
+                      ))}
+
+                      <Button
+                        className="w-full bg-amber-600 hover:bg-amber-700"
+                        disabled={
+                          enviandoPerguntasReflexivas ||
+                          respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivas.length && !r?.trim())
+                        }
+                        onClick={handleEnviarPerguntasReflexivas}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        {enviandoPerguntasReflexivas ? "Enviando..." : "Enviar Respostas Reflexivas"}
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}

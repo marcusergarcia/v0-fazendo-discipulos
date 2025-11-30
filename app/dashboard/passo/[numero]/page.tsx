@@ -97,35 +97,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
-  const { data: respostasPasso } = await supabase
-    .from("historico_respostas_passo")
-    .select("tipo_resposta, resposta, situacao, xp_ganho")
-    .eq("discipulo_id", discipulo.id)
-    .eq("passo_numero", numero)
-    .in("tipo_resposta", ["pergunta", "missao"])
-
-  const respostaPergunta = respostasPasso?.find((r) => r.tipo_resposta === "pergunta")
-  const respostaMissao = respostasPasso?.find((r) => r.tipo_resposta === "missao")
-
-  const getStatus = () => {
-    // Se ambas respostas foram aprovadas, status é validado
-    if (respostaPergunta?.situacao === "aprovado" && respostaMissao?.situacao === "aprovado") {
-      return "validado"
-    }
-
-    // Se alguma resposta foi enviada (existe no histórico) mas não aprovada, está aguardando
-    if (
-      (respostaPergunta && respostaPergunta.situacao === "enviado") ||
-      (respostaMissao && respostaMissao.situacao === "enviado")
-    ) {
-      return "aguardando"
-    }
-
-    // Caso contrário, está pendente
-    return "pendente"
-  }
-
-  const status = getStatus()
+  const status = "pendente" // Status simplificado - agora controlado por perguntas_reflexivas
 
   let statusLeituraSemana: "nao_iniciada" | "pendente" | "concluida" = "nao_iniciada"
   let temaSemana = ""
@@ -203,8 +175,6 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       statusLeituraSemana={statusLeituraSemana}
       temaSemana={temaSemana}
       descricaoSemana={descricaoSemana}
-      respostaPerguntaHistorico={respostaPergunta}
-      respostaMissaoHistorico={respostaMissao}
     />
   )
 }

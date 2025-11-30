@@ -3,124 +3,19 @@
 import { createClient } from "@/lib/supabase/server"
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 import { redirect } from "next/navigation"
-import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { revalidatePath } from "next/cache"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function salvarRascunho(numero: number, formData: FormData) {
-  const supabase = await createClient()
-  const respostaPergunta = formData.get("resposta_pergunta") as string
-  const respostaMissao = formData.get("resposta_missao") as string
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return
-
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-
-  if (!discipulo) return
-
-  redirect(`/dashboard/passo/${numero}?saved=true`)
+  console.log("[v0] salvarRascunho é obsoleto e não faz nada")
+  redirect(`/dashboard/passo/${numero}`)
 }
 
 export async function enviarParaValidacao(numero: number, formData: FormData) {
-  const supabase = await createClient()
-  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  })
-
-  const respostaPergunta = formData.get("resposta_pergunta") as string
-  const respostaMissao = formData.get("resposta_missao") as string
-
-  if (
-    !respostaPergunta ||
-    !respostaMissao ||
-    respostaPergunta.trim().length < 10 ||
-    respostaMissao.trim().length < 10
-  ) {
-    throw new Error("Por favor, preencha ambas as respostas com pelo menos 10 caracteres")
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return
-
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
-  if (!discipulo) return
-
-  const conteudoPasso = PASSOS_CONTEUDO[numero as keyof typeof PASSOS_CONTEUDO]
-
-  let notificacaoId: string | null = null
-  if (discipulo.discipulador_id) {
-    const { data: novaNotificacao } = await supabaseAdmin
-      .from("notificacoes")
-      .insert({
-        user_id: discipulo.discipulador_id,
-        tipo: "respostas_passo",
-        titulo: "Novas respostas para avaliar",
-        mensagem: `Seu discípulo enviou as respostas do Passo ${numero} para avaliação.`,
-        link: `/discipulador`,
-        lida: false,
-      })
-      .select("id")
-      .single()
-
-    if (novaNotificacao) {
-      notificacaoId = novaNotificacao.id
-    }
-  }
-
-  const { error: perguntaError } = await supabase.from("historico_respostas_passo").insert({
-    discipulo_id: discipulo.id,
-    discipulador_id: discipulo.discipulador_id,
-    fase_numero: discipulo.fase_atual || 1,
-    passo_numero: numero,
-    tipo_resposta: "pergunta",
-    resposta: respostaPergunta,
-    situacao: "enviado",
-    notificacao_id: notificacaoId,
-    data_envio: new Date().toISOString(),
-  })
-
-  if (perguntaError) {
-    console.error("[v0] Erro ao salvar pergunta:", perguntaError)
-    throw new Error("Erro ao enviar pergunta para avaliação")
-  }
-
-  const { error: missaoError } = await supabase.from("historico_respostas_passo").insert({
-    discipulo_id: discipulo.id,
-    discipulador_id: discipulo.discipulador_id,
-    fase_numero: discipulo.fase_atual || 1,
-    passo_numero: numero,
-    tipo_resposta: "missao",
-    resposta: respostaMissao,
-    situacao: "enviado",
-    notificacao_id: null,
-    data_envio: new Date().toISOString(),
-  })
-
-  if (missaoError) {
-    console.error("[v0] Erro ao salvar missão:", missaoError)
-    throw new Error("Erro ao enviar missão para avaliação")
-  }
-
-  await supabase
-    .from("progresso_fases")
-    .update({
-      enviado_para_validacao: true,
-    })
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", discipulo.fase_atual || 1)
-    .eq("passo_numero", numero)
-
-  redirect(`/dashboard/passo/${numero}?sent=true`)
+  console.log("[v0] enviarParaValidacao é obsoleto - use enviarPerguntasReflexivas")
+  redirect(`/dashboard/passo/${numero}`)
 }
 
 export async function marcarVideoAssistido(numero: number, videoId: string) {
@@ -750,9 +645,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   return { success: true, artigoId }
 }
 
-export async function verificarConclusaoPasso(numero: number) {
-  console.log("[v0] 🔍 Verificando conclusão do Passo:", numero)
-
+export async function verificarCondicoesPasso(numero: number) {
   const supabase = await createClient()
 
   const {
@@ -760,7 +653,7 @@ export async function verificarConclusaoPasso(numero: number) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    console.log("[v0] ❌ Usuário não autenticado")
+    console.error("[v0] SERVER: Usuário não autenticado")
     return { completo: false }
   }
 
@@ -771,7 +664,7 @@ export async function verificarConclusaoPasso(numero: number) {
     .single()
 
   if (!discipulo || discipulo.passo_atual !== numero) {
-    console.log("[v0] ❌ Discípulo não encontrado ou não está neste passo")
+    console.log("[v0] SERVER: Discípulo não encontrado ou não está neste passo")
     return { completo: false }
   }
 
@@ -782,29 +675,37 @@ export async function verificarConclusaoPasso(numero: number) {
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
-  console.log("[v0] 📝 Reflexões encontradas:", reflexoes?.length)
+  console.log("[v0] SERVER: Reflexões encontradas:", reflexoes?.length)
 
   const todasReflexoesAprovadas =
     reflexoes && reflexoes.length > 0 ? reflexoes.every((r) => r.situacao === "aprovado") : false
 
-  console.log("[v0] ✅ Todas reflexões aprovadas?", todasReflexoesAprovadas)
+  console.log("[v0] SERVER: ✅ Todas reflexões aprovadas?", todasReflexoesAprovadas)
+
+  // Verificar perguntas reflexivas (nova tabela)
+  const { data: perguntasReflexivas } = await supabase
+    .from("perguntas_reflexivas")
+    .select("situacao")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+    .maybeSingle()
+
+  const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
+
+  console.log("[v0] SERVER: ✅ Perguntas reflexivas aprovadas?", perguntasReflexivasAprovadas)
 
   // Verificar respostas do passo (pergunta E missão)
   const { data: respostas } = await supabase
     .from("historico_respostas_passo")
-    .select("situacao, tipo_resposta")
+    .select("situacao")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
-    .order("created_at", { ascending: false })
 
-  console.log("[v0] 💬 Respostas encontradas:", respostas?.length)
+  console.log("[v0] SERVER: 💬 Respostas encontradas:", respostas?.length)
 
-  const respostaPerguntaAprovada = respostas?.some((r) => r.tipo_resposta === "pergunta" && r.situacao === "aprovado")
-  const respostaMissaoAprovada = respostas?.some((r) => r.tipo_resposta === "missao" && r.situacao === "aprovado")
-  const respostasAprovadas = respostaPerguntaAprovada && respostaMissaoAprovada
+  const respostasAprovadas = respostas?.every((r) => r.situacao === "aprovado") || false
 
-  console.log("[v0] ❓ Resposta pergunta aprovada?", respostaPerguntaAprovada)
-  console.log("[v0] 🎯 Resposta missão aprovada?", respostaMissaoAprovada)
+  console.log("[v0] SERVER: ❓ Respostas aprovadas?", respostasAprovadas)
 
   const { data: leituraCapitulos } = await supabase
     .from("leituras_capitulos")
@@ -826,17 +727,21 @@ export async function verificarConclusaoPasso(numero: number) {
   // Verificar se TODOS os capítulos da semana foram lidos
   const leituraSemanalConcluida = capitulosSemana.every((capId: number) => capitulosLidos.includes(capId))
 
-  console.log("[v0] 📖 Capítulos da semana:", capitulosSemana.length)
-  console.log("[v0] ✅ Capítulos lidos:", capitulosLidos.filter((id: number) => capitulosSemana.includes(id)).length)
-  console.log("[v0] 📚 Leitura semanal concluída?", leituraSemanalConcluida)
+  console.log("[v0] SERVER: 📖 Capítulos da semana:", capitulosSemana.length)
+  console.log(
+    "[v0] SERVER: ✅ Capítulos lidos:",
+    capitulosLidos.filter((id: number) => capitulosSemana.includes(id)).length,
+  )
+  console.log("[v0] SERVER: 📚 Leitura semanal concluída?", leituraSemanalConcluida)
 
-  const passoCompleto = todasReflexoesAprovadas && respostasAprovadas && leituraSemanalConcluida
+  const passoCompleto = todasReflexoesAprovadas && perguntasReflexivasAprovadas && leituraSemanalConcluida
 
-  console.log("[v0] 🎉 PASSO COMPLETO?", passoCompleto)
+  console.log("[v0] SERVER: 🎉 PASSO COMPLETO?", passoCompleto)
 
   return {
     completo: passoCompleto,
     reflexoesAprovadas: todasReflexoesAprovadas,
+    perguntasReflexivasAprovadas: perguntasReflexivasAprovadas,
     respostasAprovadas: respostasAprovadas,
     leituraSemanalConcluida: leituraSemanalConcluida,
   }
@@ -858,7 +763,7 @@ export async function liberarProximoPasso() {
   }
 
   const passoAtual = discipulo.passo_atual
-  const verificacao = await verificarConclusaoPasso(passoAtual)
+  const verificacao = await verificarCondicoesPasso(passoAtual)
 
   if (!verificacao.completo) {
     return {
@@ -1124,4 +1029,176 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       error: error instanceof Error ? error.message : "Erro desconhecido",
     }
   }
+}
+
+export async function enviarPerguntasReflexivas(
+  numero: number,
+  respostas: { pergunta1: string; pergunta2: string; pergunta3: string },
+) {
+  console.log("[v0] SERVER: enviarPerguntasReflexivas iniciada")
+  console.log("[v0] SERVER: Passo:", numero)
+  console.log("[v0] SERVER: Respostas recebidas:", Object.keys(respostas))
+
+  const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  console.log("[v0] SERVER: User ID:", user?.id)
+  console.log("[v0] SERVER: User Error:", userError)
+
+  if (!user) {
+    console.error("[v0] SERVER: Usuário não autenticado")
+    return { success: false, error: "Usuário não autenticado" }
+  }
+
+  const { data: discipulo, error: discipuloError } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
+  console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
+  console.log("[v0] SERVER: Discípulo Error:", discipuloError)
+
+  if (!discipulo) {
+    console.error("[v0] SERVER: Discípulo não encontrado")
+    return { success: false, error: "Discípulo não encontrado" }
+  }
+
+  let notificacaoId: string | null = null
+  if (discipulo.discipulador_id) {
+    console.log("[v0] SERVER: Criando notificação para discipulador...")
+
+    const { data: novaNotificacao, error: notifError } = await supabaseAdmin
+      .from("notificacoes")
+      .insert({
+        user_id: discipulo.discipulador_id,
+        tipo: "perguntas_reflexivas",
+        titulo: "Novas perguntas reflexivas",
+        mensagem: `Seu discípulo respondeu as 3 perguntas reflexivas do Passo ${numero}.`,
+        link: `/discipulador`,
+      })
+      .select("id")
+      .single()
+
+    if (notifError) {
+      console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
+    } else {
+      console.log("[v0] SERVER: Notificação criada com ID:", novaNotificacao.id)
+      notificacaoId = novaNotificacao.id
+    }
+  }
+
+  const respostasArray = [
+    { pergunta_id: 1, resposta: respostas.pergunta1 },
+    { pergunta_id: 2, resposta: respostas.pergunta2 },
+    { pergunta_id: 3, resposta: respostas.pergunta3 },
+  ]
+
+  console.log("[v0] SERVER: Inserindo perguntas reflexivas na tabela...")
+
+  const { error: insertError } = await supabase.from("perguntas_reflexivas").upsert(
+    {
+      discipulo_id: discipulo.id,
+      fase_numero: discipulo.fase_atual || 1,
+      passo_numero: numero,
+      respostas: respostasArray, // Array JSONB com as 3 respostas
+      situacao: "enviado",
+      xp_ganho: 0,
+      discipulador_id: discipulo.discipulador_id,
+      notificacao_id: notificacaoId,
+      data_envio: new Date().toISOString(),
+    },
+    {
+      onConflict: "discipulo_id,fase_numero,passo_numero",
+    },
+  )
+
+  if (insertError) {
+    console.error("[v0] SERVER: Erro ao inserir perguntas reflexivas:", insertError)
+    return { success: false, error: "Erro ao enviar perguntas reflexivas" }
+  }
+
+  console.log("[v0] SERVER: Perguntas reflexivas enviadas com sucesso!")
+  revalidatePath(`/dashboard/passo/${numero}`)
+
+  return { success: true }
+}
+
+export async function recalcularProgressoPasso(numero: number) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    console.error("[v0] SERVER: Usuário não autenticado")
+    return { success: false, error: "Usuário não autenticado" }
+  }
+
+  const { data: discipulo, error: discipuloError } = await supabase
+    .from("discipulos")
+    .select("id")
+    .eq("user_id", user.id)
+    .single()
+
+  if (discipuloError || !discipulo) {
+    console.error("[v0] SERVER: Erro ao buscar discípulo:", discipuloError)
+    return { success: false, error: "Discípulo não encontrado" }
+  }
+
+  const { data: reflexoes, error: reflexoesError } = await supabase
+    .from("reflexoes_conteudo")
+    .select("xp_ganho")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+    .eq("situacao", "aprovado")
+
+  let pontosVideosArtigos = 0
+  if (!reflexoesError && reflexoes) {
+    pontosVideosArtigos = reflexoes.reduce((total, r) => total + (r.xp_ganho || 0), 0)
+    console.log("[v0] SERVER: Pontos de vídeos/artigos a remover:", pontosVideosArtigos)
+  }
+
+  const { data: perguntasReflexivas, error: perguntasReflexivasError } = await supabase
+    .from("perguntas_reflexivas")
+    .select("xp_ganho")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+    .eq("situacao", "aprovado")
+
+  let pontosPerguntasReflexivas = 0
+  if (!perguntasReflexivasError && perguntasReflexivas) {
+    pontosPerguntasReflexivas = perguntasReflexivas.reduce((total, r) => total + (r.xp_ganho || 0), 0)
+    console.log("[v0] SERVER: Pontos de perguntas reflexivas a manter:", pontosPerguntasReflexivas)
+  }
+
+  const totalPontos = pontosPerguntasReflexivas
+
+  const { error: updateProgressoError } = await supabase
+    .from("progresso_fases")
+    .update({
+      pontuacao_total: totalPontos,
+    })
+    .eq("discipulo_id", discipulo.id)
+    .eq("fase_numero", 1)
+    .eq("passo_numero", numero)
+
+  if (updateProgressoError) {
+    console.error("[v0] SERVER: Erro ao atualizar progresso:", updateProgressoError)
+    return { success: false, error: "Erro ao atualizar progresso" }
+  }
+
+  return { success: true, message: "Progresso recalculado com sucesso!" }
 }
