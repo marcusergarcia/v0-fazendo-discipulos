@@ -14,9 +14,8 @@ export const perguntasPorPasso: Record<number, string[]> = {
     "Refletindo sobre a Queda de Adão e Eva, como você identifica o mesmo padrão de tentação (duvidar da Palavra de Deus → desacreditar → autossuficiência → desobediência) em sua própria vida? Que áreas você precisa entregar a Deus?",
     "Quais consequências do pecado você já experimentou pessoalmente? Como o conhecimento do amor e perdão de Deus através de Cristo transforma sua resposta ao pecado?",
   ],
+  // Adicione mais perguntas para outros passos conforme necessário
 }
-
-export const PERGUNTAS_PASSOS = perguntasPorPasso
 
 export function getPerguntasPasso(numero: number): string[] {
   return perguntasPorPasso[numero] || []

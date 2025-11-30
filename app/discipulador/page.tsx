@@ -8,7 +8,6 @@ import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video,
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
-import { PERGUNTAS_PASSOS } from "@/constants/perguntas-passos"
 import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
@@ -134,30 +133,41 @@ export default async function DiscipuladorPage() {
           })
         })
 
-        const perguntasDoPassoAtual = PERGUNTAS_PASSOS[discipulo.passo_atual as keyof typeof PERGUNTAS_PASSOS]
+        const respostaPergunta = respostasDiscipulo.find(
+          (r) =>
+            r.passo_numero === discipulo.passo_atual &&
+            r.fase_numero === discipulo.fase_atual &&
+            r.tipo_resposta === "pergunta",
+        )
 
-        if (perguntasDoPassoAtual && perguntasDoPassoAtual.length > 0) {
-          perguntasDoPassoAtual.forEach((pergunta, index) => {
-            const conteudoId = index + 1
+        const respostaMissao = respostasDiscipulo.find(
+          (r) =>
+            r.passo_numero === discipulo.passo_atual &&
+            r.fase_numero === discipulo.fase_atual &&
+            r.tipo_resposta === "missao",
+        )
 
-            // Buscar se já existe resposta no banco
-            const respostaExistente = respostasDiscipulo.find(
-              (r) =>
-                r.passo_numero === discipulo.passo_atual &&
-                r.fase_numero === discipulo.fase_atual &&
-                r.tipo_resposta === "reflexao_guiada" &&
-                r.conteudo_id === conteudoId,
-            )
+        if (conteudoPasso.perguntaChave) {
+          tarefas.push({
+            id: "pergunta-responder",
+            tipo: "pergunta",
+            titulo: conteudoPasso.perguntaChave,
+            concluido: !!respostaPergunta?.resposta,
+            resposta: respostaPergunta || null,
+            xp: respostaPergunta?.xp_ganho || null,
+            situacao: respostaPergunta?.situacao || null,
+          })
+        }
 
-            tarefas.push({
-              id: `reflexao-guiada-${conteudoId}`,
-              tipo: "reflexao_guiada",
-              titulo: pergunta,
-              concluido: !!respostaExistente?.resposta,
-              resposta: respostaExistente || null,
-              xp: respostaExistente?.pontuacao_recebida || null,
-              situacao: respostaExistente?.situacao || null,
-            })
+        if (conteudoPasso.missao) {
+          tarefas.push({
+            id: "missao-pratica",
+            tipo: "missao",
+            titulo: conteudoPasso.missao,
+            concluido: !!respostaMissao?.resposta,
+            resposta: respostaMissao || null,
+            xp: respostaMissao?.xp_ganho || null,
+            situacao: respostaMissao?.situacao || null,
           })
         }
       }
@@ -386,7 +396,7 @@ export default async function DiscipuladorPage() {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {tarefa.tipo === "reflexao_guiada" ? (
+                                {tarefa.tipo === "pergunta" || tarefa.tipo === "missao" ? (
                                   tarefa.situacao === "aprovado" ? (
                                     <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                                       <CheckCircle className="w-3 h-3 mr-1" />
