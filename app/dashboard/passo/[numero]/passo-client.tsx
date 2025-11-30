@@ -493,15 +493,13 @@ export default function PassoClient({
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-primary" />
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
+              <BookOpen className="h-6 w-6 text-primary" />
               Objetivo do Passo
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium mb-4">
-              Entender que a vida não é um acidente: fomos criados por Deus com propósito.
-            </p>
+            <p className="text-lg font-medium mb-4">{passo.objetivo}</p>
             <div className="space-y-3">
               {passo.conteudo.map((linha: string, i: number) => (
                 <p key={i} className="leading-relaxed text-base">
@@ -524,7 +522,9 @@ export default function PassoClient({
             {passo.versiculos.map((v: any, i: number) => (
               <div key={i} className="space-y-2">
                 <p className="text-xl italic leading-relaxed font-medium">"{v.texto}"</p>
-                <p className="text-sm font-semibold text-primary">— {v.referencia}</p>
+                <p className="text-sm font-semibold text-primary">
+                  — <TextWithBibleLinks text={v.referencia} />
+                </p>
               </div>
             ))}
           </CardContent>

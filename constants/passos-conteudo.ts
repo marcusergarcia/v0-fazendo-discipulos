@@ -2,6 +2,7 @@ export const PASSOS_CONTEUDO = {
   1: {
     titulo: "Deus nos Criou",
     fase: "FASE 1: O Evangelho",
+    objetivo: "Entender que a vida não é um acidente: fomos criados por Deus com propósito.",
     conteudo: [
       "Deus é o Criador de todas as coisas.",
       "Ele nos fez à Sua imagem (Gênesis 1:26–27).",
@@ -65,6 +66,7 @@ export const PASSOS_CONTEUDO = {
   2: {
     titulo: "Deus nos Ama",
     fase: "FASE 1: O Evangelho",
+    objetivo: "Reconhecer que o amor de Deus é a base do discipulado e o fundamento de todo relacionamento com Ele.",
     conteudo: [
       "Deus não apenas nos criou, mas nos ama profundamente.",
       "Esse amor é constante, imutável e demonstrado através de suas ações na história.",
@@ -135,6 +137,7 @@ export const PASSOS_CONTEUDO = {
   3: {
     titulo: "O Pecado Entrou no Mundo",
     fase: "FASE 1: O Evangelho",
+    objetivo: "Compreender que o pecado trouxe separação entre o homem e Deus, rompendo a comunhão original.",
     conteudo: [
       "O pecado não é apenas 'errar'; é romper o padrão e o propósito de Deus.",
       "Quando o pecado entrou no mundo, ele trouxe:",
@@ -207,6 +210,87 @@ export const PASSOS_CONTEUDO = {
       "Identifique uma área da sua vida onde você precisa de mudança e explique por que. (Exemplos: relacionamentos, temperamento, vida espiritual, rotina/hábitos, pureza/pensamentos, obediência a Deus)",
     recompensa: "Reconhecimento da Verdade",
     icone: "👁️",
+    xp: 100,
+  },
+  4: {
+    titulo: "Consequências do Pecado",
+    fase: "FASE 1: O Evangelho",
+    objetivo: "Entender as quatro consequências devastadoras do pecado e por que o homem precisa de um Salvador.",
+    conteudo: [
+      "O pecado produz uma condição espiritual devastadora em toda a humanidade.",
+      "Após a queda em Gênesis 3, surgiram quatro consequências universais:",
+      "",
+      "1️⃣ CULPA PERANTE A LEI DE DEUS",
+      "• Gênesis 3:23-24; Romanos 1:18-21; João 3:36; Romanos 3:22-23",
+      "• Somos considerados culpados diante da justiça perfeita de Deus.",
+      "",
+      "2️⃣ MORTE ESPIRITUAL",
+      "• Efésios 2:1-3; Ezequiel 18:4-9; Jeremias 31:30",
+      "• A conexão espiritual com Deus foi rompida; o espírito humano se tornou inativo.",
+      "",
+      "3️⃣ INIMIZADE CONTRA DEUS",
+      "• Gênesis 3:15; Romanos 8:7; Tiago 4:4; Efésios 2:3",
+      "• A natureza humana passa a resistir, ignorar e rejeitar Deus.",
+      "",
+      "4️⃣ ESCRAVIDÃO DO PECADO",
+      "• Romanos 7:20-23; Marcos 7:21-23; Gálatas 5:19-21; João 8:34,36",
+      "• O ser humano se torna dominado por seus desejos e pela inclinação para o mal.",
+      "",
+      "Essas quatro áreas explicam por que o ser humano precisa de um Salvador.",
+      "Por isso, o homem NÃO consegue se salvar sozinho.",
+    ],
+    versiculos: [
+      {
+        texto:
+          "Porque o salário do pecado é a morte, mas o dom gratuito de Deus é a vida eterna em Cristo Jesus, nosso Senhor.",
+        referencia: "Romanos 6:23",
+      },
+      {
+        texto: "Ele vos deu vida, estando vós mortos nos vossos delitos e pecados.",
+        referencia: "Efésios 2:1",
+      },
+    ],
+    videos: [
+      {
+        id: "video-p4-1",
+        titulo: "O que o pecado faz conosco?",
+        canal: "Douglas Gonçalves",
+        duracao: "3:00",
+        url: "https://www.youtube.com/watch?v=2hHKLx7nImE",
+      },
+      {
+        id: "video-p4-2",
+        titulo: "As consequências do pecado",
+        canal: "BibleProject",
+        duracao: "5:18",
+        url: "https://www.youtube.com/watch?v=xMVXo_9wTdc",
+      },
+    ],
+    artigos: [
+      {
+        id: "artigo-p4-1",
+        titulo: "Pecado (Cristianismo)",
+        fonte: "Wikipédia",
+        url: "https://pt.wikipedia.org/wiki/Pecado",
+      },
+      {
+        id: "artigo-p4-2",
+        titulo: "Morte Espiritual - Estudo",
+        fonte: "Wikipédia",
+        url: "https://pt.wikipedia.org/wiki/Morte_espiritual",
+      },
+      {
+        id: "artigo-p4-3",
+        titulo: "As Consequências do Pecado",
+        fonte: "Respostas Bíblicas",
+        url: "https://www.respostas.com.br/quais-sao-as-consequencias-do-pecado",
+      },
+    ],
+    perguntaChave: "Qual é o destino do ser humano sem reconciliação com Deus?",
+    missao:
+      'Escrever uma reflexão (3-5 linhas) respondendo: "O que eu acredito sobre a eternidade?" (Exemplos: Céu, Inferno, Vida após a morte, Comunhão eterna com Deus, Separação eterna)',
+    recompensa: "Consciência Espiritual",
+    icone: "🔥",
     xp: 100,
   },
 }
