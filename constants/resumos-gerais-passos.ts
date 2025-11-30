@@ -59,6 +59,31 @@ export const RESUMOS_GERAIS_PASSOS = {
       },
     ],
   },
+  4: {
+    titulo: "Consequências do Pecado",
+    topicos: [
+      {
+        titulo: "Culpa: O Peso da Condenação",
+        descricao:
+          "O pecado gera culpa tanto pela herança do pecado original de Adão quanto por nossas transgressões pessoais. Todos nascemos sob condenação, mas através do sacrifício de Cristo, Sua justiça é creditada a nós, removendo completamente a culpa e garantindo que não há 'nenhuma condenação' para os que estão em Cristo.",
+      },
+      {
+        titulo: "Morte Espiritual: Separados da Fonte da Vida",
+        descricao:
+          "A morte espiritual é a separação de Deus, a consequência direta do pecado. Cada pessoa nasce espiritualmente morta, insensível à voz de Deus e inclinada ao mal. Antes da conversão, vivemos sob a influência do pecado, do mundo e do diabo, incapazes de responder a Deus sem Sua intervenção.",
+      },
+      {
+        titulo: "Inimizade: A Guerra contra o Criador",
+        descricao:
+          "O pecado nos torna inimigos de Deus, criando uma barreira de hostilidade entre o Criador e a criatura. Não existe neutralidade: ou somos inimigos de Deus, ou inimigos do pecado. Jesus veio destruir esta barreira através da cruz, oferecendo reconciliação e paz com Deus a todos que creem.",
+      },
+      {
+        titulo: "Escravidão: Aprisionados pelo Pecado",
+        descricao:
+          "O pecado não apenas nos separa de Deus, mas nos escraviza, criando uma prisão interior da qual não podemos escapar sozinhos. Jesus declarou que 'todo o que comete pecado é escravo do pecado'. Somente através da cruz de Cristo e do poder do Espírito Santo podemos ser libertados desta escravidão e viver na liberdade dos filhos de Deus.",
+      },
+    ],
+  },
 } as const
 
 export type ResumoGeralPasso = {

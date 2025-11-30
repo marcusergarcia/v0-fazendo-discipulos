@@ -14,6 +14,12 @@ export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
     "Refletindo sobre a Queda de Adão e Eva, como você identifica o mesmo padrão de tentação (duvidar da Palavra de Deus → desacreditar → autossuficiência → desobediência) em sua própria vida? Que áreas você precisa entregar a Deus?",
     "Quais consequências do pecado você já experimentou pessoalmente? Como o conhecimento do amor e perdão de Deus através de Cristo transforma sua resposta ao pecado?",
   ],
+  4: [
+    "Você compreende que nasceu com uma 'culpa herdada' do pecado de Adão (pecado imputado), além da culpa pessoal por seus próprios erros? Como essa verdade impacta sua percepção da necessidade de um Salvador e da graça de Cristo que apaga completamente sua 'ficha criminal espiritual'?",
+    "Paulo Washer afirma que a morte espiritual significa estar 'vivo fisicamente, mas completamente morto por dentro' — insensível a Deus, mas hipersensível ao pecado. Você já experimentou essa realidade em sua vida? Como o milagre da regeneração através de Cristo transforma esse estado de morte espiritual em vida abundante?",
+    "Tiago 4:4 diz que 'a amizade com o mundo é inimizade com Deus'. Antes de conhecer Cristo, você reconhece que era inimigo de Deus ao amar o pecado? Como Jesus destruiu essa barreira de inimizade na cruz e ofereceu paz e reconciliação? De que formas práticas você demonstra hoje que é amigo de Deus e não do pecado?",
+    "Jesus declarou: 'Todo o que comete pecado é escravo do pecado' (João 8:34). Você já se sentiu acorrentado em uma prisão invisível, querendo mudar mas não conseguindo? Quais áreas específicas de sua vida ainda lutam contra essa escravidão? Como Romanos 6:18 ('Libertados do pecado, vocês se tornaram servos da justiça') se aplica à sua jornada de libertação através do poder de Cristo?",
+  ],
 }
 
 // Mantendo compatibilidade com código existente

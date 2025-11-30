@@ -120,12 +120,11 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   let temaSemana = ""
   let descricaoSemana = ""
 
-  if (numero === 1 || numero === 2 || numero === 3) {
-    // Buscar capítulos lidos do discípulo
+  if (numero === 1 || numero === 2 || numero === 3 || numero === 4) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")
       .select("capitulos_lidos")
-      .eq("discipulo_id", discipulo.id)
+      .eq("usuario_id", user.id)
       .single()
 
     console.log("[v0] PassoPage - Leitura capítulos:", !!leituraCapitulos, "Error:", leituraError)

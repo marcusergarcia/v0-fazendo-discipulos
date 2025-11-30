@@ -110,6 +110,47 @@ export const RESUMOS_CONTEUDO = {
       },
     },
   },
+  4: {
+    artigos: {
+      "artigo-p4-1": {
+        titulo: "Culpa do Pecado: Imputação e Perdão",
+        resumo:
+          "A culpa do pecado envolve tanto a culpa herdada do pecado original de Adão quanto a culpa pelos nossos pecados pessoais. Todos nascemos com uma natureza pecaminosa e somos creditados com a culpa de Adão (pecado imputado), o que nos torna culpados e condenados diante de Deus. No entanto, através da obra expiatória de Jesus Cristo, Sua justiça é creditada aos crentes, removendo completamente a culpa. Deus não nos redimiu para vivermos em condenação permanente, mas para descansarmos na promessa de que não há 'nenhuma condenação' para os que estão em Cristo (Romanos 8:1).",
+      },
+      "artigo-p4-2": {
+        titulo: "Morte Espiritual: A Separação de Deus",
+        resumo:
+          "A morte espiritual é definida como a separação de Deus, a consequência direta do pecado. Cada ser humano nasce espiritualmente morto devido ao julgamento divino sobre Adão, que se estendeu a toda a humanidade. Esta condição torna a pessoa insensível à vontade de Deus e sensível aos estímulos perversos. Antes da conversão, vivemos em pecado, seguindo o curso de um mundo caído, sob a influência do diabo e das inclinações da carne. A morte espiritual representa a profundidade da corrupção moral do homem, tornando-o incapaz de responder a Deus sem a intervenção divina.",
+      },
+      "artigo-p4-3": {
+        titulo: "Inimizade contra Deus: A Guerra Invisível",
+        resumo:
+          "O pecado nos torna inimigos de Deus, que é perfeito e não tolera o pecado. A Bíblia afirma que a amizade com o mundo é inimizade com Deus (Tiago 4:4), o que significa que quem ama as coisas ruins do mundo e escolhe viver no pecado se torna inimigo de Deus. Não existe posição neutra: ou somos inimigos de Deus, ou inimigos do pecado. Jesus veio para trazer reconciliação, destruindo a barreira de inimizade criada pelo pecado na cruz, permitindo que as pessoas se tornem amigas de Deus e vivam em paz com Ele.",
+      },
+      "artigo-p4-4": {
+        titulo: "Escravidão do Pecado: A Prisão Interior",
+        resumo:
+          "O pecado não apenas separa de Deus, mas também escraviza, revelando uma corrupção profunda no interior do ser humano. Jesus ensinou que 'todo o que comete pecado é escravo do pecado' (João 8:34), indicando uma condição da qual não se consegue escapar sozinho. Esta escravidão é descrita como 'morte social', onde relacionamentos são contaminados, levando ao isolamento. A libertação do pecado é primariamente a libertação desta escravidão radical, sendo seu objetivo a liberdade dos filhos de Deus. Romanos 6:6 declara que 'a nossa velha natureza foi crucificada com ele, para que não sejamos mais escravos do pecado'. Esta libertação ocorre através da cruz de Cristo e pelo poder do Espírito Santo.",
+      },
+    },
+    videos: {
+      "video-p4-1": {
+        titulo: "Consequências do Pecado: Culpa e Condenação",
+        resumo:
+          "Este vídeo explora como o pecado gera culpa tanto pela herança de Adão quanto por nossas transgressões pessoais. Mostra que todos nascem sob condenação, mas Cristo oferece perdão completo através de Seu sacrifício na cruz, removendo toda culpa e condenação.",
+      },
+      "video-p4-2": {
+        titulo: "Morte Espiritual: Separados de Deus",
+        resumo:
+          "O vídeo aborda a realidade da morte espiritual, explicando como o pecado nos separa de Deus e nos torna insensíveis à Sua voz. Apresenta a conversão como o momento em que Deus ressuscita o espiritualmente morto para uma nova vida em Cristo.",
+      },
+      "video-p4-3": {
+        titulo: "Romanos 6:23 - O Salário do Pecado é a Morte",
+        resumo:
+          "Este vídeo analisa Romanos 6:23, contrastando o salário do pecado (morte) com o dom gratuito de Deus (vida eterna em Cristo). Explica que enquanto o pecado nos leva à destruição total, o amor de Deus providenciou o caminho de escape através de Jesus.",
+      },
+    },
+  },
   // Outros passos podem ser adicionados posteriormente
 } as const
 
