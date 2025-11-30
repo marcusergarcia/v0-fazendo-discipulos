@@ -309,7 +309,11 @@ export default function PassoClient({
 
   const enviarReflexao = async () => {
     if (!reflexao.trim() || reflexao.trim().length < 20) {
-      alert("Por favor, escreva uma reflexão de pelo menos 20 caracteres")
+      toast({
+        title: "Atenção",
+        description: "Por favor, escreva uma reflexão de pelo menos 20 caracteres",
+        variant: "destructive",
+      })
       return
     }
 
@@ -327,20 +331,23 @@ export default function PassoClient({
       let result
       if (tipoConteudo === "video") {
         console.log("[v0] Concluindo vídeo com reflexão...")
-        result = await concluirVideoComReflexao(numero, conteudoId, reflexao)
+        const video = passo.videos.find((v) => v.id === conteudoId)
+        result = await concluirVideoComReflexao(numero, conteudoId, video?.titulo || "Vídeo", reflexao)
       } else {
         console.log("[v0] Concluindo artigo com reflexão...")
-        result = await concluirArtigoComReflexao(numero, conteudoId, reflexao)
+        const artigo = passo.artigos.find((a) => a.id === conteudoId)
+        result = await concluirArtigoComReflexao(numero, conteudoId, artigo?.titulo || "Artigo", reflexao)
       }
       console.log("[v0] Action executada com sucesso! Resultado:", result)
 
+      toast({ title: "Sucesso!", description: "Sua reflexão foi enviada com sucesso!" })
       setModalAberto(false)
       setReflexao("")
       window.location.reload()
     } catch (error) {
       console.error("[v0] ERRO ao enviar reflexão:", error)
       console.error("[v0] Detalhes do erro:", JSON.stringify(error, null, 2))
-      alert("Erro ao enviar reflexão. Tente novamente.")
+      toast({ title: "Erro", description: "Erro ao enviar reflexão. Tente novamente.", variant: "destructive" })
     } finally {
       setEnviandoReflexao(false)
     }
