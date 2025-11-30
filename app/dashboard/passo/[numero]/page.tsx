@@ -8,12 +8,18 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   const { numero: numeroParam } = await params
   const numero = Number.parseInt(numeroParam)
 
+  console.log("[v0] PassoPage - Número recebido:", numero)
+
   if (isNaN(numero) || numero < 1 || numero > 10) {
+    console.log("[v0] PassoPage - Número inválido")
     notFound()
   }
 
   const passo = PASSOS_CONTEUDO[numero]
+  console.log("[v0] PassoPage - Passo encontrado:", !!passo)
+
   if (!passo) {
+    console.log("[v0] PassoPage - Passo não existe no PASSOS_CONTEUDO")
     notFound()
   }
 
@@ -27,7 +33,15 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     redirect("/auth/login")
   }
 
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+  console.log("[v0] PassoPage - User ID:", user.id)
+
+  const { data: discipulo, error: discipuloError } = await supabase
+    .from("discipulos")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  console.log("[v0] PassoPage - Discipulo:", !!discipulo, "Error:", discipuloError)
 
   if (!discipulo) {
     redirect("/dashboard")
@@ -45,7 +59,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   const discipuladorId = discipuladorData?.discipulador_id || null
 
-  const { data: progresso } = await supabase
+  const { data: progresso, error: progressoError } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
@@ -53,10 +67,12 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("passo_numero", numero)
     .maybeSingle()
 
+  console.log("[v0] PassoPage - Progresso:", !!progresso, "Error:", progressoError)
+
   // Se não existe progresso, criar registro inicial
   let progressoAtual = progresso
   if (!progressoAtual) {
-    const { data: novoProgresso } = await supabase
+    const { data: novoProgresso, error: novoProgressoError } = await supabase
       .from("progresso_fases")
       .insert({
         discipulo_id: discipulo.id,
@@ -71,6 +87,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       .select()
       .single()
 
+    console.log("[v0] PassoPage - Novo progresso criado:", !!novoProgresso, "Error:", novoProgressoError)
     progressoAtual = novoProgresso
   }
 
@@ -85,10 +102,10 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   let videosAssistidos: string[] = []
   let artigosLidos: string[] = []
   if (progressoAtual?.videos_assistidos) {
-    videosAssistidos = progressoAtual.videos_assistidos
+    videosAssistidos = Array.isArray(progressoAtual.videos_assistidos) ? progressoAtual.videos_assistidos : []
   }
   if (progressoAtual?.artigos_lidos) {
-    artigosLidos = progressoAtual.artigos_lidos
+    artigosLidos = Array.isArray(progressoAtual.artigos_lidos) ? progressoAtual.artigos_lidos : []
   }
 
   const { data: reflexoesPasso } = await supabase
@@ -105,18 +122,22 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   if (numero === 1 || numero === 2 || numero === 3) {
     // Buscar capítulos lidos do discípulo
-    const { data: leituraCapitulos } = await supabase
+    const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")
       .select("capitulos_lidos")
       .eq("discipulo_id", discipulo.id)
       .single()
 
+    console.log("[v0] PassoPage - Leitura capítulos:", !!leituraCapitulos, "Error:", leituraError)
+
     // Buscar capítulos da semana específica no plano de leitura
-    const { data: planoSemana } = await supabase
+    const { data: planoSemana, error: planoError } = await supabase
       .from("plano_leitura_biblica")
       .select("semana, tema, descricao, capitulos_semana")
       .eq("semana", numero)
       .single()
+
+    console.log("[v0] PassoPage - Plano semana:", !!planoSemana, "Error:", planoError)
 
     if (leituraCapitulos && planoSemana) {
       const capitulosLidos = leituraCapitulos.capitulos_lidos || []
@@ -160,6 +181,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       }
     }),
   }
+
+  console.log("[v0] PassoPage - Renderizando PassoClient")
 
   return (
     <PassoClient
