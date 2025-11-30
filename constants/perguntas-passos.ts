@@ -1,4 +1,4 @@
-export const perguntasPorPasso: Record<number, string[]> = {
+export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
   1: [
     "Ao refletir sobre os sete dias da criação, onde Deus ordenou o caos e trouxe beleza e propósito a cada elemento, como isso transforma sua visão sobre o mundo ao seu redor? De que maneiras você pode celebrar e cuidar melhor da criação de Deus como um mordomo responsável?",
     "Se você foi criado à imagem e semelhança de Deus com capacidades únicas de raciocínio, amor, criatividade e relacionamento, como essa verdade deve moldar sua identidade e seu valor próprio? Em quais áreas de sua vida você precisa permitir que Cristo restaure a imagem divina que foi distorcida pelo pecado?",
@@ -14,9 +14,11 @@ export const perguntasPorPasso: Record<number, string[]> = {
     "Refletindo sobre a Queda de Adão e Eva, como você identifica o mesmo padrão de tentação (duvidar da Palavra de Deus → desacreditar → autossuficiência → desobediência) em sua própria vida? Que áreas você precisa entregar a Deus?",
     "Quais consequências do pecado você já experimentou pessoalmente? Como o conhecimento do amor e perdão de Deus através de Cristo transforma sua resposta ao pecado?",
   ],
-  // Adicione mais perguntas para outros passos conforme necessário
 }
 
+// Mantendo compatibilidade com código existente
+export const perguntasPorPasso = PERGUNTAS_POR_PASSO
+
 export function getPerguntasPasso(numero: number): string[] {
-  return perguntasPorPasso[numero] || []
+  return PERGUNTAS_POR_PASSO[numero] || []
 }

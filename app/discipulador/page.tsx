@@ -12,6 +12,7 @@ import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
 import { CopiarLinkBoasVindas } from "@/components/copiar-link-boas-vindas"
+import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -133,43 +134,27 @@ export default async function DiscipuladorPage() {
           })
         })
 
-        const respostaPergunta = respostasDiscipulo.find(
-          (r) =>
-            r.passo_numero === discipulo.passo_atual &&
-            r.fase_numero === discipulo.fase_atual &&
-            r.tipo_resposta === "pergunta",
-        )
+        const perguntasReflexivas = PERGUNTAS_POR_PASSO[discipulo.passo_atual as keyof typeof PERGUNTAS_POR_PASSO] || []
 
-        const respostaMissao = respostasDiscipulo.find(
-          (r) =>
-            r.passo_numero === discipulo.passo_atual &&
-            r.fase_numero === discipulo.fase_atual &&
-            r.tipo_resposta === "missao",
-        )
+        perguntasReflexivas.forEach((pergunta, index) => {
+          const respostaReflexiva = respostasDiscipulo.find(
+            (r) =>
+              r.passo_numero === discipulo.passo_atual &&
+              r.fase_numero === discipulo.fase_atual &&
+              r.tipo_resposta === "reflexao_guiada" &&
+              r.conteudo_id === (index + 1).toString(),
+          )
 
-        if (conteudoPasso.perguntaChave) {
           tarefas.push({
-            id: "pergunta-responder",
-            tipo: "pergunta",
-            titulo: conteudoPasso.perguntaChave,
-            concluido: !!respostaPergunta?.resposta,
-            resposta: respostaPergunta || null,
-            xp: respostaPergunta?.xp_ganho || null,
-            situacao: respostaPergunta?.situacao || null,
+            id: `reflexiva-${index + 1}`,
+            tipo: "reflexao_guiada",
+            titulo: pergunta,
+            concluido: !!respostaReflexiva?.resposta,
+            resposta: respostaReflexiva || null,
+            xp: respostaReflexiva?.xp_ganho || null,
+            situacao: respostaReflexiva?.situacao || null,
           })
-        }
-
-        if (conteudoPasso.missao) {
-          tarefas.push({
-            id: "missao-pratica",
-            tipo: "missao",
-            titulo: conteudoPasso.missao,
-            concluido: !!respostaMissao?.resposta,
-            resposta: respostaMissao || null,
-            xp: respostaMissao?.xp_ganho || null,
-            situacao: respostaMissao?.situacao || null,
-          })
-        }
+        })
       }
 
       return {
@@ -370,8 +355,8 @@ export default async function DiscipuladorPage() {
                                     ? "bg-red-100 text-red-600"
                                     : tarefa.tipo === "artigo"
                                       ? "bg-blue-100 text-blue-600"
-                                      : tarefa.tipo === "pergunta"
-                                        ? "bg-orange-100 text-orange-600"
+                                      : tarefa.tipo === "reflexao_guiada"
+                                        ? "bg-green-100 text-green-600"
                                         : "bg-purple-100 text-purple-600"
                                 }`}
                               >
@@ -387,16 +372,12 @@ export default async function DiscipuladorPage() {
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{tarefa.titulo}</p>
                                 <p className="text-sm text-muted-foreground capitalize">
-                                  {tarefa.tipo === "pergunta"
-                                    ? "Pergunta para Responder"
-                                    : tarefa.tipo === "missao"
-                                      ? "Missão Prática"
-                                      : tarefa.tipo}
+                                  {tarefa.tipo === "reflexao_guiada" ? "Pergunta Reflexiva" : tarefa.tipo}
                                 </p>
                               </div>
 
                               <div className="flex items-center gap-2">
-                                {tarefa.tipo === "pergunta" || tarefa.tipo === "missao" ? (
+                                {tarefa.tipo === "reflexao_guiada" ? (
                                   tarefa.situacao === "aprovado" ? (
                                     <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                                       <CheckCircle className="w-3 h-3 mr-1" />
