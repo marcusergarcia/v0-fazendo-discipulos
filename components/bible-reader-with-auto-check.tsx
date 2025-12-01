@@ -103,6 +103,9 @@ export function BibleReaderWithAutoCheck({
 
   const [menuAberto, setMenuAberto] = useState(false)
 
+  const [currentLivroId, setCurrentLivroId] = useState(livroId)
+  const [currentBookName, setCurrentBookName] = useState(bookName)
+
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -133,9 +136,14 @@ export function BibleReaderWithAutoCheck({
   }, [initialChapter, startChapter])
 
   useEffect(() => {
+    setCurrentLivroId(livroId)
+    setCurrentBookName(bookName)
+  }, [livroId, bookName])
+
+  useEffect(() => {
     loadChapter(currentChapter)
     setRastreamentoAtivo(false)
-  }, [currentChapter, livroId])
+  }, [currentChapter, currentLivroId])
 
   useEffect(() => {
     if (!loading && chapterData && !capitulosLidos.has(currentChapter) && rastreamentoAtivo) {
@@ -220,15 +228,30 @@ export function BibleReaderWithAutoCheck({
     setLoading(true)
     setError(null)
 
-    const idReal = getCapituloIdReal(chapter)
+    console.log("[v0] 📖 loadChapter - livroId:", currentLivroId, "capitulo:", chapter)
 
-    const { data, error: supabaseError } = await supabase
-      .from("capitulos_biblia")
-      .select("texto, numero_capitulo, id")
-      .eq("id", idReal)
-      .single()
+    let query = supabase.from("capitulos_biblia").select("texto, numero_capitulo, id, livro_id")
+
+    // Se temos capitulosSemana, usar o ID específico (leitura semanal)
+    if (capitulosSemana && capitulosSemana.length > 0) {
+      const index = chapter - startChapter
+      const idReal = capitulosSemana[index]
+      if (idReal) {
+        console.log("[v0] 📖 Usando ID da leitura semanal:", idReal)
+        query = query.eq("id", idReal)
+      } else {
+        // Fallback para busca por livro_id + numero_capitulo
+        query = query.eq("livro_id", currentLivroId).eq("numero_capitulo", chapter)
+      }
+    } else {
+      // Busca normal por livro_id + numero_capitulo
+      query = query.eq("livro_id", currentLivroId).eq("numero_capitulo", chapter)
+    }
+
+    const { data, error: supabaseError } = await query.single()
 
     if (data && !supabaseError) {
+      console.log("[v0] ✅ Capítulo carregado:", data)
       setChapterData({
         chapter: data.numero_capitulo,
         text: data.texto || "Texto não disponível",
@@ -245,7 +268,7 @@ export function BibleReaderWithAutoCheck({
   const handleAutoMarkAsRead = async () => {
     setAutoMarked(true)
 
-    const result = await marcarCapituloLido(livroId, currentChapter, timeElapsed)
+    const result = await marcarCapituloLido(currentLivroId, currentChapter, timeElapsed)
 
     if (result.success && result.xpGanho && result.xpGanho > 0) {
       toast.success(`Capítulo ${currentChapter} concluído! +${result.xpGanho} XP`, {
@@ -268,7 +291,7 @@ export function BibleReaderWithAutoCheck({
   const iniciarRastreamento = () => {
     console.log("[v0] 🟢 BOTÃO 'LER AGORA' CLICADO")
     console.log("[v0] Capítulo atual:", currentChapter)
-    console.log("[v0] Livro ID:", livroId)
+    console.log("[v0] Livro ID:", currentLivroId)
     console.log("[v0] Capítulo inicial já lido?", capituloInicialJaLido)
     console.log("[v0] Rastreamento INICIADO")
 
@@ -381,7 +404,7 @@ export function BibleReaderWithAutoCheck({
       .from("highlights_biblia")
       .select("id, marcacoes")
       .eq("usuario_id", user.id)
-      .eq("livro_id", livroId)
+      .eq("livro_id", currentLivroId)
       .eq("numero_capitulo", currentChapter)
       .single()
 
@@ -410,7 +433,7 @@ export function BibleReaderWithAutoCheck({
 
       const { error: insertError } = await supabase.from("highlights_biblia").insert({
         usuario_id: user.id,
-        livro_id: livroId,
+        livro_id: currentLivroId,
         numero_capitulo: currentChapter,
         marcacoes: updatedMarcacoes,
       })
@@ -460,7 +483,7 @@ export function BibleReaderWithAutoCheck({
         .from("highlights_biblia")
         .select("id, marcacoes")
         .eq("usuario_id", user.id)
-        .eq("livro_id", livroId)
+        .eq("livro_id", currentLivroId)
         .eq("numero_capitulo", currentChapter)
         .single()
 
@@ -495,7 +518,7 @@ export function BibleReaderWithAutoCheck({
         .from("highlights_biblia")
         .select("id, marcacoes")
         .eq("usuario_id", user.id)
-        .eq("livro_id", livroId)
+        .eq("livro_id", currentLivroId)
         .eq("numero_capitulo", currentChapter)
         .single()
 
@@ -533,7 +556,7 @@ export function BibleReaderWithAutoCheck({
       .from("highlights_biblia")
       .select("id, marcacoes")
       .eq("usuario_id", user.id)
-      .eq("livro_id", livroId)
+      .eq("livro_id", currentLivroId)
       .eq("numero_capitulo", chapter)
       .single()
 
@@ -634,42 +657,17 @@ export function BibleReaderWithAutoCheck({
   }
 
   const handleNavigateToChapter = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
-    console.log("[v0] 📚 Navegando para:", novoLivroNome, "capítulo", novoCapitulo)
+    console.log("[v0] 📚 Navegando para:", novoLivroNome, "capítulo", novoCapitulo, "livroId:", novoLivroId)
 
     if (onNavigateToChapter) {
       onNavigateToChapter(novoLivroId, novoLivroNome, novoCapitulo)
     } else {
-      // Se não tem callback, atualiza localmente
+      setCurrentLivroId(novoLivroId)
+      setCurrentBookName(novoLivroNome)
       setCurrentChapter(novoCapitulo)
-      setCapituloAtualJaLido(capitulosLidos.has(novoCapitulo))
-      await loadChapter(novoLivroId, novoCapitulo)
+      setCapituloAtualJaLido(false) // Reset do estado de leitura
+      // O useEffect vai chamar loadChapter automaticamente
     }
-  }
-
-  const carregarCapitulo = async (novoLivroId: number, novoCapitulo: number) => {
-    setLoading(true)
-    setError(null)
-
-    const idReal = getCapituloIdReal(novoCapitulo)
-
-    const { data, error: supabaseError } = await supabase
-      .from("capitulos_biblia")
-      .select("texto, numero_capitulo, id")
-      .eq("id", idReal)
-      .single()
-
-    if (data && !supabaseError) {
-      setChapterData({
-        chapter: data.numero_capitulo,
-        text: data.texto || "Texto não disponível",
-      })
-      await loadHighlights(novoCapitulo)
-    } else {
-      console.error("[v0] BibleReader: Erro ao buscar texto:", supabaseError)
-      setError("Texto do capítulo não encontrado no banco de dados")
-    }
-
-    setLoading(false)
   }
 
   if (!isMounted) {
@@ -702,7 +700,7 @@ export function BibleReaderWithAutoCheck({
           </Button>
           <div className="flex-1 text-center">
             <h2 className="text-lg font-semibold">
-              {bookName} {currentChapter}
+              {currentBookName} {currentChapter}
             </h2>
           </div>
           <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
@@ -715,7 +713,7 @@ export function BibleReaderWithAutoCheck({
             <SheetContent side="left" className="w-full sm:w-96 p-0">
               <BibleNavigationMenu
                 onNavigate={handleNavigateToChapter}
-                currentLivroId={livroId}
+                currentLivroId={currentLivroId}
                 currentCapitulo={currentChapter}
                 onClose={() => setMenuAberto(false)}
               />
@@ -911,7 +909,7 @@ export function BibleReaderWithAutoCheck({
           <SheetContent side="left" className="w-full sm:w-96 p-0">
             <BibleNavigationMenu
               onNavigate={handleNavigateToChapter}
-              currentLivroId={livroId}
+              currentLivroId={currentLivroId}
               currentCapitulo={currentChapter}
               onClose={() => setMenuAberto(false)}
             />
@@ -920,7 +918,7 @@ export function BibleReaderWithAutoCheck({
 
         <div className="flex-1 text-center">
           <h2 className="text-lg font-semibold">
-            {bookName} {currentChapter}
+            {currentBookName} {currentChapter}
           </h2>
         </div>
 
