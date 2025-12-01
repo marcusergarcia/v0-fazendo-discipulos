@@ -535,13 +535,16 @@ export default function PassoClient({
           </CardContent>
         </Card>
 
-        {/* Leitura Bíblica da Semana */}
-        {(numero === 1 || numero === 2 || numero === 3) && (
-          <Card className="mb-6 border-accent/30 bg-gradient-to-br from-accent/5 to-primary/5">
+        {/* Leitura Bíblica Semanal */}
+        {(numero === 1 || numero === 2 || numero === 3 || numero === 4) && (
+          <Card className="mb-6 border-2 border-primary/20">
             <CardHeader>
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-accent" />📖 Leitura Bíblica da Semana {numero}
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                </div>
+                <CardTitle className="flex-1 text-xl">
+                  📖 Leitura Bíblica Semanal <Badge className="ml-2">Semana {numero}</Badge>
                 </CardTitle>
                 <CardDescription>Parte do plano de leitura em 1 ano — complete para avançar!</CardDescription>
               </div>
@@ -666,6 +669,47 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 3"
                             : "Iniciar Leitura da Semana 3"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {numero === 4 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "Jesus em ação"}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Comece a ler o Evangelho de Marcos e veja Jesus demonstrando Seu poder e autoridade através de milagres e ensinamentos."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          Marcos 1-8
+                        </Badge>
+                        <span className="text-muted-foreground">8 capítulos</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Incrível! Você completou a leitura da semana 4! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Você viu Jesus em ação! Continue descobrindo mais sobre Seu ministério e poder.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=4">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 4"
+                            : "Iniciar Leitura da Semana 4"}
                         </Button>
                       </Link>
                     )}
