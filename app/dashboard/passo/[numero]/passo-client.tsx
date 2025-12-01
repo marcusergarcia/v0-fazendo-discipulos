@@ -63,6 +63,7 @@ type PassoClientProps = {
   descricaoSemana?: string
   respostaPerguntaHistorico?: any
   respostaMissaoHistorico?: any
+  perguntasReflexivas?: any
 }
 
 export default function PassoClient({
@@ -80,6 +81,7 @@ export default function PassoClient({
   descricaoSemana = "",
   respostaPerguntaHistorico,
   respostaMissaoHistorico,
+  perguntasReflexivas,
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -114,7 +116,7 @@ export default function PassoClient({
 
   const [resumoAtual, setResumoAtual] = useState<string>("")
   const [respostasPerguntasReflexivas, setRespostasPerguntasReflexivas] = useState<string[]>([])
-  const perguntasReflexivas = getPerguntasPasso(numero)
+  const perguntasReflexivasList = getPerguntasPasso(numero)
 
   const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<{
     situacao: string
@@ -155,7 +157,7 @@ export default function PassoClient({
 
   const handleEnviarPerguntasReflexivas = async () => {
     // Validar que todas as perguntas foram respondidas
-    if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivas.length && !r?.trim())) {
+    if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
       toast({
         title: "Atenção",
         description: "Por favor, responda todas as perguntas reflexivas",
@@ -214,26 +216,28 @@ export default function PassoClient({
       todosConteudos.map((c) => ({ id: c.id, situacao: c.reflexao_situacao })),
     )
     console.log("[v0] Todas aprovadas:", todasAprovadas)
-    console.log("[v0] Resultado final:", todasAprovadas && todosConteudos.length === 6)
 
-    return todasAprovadas && todosConteudos.length === 6
+    const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
+    console.log("[v0] Total esperado:", totalEsperado)
+    console.log("[v0] Resultado final:", todasAprovadas && todosConteudos.length === totalEsperado)
+
+    return todasAprovadas && todosConteudos.length === totalEsperado
   }
 
-  const todasTarefasEnviadas =
-    respostaPerguntaHistorico?.situacao === "enviado" && respostaMissaoHistorico?.situacao === "enviado"
+  const perguntasReflexivasEnviadas = perguntasReflexivas?.situacao === "enviado"
+  const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
 
-  const todasTarefasAprovadas =
-    todasReflexoesAprovadas() &&
-    respostaPerguntaHistorico?.situacao === "aprovado" &&
-    respostaMissaoHistorico?.situacao === "aprovado"
+  const todasTarefasEnviadas = perguntasReflexivasEnviadas
+
+  const todasTarefasAprovadas = todasReflexoesAprovadas() && perguntasReflexivasAprovadas
 
   const podeReceberRecompensas = isPrMarcus ? todasTarefasAprovadas : todasTarefasAprovadas && status !== "validado"
 
   console.log("[v0] Verificando se pode receber recompensas:")
   console.log("[v0] isPrMarcus:", isPrMarcus)
   console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
-  console.log("[v0] respostaPerguntaHistorico.situacao:", respostaPerguntaHistorico?.situacao)
-  console.log("[v0] respostaMissaoHistorico.situacao:", respostaMissaoHistorico?.situacao)
+  console.log("[v0] perguntasReflexivas?.situacao:", perguntasReflexivas?.situacao)
+  console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
   console.log("[v0] status:", status)
   console.log("[v0] podeReceberRecompensas:", podeReceberRecompensas)
 
@@ -446,9 +450,10 @@ export default function PassoClient({
     console.log("[v0] Todas completadas:", todasCompletadas)
     // Fix: The variable "todos" and "companias" were not declared. They were likely intended to be "conteudos".
     // Corrected the comparison to use the `todosConteudos.length` directly.
-    console.log("[v0] Resultado final:", todasCompletadas && todosConteudos.length === 6)
+    const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
+    console.log("[v0] Resultado final:", todasCompletadas && todosConteudos.length === totalEsperado)
 
-    return todasCompletadas && todosConteudos.length === 6
+    return todasCompletadas && todosConteudos.length === totalEsperado
   }
 
   return (
@@ -850,7 +855,7 @@ export default function PassoClient({
             )}
 
             {/* Perguntas Reflexivas */}
-            {perguntasReflexivas.length > 0 && (
+            {perguntasReflexivasList.length > 0 && (
               <Card className="mb-6 border-amber-200 bg-amber-50/30">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-amber-900">
@@ -900,7 +905,7 @@ export default function PassoClient({
                           (item: { resposta: string; pergunta_id: number }, index: number) => (
                             <div key={index} className="bg-white rounded-lg p-4 border border-amber-200">
                               <p className="text-xs font-medium text-amber-700 mb-2">
-                                Pergunta {index + 1}: {perguntasReflexivas[index]}
+                                Pergunta {index + 1}: {perguntasReflexivasList[index]}
                               </p>
                               <p className="text-sm text-gray-700">{item.resposta}</p>
                             </div>
@@ -910,7 +915,7 @@ export default function PassoClient({
                     </div>
                   ) : (
                     <>
-                      {perguntasReflexivas.map((pergunta, index) => (
+                      {perguntasReflexivasList.map((pergunta, index) => (
                         <div key={index} className="space-y-3">
                           <label className="text-sm font-medium text-amber-900 block">
                             {index + 1}. {pergunta}
@@ -932,7 +937,7 @@ export default function PassoClient({
                         className="w-full bg-amber-600 hover:bg-amber-700"
                         disabled={
                           enviandoPerguntasReflexivas ||
-                          respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivas.length && !r?.trim())
+                          respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())
                         }
                         onClick={handleEnviarPerguntasReflexivas}
                       >
