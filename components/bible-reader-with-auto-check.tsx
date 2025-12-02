@@ -216,22 +216,12 @@ export function BibleReaderWithAutoCheck({
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement
 
-    console.log("[v0] 🔍 useEffect SCROLL executado")
-    console.log("[v0] scrollContainer encontrado?", !!scrollContainer)
-    console.log("[v0] rastreamentoAtivo?", rastreamentoAtivo)
-
     if (scrollContainer && rastreamentoAtivo) {
       const handleScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 20
 
-        console.log("[v0] 📜 SCROLL DETECTADO")
-        console.log("[v0] scrollTop:", scrollTop, "scrollHeight:", scrollHeight, "clientHeight:", clientHeight)
-        console.log("[v0] Distância do fim:", scrollHeight - scrollTop - clientHeight)
-        console.log("[v0] isAtBottom?", isAtBottom)
-
         if (isAtBottom && !scrolledToBottom) {
-          console.log("[v0] ✅ ROLOU ATÉ O FIM!")
           setScrolledToBottom(true)
         }
       }
