@@ -23,8 +23,6 @@ export function ProgressoAnualClient({ children, capitulosLidos, onChapterRead }
   const [capituloInicial, setCapituloInicial] = useState(1)
 
   const handleNavigateToChapter = (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
-    console.log("[v0] 📚 Navegação livre INICIADA")
-    console.log("[v0] Parâmetros recebidos:", { novoLivroId, novoLivroNome, novoCapitulo })
     setLivroId(novoLivroId)
     setLivroNome(novoLivroNome)
     setCapituloInicial(novoCapitulo)
@@ -33,13 +31,9 @@ export function ProgressoAnualClient({ children, capitulosLidos, onChapterRead }
   }
 
   const handleChapterRead = (capituloId: number) => {
-    console.log("[v0] 📚 Capítulo marcado como lido - ID:", capituloId)
     onChapterRead(capituloId)
-    // Fechar o leitor
     setLeitorAberto(false)
-    // Aguardar um momento para garantir que o estado foi atualizado
     setTimeout(() => {
-      // Router refresh ao invés de window.location.reload para manter o estado
       window.location.href = window.location.href
     }, 1000)
   }

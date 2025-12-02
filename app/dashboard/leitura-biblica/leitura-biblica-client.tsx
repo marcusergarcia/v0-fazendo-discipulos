@@ -34,17 +34,6 @@ export default function LeituraBiblicaClient({
   leituraJaConfirmada,
   capitulosLidosInicial = [],
 }: LeituraBiblicaClientProps) {
-  console.log("[v0] 🔷 LEITURA BÍBLICA CLIENT MONTADO")
-  console.log("[v0] 📊 Props recebidas:", {
-    semana: leituraAtual.semana,
-    livro: leituraAtual.livro,
-    capituloInicio: leituraAtual.capituloInicio,
-    capituloFim: leituraAtual.capituloFim,
-    discipuloId,
-    leituraJaConfirmada,
-    capitulosLidosInicialLength: capitulosLidosInicial.length,
-  })
-
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
@@ -61,27 +50,21 @@ export default function LeituraBiblicaClient({
   )
 
   useEffect(() => {
-    console.log("[v0] 🔄 useEffect capitulosLidosInicial disparado")
-
     if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {
-      console.log("[v0] ✅ Atualizando capítulos lidos:", capitulosLidosInicial.length)
       setCapitulosLidos(new Set(capitulosLidosInicial))
 
       const capitulosDaSemana = leituraAtual.capitulosSemana || []
       const lidosDaSemana = capitulosLidosInicial.filter((id: number) => capitulosDaSemana.includes(id))
-      console.log("[v0] 📊 Lidos da semana:", lidosDaSemana.length)
       setChaptersRead(lidosDaSemana.length)
     }
   }, [capitulosLidosInicial, leituraAtual.capitulosSemana, discipuloId])
 
   const handleProgressChange = (lidos: number, total: number) => {
-    console.log("[v0] 📊 Progress change:", { lidos, total })
     setChaptersRead(lidos)
     setTotalChapters(total)
   }
 
   const handleChapterRead = (capituloId: number) => {
-    console.log("[v0] ✅ Capítulo lido:", capituloId)
     setCapitulosLidos((prev) => new Set([...prev, capituloId]))
 
     const capitulosDaSemana = leituraAtual.capitulosSemana || []
@@ -90,21 +73,18 @@ export default function LeituraBiblicaClient({
   }
 
   const handleUltimoCapituloLido = (numeroCapitulo: number) => {
-    console.log("[v0] 📖 Último capítulo lido:", numeroCapitulo)
     if (numeroCapitulo >= leituraAtual.capituloInicio && numeroCapitulo < leituraAtual.capituloFim) {
       setCapituloSelecionado(numeroCapitulo + 1)
     }
   }
 
   const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
-    console.log("[v0] 📖 Abrindo capítulo:", { numeroCapitulo, isLido })
     setCapituloSelecionado(numeroCapitulo)
     setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
   }
 
   const fecharLeitor = () => {
-    console.log("[v0] ❌ Fechando leitor")
     setLeitorAberto(false)
     setLivroAtual(leituraAtual.livro)
     setLivroIdAtual(LIVROS_MAP[leituraAtual.livro] || 1)
@@ -112,8 +92,6 @@ export default function LeituraBiblicaClient({
   }
 
   const navegarParaCapitulo = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
-    console.log("[v0] 🔄 Navegando para:", { novoLivroId, novoLivroNome, novoCapitulo })
-
     const { data: capituloData } = await supabase
       .from("capitulos_biblia")
       .select("id")
@@ -121,13 +99,9 @@ export default function LeituraBiblicaClient({
       .eq("numero_capitulo", novoCapitulo)
       .single()
 
-    console.log("[v0] 📊 Capítulo data:", capituloData)
-
     if (capituloData) {
       const capituloId = capituloData.id
       const isLido = capitulosLidos.has(capituloId)
-
-      console.log("[v0] ✅ Abrindo novo capítulo:", { capituloId, isLido })
 
       setLivroAtual(novoLivroNome)
       setLivroIdAtual(novoLivroId)
@@ -138,14 +112,6 @@ export default function LeituraBiblicaClient({
   }
 
   const allChaptersRead = chaptersRead === totalChapters && totalChapters > 0
-
-  console.log("[v0] 📊 Estado atual:", {
-    chaptersRead,
-    totalChapters,
-    allChaptersRead,
-    leitorAberto,
-    capituloSelecionado,
-  })
 
   return (
     <Card className="mb-8 border-2 border-primary">
