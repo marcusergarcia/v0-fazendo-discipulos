@@ -811,22 +811,24 @@ export function BibleReaderWithAutoCheck({
               {bookName} {currentChapter}
             </h2>
           </div>
-          <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Menu className="w-4 h-4 mr-2" />
-                Menu
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-full sm:w-96 p-0">
-              <BibleNavigationMenu
-                onNavigate={handleNavigateToChapter}
-                currentLivroId={livroId}
-                currentCapitulo={currentChapter}
-                onClose={() => setMenuAberto(false)}
-              />
-            </SheetContent>
-          </Sheet>
+          {modoNavegacaoLivre && (
+            <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Menu className="w-4 h-4 mr-2" />
+                  Menu
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-full sm:w-96 p-0">
+                <BibleNavigationMenu
+                  onNavigate={handleNavigateToChapter}
+                  currentLivroId={livroId}
+                  currentCapitulo={currentChapter}
+                  onClose={() => setMenuAberto(false)}
+                />
+              </SheetContent>
+            </Sheet>
+          )}
         </div>
 
         {/* Conteúdo do capítulo */}
@@ -1007,22 +1009,24 @@ export function BibleReaderWithAutoCheck({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-background sticky top-0 z-10">
         {/* Menu hamburguer */}
-        <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Menu className="w-4 h-4 mr-2" />
-              Menu
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-full sm:w-96 p-0">
-            <BibleNavigationMenu
-              onNavigate={handleNavigateToChapter}
-              currentLivroId={livroId}
-              currentCapitulo={currentChapter}
-              onClose={() => setMenuAberto(false)}
-            />
-          </SheetContent>
-        </Sheet>
+        {modoNavegacaoLivre && (
+          <Sheet open={menuAberto} onOpenChange={setMenuAberto}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Menu className="w-4 h-4 mr-2" />
+                Menu
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-full sm:w-96 p-0">
+              <BibleNavigationMenu
+                onNavigate={handleNavigateToChapter}
+                currentLivroId={livroId}
+                currentCapitulo={currentChapter}
+                onClose={() => setMenuAberto(false)}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
 
         <div className="flex-1 text-center">
           <h2 className="text-lg font-semibold">
