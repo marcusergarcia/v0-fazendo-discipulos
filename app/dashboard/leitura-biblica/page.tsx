@@ -174,6 +174,9 @@ export default async function LeituraBiblicaPage({
                 if (confirmada) {
                   badgeClass = "bg-green-100 text-green-700 hover:bg-green-100 border-green-300"
                   icon = <CheckCircle2 className="w-3 h-3" />
+                } else if (emProgresso) {
+                  badgeClass = "bg-yellow-500 text-white hover:bg-yellow-500"
+                  icon = <AlertCircle className="w-3 h-3" />
                 } else if (isPendente) {
                   badgeClass = "bg-yellow-500 text-white hover:bg-yellow-500"
                   icon = <AlertCircle className="w-3 h-3" />
