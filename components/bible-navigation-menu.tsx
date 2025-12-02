@@ -56,14 +56,13 @@ export function BibleNavigationMenu({
     carregarLivros()
   }, [])
 
-  const livrosFiltrados = livros.filter(
-    (livro) =>
-      livro.nome.toLowerCase().includes(busca.toLowerCase()) ||
-      livro.abreviacao.toLowerCase().includes(busca.toLowerCase()),
-  )
-
-  console.log("[v0] 🔍 Busca:", busca)
-  console.log("[v0] 📚 Livros filtrados:", livrosFiltrados.length)
+  const livrosFiltrados = busca
+    ? livros.filter(
+        (livro) =>
+          livro.nome.toLowerCase().includes(busca.toLowerCase()) ||
+          livro.abreviacao.toLowerCase().includes(busca.toLowerCase()),
+      )
+    : livros
 
   const pentateuco = livrosFiltrados.filter((l) => l.ordem >= 1 && l.ordem <= 5)
   const livrosHistoricos = livrosFiltrados.filter((l) => l.ordem >= 6 && l.ordem <= 17)
@@ -72,14 +71,6 @@ export function BibleNavigationMenu({
   const evangelhosAtos = livrosFiltrados.filter((l) => l.ordem >= 40 && l.ordem <= 44)
   const cartas = livrosFiltrados.filter((l) => l.ordem >= 45 && l.ordem <= 65)
   const apocalipse = livrosFiltrados.filter((l) => l.ordem === 66)
-
-  console.log("[v0] 📖 Pentateuco:", pentateuco.length)
-  console.log("[v0] 📖 Livros Históricos:", livrosHistoricos.length)
-  console.log("[v0] 📖 Livros Poéticos:", livrosPoeticos.length)
-  console.log("[v0] 📖 Livros Proféticos:", livrosProfeticos.length)
-  console.log("[v0] 📖 Evangelhos e Atos:", evangelhosAtos.length)
-  console.log("[v0] 📖 Cartas:", cartas.length)
-  console.log("[v0] 📖 Apocalipse:", apocalipse.length)
 
   if (loading) {
     return (

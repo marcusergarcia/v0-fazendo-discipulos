@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import LeituraBiblicaClient from "./leitura-biblica-client"
+import { ProgressoAnualClient } from "./progresso-anual-client"
 
 export default async function LeituraBiblicaPage({
   searchParams,
@@ -121,13 +122,23 @@ export default async function LeituraBiblicaPage({
         {/* Progresso Geral */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-primary" />
-              Progresso Anual
-            </CardTitle>
-            <CardDescription>
-              {leiturasRealizadas} de {totalLeituras} semanas completas ({progressoPercentual}%)
-            </CardDescription>
+            <ProgressoAnualClient
+              capitulosLidos={capitulosLidos}
+              onChapterRead={(capId) => {
+                // Função vazia - o tracking já acontece no BibleReaderWithAutoCheck
+                console.log("[v0] Capítulo lido:", capId)
+              }}
+            >
+              <div className="flex-1">
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-primary" />
+                  Progresso Anual
+                </CardTitle>
+                <CardDescription>
+                  {leiturasRealizadas} de {totalLeituras} semanas completas ({progressoPercentual}%)
+                </CardDescription>
+              </div>
+            </ProgressoAnualClient>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">

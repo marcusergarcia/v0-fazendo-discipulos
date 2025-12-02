@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useMemo } from "react"
 
 import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,12 +32,13 @@ interface BibleReaderWithAutoCheckProps {
   startChapter: number
   endChapter: number
   capitulosLidos: Set<number>
-  onChapterRead?: (chapter: number) => void
-  capituloInicialJaLido?: boolean
-  capitulosSemana?: number[]
+  onChapterRead: (capituloId: number) => void
+  capituloInicialJaLido: boolean
+  capitulosSemana: number[]
   initialChapter?: number
   onClose?: () => void
   onNavigateToChapter?: (livroId: number, livroNome: string, capitulo: number) => void
+  modoNavegacaoLivre?: boolean // Nova prop para indicar modo de navegação livre
 }
 
 interface Highlight {
@@ -74,11 +75,12 @@ export function BibleReaderWithAutoCheck({
   endChapter,
   capitulosLidos,
   onChapterRead,
-  capituloInicialJaLido = false,
-  capitulosSemana = [],
+  capituloInicialJaLido,
+  capitulosSemana,
   initialChapter,
   onClose,
   onNavigateToChapter,
+  modoNavegacaoLivre = false, // Default false para manter compatibilidade
 }: BibleReaderWithAutoCheckProps) {
   const [currentChapter, setCurrentChapter] = useState(initialChapter || startChapter)
   const [chapterData, setChapterData] = useState<{ chapter: number; text: string } | null>(null)
@@ -117,12 +119,28 @@ export function BibleReaderWithAutoCheck({
 
   const [fontSize, setFontSize] = useState(16)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
+  const isLoadingRef = useRef(false)
 
   const [isMobile, setIsMobile] = useState(false)
+
+  const [capituloIdReal, setCapituloIdReal] = useState<number | undefined>(undefined)
+
+  const capituloAtualJaLidoMemo = useMemo(() => {
+    if (capituloIdReal === undefined) {
+      return false // Ainda não carregou o ID
+    }
+
+    const jaLido = capitulosLidos.has(capituloIdReal)
+    console.log(
+      "[v0] 🔍 Verificando se capítulo está lido - Capítulo:",
+      currentChapter,
+      "ID real:",
+      capituloIdReal,
+      "Já lido:",
+      jaLido,
+    )
+    return jaLido
+  }, [capituloIdReal, capitulosLidos, currentChapter])
 
   useEffect(() => {
     setIsMounted(true)
@@ -133,12 +151,46 @@ export function BibleReaderWithAutoCheck({
   }, [initialChapter, startChapter])
 
   useEffect(() => {
+    const buscarIdRealCapitulo = async () => {
+      if (modoNavegacaoLivre) {
+        console.log("[v0] 🔍 Buscando ID real do capítulo:", currentChapter, "do livro:", livroId)
+
+        const supabase = createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        )
+
+        const { data, error } = await supabase
+          .from("capitulos_biblia")
+          .select("id")
+          .eq("livro_id", livroId)
+          .eq("numero_capitulo", currentChapter)
+          .single()
+
+        if (!error && data) {
+          console.log("[v0] ✅ ID real encontrado:", data.id)
+          setCapituloIdReal(data.id)
+        } else {
+          console.error("[v0] ❌ Erro ao buscar ID real:", error)
+          setCapituloIdReal(undefined)
+        }
+      } else {
+        // Modo leitura semanal usa o ID da lista de capítulos da semana
+        const idReal = getCapituloIdReal(currentChapter)
+        setCapituloIdReal(idReal)
+      }
+    }
+
+    buscarIdRealCapitulo()
+  }, [currentChapter, livroId, modoNavegacaoLivre])
+
+  useEffect(() => {
     loadChapter(currentChapter)
     setRastreamentoAtivo(false)
   }, [currentChapter, livroId])
 
   useEffect(() => {
-    if (!loading && chapterData && !capitulosLidos.has(currentChapter) && rastreamentoAtivo) {
+    if (!loading && chapterData && !capituloAtualJaLido && rastreamentoAtivo) {
       const startTime = Date.now()
       setReadingStartTime(startTime)
       setScrolledToBottom(false)
@@ -159,17 +211,27 @@ export function BibleReaderWithAutoCheck({
         clearInterval(timerRef.current)
       }
     }
-  }, [loading, chapterData, currentChapter, capitulosLidos, rastreamentoAtivo])
+  }, [loading, chapterData, rastreamentoAtivo])
 
   useEffect(() => {
     const scrollContainer = scrollAreaRef.current?.querySelector("[data-radix-scroll-area-viewport]") as HTMLDivElement
 
-    if (scrollContainer) {
+    console.log("[v0] 🔍 useEffect SCROLL executado")
+    console.log("[v0] scrollContainer encontrado?", !!scrollContainer)
+    console.log("[v0] rastreamentoAtivo?", rastreamentoAtivo)
+
+    if (scrollContainer && rastreamentoAtivo) {
       const handleScroll = () => {
         const { scrollTop, scrollHeight, clientHeight } = scrollContainer
         const isAtBottom = scrollHeight - scrollTop - clientHeight < 20
 
+        console.log("[v0] 📜 SCROLL DETECTADO")
+        console.log("[v0] scrollTop:", scrollTop, "scrollHeight:", scrollHeight, "clientHeight:", clientHeight)
+        console.log("[v0] Distância do fim:", scrollHeight - scrollTop - clientHeight)
+        console.log("[v0] isAtBottom?", isAtBottom)
+
         if (isAtBottom && !scrolledToBottom) {
+          console.log("[v0] ✅ ROLOU ATÉ O FIM!")
           setScrolledToBottom(true)
         }
       }
@@ -179,33 +241,7 @@ export function BibleReaderWithAutoCheck({
 
       return () => scrollContainer.removeEventListener("scroll", handleScroll)
     }
-  }, [loading, chapterData, currentChapter, rastreamentoAtivo])
-
-  useEffect(() => {
-    if (
-      scrolledToBottom &&
-      timeElapsed >= MIN_READ_TIME_MS &&
-      !autoMarked &&
-      !capitulosLidos.has(currentChapter) &&
-      !loading &&
-      rastreamentoAtivo
-    ) {
-      handleAutoMarkAsRead()
-    }
-  }, [scrolledToBottom, timeElapsed, autoMarked, currentChapter, capitulosLidos, loading, rastreamentoAtivo])
-
-  useEffect(() => {
-    console.log("[v0] 🔄 VERIFICANDO STATUS DO CAPÍTULO:", currentChapter)
-    console.log("[v0] startChapter:", startChapter)
-    const indexAtual = currentChapter - startChapter
-    console.log("[v0] indexAtual:", indexAtual)
-    const idReal = capitulosSemana[indexAtual]
-    console.log("[v0] ID real:", idReal)
-    const isLido = capitulosLidos.has(idReal)
-    console.log("[v0] Status isLido:", isLido)
-    console.log("[v0] capitulosLidos Set:", Array.from(capitulosLidos))
-    setCapituloAtualJaLido(isLido)
-  }, [currentChapter, capitulosLidos, startChapter, capitulosSemana])
+  }, [loading, chapterData, currentChapter, rastreamentoAtivo, scrolledToBottom])
 
   useEffect(() => {
     const checkMobile = () => {
@@ -216,35 +252,40 @@ export function BibleReaderWithAutoCheck({
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
+  useEffect(() => {
+    // Verifica se ambas as condições foram atendidas e ainda não marcou
+    if (
+      rastreamentoAtivo &&
+      scrolledToBottom &&
+      timeElapsed >= MIN_READ_TIME_MS &&
+      !autoMarked &&
+      !capituloAtualJaLidoMemo
+    ) {
+      console.log("[v0] ✅ Condições atendidas! Marcando capítulo automaticamente...")
+      console.log("[v0] - Scroll até o fim:", scrolledToBottom)
+      console.log("[v0] - Tempo decorrido:", timeElapsed, "ms (mínimo:", MIN_READ_TIME_MS, "ms)")
+      console.log("[v0] - Já marcado?", autoMarked)
+
+      handleAutoMarkAsRead()
+    }
+  }, [scrolledToBottom, timeElapsed, rastreamentoAtivo, autoMarked, capituloAtualJaLidoMemo])
+
   const loadChapter = async (chapter: number) => {
     setLoading(true)
     setError(null)
 
+    await fetchBibleText(chapter)
+
     const idReal = getCapituloIdReal(chapter)
-
-    const { data, error: supabaseError } = await supabase
-      .from("capitulos_biblia")
-      .select("texto, numero_capitulo, id")
-      .eq("id", idReal)
-      .single()
-
-    if (data && !supabaseError) {
-      setChapterData({
-        chapter: data.numero_capitulo,
-        text: data.texto || "Texto não disponível",
-      })
+    if (idReal !== undefined) {
       await loadHighlights(chapter)
-    } else {
-      console.error("[v0] BibleReader: Erro ao buscar texto:", supabaseError)
-      setError("Texto do capítulo não encontrado no banco de dados")
     }
-
-    setLoading(false)
   }
 
   const handleAutoMarkAsRead = async () => {
     setAutoMarked(true)
 
+    console.log("[v0] 🎯 Marcando capítulo como lido - livroId:", livroId, "capítulo:", currentChapter)
     const result = await marcarCapituloLido(livroId, currentChapter, timeElapsed)
 
     if (result.success && result.xpGanho && result.xpGanho > 0) {
@@ -254,14 +295,17 @@ export function BibleReaderWithAutoCheck({
     }
 
     if (result.success) {
-      const idReal = getCapituloIdReal(currentChapter)
-      console.log(`[v0] ✅ Capítulo marcado como lido - número: ${currentChapter}, ID real: ${idReal}`)
-      onChapterRead?.(idReal)
+      console.log("[v0] ✅ Capítulo marcado como lido - número:", currentChapter, "ID real:", capituloIdReal)
+      if (capituloIdReal) {
+        onChapterRead(capituloIdReal)
+      }
 
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
+    } else {
+      console.error("[v0] ❌ Erro ao marcar capítulo:", result.error)
     }
   }
 
@@ -288,14 +332,7 @@ export function BibleReaderWithAutoCheck({
       console.log("[v0] ID real do capítulo anterior:", idRealAnterior)
       console.log("[v0] Capítulo anterior já lido?", jaLidoAnterior)
 
-      setCurrentChapter(novoCapitulo)
-      setCapituloAtualJaLido(jaLidoAnterior)
-      setRastreamentoAtivo(false)
-      setScrolledToBottom(false)
-      setReadingStartTime(null)
-      setTimeElapsed(0)
-      setAutoMarked(false)
-      console.log("[v0] Mudança para capítulo anterior CONCLUÍDA")
+      handleChapterChange(novoCapitulo)
     } else {
       console.log("[v0] ⚠ Já está no primeiro capítulo da semana")
     }
@@ -314,14 +351,7 @@ export function BibleReaderWithAutoCheck({
       console.log("[v0] ID real do próximo capítulo:", idRealProximo)
       console.log("[v0] Próximo capítulo já lido?", jaLidoProximo)
 
-      setCurrentChapter(novoCapitulo)
-      setCapituloAtualJaLido(jaLidoProximo)
-      setRastreamentoAtivo(false)
-      setScrolledToBottom(false)
-      setReadingStartTime(null)
-      setTimeElapsed(0)
-      setAutoMarked(false)
-      console.log("[v0] Mudança para próximo capítulo CONCLUÍDA")
+      handleChapterChange(novoCapitulo)
     } else {
       console.log("[v0] ⚠ Já está no último capítulo da semana")
     }
@@ -366,7 +396,10 @@ export function BibleReaderWithAutoCheck({
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    ).auth.getUser()
     if (!user) {
       toast.error("Você precisa estar logado para salvar marcações", {
         duration: 2000,
@@ -377,6 +410,10 @@ export function BibleReaderWithAutoCheck({
     const selectedText = currentSelection.text
     console.log("[v0] 💾 Salvando highlight:", selectedText, "cor:", selectedColor)
 
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
     const { data: existing } = await supabase
       .from("highlights_biblia")
       .select("id, marcacoes")
@@ -452,10 +489,17 @@ export function BibleReaderWithAutoCheck({
     const action = history[historyIndex]
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    ).auth.getUser()
     if (!user) return
 
     if (action.type === "add" && action.highlight.id) {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
       const { data: existing } = await supabase
         .from("highlights_biblia")
         .select("id, marcacoes")
@@ -487,10 +531,17 @@ export function BibleReaderWithAutoCheck({
     const action = history[historyIndex + 1]
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    ).auth.getUser()
     if (!user) return
 
     if (action.type === "add") {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
       const { data: existing } = await supabase
         .from("highlights_biblia")
         .select("id, marcacoes")
@@ -525,10 +576,17 @@ export function BibleReaderWithAutoCheck({
   const loadHighlights = async (chapter: number) => {
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    ).auth.getUser()
 
     if (!user) return
 
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    )
     const { data, error: highlightError } = await supabase
       .from("highlights_biblia")
       .select("id, marcacoes")
@@ -624,7 +682,12 @@ export function BibleReaderWithAutoCheck({
     })
   }
 
-  const getCapituloIdReal = (numeroCapitulo: number): number => {
+  const getCapituloIdReal = (numeroCapitulo: number): number | undefined => {
+    if (modoNavegacaoLivre) {
+      // No modo de navegação livre, buscamos o ID diretamente do banco
+      return undefined // Será buscado pelo fetchBibleText
+    }
+
     const index = numeroCapitulo - startChapter
     const idReal = capitulosSemana[index]
     console.log(
@@ -646,30 +709,83 @@ export function BibleReaderWithAutoCheck({
     }
   }
 
-  const carregarCapitulo = async (novoLivroId: number, novoCapitulo: number) => {
+  const fetchBibleText = async (chapter: number) => {
+    if (isLoadingRef.current) return
+    isLoadingRef.current = true
     setLoading(true)
     setError(null)
 
-    const idReal = getCapituloIdReal(novoCapitulo)
+    try {
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      )
 
-    const { data, error: supabaseError } = await supabase
-      .from("capitulos_biblia")
-      .select("texto, numero_capitulo, id")
-      .eq("id", idReal)
-      .single()
+      let capituloId = getCapituloIdReal(chapter)
 
-    if (data && !supabaseError) {
-      setChapterData({
-        chapter: data.numero_capitulo,
-        text: data.texto || "Texto não disponível",
-      })
-      await loadHighlights(novoCapitulo)
-    } else {
-      console.error("[v0] BibleReader: Erro ao buscar texto:", supabaseError)
-      setError("Texto do capítulo não encontrado no banco de dados")
+      if (capituloId === undefined) {
+        const { data: capituloData, error: capituloError } = await supabase
+          .from("capitulos_biblia")
+          .select("id")
+          .eq("livro_id", livroId)
+          .eq("numero_capitulo", chapter)
+          .single()
+
+        if (capituloError) {
+          console.error("[v0] ❌ Erro ao buscar ID do capítulo:", capituloError)
+          throw new Error("Erro ao buscar capítulo")
+        }
+
+        capituloId = capituloData.id
+        console.log(`[v0] 🔍 ID do capítulo buscado do banco: ${capituloId}`)
+      }
+
+      const { data, error } = await supabase
+        .from("capitulos_biblia")
+        .select("texto, versao, numero_capitulo")
+        .eq("id", capituloId)
+        .single()
+
+      if (data && !error) {
+        setChapterData({
+          chapter: data.numero_capitulo,
+          text: data.texto || "Texto não disponível",
+        })
+      } else {
+        console.error("[v0] BibleReader: Erro ao buscar texto:", error)
+        setError("Texto do capítulo não encontrado no banco de dados")
+      }
+    } catch (err) {
+      console.error("[v0] ❌ Erro ao buscar texto:", err)
+      setError("Erro ao buscar texto")
+    } finally {
+      isLoadingRef.current = false
+      setLoading(false)
+    }
+  }
+
+  const handleChapterChange = (newChapter: number) => {
+    if (modoNavegacaoLivre) {
+      console.log("[v0] 📖 Mudando para capítulo", newChapter, "- reiniciando rastreamento")
+      setScrolledToBottom(false)
+      setReadingStartTime(Date.now())
+      setTimeElapsed(0)
+      setAutoMarked(false)
+
+      if (timerRef.current) {
+        clearInterval(timerRef.current)
+      }
+
+      const interval = setInterval(() => {
+        setTimeElapsed((prev) => prev + 1000)
+      }, 1000)
+
+      timerRef.current = interval
     }
 
-    setLoading(false)
+    setCurrentChapter(newChapter)
+    setError(null)
+    loadChapter(newChapter)
   }
 
   if (!isMounted) {
@@ -737,7 +853,7 @@ export function BibleReaderWithAutoCheck({
             <ScrollArea className="h-full" ref={scrollAreaRef}>
               <div className="p-4">
                 {/* Paleta de cores para highlight */}
-                {(rastreamentoAtivo || capituloAtualJaLido) && (
+                {(rastreamentoAtivo || capituloAtualJaLidoMemo) && (
                   <div className="mb-4 flex flex-wrap gap-2 items-center justify-center sticky top-0 bg-background/95 backdrop-blur-sm py-3 z-10 border-b">
                     <div className="flex gap-1.5">
                       <Button
@@ -832,7 +948,7 @@ export function BibleReaderWithAutoCheck({
         {/* Footer com botões de navegação e Ler Agora */}
         <div className="border-t bg-card p-4 space-y-3">
           {/* Barra de progresso */}
-          {rastreamentoAtivo && !capituloAtualJaLido && (
+          {rastreamentoAtivo && !capituloAtualJaLidoMemo && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{scrolledToBottom ? "✓ Rolou até o fim" : "Role até o fim"}</span>
@@ -850,14 +966,14 @@ export function BibleReaderWithAutoCheck({
           )}
 
           {/* Botão Ler Agora ou Marcador */}
-          {!capituloAtualJaLido && !loading && !rastreamentoAtivo && (
+          {!capituloAtualJaLidoMemo && !loading && !rastreamentoAtivo && (
             <Button onClick={iniciarRastreamento} className="w-full gap-2" size="lg">
               <PlayCircle className="w-5 h-5" />
               Ler Agora
             </Button>
           )}
 
-          {capituloAtualJaLido && (
+          {capituloAtualJaLidoMemo && (
             <div className="flex items-center justify-center gap-2 py-2 text-green-600 font-medium">
               <Check className="w-5 h-5" />
               <span>Capítulo Lido</span>
@@ -963,30 +1079,68 @@ export function BibleReaderWithAutoCheck({
             </ScrollArea>
           )}
 
-          <div className="flex items-center justify-between mt-4 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrevChapter}
-              disabled={currentChapter <= startChapter || loading}
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Anterior
-            </Button>
+          {/* Barra de progresso e botão Ler Agora na versão desktop */}
+          <div className="mt-4 space-y-3">
+            {/* Barra de progresso */}
+            {rastreamentoAtivo && !capituloAtualJaLidoMemo && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{scrolledToBottom ? "✓ Rolou até o fim" : "Role até o fim"}</span>
+                  <span>
+                    {timeElapsed >= MIN_READ_TIME_MS ? "✓ Tempo atingido" : `${formatTime(timeRemaining)} restantes`}
+                  </span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
-            <span className="text-sm text-muted-foreground">
-              {currentChapter} / {endChapter}
-            </span>
+            {/* Botão Ler Agora */}
+            {!capituloAtualJaLidoMemo && !loading && !rastreamentoAtivo && (
+              <Button onClick={iniciarRastreamento} className="w-full gap-2" size="lg">
+                <PlayCircle className="w-5 h-5" />
+                Ler Agora
+              </Button>
+            )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNextChapter}
-              disabled={currentChapter >= endChapter || loading}
-            >
-              Próximo
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+            {/* Status de capítulo lido */}
+            {capituloAtualJaLidoMemo && (
+              <div className="flex items-center justify-center gap-2 py-2 text-green-600 font-medium">
+                <Check className="w-5 h-5" />
+                <span>Capítulo Lido</span>
+              </div>
+            )}
+
+            {/* Navegação entre capítulos */}
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrevChapter}
+                disabled={currentChapter <= startChapter || loading}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Anterior
+              </Button>
+
+              <span className="text-sm text-muted-foreground">
+                {currentChapter} / {endChapter}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNextChapter}
+                disabled={currentChapter >= endChapter || loading}
+              >
+                Próximo
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
