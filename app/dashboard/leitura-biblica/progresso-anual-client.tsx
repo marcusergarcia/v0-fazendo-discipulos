@@ -11,7 +11,7 @@ import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-ch
 
 interface ProgressoAnualClientProps {
   children: React.ReactNode
-  capitulosLidos: Set<number>
+  capitulosLidos: number[]
   onChapterRead: (capituloId: number) => void
 }
 
@@ -75,14 +75,14 @@ export function ProgressoAnualClient({ children, capitulosLidos, onChapterRead }
             livroId={livroId}
             startChapter={capituloInicial}
             endChapter={capituloInicial}
-            capitulosLidos={capitulosLidos} // Passar os capítulos lidos reais
-            onChapterRead={handleChapterRead} // Usar callback atualizado
+            capitulosLidos={new Set(capitulosLidos)}
+            onChapterRead={handleChapterRead}
             capituloInicialJaLido={false}
-            capitulosSemana={[]} // Array vazio indica modo de navegação livre
+            capitulosSemana={[]}
             initialChapter={capituloInicial}
             onClose={() => setLeitorAberto(false)}
             onNavigateToChapter={handleNavigateToChapter}
-            modoNavegacaoLivre={true} // Flag para modo de navegação livre
+            modoNavegacaoLivre={true}
           />
         </div>
       )}

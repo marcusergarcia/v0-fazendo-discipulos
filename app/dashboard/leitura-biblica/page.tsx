@@ -123,7 +123,7 @@ export default async function LeituraBiblicaPage({
         <Card className="mb-8">
           <CardHeader>
             <ProgressoAnualClient
-              capitulosLidos={capitulosLidos}
+              capitulosLidos={Array.from(capitulosLidos)}
               onChapterRead={(capId) => {
                 // Função vazia - o tracking já acontece no BibleReaderWithAutoCheck
                 console.log("[v0] Capítulo lido:", capId)
