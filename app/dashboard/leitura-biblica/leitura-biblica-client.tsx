@@ -34,17 +34,6 @@ export default function LeituraBiblicaClient({
   leituraJaConfirmada,
   capitulosLidosInicial = [],
 }: LeituraBiblicaClientProps) {
-  console.log("[v0] 🔵 LeituraBiblicaClient: COMPONENTE CARREGADO")
-  console.log("[v0] Dados recebidos:", {
-    semana: leituraAtual.semana,
-    livro: leituraAtual.livro,
-    capituloInicio: leituraAtual.capituloInicio,
-    capituloFim: leituraAtual.capituloFim,
-    discipuloId,
-    capitulosLidosInicial,
-    capitulosSemana: leituraAtual.capitulosSemana,
-  })
-
   const [chaptersRead, setChaptersRead] = useState(0)
   const [totalChapters, setTotalChapters] = useState(leituraAtual.totalCapitulos)
   const [capitulosLidos, setCapitulosLidos] = useState<Set<number>>(new Set(capitulosLidosInicial))
@@ -61,109 +50,64 @@ export default function LeituraBiblicaClient({
   )
 
   useEffect(() => {
-    console.log("[v0] 🟢 USEEFFECT: Inicializando capítulos lidos")
-    console.log("[v0] capitulosLidosInicial recebidos:", capitulosLidosInicial)
-    console.log("[v0] discipuloId:", discipuloId)
-
     if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {
       setCapitulosLidos(new Set(capitulosLidosInicial))
 
       const capitulosDaSemana = leituraAtual.capitulosSemana || []
       const lidosDaSemana = capitulosLidosInicial.filter((id: number) => capitulosDaSemana.includes(id))
       setChaptersRead(lidosDaSemana.length)
-
-      console.log("[v0] Set de capítulos lidos criado:", Array.from(new Set(capitulosLidosInicial)))
-      console.log("[v0] Capítulos lidos DA SEMANA:", lidosDaSemana.length, "/", capitulosDaSemana.length)
     }
   }, [capitulosLidosInicial, leituraAtual.capitulosSemana, discipuloId])
 
   const handleProgressChange = (lidos: number, total: number) => {
-    console.log("[v0] 📊 handleProgressChange chamado - lidos:", lidos, "total:", total)
     setChaptersRead(lidos)
     setTotalChapters(total)
   }
 
   const handleChapterRead = (capituloId: number) => {
-    console.log("[v0] ✅ handleChapterRead chamado - capítulo ID real:", capituloId)
-    setCapitulosLidos((prev) => {
-      const newSet = new Set([...prev, capituloId])
-      console.log("[v0] Novo Set de capítulos lidos:", Array.from(newSet))
-      return newSet
-    })
+    setCapitulosLidos((prev) => new Set([...prev, capituloId]))
 
     const capitulosDaSemana = leituraAtual.capitulosSemana || []
     const lidosDaSemana = Array.from(capitulosLidos).filter((id) => capitulosDaSemana.includes(id))
     setChaptersRead(lidosDaSemana.length)
-    console.log("[v0] Capítulos lidos DA SEMANA atualizado:", lidosDaSemana.length, "/", capitulosDaSemana.length)
   }
 
   const handleUltimoCapituloLido = (numeroCapitulo: number) => {
-    console.log("[v0] 📖 handleUltimoCapituloLido chamado - número:", numeroCapitulo)
     if (numeroCapitulo >= leituraAtual.capituloInicio && numeroCapitulo < leituraAtual.capituloFim) {
       setCapituloSelecionado(numeroCapitulo + 1)
-      console.log("[v0] Próximo capítulo selecionado:", numeroCapitulo + 1)
     }
   }
 
   const abrirCapitulo = (numeroCapitulo: number, isLido = false) => {
-    console.log("[v0] 📘 abrirCapitulo CHAMADO")
-    console.log("[v0] numeroCapitulo:", numeroCapitulo)
-    console.log("[v0] isLido:", isLido)
-
     setCapituloSelecionado(numeroCapitulo)
     setCapituloSelecionadoJaLido(isLido)
     setLeitorAberto(true)
-
-    console.log("[v0] Leitor bíblico ABERTO para capítulo", numeroCapitulo)
   }
 
   const fecharLeitor = () => {
-    console.log("[v0] 🔴 Fechando leitor bíblico")
     setLeitorAberto(false)
     setLivroAtual(leituraAtual.livro)
     setLivroIdAtual(LIVROS_MAP[leituraAtual.livro] || 1)
     setCapituloSelecionado(leituraAtual.capituloInicio)
-    console.log("[v0] 🔄 Livro resetado para:", leituraAtual.livro)
   }
 
   const navegarParaCapitulo = async (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
-    console.log("[v0] 📚 Navegação livre INICIADA")
-    console.log("[v0] Parâmetros recebidos:", { novoLivroId, novoLivroNome, novoCapitulo })
-
-    // Buscar o ID do capítulo na tabela capitulos_biblia
-    const { data: capituloData, error: capituloError } = await supabase
+    const { data: capituloData } = await supabase
       .from("capitulos_biblia")
       .select("id")
       .eq("livro_id", novoLivroId)
       .eq("numero_capitulo", novoCapitulo)
       .single()
 
-    console.log("[v0] Resultado busca capítulo:", { capituloData, capituloError })
-
     if (capituloData) {
       const capituloId = capituloData.id
       const isLido = capitulosLidos.has(capituloId)
-
-      console.log("[v0] ✅ Capítulo encontrado!")
-      console.log("[v0] - ID do capítulo:", capituloId)
-      console.log("[v0] - Já lido:", isLido)
-      console.log("[v0] - Livro:", novoLivroNome)
-      console.log("[v0] - Capítulo:", novoCapitulo)
 
       setLivroAtual(novoLivroNome)
       setLivroIdAtual(novoLivroId)
       setCapituloSelecionado(novoCapitulo)
       setCapituloSelecionadoJaLido(isLido)
       setLeitorAberto(true)
-
-      console.log("[v0] 📖 Leitor bíblico aberto com:", {
-        livro: novoLivroNome,
-        livroId: novoLivroId,
-        capitulo: novoCapitulo,
-        jaLido: isLido,
-      })
-    } else {
-      console.error("[v0] ❌ Capítulo não encontrado!")
     }
   }
 
