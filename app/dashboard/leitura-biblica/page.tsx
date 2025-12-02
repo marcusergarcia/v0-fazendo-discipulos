@@ -118,19 +118,19 @@ export default async function LeituraBiblicaPage({
         {/* Progresso Geral */}
         <Card className="mb-8">
           <CardHeader>
-            <ProgressoAnualClient capitulosLidos={capitulosLidosArray} onChapterRead={() => {}}>
-              <div className="flex-1">
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-primary" />
-                  Progresso Anual
-                </CardTitle>
-                <CardDescription>
-                  {leiturasRealizadas} de {totalLeituras} semanas completas ({progressoPercentual}%)
-                </CardDescription>
-              </div>
-            </ProgressoAnualClient>
+            <div className="flex-1">
+              <CardTitle className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary" />
+                Progresso Anual
+              </CardTitle>
+              <CardDescription>
+                {leiturasRealizadas} de {totalLeituras} semanas completas ({progressoPercentual}%)
+              </CardDescription>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <ProgressoAnualClient capitulosLidos={capitulosLidosArray} />
+
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-4">
               <div className="flex items-center gap-2">
                 <Badge
