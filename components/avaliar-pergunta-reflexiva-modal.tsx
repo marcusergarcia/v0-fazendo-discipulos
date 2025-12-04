@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -21,7 +22,6 @@ interface AvaliarPerguntaReflexivaModalProps {
   perguntasReflexivasId: string
   situacaoAtual?: string
   xpGanho?: number
-  onAprovado?: () => void
 }
 
 export function AvaliarPerguntaReflexivaModal({
@@ -35,13 +35,13 @@ export function AvaliarPerguntaReflexivaModal({
   perguntasReflexivasId,
   situacaoAtual,
   xpGanho,
-  onAprovado,
 }: AvaliarPerguntaReflexivaModalProps) {
   const [open, setOpen] = useState(false)
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
   const supabase = createClient()
+  const router = useRouter()
 
   async function handleAprovar() {
     if (!feedback.trim()) {
@@ -146,7 +146,7 @@ export function AvaliarPerguntaReflexivaModal({
 
       console.log("[v0] ===== APROVAÇÃO CONCLUÍDA =====")
       setOpen(false)
-      onAprovado?.()
+      router.refresh()
     } catch (error) {
       console.error("[v0] Erro ao aprovar:", error)
       toast.error("Erro ao aprovar pergunta reflexiva")

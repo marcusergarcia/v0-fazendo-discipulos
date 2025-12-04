@@ -411,9 +411,6 @@ export default async function DiscipuladorPage() {
                                       perguntasReflexivasId={tarefa.perguntasRespostaId}
                                       situacaoAtual={tarefa.situacao}
                                       xpGanho={tarefa.xp}
-                                      onAprovado={() => {
-                                        window.location.reload()
-                                      }}
                                     />
                                   ) : (
                                     <Badge variant="outline" className="text-muted-foreground">
