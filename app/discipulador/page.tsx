@@ -12,6 +12,7 @@ import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 import { CopiarLinkBoasVindas } from "@/components/copiar-link-boas-vindas"
 import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
+import { AvaliarPerguntaReflexivaModal } from "@/components/avaliar-pergunta-reflexiva-modal"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -139,27 +140,33 @@ export default async function DiscipuladorPage() {
         )
 
         perguntasPassoAtual.forEach((pergunta, index) => {
-          const respostaEspecifica = perguntasResposta?.respostas?.find((r: any) => r.pergunta_id === index + 1)
+          const perguntaId = index + 1
+          const respostaEspecifica = perguntasResposta?.respostas?.find((r: any) => r.pergunta_id === perguntaId)
 
-          // Adicionando console.log para debugar status das perguntas reflexivas
-          console.log("[v0] DEBUG Pergunta Reflexiva:", {
-            pergunta_id: index + 1,
-            temPerguntasResposta: !!perguntasResposta,
-            situacao: perguntasResposta?.situacao,
-            xp_ganho: perguntasResposta?.xp_ganho,
-            respostaEspecifica: !!respostaEspecifica,
+          // Status individual de cada pergunta
+          const situacaoPergunta = respostaEspecifica?.situacao || null
+          const xpPergunta = respostaEspecifica?.xp_ganho || null
+
+          console.log("[v0] DEBUG Pergunta Reflexiva Individual:", {
+            pergunta_id: perguntaId,
+            situacao: situacaoPergunta,
+            xp: xpPergunta,
+            temResposta: !!respostaEspecifica,
           })
 
           tarefas.push({
-            id: `reflexiva-${index + 1}`,
+            id: `reflexiva-${perguntaId}`,
             tipo: "reflexao_guiada",
             titulo: pergunta,
-            concluido: !!respostaEspecifica,
-            perguntasResposta: perguntasResposta,
-            perguntaIndex: index,
-            xp: perguntasResposta?.xp_ganho || null,
-            situacao: perguntasResposta?.situacao || null,
+            concluido: situacaoPergunta === "aprovado",
+            perguntasRespostaId: perguntasResposta?.id,
+            perguntaId: perguntaId,
+            perguntaTexto: pergunta,
             respostaIndividual: respostaEspecifica,
+            xp: xpPergunta,
+            situacao: situacaoPergunta,
+            faseNumero: discipulo.fase_atual,
+            passoNumero: discipulo.passo_atual,
           })
         })
       }
@@ -390,15 +397,22 @@ export default async function DiscipuladorPage() {
                                       <CheckCircle className="w-3 h-3 mr-1" />
                                       Aprovado {tarefa.xp}XP
                                     </Badge>
-                                  ) : tarefa.situacao === "enviado" ? (
-                                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700" asChild>
-                                      <Link
-                                        href={`/discipulador/tarefas/${discipulo.id}?tipo=perguntas_reflexivas&id=${tarefa.perguntasResposta?.id}`}
-                                      >
-                                        <Clock className="w-4 h-4 mr-1" />
-                                        Aguardando Aprovação
-                                      </Link>
-                                    </Button>
+                                  ) : tarefa.respostaIndividual ? (
+                                    <AvaliarPerguntaReflexivaModal
+                                      perguntaTexto={tarefa.perguntaTexto}
+                                      perguntaId={tarefa.perguntaId}
+                                      resposta={tarefa.respostaIndividual.resposta}
+                                      discipuloId={discipulo.id}
+                                      discipuloNome={nome}
+                                      passoNumero={tarefa.passoNumero}
+                                      faseNumero={tarefa.faseNumero}
+                                      perguntasReflexivasId={tarefa.perguntasRespostaId}
+                                      situacaoAtual={tarefa.situacao}
+                                      xpGanho={tarefa.xp}
+                                      onAprovado={() => {
+                                        window.location.reload()
+                                      }}
+                                    />
                                   ) : (
                                     <Badge variant="outline" className="text-muted-foreground">
                                       Não iniciado
