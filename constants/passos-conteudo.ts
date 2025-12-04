@@ -223,7 +223,7 @@ export const PASSOS_CONTEUDO = {
       "",
       "1️⃣ CULPA PERANTE A LEI DE DEUS",
       "Somos considerados culpados diante da justiça perfeita de Deus.",
-      "Base bíblica: Gênesis 3:23-24, Romanos 1:18-21, João 3:36, Romanos 3:22-23",
+      "Base bíblica:  Gênesis 3:23-24,  Romanos 1:18-21,  João 3:36,  Romanos 3:22-23" ,
       "",
       "2️⃣ MORTE ESPIRITUAL",
       "A conexão espiritual com Deus foi rompida; o espírito humano se tornou inativo.",
