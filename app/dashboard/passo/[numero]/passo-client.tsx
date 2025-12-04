@@ -273,6 +273,7 @@ export default function PassoClient({
         if (Array.isArray(pr.respostas)) {
           return pr.respostas.map((resposta, index) => ({
             ...pr,
+            id: pr.id, // Explicitly preserve the id field
             perguntaIndex: index + 1,
             respostaIndividual: resposta,
             situacaoIndividual: resposta.situacao || "pendente",
@@ -299,7 +300,17 @@ export default function PassoClient({
 
     try {
       const reflexoesIds = reflexoesParaExcluir.map((r) => r.id)
-      const perguntasIdsUnicos = [...new Set(perguntasReflexivasParaExcluir.map((p) => p.id))]
+      const perguntasIdsUnicos = [
+        ...new Set(perguntasReflexivasParaExcluir.map((p) => p.id).filter((id) => id !== undefined)),
+      ]
+
+      console.log(
+        "[v0] CLIENT: Resetando - Reflexões IDs:",
+        reflexoesIds.length,
+        "Perguntas IDs:",
+        perguntasIdsUnicos.length,
+      )
+
       const resultado = await resetarProgresso(numero, reflexoesIds, perguntasIdsUnicos)
       if (resultado.success) {
         setModalResetAberto(false)

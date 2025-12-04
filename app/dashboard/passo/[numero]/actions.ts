@@ -216,56 +216,51 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
       }
     }
 
+    console.log("[v0] SERVER: resetarProgresso iniciada - Passo:", numero)
+    console.log("[v0] SERVER: Reflexões para excluir:", reflexoesIds.length)
+    console.log("[v0] SERVER: Perguntas reflexivas para excluir:", perguntasReflexivasIds.length)
+    console.log("[v0] SERVER: Perguntas IDs:", perguntasReflexivasIds)
+
     if (perguntasReflexivasIds.length > 0) {
-      console.log("[v0] ============ DELETANDO PERGUNTAS REFLEXIVAS ============")
-      console.log("[v0] Total de IDs a deletar:", perguntasReflexivasIds.length)
-      console.log("[v0] IDs:", perguntasReflexivasIds)
+      console.log("[v0] SERVER: Deletando perguntas reflexivas...")
 
-      const { data: perguntas, error: errorBuscar } = await supabaseAdmin
-        .from("perguntas_reflexivas")
-        .select("id, notificacao_id, discipulo_id, passo_numero")
-        .in("id", perguntasReflexivasIds)
+      const validPerguntasIds = perguntasReflexivasIds.filter((id) => id !== undefined && id !== null)
+      console.log("[v0] SERVER: Valid perguntas IDs:", validPerguntasIds.length)
 
-      if (errorBuscar) {
-        console.error("[v0] ERRO ao buscar perguntas reflexivas:", errorBuscar)
-        return { success: false, error: "Erro ao buscar perguntas reflexivas" }
-      }
+      if (validPerguntasIds.length > 0) {
+        for (const id of validPerguntasIds) {
+          console.log("[v0] SERVER: Deletando pergunta id:", id)
 
-      console.log("[v0] Perguntas reflexivas encontradas:", perguntas?.length || 0)
-      console.log("[v0] Detalhes das perguntas:", JSON.stringify(perguntas, null, 2))
+          const { data: notificacao } = await supabaseAdmin
+            .from("perguntas_reflexivas")
+            .select("notificacao_id")
+            .eq("id", id)
+            .single()
+          const notificacaoId = notificacao?.notificacao_id
 
-      const notificacoesIds = perguntas?.filter((p) => p.notificacao_id).map((p) => p.notificacao_id) || []
+          if (notificacaoId) {
+            const { error: deleteNotifError } = await supabaseAdmin
+              .from("notificacoes")
+              .delete()
+              .eq("id", notificacaoId)
+            if (deleteNotifError) {
+              console.error("[v0] SERVER: Erro ao deletar notificação da pergunta:", deleteNotifError)
+            }
+          }
 
-      if (notificacoesIds.length > 0) {
-        console.log("[v0] Excluindo", notificacoesIds.length, "notificações de perguntas reflexivas...")
-        const { error: errorNotif } = await supabaseAdmin.from("notificacoes").delete().in("id", notificacoesIds)
-
-        if (errorNotif) {
-          console.error("[v0] ERRO ao excluir notificações de perguntas:", errorNotif)
-          return { success: false, error: "Erro ao excluir notificações de perguntas" }
+          const { error: deletePerguntaError } = await supabaseAdmin.from("perguntas_reflexivas").delete().eq("id", id)
+          if (deletePerguntaError) {
+            console.error("[v0] SERVER: Erro ao deletar pergunta reflexiva:", deletePerguntaError)
+            throw deletePerguntaError
+          } else {
+            console.log("[v0] SERVER: Pergunta reflexiva deletada com sucesso - ID:", id)
+          }
         }
-        console.log("[v0] ✅ Notificações de perguntas excluídas com sucesso!")
+      } else {
+        console.log("[v0] SERVER: Nenhum ID válido de pergunta reflexiva para deletar")
       }
-
-      console.log("[v0] Excluindo", perguntasReflexivasIds.length, "perguntas reflexivas...")
-      const { data: deletedData, error: errorExcluir } = await supabaseAdmin
-        .from("perguntas_reflexivas")
-        .delete()
-        .in("id", perguntasReflexivasIds)
-        .select()
-
-      if (errorExcluir) {
-        console.error("[v0] ❌ ERRO ao excluir perguntas reflexivas:", errorExcluir)
-        console.error("[v0] Código do erro:", errorExcluir.code)
-        console.error("[v0] Mensagem:", errorExcluir.message)
-        console.error("[v0] Detalhes:", errorExcluir.details)
-        return { success: false, error: `Erro ao excluir perguntas reflexivas: ${errorExcluir.message}` }
-      }
-
-      console.log("[v0] ✅ TODAS as perguntas reflexivas excluídas com sucesso!")
-      console.log("[v0] Total de perguntas deletadas:", deletedData?.length || 0)
     } else {
-      console.log("[v0] Nenhuma pergunta reflexiva para excluir")
+      console.log("[v0] SERVER: Nenhuma pergunta reflexiva para excluir")
     }
 
     if (reflexoesIds.length > 0) {
