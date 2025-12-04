@@ -97,7 +97,7 @@ export async function buscarReflexoesParaReset(numero: number) {
 
   if (!user) {
     console.error("[v0] SERVER: Erro - Usuário não autenticado")
-    return []
+    return { reflexoes: [], perguntasReflexivas: [] }
   }
 
   const { data: discipulo, error: discipuloError } = await supabase
@@ -110,26 +110,10 @@ export async function buscarReflexoesParaReset(numero: number) {
 
   if (discipuloError || !discipulo) {
     console.error("[v0] SERVER: Erro ao buscar discípulo:", discipuloError)
-    return []
+    return { reflexoes: [], perguntasReflexivas: [] }
   }
 
-  console.log("[v0] SERVER: Buscando TODAS as reflexões do discípulo...")
-  const { data: todasReflexoes } = await supabase
-    .from("reflexoes_conteudo")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-
-  console.log("[v0] SERVER: Total de reflexões no banco:", todasReflexoes?.length || 0)
-  if (todasReflexoes && todasReflexoes.length > 0) {
-    console.log("[v0] SERVER: Exemplo de reflexão:", {
-      id: todasReflexoes[0].id,
-      fase_numero: todasReflexoes[0].fase_numero,
-      passo_numero: todasReflexoes[0].passo_numero,
-      tipo: todasReflexoes[0].tipo,
-    })
-  }
-
-  console.log("[v0] SERVER: Buscando reflexões - discipulo_id:", discipulo.id, "passo:", numero)
+  console.log("[v0] SERVER: Buscando reflexões de vídeos/artigos - discipulo_id:", discipulo.id, "passo:", numero)
 
   const { data: reflexoes, error } = await supabase
     .from("reflexoes_conteudo")
@@ -139,29 +123,35 @@ export async function buscarReflexoesParaReset(numero: number) {
 
   if (error) {
     console.error("[v0] SERVER: Erro ao buscar reflexões:", error)
-    return []
   }
 
   console.log("[v0] SERVER: Reflexões do passo", numero, "encontradas:", reflexoes?.length || 0)
-  if (reflexoes && reflexoes.length > 0) {
-    console.log(
-      "[v0] SERVER: Detalhes das reflexões:",
-      reflexoes.map((r) => ({
-        id: r.id,
-        titulo: r.titulo,
-        tipo: r.tipo,
-        notificacao_id: r.notificacao_id,
-      })),
-    )
+
+  console.log("[v0] SERVER: Buscando perguntas reflexivas - discipulo_id:", discipulo.id, "passo:", numero)
+
+  const { data: perguntasReflexivas, error: errorPerguntas } = await supabase
+    .from("perguntas_reflexivas")
+    .select("*")
+    .eq("discipulo_id", discipulo.id)
+    .eq("passo_numero", numero)
+
+  if (errorPerguntas) {
+    console.error("[v0] SERVER: Erro ao buscar perguntas reflexivas:", errorPerguntas)
   }
 
-  return reflexoes || []
+  console.log("[v0] SERVER: Perguntas reflexivas do passo", numero, "encontradas:", perguntasReflexivas?.length || 0)
+
+  return {
+    reflexoes: reflexoes || [],
+    perguntasReflexivas: perguntasReflexivas || [],
+  }
 }
 
-export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
+export async function resetarProgresso(numero: number, reflexoesIds: string[], perguntasReflexivasIds: string[]) {
   console.log("[v0] ===== INICIANDO RESET DE PROGRESSO =====")
   console.log("[v0] Passo número:", numero)
   console.log("[v0] IDs das reflexões a excluir:", reflexoesIds)
+  console.log("[v0] IDs das perguntas reflexivas a excluir:", perguntasReflexivasIds)
 
   try {
     const supabase = await createClient()
@@ -197,18 +187,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
 
     console.log("[v0] Discípulo ID:", discipulo.id)
 
-    const { data: progressoAtual, error: progressoError } = await supabase
-      .from("progresso_fases")
-      .select("*")
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
-      .single()
-
-    if (progressoError) {
-      console.log("[v0] Aviso: Progresso não encontrado, criando novo")
-    }
-
     let pontosMantidos = 0
 
     const { data: respostas, error: respostasError } = await supabase
@@ -238,6 +216,20 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       }
     }
 
+    let pontosPerguntasReflexivas = 0
+    if (perguntasReflexivasIds.length > 0) {
+      const { data: perguntasResetadas } = await supabase
+        .from("perguntas_reflexivas")
+        .select("xp_ganho")
+        .in("id", perguntasReflexivasIds)
+        .eq("situacao", "aprovado")
+
+      if (perguntasResetadas) {
+        pontosPerguntasReflexivas = perguntasResetadas.reduce((total, r) => total + (r.xp_ganho || 0), 0)
+        console.log("[v0] 📊 Pontos de perguntas reflexivas a remover:", pontosPerguntasReflexivas)
+      }
+    }
+
     if (reflexoesIds.length > 0) {
       console.log("[v0] Buscando reflexões com seus IDs de notificações...")
       const { data: reflexoes, error: errorBuscar } = await supabase
@@ -262,8 +254,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
           } else {
             console.log("[v0] ✅ Notificações excluídas com sucesso!")
           }
-        } else {
-          console.log("[v0] ⚠️ Nenhuma notificação encontrada para excluir")
         }
       }
 
@@ -278,10 +268,53 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
       console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
     }
 
-    if (pontosVideosArtigos > 0) {
+    if (perguntasReflexivasIds.length > 0) {
+      console.log("[v0] Buscando perguntas reflexivas com seus IDs de notificações...")
+      const { data: perguntas, error: errorBuscar } = await supabase
+        .from("perguntas_reflexivas")
+        .select("id, notificacao_id")
+        .in("id", perguntasReflexivasIds)
+
+      if (errorBuscar) {
+        console.log("[v0] ERRO ao buscar perguntas reflexivas:", errorBuscar)
+      } else {
+        console.log("[v0] Perguntas reflexivas encontradas:", perguntas)
+
+        const notificacoesIds = perguntas?.filter((p) => p.notificacao_id).map((p) => p.notificacao_id) || []
+
+        if (notificacoesIds.length > 0) {
+          console.log("[v0] Excluindo", notificacoesIds.length, "notificações de perguntas reflexivas...")
+          const { error: errorNotif } = await supabaseAdmin.from("notificacoes").delete().in("id", notificacoesIds)
+
+          if (errorNotif) {
+            console.error("[v0] ERRO ao excluir notificações de perguntas:", errorNotif)
+            return { success: false, error: "Erro ao excluir notificações de perguntas" }
+          } else {
+            console.log("[v0] ✅ Notificações de perguntas excluídas com sucesso!")
+          }
+        }
+      }
+
+      console.log("[v0] Excluindo", perguntasReflexivasIds.length, "perguntas reflexivas...")
+      const { error: errorExcluir } = await supabaseAdmin
+        .from("perguntas_reflexivas")
+        .delete()
+        .in("id", perguntasReflexivasIds)
+
+      if (errorExcluir) {
+        console.error("[v0] ERRO ao excluir perguntas reflexivas:", errorExcluir)
+        return { success: false, error: "Erro ao excluir perguntas reflexivas" }
+      }
+
+      console.log("[v0] ✅ TODAS as perguntas reflexivas excluídas com sucesso!")
+    }
+
+    const totalPontosRemover = pontosVideosArtigos + pontosPerguntasReflexivas
+
+    if (totalPontosRemover > 0) {
       const { error: xpError } = await supabase.rpc("decrement_xp", {
         discipulo_id: discipulo.id,
-        xp_amount: pontosVideosArtigos,
+        xp_amount: totalPontosRemover,
       })
 
       if (xpError) {
@@ -292,13 +325,13 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
           .eq("id", discipulo.id)
           .single()
 
-        const novoXp = Math.max(0, (discipuloAtual?.xp_total || 0) - pontosVideosArtigos)
+        const novoXp = Math.max(0, (discipuloAtual?.xp_total || 0) - totalPontosRemover)
 
         await supabase.from("discipulos").update({ xp_total: novoXp }).eq("id", discipulo.id)
 
-        console.log("[v0] XP decrementado manualmente:", pontosVideosArtigos, "pontos")
+        console.log("[v0] XP decrementado manualmente:", totalPontosRemover, "pontos")
       } else {
-        console.log("[v0] ✅ XP decrementado via RPC:", pontosVideosArtigos, "pontos")
+        console.log("[v0] ✅ XP decrementado via RPC:", totalPontosRemover, "pontos")
       }
     }
 
@@ -325,6 +358,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[]) {
     console.log("[v0] ✅ Progresso resetado com sucesso!")
     console.log("[v0] 📊 Pontos mantidos (perguntas/missões):", pontosMantidos)
     console.log("[v0] 📊 Pontos removidos (vídeos/artigos):", pontosVideosArtigos)
+    console.log("[v0] 📊 Pontos removidos (perguntas reflexivas):", pontosPerguntasReflexivas)
 
     return { success: true, message: "Progresso resetado com sucesso!" }
   } catch (error: any) {

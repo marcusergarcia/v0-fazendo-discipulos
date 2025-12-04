@@ -111,6 +111,7 @@ export default function PassoClient({
   const [resetando, setResetando] = useState(false)
   const [erroSenha, setErroSenha] = useState<string | null>(null)
   const [reflexoesParaExcluir, setReflexoesParaExcluir] = useState<any[]>([])
+  const [perguntasReflexivasParaExcluir, setPerguntasReflexivasParaExcluir] = useState<any[]>([]) // Adicionar estado para perguntas reflexivas
   const [carregandoReflexoes, setCarregandoReflexoes] = useState(false)
   const [processandoRecompensas, setProcessandoRecompensas] = useState(false)
 
@@ -265,8 +266,22 @@ export default function PassoClient({
     setErroSenha(null)
 
     try {
-      const reflexoes = await buscarReflexoesParaReset(numero)
-      setReflexoesParaExcluir(reflexoes)
+      const resultado = await buscarReflexoesParaReset(numero)
+      setReflexoesParaExcluir(resultado.reflexoes)
+      const perguntasExpandidas = resultado.perguntasReflexivas.flatMap((pr) => {
+        // Se respostas é um array, criar uma entrada para cada resposta
+        if (Array.isArray(pr.respostas)) {
+          return pr.respostas.map((resposta, index) => ({
+            ...pr,
+            perguntaIndex: index + 1,
+            respostaIndividual: resposta,
+            situacaoIndividual: resposta.situacao || "pendente",
+          }))
+        }
+        // Caso contrário, retornar o objeto original
+        return [pr]
+      })
+      setPerguntasReflexivasParaExcluir(perguntasExpandidas)
       setModalResetAberto(true)
     } catch (error: any) {
       console.error("ERRO ao buscar reflexões:", error)
@@ -284,7 +299,8 @@ export default function PassoClient({
 
     try {
       const reflexoesIds = reflexoesParaExcluir.map((r) => r.id)
-      const resultado = await resetarProgresso(numero, reflexoesIds)
+      const perguntasIdsUnicos = [...new Set(perguntasReflexivasParaExcluir.map((p) => p.id))]
+      const resultado = await resetarProgresso(numero, reflexoesIds, perguntasIdsUnicos)
       if (resultado.success) {
         setModalResetAberto(false)
         window.location.href = `/dashboard/passo/${numero}?reset=true`
@@ -1139,10 +1155,41 @@ export default function PassoClient({
               </div>
             )}
 
-            {reflexoesParaExcluir.length === 0 && (
+            {perguntasReflexivasParaExcluir.length > 0 && (
+              <div className="bg-destructive/10 rounded-lg p-4 border border-destructive/30">
+                <p className="font-semibold text-destructive mb-3">
+                  Perguntas Reflexivas que serão excluídas ({perguntasReflexivasParaExcluir.length}):
+                </p>
+                <div className="space-y-2">
+                  {perguntasReflexivasParaExcluir.map((pergunta, idx) => (
+                    <div key={`${pergunta.id}-${idx}`} className="bg-background/50 rounded p-3 text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline" className="text-xs">
+                          💭 Pergunta Reflexiva
+                        </Badge>
+                        <span className="font-medium">
+                          Pergunta {pergunta.perguntaIndex || idx + 1} • Status:{" "}
+                          {pergunta.situacaoIndividual || pergunta.situacao}
+                        </span>
+                      </div>
+                      {pergunta.respostaIndividual?.resposta && (
+                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                          Resposta: {pergunta.respostaIndividual.resposta}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        XP: {pergunta.respostaIndividual?.xp || pergunta.xp_ganho || 0}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {reflexoesParaExcluir.length === 0 && perguntasReflexivasParaExcluir.length === 0 && (
               <div className="bg-muted rounded-lg p-4 border">
                 <p className="text-sm text-muted-foreground text-center">
-                  Nenhuma reflexão encontrada para este passo. O reset apenas limpará o histórico de vídeos e artigos.
+                  Nenhuma reflexão ou pergunta reflexiva encontrada para este passo. O reset apenas limpará o histórico.
                 </p>
               </div>
             )}
@@ -1154,6 +1201,7 @@ export default function PassoClient({
               <ul className="text-sm space-y-2 list-disc list-inside text-destructive/90">
                 <li>Todas as reflexões de vídeos deste passo</li>
                 <li>Todas as reflexões de artigos deste passo</li>
+                <li>Todas as respostas das perguntas reflexivas deste passo</li>
                 <li>Todas as notificações relacionadas a este passo</li>
                 <li>Histórico de vídeos assistidos</li>
                 <li>Histórico de artigos lidos</li>
@@ -1176,7 +1224,7 @@ export default function PassoClient({
             )}
 
             <p className="text-sm text-center font-medium text-muted-foreground">
-              Você poderá refazer os vídeos e artigos após o reset.
+              Você poderá refazer os vídeos, artigos e perguntas reflexivas após o reset.
             </p>
           </div>
 
@@ -1187,6 +1235,7 @@ export default function PassoClient({
               onClick={() => {
                 setModalResetAberto(false)
                 setReflexoesParaExcluir([])
+                setPerguntasReflexivasParaExcluir([]) // Limpar também as perguntas reflexivas ao cancelar
               }}
               disabled={resetando}
               className="flex-1"
