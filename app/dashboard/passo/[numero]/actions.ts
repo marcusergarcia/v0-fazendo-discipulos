@@ -216,29 +216,68 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
       }
     }
 
-    let pontosPerguntasReflexivas = 0
     if (perguntasReflexivasIds.length > 0) {
-      const { data: perguntasResetadas } = await supabase
-        .from("perguntas_reflexivas")
-        .select("xp_ganho")
-        .in("id", perguntasReflexivasIds)
-        .eq("situacao", "aprovado")
+      console.log("[v0] ============ DELETANDO PERGUNTAS REFLEXIVAS ============")
+      console.log("[v0] Total de IDs a deletar:", perguntasReflexivasIds.length)
+      console.log("[v0] IDs:", perguntasReflexivasIds)
 
-      if (perguntasResetadas) {
-        pontosPerguntasReflexivas = perguntasResetadas.reduce((total, r) => total + (r.xp_ganho || 0), 0)
-        console.log("[v0] 📊 Pontos de perguntas reflexivas a remover:", pontosPerguntasReflexivas)
+      const { data: perguntas, error: errorBuscar } = await supabaseAdmin
+        .from("perguntas_reflexivas")
+        .select("id, notificacao_id, discipulo_id, passo_numero")
+        .in("id", perguntasReflexivasIds)
+
+      if (errorBuscar) {
+        console.error("[v0] ERRO ao buscar perguntas reflexivas:", errorBuscar)
+        return { success: false, error: "Erro ao buscar perguntas reflexivas" }
       }
+
+      console.log("[v0] Perguntas reflexivas encontradas:", perguntas?.length || 0)
+      console.log("[v0] Detalhes das perguntas:", JSON.stringify(perguntas, null, 2))
+
+      const notificacoesIds = perguntas?.filter((p) => p.notificacao_id).map((p) => p.notificacao_id) || []
+
+      if (notificacoesIds.length > 0) {
+        console.log("[v0] Excluindo", notificacoesIds.length, "notificações de perguntas reflexivas...")
+        const { error: errorNotif } = await supabaseAdmin.from("notificacoes").delete().in("id", notificacoesIds)
+
+        if (errorNotif) {
+          console.error("[v0] ERRO ao excluir notificações de perguntas:", errorNotif)
+          return { success: false, error: "Erro ao excluir notificações de perguntas" }
+        }
+        console.log("[v0] ✅ Notificações de perguntas excluídas com sucesso!")
+      }
+
+      console.log("[v0] Excluindo", perguntasReflexivasIds.length, "perguntas reflexivas...")
+      const { data: deletedData, error: errorExcluir } = await supabaseAdmin
+        .from("perguntas_reflexivas")
+        .delete()
+        .in("id", perguntasReflexivasIds)
+        .select()
+
+      if (errorExcluir) {
+        console.error("[v0] ❌ ERRO ao excluir perguntas reflexivas:", errorExcluir)
+        console.error("[v0] Código do erro:", errorExcluir.code)
+        console.error("[v0] Mensagem:", errorExcluir.message)
+        console.error("[v0] Detalhes:", errorExcluir.details)
+        return { success: false, error: `Erro ao excluir perguntas reflexivas: ${errorExcluir.message}` }
+      }
+
+      console.log("[v0] ✅ TODAS as perguntas reflexivas excluídas com sucesso!")
+      console.log("[v0] Total de perguntas deletadas:", deletedData?.length || 0)
+    } else {
+      console.log("[v0] Nenhuma pergunta reflexiva para excluir")
     }
 
     if (reflexoesIds.length > 0) {
       console.log("[v0] Buscando reflexões com seus IDs de notificações...")
-      const { data: reflexoes, error: errorBuscar } = await supabase
+      const { data: reflexoes, error: errorBuscar } = await supabaseAdmin
         .from("reflexoes_conteudo")
         .select("id, notificacao_id")
         .in("id", reflexoesIds)
 
       if (errorBuscar) {
         console.log("[v0] ERRO ao buscar reflexões:", errorBuscar)
+        return { success: false, error: "Erro ao buscar reflexões" }
       } else {
         console.log("[v0] Reflexões encontradas:", reflexoes)
 
@@ -268,48 +307,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
       console.log("[v0] ✅ TODAS as reflexões excluídas com sucesso!")
     }
 
-    if (perguntasReflexivasIds.length > 0) {
-      console.log("[v0] Buscando perguntas reflexivas com seus IDs de notificações...")
-      const { data: perguntas, error: errorBuscar } = await supabase
-        .from("perguntas_reflexivas")
-        .select("id, notificacao_id")
-        .in("id", perguntasReflexivasIds)
-
-      if (errorBuscar) {
-        console.log("[v0] ERRO ao buscar perguntas reflexivas:", errorBuscar)
-      } else {
-        console.log("[v0] Perguntas reflexivas encontradas:", perguntas)
-
-        const notificacoesIds = perguntas?.filter((p) => p.notificacao_id).map((p) => p.notificacao_id) || []
-
-        if (notificacoesIds.length > 0) {
-          console.log("[v0] Excluindo", notificacoesIds.length, "notificações de perguntas reflexivas...")
-          const { error: errorNotif } = await supabaseAdmin.from("notificacoes").delete().in("id", notificacoesIds)
-
-          if (errorNotif) {
-            console.error("[v0] ERRO ao excluir notificações de perguntas:", errorNotif)
-            return { success: false, error: "Erro ao excluir notificações de perguntas" }
-          } else {
-            console.log("[v0] ✅ Notificações de perguntas excluídas com sucesso!")
-          }
-        }
-      }
-
-      console.log("[v0] Excluindo", perguntasReflexivasIds.length, "perguntas reflexivas...")
-      const { error: errorExcluir } = await supabaseAdmin
-        .from("perguntas_reflexivas")
-        .delete()
-        .in("id", perguntasReflexivasIds)
-
-      if (errorExcluir) {
-        console.error("[v0] ERRO ao excluir perguntas reflexivas:", errorExcluir)
-        return { success: false, error: "Erro ao excluir perguntas reflexivas" }
-      }
-
-      console.log("[v0] ✅ TODAS as perguntas reflexivas excluídas com sucesso!")
-    }
-
-    const totalPontosRemover = pontosVideosArtigos + pontosPerguntasReflexivas
+    const totalPontosRemover = pontosVideosArtigos
 
     if (totalPontosRemover > 0) {
       const { error: xpError } = await supabase.rpc("decrement_xp", {
@@ -358,7 +356,6 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
     console.log("[v0] ✅ Progresso resetado com sucesso!")
     console.log("[v0] 📊 Pontos mantidos (perguntas/missões):", pontosMantidos)
     console.log("[v0] 📊 Pontos removidos (vídeos/artigos):", pontosVideosArtigos)
-    console.log("[v0] 📊 Pontos removidos (perguntas reflexivas):", pontosPerguntasReflexivas)
 
     return { success: true, message: "Progresso resetado com sucesso!" }
   } catch (error: any) {
