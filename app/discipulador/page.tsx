@@ -154,20 +154,22 @@ export default async function DiscipuladorPage() {
             temResposta: !!respostaEspecifica,
           })
 
-          tarefas.push({
-            id: `reflexiva-${perguntaId}`,
-            tipo: "reflexao_guiada",
-            titulo: pergunta,
-            concluido: situacaoPergunta === "aprovado",
-            perguntasRespostaId: perguntasResposta?.id,
-            perguntaId: perguntaId,
-            perguntaTexto: pergunta,
-            respostaIndividual: respostaEspecifica,
-            xp: xpPergunta,
-            situacao: situacaoPergunta,
-            faseNumero: discipulo.fase_atual,
-            passoNumero: discipulo.passo_atual,
-          })
+          if (respostaEspecifica && respostaEspecifica.resposta) {
+            tarefas.push({
+              id: `reflexiva-${perguntaId}`,
+              tipo: "reflexao_guiada",
+              titulo: pergunta,
+              concluido: situacaoPergunta === "aprovado",
+              perguntasRespostaId: perguntasResposta?.id,
+              perguntaId: perguntaId,
+              perguntaTexto: pergunta,
+              respostaIndividual: respostaEspecifica,
+              xp: xpPergunta,
+              situacao: situacaoPergunta,
+              faseNumero: discipulo.fase_atual,
+              passoNumero: discipulo.passo_atual,
+            })
+          }
         })
       }
 
