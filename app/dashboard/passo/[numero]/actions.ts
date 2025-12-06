@@ -854,6 +854,12 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
   console.error("[v0 SERVER] Passo número:", numeroPasso)
 
   const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  })
 
   const {
     data: { user },
@@ -963,7 +969,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     console.error("[v0 SERVER] Atualizando recompensas (array de insígnias)...")
 
     // Buscar ou criar registro de recompensas
-    const { data: recompensaExistente } = await supabase
+    const { data: recompensaExistente } = await supabaseAdmin
       .from("recompensas")
       .select("*")
       .eq("discipulo_id", discipulo.id)
@@ -974,14 +980,20 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       descricao: `Você completou o passo ${numeroPasso} e ganhou ${progresso.pontuacao_passo_atual} XP!`,
       passo: numeroPasso,
       fase: faseAtual,
+      data: new Date().toISOString(),
     }
+
+    console.error("[v0 SERVER] Nova insígnia a adicionar:", novaInsignia)
 
     if (recompensaExistente) {
       // Adicionar insígnia ao array existente
-      const insigniasAtuais = recompensaExistente.insignias || []
+      const insigniasAtuais = Array.isArray(recompensaExistente.insignias) ? recompensaExistente.insignias : []
+
+      console.error("[v0 SERVER] Insígnias atuais:", insigniasAtuais.length)
+
       insigniasAtuais.push(novaInsignia)
 
-      const { error: recompensasError } = await supabase
+      const { error: recompensasError } = await supabaseAdmin
         .from("recompensas")
         .update({
           insignias: insigniasAtuais,
@@ -992,11 +1004,13 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       if (recompensasError) {
         console.error("[v0 SERVER] ERRO ao atualizar recompensas:", recompensasError)
       } else {
-        console.error("[v0 SERVER] Insígnia adicionada ao array existente")
+        console.error("[v0 SERVER] Insígnia adicionada ao array existente. Total:", insigniasAtuais.length)
       }
     } else {
       // Criar novo registro com a primeira insígnia
-      const { error: recompensasError } = await supabase.from("recompensas").insert({
+      console.error("[v0 SERVER] Criando novo registro de recompensas...")
+
+      const { error: recompensasError } = await supabaseAdmin.from("recompensas").insert({
         discipulo_id: discipulo.id,
         insignias: [novaInsignia],
         medalhas: [],

@@ -63,13 +63,11 @@ export default async function DashboardPage({
     redirect("/auth/login")
   }
 
-  // Buscar progresso dos passos
   const { data: progressoFases, error: progressoError } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", discipulo.fase_atual || 1)
-    .order("passo_numero")
+    .eq("fase_atual", discipulo.fase_atual || 1)
 
   console.log("[v0] Progresso check - Count:", progressoFases?.length, "Error:", progressoError)
 
@@ -82,8 +80,8 @@ export default async function DashboardPage({
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
-  // Calcular XP para próximo nível baseado nos passos completados
-  const passosCompletados = progressoFases?.filter((p) => p.completado).length || 0
+  // Se está no passo 2, significa que completou o passo 1
+  const passosCompletados = (discipulo.passo_atual || 1) - 1
   const xpAtual = discipulo.xp_total || 0
   const xpProximoNivel = 1000
 
@@ -97,8 +95,7 @@ export default async function DashboardPage({
   const passoAtual = discipulo.passo_atual || 1
   const totalPassos = 10
 
-  // Calcular insígnias (1 insígnia por passo completado)
-  const totalInsignias = passosCompletados
+  const totalInsignias = recompensas?.[0]?.insignias?.length || 0
 
   const userData = {
     name: profile?.nome_completo || "Usuário",
@@ -149,7 +146,7 @@ export default async function DashboardPage({
     .select("pontuacao_total")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", discipulo.passo_atual)
-    .eq("fase_numero", 1)
+    .eq("fase_atual", 1)
     .maybeSingle()
 
   return (
@@ -426,12 +423,9 @@ export default async function DashboardPage({
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {Array.from({ length: 10 }, (_, i) => {
                 const stepNumber = i + 1
-                const stepProgress = progressoFases?.find((p) => p.passo_numero === stepNumber)
-                const status = stepProgress?.completado
-                  ? "completed"
-                  : stepNumber <= userData.currentStep
-                    ? "current"
-                    : "locked"
+                const isCompleted = stepNumber < userData.currentStep
+                const isCurrent = stepNumber === userData.currentStep
+                const status = isCompleted ? "completed" : isCurrent ? "current" : "locked"
 
                 return (
                   <StepCard
