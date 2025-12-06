@@ -6,6 +6,7 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   const supabase = await createClient()
 
+  console.log("[v0] ==================== PÁGINA DE CONVITE ====================")
   console.log("[v0] Buscando convite com código:", codigo)
 
   const { data: convite, error } = await supabase
@@ -18,6 +19,7 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   console.log("[v0] Convite encontrado:", convite)
   console.log("[v0] Discipulador ID do convite:", convite?.discipulador_id)
+  console.log("[v0] Tipo do discipulador_id:", typeof convite?.discipulador_id)
 
   // Se convite inválido, mostrar mensagem de erro
   if (error || !convite) {
@@ -39,39 +41,56 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
   let emailDiscipulador = ""
 
   if (convite.discipulador_id) {
+    console.log("[v0] ==================== BUSCANDO DISCIPULADOR ====================")
+    console.log("[v0] Buscando com discipulador_id:", convite.discipulador_id)
+
     // Primeiro tenta buscar em profiles
-    const { data: discipulador } = await supabase
+    const { data: discipulador, error: profileError } = await supabase
       .from("profiles")
-      .select("nome_completo, email")
+      .select("nome_completo, email, id")
       .eq("id", convite.discipulador_id)
       .maybeSingle()
 
-    console.log("[v0] Discipulador encontrado em profiles:", discipulador)
+    console.log("[v0] Resultado busca em profiles:", { discipulador, error: profileError })
 
     if (discipulador) {
       nomeDiscipulador = discipulador.nome_completo || "Desconhecido"
       emailDiscipulador = discipulador.email || ""
+      console.log("[v0] ✅ Nome encontrado em profiles:", nomeDiscipulador)
     } else {
       // Se não encontrou em profiles, busca em discipulos usando user_id
-      console.log("[v0] Não encontrado em profiles, buscando em discipulos...")
-      const { data: discipuloInfo } = await supabase
+      console.log("[v0] Não encontrado em profiles, buscando em discipulos com user_id...")
+      const { data: discipuloInfo, error: discipuloError } = await supabase
         .from("discipulos")
-        .select("nome_completo_temp, email_temporario")
+        .select("nome_completo_temp, email_temporario, user_id, id")
         .eq("user_id", convite.discipulador_id)
         .maybeSingle()
 
-      console.log("[v0] Discipulador encontrado em discipulos:", discipuloInfo)
+      console.log("[v0] Resultado busca em discipulos:", { discipuloInfo, error: discipuloError })
 
       if (discipuloInfo) {
         nomeDiscipulador = discipuloInfo.nome_completo_temp || "Desconhecido"
         emailDiscipulador = discipuloInfo.email_temporario || ""
+        console.log("[v0] ✅ Nome encontrado em discipulos:", nomeDiscipulador)
       } else {
-        console.error("[v0] PROBLEMA: Nenhum registro encontrado para discipulador_id:", convite.discipulador_id)
+        console.error("[v0] ❌ PROBLEMA: Nenhum registro encontrado nem em profiles nem em discipulos")
+        console.error("[v0] Tentamos buscar com ID:", convite.discipulador_id)
+
+        const { data: todosDiscipulos } = await supabase
+          .from("discipulos")
+          .select("user_id, nome_completo_temp")
+          .limit(5)
+
+        console.log("[v0] DEBUG: Alguns discípulos no banco:", todosDiscipulos)
       }
     }
+    console.log("[v0] ==================== FIM BUSCA DISCIPULADOR ====================")
   } else {
-    console.error("[v0] PROBLEMA: convite.discipulador_id está null ou undefined")
+    console.error("[v0] ❌ PROBLEMA: convite.discipulador_id está null ou undefined")
   }
+
+  console.log("[v0] Nome final do discipulador:", nomeDiscipulador)
+  console.log("[v0] ==================== FIM PÁGINA DE CONVITE ====================")
 
   return (
     <CadastroConviteClient

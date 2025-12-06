@@ -34,31 +34,44 @@ export default function ConvitesClient({
   const criarConvite = async () => {
     setIsCreating(true)
     try {
-      console.log("[v0] Iniciando criação de convite para userId:", userId)
+      console.log("[v0] ==================== CRIAÇÃO DE CONVITE ====================")
+      console.log("[v0] userId passado para o componente:", userId)
 
+      const { data: discipuloAtual, error: discipuloError } = await supabase
+        .from("discipulos")
+        .select("id, nome_completo_temp, email_temporario, user_id")
+        .eq("user_id", userId)
+        .maybeSingle()
+
+      console.log("[v0] Discípulo atual encontrado:", discipuloAtual, "Error:", discipuloError)
+
+      if (!discipuloAtual) {
+        alert(
+          "Você precisa completar seu cadastro de discípulo antes de criar convites. Por favor, complete seu perfil.",
+        )
+        return
+      }
+
+      // Verificar também em profiles
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("nome_completo, email")
+        .select("nome_completo, email, id")
         .eq("id", userId)
         .maybeSingle()
 
       console.log("[v0] Perfil do criador do convite:", profile, "Error:", profileError)
 
-      if (!profile) {
-        alert(
-          "Você precisa completar seu perfil antes de criar convites. Por favor, vá para a página de perfil e preencha seus dados.",
-        )
-        return
-      }
-
       // Gerar código único
       const codigo = Math.random().toString(36).substring(2, 10).toUpperCase()
       console.log("[v0] Código gerado:", codigo)
 
+      const discipuladorId = userId
+      console.log("[v0] discipuladorId que será salvo no convite:", discipuladorId)
+
       const { data, error } = await supabase
         .from("convites")
         .insert({
-          discipulador_id: userId,
+          discipulador_id: discipuladorId,
           codigo_convite: codigo,
           email_convidado: email || null,
           usado: false,
@@ -67,7 +80,7 @@ export default function ConvitesClient({
         .select()
         .single()
 
-      console.log("[v0] Resultado do insert:", { data, error })
+      console.log("[v0] Resultado do insert do convite:", { data, error })
 
       if (error) {
         console.error("[v0] Erro detalhado ao criar convite:", {
@@ -79,7 +92,8 @@ export default function ConvitesClient({
         throw error
       }
 
-      console.log("[v0] Convite criado com sucesso:", data)
+      console.log("[v0] Convite criado com sucesso! discipulador_id salvo:", data.discipulador_id)
+      console.log("[v0] ==================== FIM CRIAÇÃO ====================")
       setConvites([data, ...convites])
       setEmail("")
       alert("Convite criado com sucesso!")
