@@ -38,55 +38,30 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     )
   }
 
-  let nomeDiscipulador = "Desconhecido"
+  let nomeDiscipulador = convite.discipulador_id || "Convite Direto"
   let emailDiscipulador = ""
 
   if (convite.discipulador_id) {
-    console.log("[v0] ==== BUSCANDO NOME DO DISCIPULADOR ====")
-    console.log("[v0] Valor EXATO do discipulador_id:", JSON.stringify(convite.discipulador_id))
-
-    const { data: discipuladorProfile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, nome_completo, email")
-      .eq("id", convite.discipulador_id)
-      .maybeSingle()
-
-    console.log("[v0] Query em profiles com id:", convite.discipulador_id)
-    console.log("[v0] Resultado busca em profiles:")
-    console.log("[v0]   - Data encontrada:", discipuladorProfile)
-    console.log("[v0]   - Error:", profileError)
-    console.log("[v0]   - profileError?.message:", profileError?.message)
-
-    if (discipuladorProfile?.nome_completo) {
-      nomeDiscipulador = discipuladorProfile.nome_completo
-      emailDiscipulador = discipuladorProfile.email || ""
-      console.log("[v0] ✓ Nome encontrado em profiles:", nomeDiscipulador)
-    } else {
-      console.log("[v0] ✗ Nome NÃO encontrado em profiles")
-      console.log("[v0] Tentando buscar em discipulos com user_id...")
-
-      const { data: discipuloRecord, error: discipuloError } = await supabase
+    // Buscar em profiles e discipulos simultaneamente
+    const [profileResult, discipuloResult] = await Promise.all([
+      supabase.from("profiles").select("nome_completo, email").eq("id", convite.discipulador_id).maybeSingle(),
+      supabase
         .from("discipulos")
-        .select("id, nome_completo_temp, email_temporario, user_id, discipulador_id")
-        .eq("user_id", convite.discipulador_id)
-        .maybeSingle()
+        .select("nome_completo_temp, email_temporario")
+        .or(`user_id.eq.${convite.discipulador_id},discipulador_id.eq.${convite.discipulador_id}`)
+        .limit(1)
+        .maybeSingle(),
+    ])
 
-      console.log("[v0] Query em discipulos com user_id:", convite.discipulador_id)
-      console.log("[v0] Resultado busca em discipulos:")
-      console.log("[v0]   - Data encontrada:", discipuloRecord)
-      console.log("[v0]   - Error:", discipuloError)
-
-      if (discipuloRecord?.nome_completo_temp) {
-        nomeDiscipulador = discipuloRecord.nome_completo_temp
-        emailDiscipulador = discipuloRecord.email_temporario || ""
-        console.log("[v0] ✓ Nome encontrado em discipulos:", nomeDiscipulador)
-      } else {
-        console.log("[v0] ✗ PROBLEMA: Nenhum registro encontrado para discipulador_id:", convite.discipulador_id)
-        console.log("[v0] Este ID não existe em profiles NEM em discipulos!")
-      }
+    // Priorizar profiles, depois discipulos
+    if (profileResult.data?.nome_completo) {
+      nomeDiscipulador = profileResult.data.nome_completo
+      emailDiscipulador = profileResult.data.email || ""
+    } else if (discipuloResult.data?.nome_completo_temp) {
+      nomeDiscipulador = discipuloResult.data.nome_completo_temp
+      emailDiscipulador = discipuloResult.data.email_temporario || ""
     }
-
-    console.log("[v0] ==== FIM BUSCA NOME ====")
+    // Se não encontrar nenhum nome, mantém o ID como fallback
   }
 
   console.log("[v0] NOME FINAL QUE SERÁ EXIBIDO:", nomeDiscipulador)
