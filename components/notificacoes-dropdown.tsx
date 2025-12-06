@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell } from 'lucide-react'
+import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -51,7 +51,7 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
         },
         () => {
           carregarNotificacoes()
-        }
+        },
       )
       .subscribe()
 
@@ -88,8 +88,61 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
   }
 
   async function marcarTodasComoLidas() {
-    await supabase.from("notificacoes").delete().eq("user_id", userId)
+    console.log("[v0] Iniciando limpeza de todas as notificações para userId:", userId)
 
+    const { data: notificacoesDoUsuario, error: notifError } = await supabase
+      .from("notificacoes")
+      .select("id")
+      .eq("user_id", userId)
+
+    if (notifError) {
+      console.error("[v0] Erro ao buscar notificações:", notifError)
+      return
+    }
+
+    if (!notificacoesDoUsuario || notificacoesDoUsuario.length === 0) {
+      console.log("[v0] Nenhuma notificação encontrada para deletar")
+      setNotificacoes([])
+      return
+    }
+
+    const notificacaoIds = notificacoesDoUsuario.map((n) => n.id)
+    console.log("[v0] Total de notificações a deletar:", notificacaoIds.length)
+    console.log("[v0] IDs das notificações:", notificacaoIds)
+
+    const { error: perguntasError } = await supabase
+      .from("perguntas_reflexivas")
+      .update({ notificacao_id: null })
+      .in("notificacao_id", notificacaoIds)
+
+    if (perguntasError) {
+      console.error("[v0] Erro ao limpar referências de perguntas_reflexivas:", perguntasError)
+    } else {
+      console.log("[v0] Referências de perguntas_reflexivas limpas com sucesso")
+    }
+
+    const { error: reflexoesError } = await supabase
+      .from("reflexoes_conteudo")
+      .update({ notificacao_id: null })
+      .in("notificacao_id", notificacaoIds)
+
+    if (reflexoesError) {
+      console.error("[v0] Erro ao limpar referências de reflexoes_conteudo:", reflexoesError)
+    } else {
+      console.log("[v0] Referências de reflexoes_conteudo limpas com sucesso")
+    }
+
+    const { error: deleteError, count } = await supabase.from("notificacoes").delete().eq("user_id", userId).select()
+
+    if (deleteError) {
+      console.error("[v0] Erro ao deletar notificações:", deleteError)
+    } else {
+      console.log("[v0] Notificações deletadas com sucesso. Count:", count)
+    }
+
+    setNotificacoes([])
+
+    // Reload to ensure sync with database
     carregarNotificacoes()
   }
 
@@ -99,7 +152,10 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
         <Button variant="ghost" size="sm" className="relative gap-2">
           <Bell className="w-4 h-4" />
           {naoLidas > 0 && (
-            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+            >
               {naoLidas > 9 ? "9+" : naoLidas}
             </Badge>
           )}

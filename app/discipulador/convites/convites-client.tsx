@@ -34,8 +34,11 @@ export default function ConvitesClient({
   const criarConvite = async () => {
     setIsCreating(true)
     try {
+      console.log("[v0] Iniciando criação de convite para userId:", userId)
+
       // Gerar código único
       const codigo = Math.random().toString(36).substring(2, 10).toUpperCase()
+      console.log("[v0] Código gerado:", codigo)
 
       const { data, error } = await supabase
         .from("convites")
@@ -43,17 +46,31 @@ export default function ConvitesClient({
           discipulador_id: userId,
           codigo_convite: codigo,
           email_convidado: email || null,
+          usado: false,
+          expira_em: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias
         })
         .select()
         .single()
 
-      if (error) throw error
+      console.log("[v0] Resultado do insert:", { data, error })
 
+      if (error) {
+        console.error("[v0] Erro detalhado ao criar convite:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        })
+        throw error
+      }
+
+      console.log("[v0] Convite criado com sucesso:", data)
       setConvites([data, ...convites])
       setEmail("")
+      alert("Convite criado com sucesso!")
     } catch (error) {
-      console.error("Erro ao criar convite:", error)
-      alert("Erro ao criar convite")
+      console.error("[v0] Erro ao criar convite:", error)
+      alert(`Erro ao criar convite: ${error instanceof Error ? error.message : "Erro desconhecido"}`)
     } finally {
       setIsCreating(false)
     }
