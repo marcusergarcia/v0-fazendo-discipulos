@@ -64,6 +64,8 @@ type PassoClientProps = {
   respostaPerguntaHistorico?: any
   respostaMissaoHistorico?: any
   perguntasReflexivas?: any
+  leiturasSemana?: any // Adicionar leiturasSemana
+  capitulosLidos?: string[] // Adicionar capitulosLidos
 }
 
 export default function PassoClient({
@@ -82,6 +84,8 @@ export default function PassoClient({
   respostaPerguntaHistorico,
   respostaMissaoHistorico,
   perguntasReflexivas,
+  leiturasSemana = [], // Inicializar com array vazio
+  capitulosLidos = [], // Inicializar com array vazio
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -228,17 +232,32 @@ export default function PassoClient({
   const perguntasReflexivasEnviadas = perguntasReflexivas?.situacao === "enviado"
   const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
 
-  const todasTarefasEnviadas = perguntasReflexivasEnviadas
-
   const todasTarefasAprovadas = todasReflexoesAprovadas() && perguntasReflexivasAprovadas
 
-  const podeReceberRecompensas = isPrMarcus ? todasTarefasAprovadas : todasTarefasAprovadas && status !== "validado"
+  const leituraBiblicaConcluida = () => {
+    if (!leiturasSemana || leiturasSemana.length === 0) return false
+
+    // Verificar se todos os capítulos da semana foram lidos
+    const todosCapitulosLidos = leiturasSemana.every((capitulo) => capitulosLidos.includes(capitulo.id))
+
+    console.log("[v0] Verificando leitura bíblica:")
+    console.log("[v0] Total de capítulos da semana:", leiturasSemana.length)
+    console.log("[v0] Capítulos lidos:", capitulosLidos.length)
+    console.log("[v0] Todos capítulos lidos:", todosCapitulosLidos)
+
+    return todosCapitulosLidos
+  }
+
+  const podeReceberRecompensas = isPrMarcus
+    ? todasTarefasAprovadas && leituraBiblicaConcluida()
+    : todasTarefasAprovadas && leituraBiblicaConcluida() && status !== "validado"
 
   console.log("[v0] Verificando se pode receber recompensas:")
   console.log("[v0] isPrMarcus:", isPrMarcus)
   console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
   console.log("[v0] perguntasReflexivas?.situacao:", perguntasReflexivas?.situacao)
   console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
+  console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida())
   console.log("[v0] status:", status)
   console.log("[v0] podeReceberRecompensas:", podeReceberRecompensas)
 
