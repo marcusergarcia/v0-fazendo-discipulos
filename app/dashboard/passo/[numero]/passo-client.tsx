@@ -83,7 +83,7 @@ export default function PassoClient({
   descricaoSemana = "",
   respostaPerguntaHistorico,
   respostaMissaoHistorico,
-  perguntasReflexivas,
+  perguntasReflexivas = null, // Inicializar com null para evitar erro se não for passado
   leiturasSemana = [], // Inicializar com array vazio
   capitulosLidos = [], // Inicializar com array vazio
 }: PassoClientProps) {
@@ -249,12 +249,19 @@ export default function PassoClient({
     return todosCapitulosLidos
   }
 
-  const podeReceberRecompensas = isPrMarcus
-    ? todasTarefasAprovadas && leituraBiblicaConcluida()
-    : todasTarefasAprovadas && leituraBiblicaConcluida() && status !== "validado"
+  const jaAvancou = discipulo.passo_atual > numero
+
+  const podeReceberRecompensas = jaAvancou
+    ? false // Se já avançou, não pode receber recompensas novamente
+    : isPrMarcus
+      ? todasTarefasAprovadas && leituraBiblicaConcluida()
+      : todasTarefasAprovadas && leituraBiblicaConcluida() && status !== "validado"
 
   console.log("[v0] Verificando se pode receber recompensas:")
   console.log("[v0] isPrMarcus:", isPrMarcus)
+  console.log("[v0] jaAvancou:", jaAvancou)
+  console.log("[v0] passo_atual do discípulo:", discipulo.passo_atual)
+  console.log("[v0] número do passo da página:", numero)
   console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
   console.log("[v0] perguntasReflexivas?.situacao:", perguntasReflexivas?.situacao)
   console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)

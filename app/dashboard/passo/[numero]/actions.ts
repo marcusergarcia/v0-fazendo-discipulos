@@ -33,19 +33,12 @@ export async function marcarVideoAssistido(numero: number, videoId: string) {
     .from("progresso_fases")
     .select("videos_assistidos")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .single()
 
   const videosAtuais = (progresso?.videos_assistidos as string[]) || []
   if (!videosAtuais.includes(videoId)) {
     videosAtuais.push(videoId)
-    await supabase
-      .from("progresso_fases")
-      .update({ videos_assistidos: videosAtuais })
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
+    await supabase.from("progresso_fases").update({ videos_assistidos: videosAtuais }).eq("discipulo_id", discipulo.id)
   }
 
   redirect(`/dashboard/passo/${numero}?video=${videoId}`)
@@ -66,19 +59,12 @@ export async function marcarArtigoLido(numero: number, artigoId: string) {
     .from("progresso_fases")
     .select("artigos_lidos")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .single()
 
   const artigosAtuais = (progresso?.artigos_lidos as string[]) || []
   if (!artigosAtuais.includes(artigoId)) {
     artigosAtuais.push(artigoId)
-    await supabase
-      .from("progresso_fases")
-      .update({ artigos_lidos: artigosAtuais })
-      .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
+    await supabase.from("progresso_fases").update({ artigos_lidos: artigosAtuais }).eq("discipulo_id", discipulo.id)
   }
 
   redirect(`/dashboard/passo/${numero}?artigo=${artigoId}`)
@@ -232,7 +218,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
           console.log("[v0] SERVER: Deletando pergunta id:", id)
 
           const { data: notificacao } = await supabaseAdmin
-            .from("perguntas_reflexivas")
+            .from("notificacoes")
             .select("notificacao_id")
             .eq("id", id)
             .single()
@@ -335,13 +321,9 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
         videos_assistidos: [],
         artigos_lidos: [],
         reflexoes_concluidas: 0,
-        pontuacao_total: pontosMantidos, // Mantém pontos de perguntas/missões
-        completado: false,
-        enviado_para_validacao: false,
+        pontuacao_passo_atual: pontosMantidos, // Mantém pontos de perguntas/missões
       })
       .eq("discipulo_id", discipulo.id)
-      .eq("fase_numero", 1)
-      .eq("passo_numero", numero)
 
     if (errorReset) {
       console.error("[v0] ERRO ao resetar progresso:", errorReset)
@@ -472,21 +454,17 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .maybeSingle()
 
   if (!progressoExistente) {
     await supabase.from("progresso_fases").insert({
       discipulo_id: discipulo.id,
-      fase_numero: 1,
-      passo_numero: numero,
+      fase_atual: discipulo.fase_atual || 1,
+      passo_atual: numero,
       videos_assistidos: [videoId],
       artigos_lidos: [],
       reflexoes_concluidas: 1, // Incrementar reflexões concluídas
-      pontuacao_total: 10, // Adicionar pontuação total
-      completado: false,
-      enviado_para_validacao: false,
+      pontuacao_passo_atual: 10, // Adicionar pontuação total
       data_inicio: new Date().toISOString(),
     })
   } else {
@@ -498,11 +476,9 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         .update({
           videos_assistidos: videosAtuais,
           reflexoes_concluidas: progressoExistente.reflexoes_concluidas + 1, // Incrementar reflexões concluídas
-          pontuacao_total: progressoExistente.pontuacao_total + 10, // Adicionar pontuação total
+          pontuacao_passo_atual: (progressoExistente.pontuacao_passo_atual || 0) + 10, // Adicionar pontuação total
         })
         .eq("discipulo_id", discipulo.id)
-        .eq("fase_numero", 1)
-        .eq("passo_numero", numero)
 
       if (progressoError) {
         console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
@@ -628,43 +604,31 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .maybeSingle()
 
   if (!progressoExistente) {
     await supabase.from("progresso_fases").insert({
       discipulo_id: discipulo.id,
-      fase_numero: 1,
-      passo_numero: numero,
+      fase_atual: discipulo.fase_atual || 1,
+      passo_atual: numero,
       videos_assistidos: [],
       artigos_lidos: [artigoId],
       reflexoes_concluidas: 1, // Incrementar reflexões concluídas
-      pontuacao_total: 10, // Adicionar pontuação total
-      completado: false,
-      enviado_para_validacao: false,
+      pontuacao_passo_atual: 10, // Adicionar pontuação total
       data_inicio: new Date().toISOString(),
     })
   } else {
     const artigosAtuais = (progressoExistente.artigos_lidos as string[]) || []
     if (!artigosAtuais.includes(artigoId)) {
       artigosAtuais.push(artigoId)
-      const { error: progressoError } = await supabase
+      await supabase
         .from("progresso_fases")
         .update({
           artigos_lidos: artigosAtuais,
           reflexoes_concluidas: progressoExistente.reflexoes_concluidas + 1, // Incrementar reflexões concluídas
-          pontuacao_total: progressoExistente.pontuacao_total + 10, // Adicionar pontuação total
+          pontuacao_passo_atual: (progressoExistente.pontuacao_passo_atual || 0) + 10, // Adicionar pontuação total
         })
         .eq("discipulo_id", discipulo.id)
-        .eq("fase_numero", 1)
-        .eq("passo_numero", numero)
-
-      if (progressoError) {
-        console.error("[v0] SERVER: Erro ao atualizar progresso:", progressoError)
-      } else {
-        console.log("[v0] SERVER: Artigo marcado como lido!")
-      }
     }
   }
 
@@ -892,13 +856,13 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Discípulo encontrado:", discipulo.id)
     console.error("[v0 SERVER] XP atual:", discipulo.xp_total)
+    console.error("[v0 SERVER] Passo atual do discípulo:", discipulo.passo_atual)
 
-    console.error("[v0 SERVER] Buscando progresso do passo...")
+    console.error("[v0 SERVER] Buscando progresso do discípulo...")
     const { data: progresso, error: progressoError } = await supabase
       .from("progresso_fases")
       .select("*")
       .eq("discipulo_id", discipulo.id)
-      .eq("passo_atual", numeroPasso) // This was changed from passo_numero
       .single()
 
     if (progressoError || !progresso) {
@@ -908,7 +872,13 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Progresso encontrado - ID:", progresso.id)
     console.error("[v0 SERVER] Pontos do passo:", progresso.pontuacao_passo_atual)
-    console.error("[v0 SERVER] Fase atual:", progresso.fase_atual)
+    console.error("[v0 SERVER] Fase atual no progresso:", progresso.fase_atual)
+    console.error("[v0 SERVER] Passo atual no progresso:", progresso.passo_atual)
+
+    if (discipulo.passo_atual > numeroPasso) {
+      console.error("[v0 SERVER] ERRO: Usuário já avançou deste passo")
+      throw new Error("Você já avançou deste passo")
+    }
 
     if (isPrMarcus) {
       console.error("[v0 SERVER] Executando aprovação automática para Pr. Marcus...")
@@ -920,7 +890,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       console.error("[v0 SERVER] Aprovação automática concluída com sucesso")
     }
 
-    const faseAtual = progresso.fase_atual
+    const faseAtual = discipulo.fase_atual
     const proximoPasso = numeroPasso === 10 ? 1 : numeroPasso + 1
     const proximaFase = numeroPasso === 10 ? faseAtual + 1 : faseAtual
 
@@ -930,7 +900,8 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     console.error("[v0 SERVER] - Próxima fase:", proximaFase)
     console.error("[v0 SERVER] - Próximo passo:", proximoPasso)
 
-    const novoXpTotal = (discipulo.xp_total || 0) + (progresso.pontuacao_passo_atual || 0)
+    const xpPasso = progresso.pontuacao_passo_atual || 0
+    const novoXpTotal = (discipulo.xp_total || 0) + xpPasso
     console.error("[v0 SERVER] Novo XP total:", novoXpTotal)
 
     console.error("[v0 SERVER] Atualizando discípulo...")
@@ -950,38 +921,25 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Discípulo atualizado com sucesso")
 
-    // A tabela não tem campo completado, então só atualizamos data_inicio_passo para histórico
-    console.error("[v0 SERVER] Atualizando data de conclusão do passo...")
-    const { error: validarError } = await supabase
-      .from("progresso_fases")
-      .update({
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", progresso.id)
-
-    if (validarError) {
-      console.error("[v0 SERVER] ERRO ao atualizar progresso:", validarError)
-      throw validarError
-    }
-
-    console.error("[v0 SERVER] Progresso atualizado")
-
+    // Atualizando recompensas (array de insígnias)...
     console.error("[v0 SERVER] Atualizando recompensas (array de insígnias)...")
 
-    const { data: recompensaExistente, error: fetchRecompensaError } = await supabaseAdmin.rpc("exec_sql", {
-      query: `SELECT * FROM recompensas WHERE discipulo_id = '${discipulo.id}' LIMIT 1`,
-    })
+    const { data: recompensaExistente, error: fetchRecompensaError } = await supabaseAdmin
+      .from("recompensas")
+      .select("*")
+      .eq("discipulo_id", discipulo.id)
+      .maybeSingle()
 
     if (fetchRecompensaError) {
-      console.error("[v0 SERVER] ERRO ao buscar recompensas existentes:", fetchRecompensaError)
+      console.error("[v0 SERVER] ERRO ao buscar recompensas existentes:", JSON.stringify(fetchRecompensaError))
     }
 
-    const existeRecompensa = recompensaExistente && recompensaExistente.length > 0
+    const existeRecompensa = !!recompensaExistente
     console.error("[v0 SERVER] Recompensa existente encontrada?", existeRecompensa)
 
     const novaInsignia = {
       nome: `Passo ${numeroPasso} Concluído`,
-      descricao: `Você completou o passo ${numeroPasso} e ganhou ${progresso.pontuacao_passo_atual} XP!`,
+      descricao: `Você completou o passo ${numeroPasso} e ganhou ${xpPasso} XP!`,
       passo: numeroPasso,
       fase: faseAtual,
       data: new Date().toISOString(),
@@ -990,64 +948,60 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     console.error("[v0 SERVER] Nova insígnia a adicionar:", JSON.stringify(novaInsignia))
 
     if (existeRecompensa) {
-      const recompensa = recompensaExistente[0]
-      const insigniasAtuais = Array.isArray(recompensa.insignias) ? recompensa.insignias : []
+      const insigniasAtuais = Array.isArray(recompensaExistente.insignias) ? recompensaExistente.insignias : []
 
       console.error("[v0 SERVER] Insígnias atuais:", insigniasAtuais.length)
 
       insigniasAtuais.push(novaInsignia)
-      const insigniasJson = JSON.stringify(insigniasAtuais).replace(/'/g, "''")
 
-      const updateQuery = `
-        UPDATE recompensas 
-        SET 
-          insignias = '${insigniasJson}'::jsonb,
-          updated_at = NOW()
-        WHERE discipulo_id = '${discipulo.id}'
-        RETURNING *
-      `
-
-      console.error("[v0 SERVER] Executando UPDATE query...")
-      const { data: updatedData, error: updateError } = await supabaseAdmin.rpc("exec_sql", {
-        query: updateQuery,
-      })
+      console.error("[v0 SERVER] Atualizando recompensas com admin client...")
+      const { data: updatedData, error: updateError } = await supabaseAdmin
+        .from("recompensas")
+        .update({
+          insignias: insigniasAtuais,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("discipulo_id", discipulo.id)
+        .select()
 
       if (updateError) {
-        console.error("[v0 SERVER] ERRO ao atualizar recompensas:", JSON.stringify(updateError))
+        console.error("[v0 SERVER] ERRO COMPLETO ao atualizar recompensas:")
+        console.error("[v0 SERVER] - Code:", updateError.code)
+        console.error("[v0 SERVER] - Message:", updateError.message)
+        console.error("[v0 SERVER] - Details:", updateError.details)
+        console.error("[v0 SERVER] - Hint:", updateError.hint)
       } else {
-        console.error("[v0 SERVER] Insígnia adicionada. Total:", insigniasAtuais.length)
+        console.error("[v0 SERVER] Insígnia adicionada com sucesso! Total:", insigniasAtuais.length)
+        console.error("[v0 SERVER] Dados atualizados:", JSON.stringify(updatedData))
       }
     } else {
-      console.error("[v0 SERVER] Criando novo registro de recompensas...")
+      console.error("[v0 SERVER] Criando novo registro de recompensas com admin client...")
 
-      const insigniasJson = JSON.stringify([novaInsignia]).replace(/'/g, "''")
-
-      const insertQuery = `
-        INSERT INTO recompensas (discipulo_id, insignias, medalhas, armaduras, nivel)
-        VALUES (
-          '${discipulo.id}',
-          '${insigniasJson}'::jsonb,
-          '[]'::jsonb,
-          '[]'::jsonb,
-          1
-        )
-        RETURNING *
-      `
-
-      console.error("[v0 SERVER] Executando INSERT query...")
-      const { data: insertedData, error: insertError } = await supabaseAdmin.rpc("exec_sql", {
-        query: insertQuery,
-      })
+      const { data: insertedData, error: insertError } = await supabaseAdmin
+        .from("recompensas")
+        .insert({
+          discipulo_id: discipulo.id,
+          insignias: [novaInsignia],
+          medalhas: [],
+          armaduras: [],
+          nivel: 1,
+        })
+        .select()
 
       if (insertError) {
-        console.error("[v0 SERVER] ERRO ao criar recompensas:", JSON.stringify(insertError))
+        console.error("[v0 SERVER] ERRO COMPLETO ao criar recompensas:")
+        console.error("[v0 SERVER] - Code:", insertError.code)
+        console.error("[v0 SERVER] - Message:", insertError.message)
+        console.error("[v0 SERVER] - Details:", insertError.details)
+        console.error("[v0 SERVER] - Hint:", insertError.hint)
       } else {
         console.error("[v0 SERVER] Recompensas criadas com sucesso!")
+        console.error("[v0 SERVER] Dados inseridos:", JSON.stringify(insertedData))
       }
     }
 
-    console.error("[v0 SERVER] Atualizando para próximo passo:", proximoPasso, "na fase:", proximaFase)
-    const { error: novoProgressoError } = await supabase
+    console.log("[v0 SERVER] Atualizando progresso para próximo passo...")
+    const { error: updateProgressoError } = await supabaseAdmin
       .from("progresso_fases")
       .update({
         fase_atual: proximaFase,
@@ -1056,15 +1010,12 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
         reflexoes_concluidas: 0,
         videos_assistidos: [],
         artigos_lidos: [],
-        enviado_para_validacao: false,
-        dias_no_passo: 1,
-        data_inicio_passo: new Date().toISOString(),
       })
       .eq("discipulo_id", discipulo.id)
 
-    if (novoProgressoError) {
-      console.error("[v0 SERVER] ERRO ao atualizar próximo passo:", novoProgressoError)
-      throw novoProgressoError
+    if (updateProgressoError) {
+      console.error("[v0 SERVER] ERRO ao atualizar próximo passo:", updateProgressoError)
+      throw updateProgressoError
     }
     console.error("[v0 SERVER] Próximo passo atualizado com sucesso")
 

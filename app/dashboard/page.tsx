@@ -28,14 +28,8 @@ import {
 } from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>
-}) {
+export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
-
-  const params = await searchParams
 
   const supabase = await createClient()
 
@@ -67,9 +61,9 @@ export default async function DashboardPage({
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_atual", discipulo.fase_atual || 1)
+    .maybeSingle()
 
-  console.log("[v0] Progresso check - Count:", progressoFases?.length, "Error:", progressoError)
+  console.log("[v0] Progresso check - Data:", !!progressoFases, "Error:", progressoError)
 
   // Buscar recompensas
   const { data: recompensas, error: recompensasError } = await supabase
@@ -140,24 +134,14 @@ export default async function DashboardPage({
     .select("*", { count: "exact", head: true })
     .eq("user_id", user.id)
 
-  // Buscar progresso atual do passo
   const { data: progressoAtualData } = await supabase
     .from("progresso_fases")
-    .select("pontuacao_total")
+    .select("pontuacao_passo_atual")
     .eq("discipulo_id", discipulo.id)
-    .eq("passo_numero", discipulo.passo_atual)
-    .eq("fase_atual", 1)
     .maybeSingle()
 
   return (
     <div className="min-h-screen bg-background">
-      {params.error === "passo-load-failed" && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mx-4 mt-4">
-          <p className="font-medium">Erro ao carregar passo</p>
-          <p className="text-sm">Ocorreu um problema ao carregar a página do passo. Por favor, tente novamente.</p>
-        </div>
-      )}
-
       {/* Header */}
       <header className="border-b bg-card shadow-sm sticky top-0 z-50">
         <div className="container mx-auto px-2 sm:px-4 py-2">
@@ -322,13 +306,15 @@ export default async function DashboardPage({
             <div className="space-y-2">
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="font-medium">Experiência</span>
+                {/* Usar pontuacao_passo_atual ao invés de pontuacao_total */}
                 <span className="text-muted-foreground">
-                  {userData.xp + (progressoAtualData?.pontuacao_total || 0)} XP Total
+                  {userData.xp + (progressoAtualData?.pontuacao_passo_atual || 0)} XP Total
                 </span>
               </div>
               <Progress value={(userData.xp / userData.xpToNext) * 100} className="h-2 sm:h-3" />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Passo Atual: +{progressoAtualData?.pontuacao_total || 0} XP</span>
+                {/* Usar pontuacao_passo_atual ao invés de pontuacao_total */}
+                <span>Passo Atual: +{progressoAtualData?.pontuacao_passo_atual || 0} XP</span>
                 <span>
                   {userData.xp} / {userData.xpToNext} XP para próximo nível
                 </span>

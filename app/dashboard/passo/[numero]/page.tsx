@@ -51,20 +51,10 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   const nomeDiscipulo = profile?.nome_completo || "Sem nome"
 
-  const { data: discipuladorData } = await supabase
-    .from("discipulos")
-    .select("discipulador_id")
-    .eq("id", discipulo.id)
-    .single()
-
-  const discipuladorId = discipuladorData?.discipulador_id || null
-
   const { data: progresso, error: progressoError } = await supabase
     .from("progresso_fases")
     .select("*")
     .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
-    .eq("passo_numero", numero)
     .maybeSingle()
 
   console.log("[v0] PassoPage - Progresso:", !!progresso, "Error:", progressoError)
@@ -76,12 +66,10 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       .from("progresso_fases")
       .insert({
         discipulo_id: discipulo.id,
-        fase_numero: 1,
-        passo_numero: numero,
+        fase_atual: 1,
+        passo_atual: numero,
         videos_assistidos: [],
         artigos_lidos: [],
-        completado: false,
-        enviado_para_validacao: false,
         data_inicio: new Date().toISOString(),
       })
       .select()
@@ -91,22 +79,16 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     progressoAtual = novoProgresso
   }
 
-  const { data: todosPassos } = await supabase
-    .from("progresso_fases")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-    .eq("fase_numero", 1)
+  // Passos completados = passo_atual - 1 do discípulo
+  const passosCompletados = (discipulo.passo_atual || 1) - 1
 
-  const passosCompletados = todosPassos?.filter((p) => p.completado).length || 0
+  const { data: discipuladorData } = await supabase
+    .from("discipulos")
+    .select("discipulador_id")
+    .eq("id", discipulo.id)
+    .single()
 
-  let videosAssistidos: string[] = []
-  let artigosLidos: string[] = []
-  if (progressoAtual?.videos_assistidos) {
-    videosAssistidos = Array.isArray(progressoAtual.videos_assistidos) ? progressoAtual.videos_assistidos : []
-  }
-  if (progressoAtual?.artigos_lidos) {
-    artigosLidos = Array.isArray(progressoAtual.artigos_lidos) ? progressoAtual.artigos_lidos : []
-  }
+  const discipuladorId = discipuladorData?.discipulador_id || null
 
   const { data: reflexoesPasso } = await supabase
     .from("reflexoes_conteudo")
@@ -202,8 +184,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       discipulo={{ ...discipulo, nome_completo: nomeDiscipulo }}
       progresso={progressoAtual}
       passosCompletados={passosCompletados}
-      videosAssistidos={videosAssistidos}
-      artigosLidos={artigosLidos}
+      videosAssistidos={progressoAtual?.videos_assistidos || []}
+      artigosLidos={progressoAtual?.artigos_lidos || []}
       status={status}
       discipuladorId={discipuladorId}
       statusLeituraSemana={statusLeituraSemana}
