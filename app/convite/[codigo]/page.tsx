@@ -58,7 +58,6 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
       emailDiscipulador = discipulador.email || ""
       console.log("[v0] ✅ Nome encontrado em profiles:", nomeDiscipulador)
     } else {
-      // Se não encontrou em profiles, busca em discipulos usando user_id
       console.log("[v0] Não encontrado em profiles, buscando em discipulos com user_id...")
       const { data: discipuloInfo, error: discipuloError } = await supabase
         .from("discipulos")
@@ -66,32 +65,48 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
         .eq("user_id", convite.discipulador_id)
         .maybeSingle()
 
-      console.log("[v0] Resultado busca em discipulos:", { discipuloInfo, error: discipuloError })
+      console.log("[v0] Resultado busca em discipulos (user_id):", { discipuloInfo, error: discipuloError })
 
       if (discipuloInfo) {
         nomeDiscipulador = discipuloInfo.nome_completo_temp || "Desconhecido"
         emailDiscipulador = discipuloInfo.email_temporario || ""
-        console.log("[v0] ✅ Nome encontrado em discipulos:", nomeDiscipulador)
+        console.log("[v0] ✅ Nome encontrado em discipulos (user_id):", nomeDiscipulador)
       } else {
-        console.log("[v0] Não encontrado em discipulos, buscando em auth.users...")
-        try {
-          const adminClient = createAdminClient()
-          const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(convite.discipulador_id)
+        console.log("[v0] Não encontrado como user_id, buscando como discipulador_id ativo...")
+        const { data: discipuloMentorado, error: mentoradoError } = await supabase
+          .from("discipulos")
+          .select("discipulador_id")
+          .eq("discipulador_id", convite.discipulador_id)
+          .limit(1)
+          .maybeSingle()
 
-          console.log("[v0] Resultado busca em auth.users:", { authUser, error: authError })
+        console.log("[v0] Resultado busca como discipulador ativo:", { discipuloMentorado, error: mentoradoError })
 
-          if (authUser?.user) {
-            nomeDiscipulador =
-              authUser.user.user_metadata?.nome_completo || authUser.user.email?.split("@")[0] || "Discipulador"
-            emailDiscipulador = authUser.user.email || ""
-            console.log("[v0] ✅ Informações encontradas em auth.users")
-            console.log("[v0] Nome extraído:", nomeDiscipulador)
-            console.log("[v0] Email:", emailDiscipulador)
-          } else {
-            console.error("[v0] ❌ PROBLEMA: Usuário não encontrado nem em auth.users")
+        if (discipuloMentorado) {
+          console.log("[v0] Encontrado como discipulador ativo, buscando auth.users...")
+          try {
+            const adminClient = createAdminClient()
+            const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(
+              convite.discipulador_id,
+            )
+
+            console.log("[v0] Resultado busca em auth.users:", { authUser, error: authError })
+
+            if (authUser?.user) {
+              nomeDiscipulador =
+                authUser.user.user_metadata?.nome_completo || authUser.user.email?.split("@")[0] || "Discipulador"
+              emailDiscipulador = authUser.user.email || ""
+              console.log("[v0] ✅ Informações encontradas em auth.users")
+              console.log("[v0] Nome extraído:", nomeDiscipulador)
+              console.log("[v0] Email:", emailDiscipulador)
+            } else {
+              console.error("[v0] ❌ PROBLEMA: Usuário não encontrado nem em auth.users")
+            }
+          } catch (authError) {
+            console.error("[v0] ❌ Erro ao buscar em auth.users:", authError)
           }
-        } catch (authError) {
-          console.error("[v0] ❌ Erro ao buscar em auth.users:", authError)
+        } else {
+          console.error("[v0] ❌ PROBLEMA: Não encontrado em nenhuma tabela")
         }
       }
     }
