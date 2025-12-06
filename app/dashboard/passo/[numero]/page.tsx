@@ -127,6 +127,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   let statusLeituraSemana: "nao_iniciada" | "pendente" | "concluida" = "nao_iniciada"
   let temaSemana = ""
   let descricaoSemana = ""
+  let leiturasSemana: any[] = []
+  let capitulosLidos: number[] = []
 
   if (numero === 1 || numero === 2 || numero === 3 || numero === 4) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
@@ -147,11 +149,13 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     console.log("[v0] PassoPage - Plano semana:", !!planoSemana, "Error:", planoError)
 
     if (leituraCapitulos && planoSemana) {
-      const capitulosLidos = leituraCapitulos.capitulos_lidos || []
+      capitulosLidos = leituraCapitulos.capitulos_lidos || []
       const capitulosSemana = planoSemana.capitulos_semana || []
 
       temaSemana = planoSemana.tema || ""
       descricaoSemana = planoSemana.descricao || ""
+
+      leiturasSemana = capitulosSemana.map((cap: number) => ({ id: cap }))
 
       // Verificar se TODOS os capítulos da semana foram lidos
       const todosLidos = capitulosSemana.every((cap: number) => capitulosLidos.includes(cap))
@@ -206,6 +210,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       temaSemana={temaSemana}
       descricaoSemana={descricaoSemana}
       perguntasReflexivas={perguntasReflexivas}
+      leiturasSemana={leiturasSemana}
+      capitulosLidos={capitulosLidos}
     />
   )
 }

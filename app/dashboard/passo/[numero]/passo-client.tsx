@@ -237,12 +237,13 @@ export default function PassoClient({
   const leituraBiblicaConcluida = () => {
     if (!leiturasSemana || leiturasSemana.length === 0) return false
 
-    // Verificar se todos os capítulos da semana foram lidos
     const todosCapitulosLidos = leiturasSemana.every((capitulo) => capitulosLidos.includes(capitulo.id))
 
     console.log("[v0] Verificando leitura bíblica:")
+    console.log("[v0] Leituras da semana:", leiturasSemana)
     console.log("[v0] Total de capítulos da semana:", leiturasSemana.length)
-    console.log("[v0] Capítulos lidos:", capitulosLidos.length)
+    console.log("[v0] Capítulos lidos array:", capitulosLidos)
+    console.log("[v0] Total capítulos lidos:", capitulosLidos.length)
     console.log("[v0] Todos capítulos lidos:", todosCapitulosLidos)
 
     return todosCapitulosLidos
