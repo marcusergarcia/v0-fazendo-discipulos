@@ -42,26 +42,44 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
   let emailDiscipulador = ""
 
   if (convite.discipulador_id) {
-    // Buscar em profiles e discipulos simultaneamente
-    const [profileResult, discipuloResult] = await Promise.all([
-      supabase.from("profiles").select("nome_completo, email").eq("id", convite.discipulador_id).maybeSingle(),
-      supabase
+    console.log("[v0] ========== BUSCANDO NOME DO DISCIPULADOR ==========")
+    console.log("[v0] Discipulador ID:", convite.discipulador_id)
+
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("nome_completo, email")
+      .eq("id", convite.discipulador_id)
+      .single()
+
+    console.log("[v0] Resultado da busca em profiles:", profileData)
+    console.log("[v0] Erro da busca em profiles:", profileError)
+
+    if (profileData?.nome_completo) {
+      nomeDiscipulador = profileData.nome_completo
+      emailDiscipulador = profileData.email || ""
+      console.log("[v0] ✓ Nome encontrado em profiles:", nomeDiscipulador)
+    } else {
+      console.log("[v0] Não encontrado em profiles, buscando em discipulos...")
+
+      const { data: discipuloData, error: discipuloError } = await supabase
         .from("discipulos")
-        .select("nome_completo_temp, email_temporario")
+        .select("nome_completo_temp, email_temporario, user_id, discipulador_id")
         .or(`user_id.eq.${convite.discipulador_id},discipulador_id.eq.${convite.discipulador_id}`)
         .limit(1)
-        .maybeSingle(),
-    ])
+        .single()
 
-    // Priorizar profiles, depois discipulos
-    if (profileResult.data?.nome_completo) {
-      nomeDiscipulador = profileResult.data.nome_completo
-      emailDiscipulador = profileResult.data.email || ""
-    } else if (discipuloResult.data?.nome_completo_temp) {
-      nomeDiscipulador = discipuloResult.data.nome_completo_temp
-      emailDiscipulador = discipuloResult.data.email_temporario || ""
+      console.log("[v0] Resultado da busca em discipulos:", discipuloData)
+      console.log("[v0] Erro da busca em discipulos:", discipuloError)
+
+      if (discipuloData?.nome_completo_temp) {
+        nomeDiscipulador = discipuloData.nome_completo_temp
+        emailDiscipulador = discipuloData.email_temporario || ""
+        console.log("[v0] ✓ Nome encontrado em discipulos:", nomeDiscipulador)
+      } else {
+        console.log("[v0] ⚠ Nenhum nome encontrado. Mantendo ID como fallback:", nomeDiscipulador)
+      }
     }
-    // Se não encontrar nenhum nome, mantém o ID como fallback
+    console.log("[v0] ========== FIM BUSCA NOME ==========")
   }
 
   console.log("[v0] NOME FINAL QUE SERÁ EXIBIDO:", nomeDiscipulador)
