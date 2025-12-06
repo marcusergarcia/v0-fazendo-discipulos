@@ -19,6 +19,8 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   console.log("[v0] Convite encontrado:", convite)
   console.log("[v0] Discipulador ID do convite:", convite?.discipulador_id)
+  console.log("[v0] Tipo do discipulador_id:", typeof convite?.discipulador_id)
+  console.log("[v0] Comprimento do discipulador_id:", convite?.discipulador_id?.length)
 
   // Se convite inválido, mostrar mensagem de erro
   if (error || !convite) {
@@ -41,7 +43,7 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   if (convite.discipulador_id) {
     console.log("[v0] ==== BUSCANDO NOME DO DISCIPULADOR ====")
-    console.log("[v0] discipulador_id do convite:", convite.discipulador_id)
+    console.log("[v0] Valor EXATO do discipulador_id:", JSON.stringify(convite.discipulador_id))
 
     const { data: discipuladorProfile, error: profileError } = await supabase
       .from("profiles")
@@ -49,69 +51,38 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
       .eq("id", convite.discipulador_id)
       .maybeSingle()
 
+    console.log("[v0] Query em profiles com id:", convite.discipulador_id)
     console.log("[v0] Resultado busca em profiles:")
-    console.log("[v0]   - Data:", discipuladorProfile)
+    console.log("[v0]   - Data encontrada:", discipuladorProfile)
     console.log("[v0]   - Error:", profileError)
+    console.log("[v0]   - profileError?.message:", profileError?.message)
 
     if (discipuladorProfile?.nome_completo) {
       nomeDiscipulador = discipuladorProfile.nome_completo
       emailDiscipulador = discipuladorProfile.email || ""
       console.log("[v0] ✓ Nome encontrado em profiles:", nomeDiscipulador)
     } else {
-      console.log("[v0] ✗ Nome NÃO encontrado em profiles, tentando discipulos...")
+      console.log("[v0] ✗ Nome NÃO encontrado em profiles")
+      console.log("[v0] Tentando buscar em discipulos com user_id...")
 
-      const { data: discipuloByUserId, error: discipuloError1 } = await supabase
+      const { data: discipuloRecord, error: discipuloError } = await supabase
         .from("discipulos")
         .select("id, nome_completo_temp, email_temporario, user_id, discipulador_id")
         .eq("user_id", convite.discipulador_id)
         .maybeSingle()
 
-      console.log("[v0] Resultado busca em discipulos por user_id:")
-      console.log("[v0]   - Data:", discipuloByUserId)
-      console.log("[v0]   - Error:", discipuloError1)
+      console.log("[v0] Query em discipulos com user_id:", convite.discipulador_id)
+      console.log("[v0] Resultado busca em discipulos:")
+      console.log("[v0]   - Data encontrada:", discipuloRecord)
+      console.log("[v0]   - Error:", discipuloError)
 
-      if (discipuloByUserId?.nome_completo_temp) {
-        nomeDiscipulador = discipuloByUserId.nome_completo_temp
-        emailDiscipulador = discipuloByUserId.email_temporario || ""
-        console.log("[v0] ✓ Nome encontrado em discipulos (user_id):", nomeDiscipulador)
+      if (discipuloRecord?.nome_completo_temp) {
+        nomeDiscipulador = discipuloRecord.nome_completo_temp
+        emailDiscipulador = discipuloRecord.email_temporario || ""
+        console.log("[v0] ✓ Nome encontrado em discipulos:", nomeDiscipulador)
       } else {
-        console.log("[v0] ✗ Nome NÃO encontrado por user_id, buscando qualquer registro deste discipulador...")
-
-        const { data: discipulosByDiscipuladorId, error: discipuloError2 } = await supabase
-          .from("discipulos")
-          .select("id, nome_completo_temp, email_temporario, user_id, discipulador_id")
-          .eq("discipulador_id", convite.discipulador_id)
-          .limit(1)
-
-        console.log("[v0] Resultado busca em discipulos por discipulador_id:")
-        console.log("[v0]   - Data (array):", discipulosByDiscipuladorId)
-        console.log("[v0]   - Error:", discipuloError2)
-        console.log("[v0]   - Quantidade de registros:", discipulosByDiscipuladorId?.length)
-
-        if (discipulosByDiscipuladorId && discipulosByDiscipuladorId.length > 0) {
-          console.log("[v0] Esta pessoa discipula alguém! Buscando o registro do próprio discipulador...")
-
-          const { data: perfilDoDiscipulador, error: perfilError } = await supabase
-            .from("discipulos")
-            .select("id, nome_completo_temp, email_temporario, user_id")
-            .eq("user_id", convite.discipulador_id)
-            .maybeSingle()
-
-          console.log("[v0] Perfil do próprio discipulador:")
-          console.log("[v0]   - Data:", perfilDoDiscipulador)
-          console.log("[v0]   - Error:", perfilError)
-
-          if (perfilDoDiscipulador?.nome_completo_temp) {
-            nomeDiscipulador = perfilDoDiscipulador.nome_completo_temp
-            emailDiscipulador = perfilDoDiscipulador.email_temporario || ""
-            console.log("[v0] ✓ Nome encontrado no perfil do discipulador:", nomeDiscipulador)
-          } else {
-            console.log("[v0] ✗ PROBLEMA: Esta pessoa discipula outros mas não tem registro próprio!")
-            console.log("[v0] Tentando buscar nome via auth.users...")
-          }
-        } else {
-          console.log("[v0] ✗ Nenhum registro encontrado em discipulos")
-        }
+        console.log("[v0] ✗ PROBLEMA: Nenhum registro encontrado para discipulador_id:", convite.discipulador_id)
+        console.log("[v0] Este ID não existe em profiles NEM em discipulos!")
       }
     }
 
