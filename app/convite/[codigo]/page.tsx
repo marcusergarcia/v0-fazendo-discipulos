@@ -29,62 +29,72 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     )
   }
 
+  console.log("[v0] ========== INICIO DEBUG ==========")
   console.log("[v0] CONVITE DATA:", JSON.stringify(convite, null, 2))
   console.log("[v0] DISCIPULADOR_ID:", convite.discipulador_id)
   console.log("[v0] DISCIPULADOR_ID TYPE:", typeof convite.discipulador_id)
+  console.log("[v0] DISCIPULADOR_ID LENGTH:", convite.discipulador_id?.length)
 
   let nomeDiscipulador = "Convite Direto"
   let emailDiscipulador = ""
 
   if (convite.discipulador_id) {
-    const { data: rawData, error: rawError } = await supabase
-      .rpc("get_profile_name", {
-        profile_id: convite.discipulador_id,
-      })
-      .maybeSingle()
+    console.log("[v0] ========== BUSCANDO EM PROFILES ==========")
 
-    console.log("[v0] RAW SQL RESULT:", rawData)
-    console.log("[v0] RAW SQL ERROR:", rawError)
-
-    // Tentar buscar em profiles primeiro
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("nome_completo, email, id")
       .eq("id", convite.discipulador_id)
       .maybeSingle()
 
+    console.log("[v0] PROFILE QUERY PARAMS:", {
+      table: "profiles",
+      id_buscado: convite.discipulador_id,
+      select: "nome_completo, email, id",
+    })
     console.log("[v0] PROFILE QUERY RESULT:", JSON.stringify(profileData, null, 2))
-    console.log("[v0] PROFILE QUERY ERROR:", profileError)
+    console.log("[v0] PROFILE QUERY ERROR:", JSON.stringify(profileError, null, 2))
+    console.log("[v0] PROFILE DATA EXISTS?", !!profileData)
+    console.log("[v0] PROFILE HAS NOME?", !!profileData?.nome_completo)
 
     if (profileData?.nome_completo) {
       nomeDiscipulador = profileData.nome_completo
       emailDiscipulador = profileData.email || ""
-      console.log("[v0] FOUND IN PROFILES:", nomeDiscipulador)
+      console.log("[v0] ✅ ENCONTRADO EM PROFILES:", nomeDiscipulador)
     } else {
-      // Se não encontrou em profiles, buscar em discipulos
+      console.log("[v0] ========== BUSCANDO EM DISCIPULOS ==========")
+
       const { data: discipuloData, error: discipuloError } = await supabase
         .from("discipulos")
-        .select("nome_completo_temp, email_temporario, user_id, discipulador_id")
-        .or(`user_id.eq.${convite.discipulador_id},discipulador_id.eq.${convite.discipulador_id}`)
-        .limit(1)
+        .select("nome_completo_temp, email_temporario, user_id")
+        .eq("user_id", convite.discipulador_id)
         .maybeSingle()
 
+      console.log("[v0] DISCIPULO QUERY PARAMS:", {
+        table: "discipulos",
+        user_id_buscado: convite.discipulador_id,
+        select: "nome_completo_temp, email_temporario, user_id",
+      })
       console.log("[v0] DISCIPULO QUERY RESULT:", JSON.stringify(discipuloData, null, 2))
-      console.log("[v0] DISCIPULO QUERY ERROR:", discipuloError)
+      console.log("[v0] DISCIPULO QUERY ERROR:", JSON.stringify(discipuloError, null, 2))
+      console.log("[v0] DISCIPULO DATA EXISTS?", !!discipuloData)
+      console.log("[v0] DISCIPULO HAS NOME?", !!discipuloData?.nome_completo_temp)
 
       if (discipuloData?.nome_completo_temp) {
         nomeDiscipulador = discipuloData.nome_completo_temp
         emailDiscipulador = discipuloData.email_temporario || ""
-        console.log("[v0] FOUND IN DISCIPULOS:", nomeDiscipulador)
+        console.log("[v0] ✅ ENCONTRADO EM DISCIPULOS:", nomeDiscipulador)
       } else {
-        // Fallback para mostrar o ID caso não encontre em nenhuma tabela
-        console.log("[v0] NOT FOUND IN ANY TABLE, USING ID AS FALLBACK")
+        console.log("[v0] ❌ NÃO ENCONTRADO EM NENHUMA TABELA - USANDO ID")
         nomeDiscipulador = convite.discipulador_id
       }
     }
   }
 
+  console.log("[v0] ========== RESULTADO FINAL ==========")
   console.log("[v0] FINAL NOME DISCIPULADOR:", nomeDiscipulador)
+  console.log("[v0] FINAL EMAIL DISCIPULADOR:", emailDiscipulador)
+  console.log("[v0] ========== FIM DEBUG ==========")
 
   return (
     <CadastroConviteClient
