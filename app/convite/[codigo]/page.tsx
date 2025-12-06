@@ -37,6 +37,26 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   if (!convite.discipulador_id) {
     console.error("[v0] PROBLEMA: convite.discipulador_id está null ou undefined")
+    const { data: discipuloQueConvidou } = await supabase
+      .from("discipulos")
+      .select("nome_completo_temp, user_id")
+      .eq("user_id", convite.discipulador_id)
+      .maybeSingle()
+
+    if (discipuloQueConvidou) {
+      return (
+        <CadastroConviteClient
+          convite={{
+            ...convite,
+            discipulador: {
+              nome_completo: discipuloQueConvidou.nome_completo_temp || "Desconhecido",
+              email: "",
+            },
+          }}
+        />
+      )
+    }
+
     return (
       <CadastroConviteClient
         convite={{
@@ -57,10 +77,32 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     console.error("[v0] Erro ao buscar perfil do discipulador:", discipuladorError)
   }
 
-  console.log("[v0] Discipulador encontrado:", discipulador)
+  console.log("[v0] Discipulador encontrado em profiles:", discipulador)
 
   if (!discipulador) {
-    console.error("[v0] PROBLEMA: Nenhum perfil encontrado para discipulador_id:", convite.discipulador_id)
+    console.error("[v0] PROBLEMA: Nenhum perfil encontrado em profiles para discipulador_id:", convite.discipulador_id)
+
+    const { data: discipuloInfo } = await supabase
+      .from("discipulos")
+      .select("nome_completo_temp, email_temporario")
+      .eq("user_id", convite.discipulador_id)
+      .maybeSingle()
+
+    console.log("[v0] Tentando buscar em discipulos:", discipuloInfo)
+
+    if (discipuloInfo) {
+      return (
+        <CadastroConviteClient
+          convite={{
+            ...convite,
+            discipulador: {
+              nome_completo: discipuloInfo.nome_completo_temp || "Desconhecido",
+              email: discipuloInfo.email_temporario || "",
+            },
+          }}
+        />
+      )
+    }
   }
 
   return (

@@ -36,6 +36,21 @@ export default function ConvitesClient({
     try {
       console.log("[v0] Iniciando criação de convite para userId:", userId)
 
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("nome_completo, email")
+        .eq("id", userId)
+        .maybeSingle()
+
+      console.log("[v0] Perfil do criador do convite:", profile, "Error:", profileError)
+
+      if (!profile) {
+        alert(
+          "Você precisa completar seu perfil antes de criar convites. Por favor, vá para a página de perfil e preencha seus dados.",
+        )
+        return
+      }
+
       // Gerar código único
       const codigo = Math.random().toString(36).substring(2, 10).toUpperCase()
       console.log("[v0] Código gerado:", codigo)
