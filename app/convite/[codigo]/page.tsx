@@ -6,6 +6,8 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   const supabase = await createClient()
 
+  console.log("[v0] Buscando convite com código:", codigo)
+
   const { data: convite, error } = await supabase
     .from("convites")
     .select("*")
@@ -14,8 +16,12 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     .gt("expira_em", new Date().toISOString())
     .single()
 
+  console.log("[v0] Convite encontrado:", convite)
+  console.log("[v0] Discipulador ID do convite:", convite?.discipulador_id)
+
   // Se convite inválido, mostrar mensagem de erro
   if (error || !convite) {
+    console.error("[v0] Erro ao buscar convite:", error)
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600 p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-xl p-8 text-center">
@@ -29,6 +35,18 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     )
   }
 
+  if (!convite.discipulador_id) {
+    console.error("[v0] PROBLEMA: convite.discipulador_id está null ou undefined")
+    return (
+      <CadastroConviteClient
+        convite={{
+          ...convite,
+          discipulador: { nome_completo: "Desconhecido (ID não encontrado)", email: "" },
+        }}
+      />
+    )
+  }
+
   const { data: discipulador, error: discipuladorError } = await supabase
     .from("profiles")
     .select("nome_completo, email")
@@ -37,6 +55,12 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
 
   if (discipuladorError) {
     console.error("[v0] Erro ao buscar perfil do discipulador:", discipuladorError)
+  }
+
+  console.log("[v0] Discipulador encontrado:", discipulador)
+
+  if (!discipulador) {
+    console.error("[v0] PROBLEMA: Nenhum perfil encontrado para discipulador_id:", convite.discipulador_id)
   }
 
   return (
