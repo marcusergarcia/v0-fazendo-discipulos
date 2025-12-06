@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import CadastroConviteClient from "./cadastro-convite-client"
 
 export default async function ConvitePage({ params }: { params: Promise<{ codigo: string }> }) {
@@ -44,7 +45,6 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
     console.log("[v0] ==================== BUSCANDO DISCIPULADOR ====================")
     console.log("[v0] Buscando com discipulador_id:", convite.discipulador_id)
 
-    // Primeiro tenta buscar em profiles
     const { data: discipulador, error: profileError } = await supabase
       .from("profiles")
       .select("nome_completo, email, id")
@@ -73,15 +73,26 @@ export default async function ConvitePage({ params }: { params: Promise<{ codigo
         emailDiscipulador = discipuloInfo.email_temporario || ""
         console.log("[v0] ✅ Nome encontrado em discipulos:", nomeDiscipulador)
       } else {
-        console.error("[v0] ❌ PROBLEMA: Nenhum registro encontrado nem em profiles nem em discipulos")
-        console.error("[v0] Tentamos buscar com ID:", convite.discipulador_id)
+        console.log("[v0] Não encontrado em discipulos, buscando em auth.users...")
+        try {
+          const adminClient = createAdminClient()
+          const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(convite.discipulador_id)
 
-        const { data: todosDiscipulos } = await supabase
-          .from("discipulos")
-          .select("user_id, nome_completo_temp")
-          .limit(5)
+          console.log("[v0] Resultado busca em auth.users:", { authUser, error: authError })
 
-        console.log("[v0] DEBUG: Alguns discípulos no banco:", todosDiscipulos)
+          if (authUser?.user) {
+            nomeDiscipulador =
+              authUser.user.user_metadata?.nome_completo || authUser.user.email?.split("@")[0] || "Discipulador"
+            emailDiscipulador = authUser.user.email || ""
+            console.log("[v0] ✅ Informações encontradas em auth.users")
+            console.log("[v0] Nome extraído:", nomeDiscipulador)
+            console.log("[v0] Email:", emailDiscipulador)
+          } else {
+            console.error("[v0] ❌ PROBLEMA: Usuário não encontrado nem em auth.users")
+          }
+        } catch (authError) {
+          console.error("[v0] ❌ Erro ao buscar em auth.users:", authError)
+        }
       }
     }
     console.log("[v0] ==================== FIM BUSCA DISCIPULADOR ====================")
