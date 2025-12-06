@@ -892,7 +892,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       .from("progresso_fases")
       .select("*")
       .eq("discipulo_id", discipulo.id)
-      .eq("passo_numero", numeroPasso)
+      .eq("passo_atual", numeroPasso) // This was changed from passo_numero
       .single()
 
     if (progressoError || !progresso) {
@@ -901,9 +901,8 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     }
 
     console.error("[v0 SERVER] Progresso encontrado - ID:", progresso.id)
-    console.error("[v0 SERVER] Pontos do passo:", progresso.pontuacao_total)
-    console.error("[v0 SERVER] Completado?", progresso.completado)
-    console.error("[v0 SERVER] Fase atual:", progresso.fase_numero)
+    console.error("[v0 SERVER] Pontos do passo:", progresso.pontuacao_passo_atual)
+    console.error("[v0 SERVER] Fase atual:", progresso.fase_atual)
 
     if (isPrMarcus) {
       console.error("[v0 SERVER] Executando aprovação automática para Pr. Marcus...")
@@ -915,7 +914,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       console.error("[v0 SERVER] Aprovação automática concluída com sucesso")
     }
 
-    const faseAtual = progresso.fase_numero
+    const faseAtual = progresso.fase_atual
     const proximoPasso = numeroPasso === 10 ? 1 : numeroPasso + 1
     const proximaFase = numeroPasso === 10 ? faseAtual + 1 : faseAtual
 
@@ -925,7 +924,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     console.error("[v0 SERVER] - Próxima fase:", proximaFase)
     console.error("[v0 SERVER] - Próximo passo:", proximoPasso)
 
-    const novoXpTotal = (discipulo.xp_total || 0) + (progresso.pontuacao_total || 0)
+    const novoXpTotal = (discipulo.xp_total || 0) + (progresso.pontuacao_passo_atual || 0)
     console.error("[v0 SERVER] Novo XP total:", novoXpTotal)
 
     console.error("[v0 SERVER] Atualizando discípulo...")
@@ -945,21 +944,21 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Discípulo atualizado com sucesso")
 
-    console.error("[v0 SERVER] Marcando progresso como completado...")
+    // A tabela não tem campo completado, então só atualizamos data_inicio_passo para histórico
+    console.error("[v0 SERVER] Atualizando data de conclusão do passo...")
     const { error: validarError } = await supabase
       .from("progresso_fases")
       .update({
-        completado: true,
-        data_completado: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .eq("id", progresso.id)
 
     if (validarError) {
-      console.error("[v0 SERVER] ERRO ao marcar progresso como completado:", validarError)
+      console.error("[v0 SERVER] ERRO ao atualizar progresso:", validarError)
       throw validarError
     }
 
-    console.error("[v0 SERVER] Progresso marcado como completado")
+    console.error("[v0 SERVER] Progresso atualizado")
 
     console.error("[v0 SERVER] Atualizando recompensas (array de insígnias)...")
 
@@ -972,7 +971,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     const novaInsignia = {
       nome: `Passo ${numeroPasso} Concluído`,
-      descricao: `Você completou o passo ${numeroPasso} e ganhou ${progresso.pontuacao_total} XP!`,
+      descricao: `Você completou o passo ${numeroPasso} e ganhou ${progresso.pontuacao_passo_atual} XP!`,
       passo: numeroPasso,
       fase: faseAtual,
     }
@@ -1012,31 +1011,27 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       }
     }
 
-    console.error("[v0 SERVER] Criando próximo passo:", proximoPasso, "na fase:", proximaFase)
-    const { error: novoProgressoError } = await supabase.from("progresso_fases").upsert(
-      {
-        discipulo_id: discipulo.id,
-        fase_numero: proximaFase,
-        passo_numero: proximoPasso,
-        pontuacao_total: 0,
+    console.error("[v0 SERVER] Atualizando para próximo passo:", proximoPasso, "na fase:", proximaFase)
+    const { error: novoProgressoError } = await supabase
+      .from("progresso_fases")
+      .update({
+        fase_atual: proximaFase,
+        passo_atual: proximoPasso,
+        pontuacao_passo_atual: 0,
         reflexoes_concluidas: 0,
         videos_assistidos: [],
         artigos_lidos: [],
-        completado: false,
         enviado_para_validacao: false,
         dias_no_passo: 1,
-      },
-      {
-        onConflict: "discipulo_id,fase_numero,passo_numero",
-        ignoreDuplicates: true,
-      },
-    )
+        data_inicio_passo: new Date().toISOString(),
+      })
+      .eq("discipulo_id", discipulo.id)
 
     if (novoProgressoError) {
-      console.error("[v0 SERVER] ERRO ao criar próximo passo:", novoProgressoError)
+      console.error("[v0 SERVER] ERRO ao atualizar próximo passo:", novoProgressoError)
       throw novoProgressoError
     }
-    console.error("[v0 SERVER] Próximo passo criado/verificado com sucesso")
+    console.error("[v0 SERVER] Próximo passo atualizado com sucesso")
 
     console.error("[v0 SERVER] Revalidando páginas...")
     revalidatePath(`/dashboard/passo/${numeroPasso}`)
