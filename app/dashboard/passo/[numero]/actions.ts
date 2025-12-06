@@ -968,17 +968,16 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Atualizando recompensas (array de insígnias)...")
 
-    const { data: recompensaExistente, error: fetchRecompensaError } = await supabaseAdmin
-      .from("recompensas")
-      .select("*")
-      .eq("discipulo_id", discipulo.id)
-      .maybeSingle()
+    const { data: recompensaExistente, error: fetchRecompensaError } = await supabaseAdmin.rpc("exec_sql", {
+      query: `SELECT * FROM recompensas WHERE discipulo_id = '${discipulo.id}' LIMIT 1`,
+    })
 
     if (fetchRecompensaError) {
       console.error("[v0 SERVER] ERRO ao buscar recompensas existentes:", fetchRecompensaError)
     }
 
-    console.error("[v0 SERVER] Recompensa existente encontrada?", !!recompensaExistente)
+    const existeRecompensa = recompensaExistente && recompensaExistente.length > 0
+    console.error("[v0 SERVER] Recompensa existente encontrada?", existeRecompensa)
 
     const novaInsignia = {
       nome: `Passo ${numeroPasso} Concluído`,
@@ -990,60 +989,60 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Nova insígnia a adicionar:", JSON.stringify(novaInsignia))
 
-    if (recompensaExistente) {
-      // Adicionar insígnia ao array existente
-      const insigniasAtuais = Array.isArray(recompensaExistente.insignias) ? recompensaExistente.insignias : []
+    if (existeRecompensa) {
+      const recompensa = recompensaExistente[0]
+      const insigniasAtuais = Array.isArray(recompensa.insignias) ? recompensa.insignias : []
 
       console.error("[v0 SERVER] Insígnias atuais:", insigniasAtuais.length)
 
       insigniasAtuais.push(novaInsignia)
+      const insigniasJson = JSON.stringify(insigniasAtuais).replace(/'/g, "''")
 
-      const { error: recompensasError, data: updatedRecompensa } = await supabaseAdmin
-        .from("recompensas")
-        .update({
-          insignias: insigniasAtuais,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("discipulo_id", discipulo.id)
-        .select()
+      const updateQuery = `
+        UPDATE recompensas 
+        SET 
+          insignias = '${insigniasJson}'::jsonb,
+          updated_at = NOW()
+        WHERE discipulo_id = '${discipulo.id}'
+        RETURNING *
+      `
 
-      if (recompensasError) {
-        console.error("[v0 SERVER] ERRO COMPLETO ao atualizar recompensas:", JSON.stringify(recompensasError))
-        console.error("[v0 SERVER] Código do erro:", recompensasError.code)
-        console.error("[v0 SERVER] Mensagem do erro:", recompensasError.message)
-        console.error("[v0 SERVER] Detalhes do erro:", recompensasError.details)
+      console.error("[v0 SERVER] Executando UPDATE query...")
+      const { data: updatedData, error: updateError } = await supabaseAdmin.rpc("exec_sql", {
+        query: updateQuery,
+      })
+
+      if (updateError) {
+        console.error("[v0 SERVER] ERRO ao atualizar recompensas:", JSON.stringify(updateError))
       } else {
-        console.error("[v0 SERVER] Insígnia adicionada ao array existente. Total:", insigniasAtuais.length)
-        console.error("[v0 SERVER] Recompensa atualizada:", JSON.stringify(updatedRecompensa))
+        console.error("[v0 SERVER] Insígnia adicionada. Total:", insigniasAtuais.length)
       }
     } else {
       console.error("[v0 SERVER] Criando novo registro de recompensas...")
-      console.error("[v0 SERVER] discipulo_id:", discipulo.id)
 
-      const novoRegistro = {
-        discipulo_id: discipulo.id,
-        insignias: [novaInsignia],
-        medalhas: [],
-        armaduras: [],
-        nivel: 1,
-      }
+      const insigniasJson = JSON.stringify([novaInsignia]).replace(/'/g, "''")
 
-      console.error("[v0 SERVER] Dados do novo registro:", JSON.stringify(novoRegistro))
+      const insertQuery = `
+        INSERT INTO recompensas (discipulo_id, insignias, medalhas, armaduras, nivel)
+        VALUES (
+          '${discipulo.id}',
+          '${insigniasJson}'::jsonb,
+          '[]'::jsonb,
+          '[]'::jsonb,
+          1
+        )
+        RETURNING *
+      `
 
-      const { error: recompensasError, data: newRecompensa } = await supabaseAdmin
-        .from("recompensas")
-        .insert(novoRegistro)
-        .select()
+      console.error("[v0 SERVER] Executando INSERT query...")
+      const { data: insertedData, error: insertError } = await supabaseAdmin.rpc("exec_sql", {
+        query: insertQuery,
+      })
 
-      if (recompensasError) {
-        console.error("[v0 SERVER] ERRO COMPLETO ao criar recompensas:", JSON.stringify(recompensasError))
-        console.error("[v0 SERVER] Código do erro:", recompensasError.code)
-        console.error("[v0 SERVER] Mensagem do erro:", recompensasError.message)
-        console.error("[v0 SERVER] Detalhes do erro:", recompensasError.details)
-        console.error("[v0 SERVER] Hint do erro:", recompensasError.hint)
+      if (insertError) {
+        console.error("[v0 SERVER] ERRO ao criar recompensas:", JSON.stringify(insertError))
       } else {
-        console.error("[v0 SERVER] Novo registro de recompensas criado com sucesso!")
-        console.error("[v0 SERVER] Recompensa criada:", JSON.stringify(newRecompensa))
+        console.error("[v0 SERVER] Recompensas criadas com sucesso!")
       }
     }
 
@@ -1125,7 +1124,7 @@ export async function enviarPerguntasReflexivas(
 
   console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
   console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
-  console.log("[v0] SERVER: Discípulo Error:", discipuloError)
+  console.log("[v0] SERVER: Discipulo Error:", discipuloError)
 
   if (!discipulo) {
     console.error("[v0] SERVER: Discípulo não encontrado")
