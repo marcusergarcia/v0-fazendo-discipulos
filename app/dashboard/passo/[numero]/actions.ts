@@ -283,7 +283,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
           const { error: errorNotif } = await supabaseAdmin.from("notificacoes").delete().in("id", notificacoesIds)
 
           if (errorNotif) {
-            console.error("[v0] ERRO ao excluir notificações:", errorNotif)
+            console.error("[v0] SERVER: Erro ao excluir notificações:", errorNotif)
             return { success: false, error: "Erro ao excluir notificações" }
           } else {
             console.log("[v0] ✅ Notificações excluídas com sucesso!")
@@ -968,12 +968,17 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Atualizando recompensas (array de insígnias)...")
 
-    // Buscar ou criar registro de recompensas
-    const { data: recompensaExistente } = await supabaseAdmin
+    const { data: recompensaExistente, error: fetchRecompensaError } = await supabaseAdmin
       .from("recompensas")
       .select("*")
       .eq("discipulo_id", discipulo.id)
-      .single()
+      .maybeSingle()
+
+    if (fetchRecompensaError) {
+      console.error("[v0 SERVER] ERRO ao buscar recompensas existentes:", fetchRecompensaError)
+    }
+
+    console.error("[v0 SERVER] Recompensa existente encontrada?", !!recompensaExistente)
 
     const novaInsignia = {
       nome: `Passo ${numeroPasso} Concluído`,
@@ -983,7 +988,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
       data: new Date().toISOString(),
     }
 
-    console.error("[v0 SERVER] Nova insígnia a adicionar:", novaInsignia)
+    console.error("[v0 SERVER] Nova insígnia a adicionar:", JSON.stringify(novaInsignia))
 
     if (recompensaExistente) {
       // Adicionar insígnia ao array existente
@@ -993,35 +998,52 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
       insigniasAtuais.push(novaInsignia)
 
-      const { error: recompensasError } = await supabaseAdmin
+      const { error: recompensasError, data: updatedRecompensa } = await supabaseAdmin
         .from("recompensas")
         .update({
           insignias: insigniasAtuais,
           updated_at: new Date().toISOString(),
         })
         .eq("discipulo_id", discipulo.id)
+        .select()
 
       if (recompensasError) {
-        console.error("[v0 SERVER] ERRO ao atualizar recompensas:", recompensasError)
+        console.error("[v0 SERVER] ERRO COMPLETO ao atualizar recompensas:", JSON.stringify(recompensasError))
+        console.error("[v0 SERVER] Código do erro:", recompensasError.code)
+        console.error("[v0 SERVER] Mensagem do erro:", recompensasError.message)
+        console.error("[v0 SERVER] Detalhes do erro:", recompensasError.details)
       } else {
         console.error("[v0 SERVER] Insígnia adicionada ao array existente. Total:", insigniasAtuais.length)
+        console.error("[v0 SERVER] Recompensa atualizada:", JSON.stringify(updatedRecompensa))
       }
     } else {
-      // Criar novo registro com a primeira insígnia
       console.error("[v0 SERVER] Criando novo registro de recompensas...")
+      console.error("[v0 SERVER] discipulo_id:", discipulo.id)
 
-      const { error: recompensasError } = await supabaseAdmin.from("recompensas").insert({
+      const novoRegistro = {
         discipulo_id: discipulo.id,
         insignias: [novaInsignia],
         medalhas: [],
         armaduras: [],
         nivel: 1,
-      })
+      }
+
+      console.error("[v0 SERVER] Dados do novo registro:", JSON.stringify(novoRegistro))
+
+      const { error: recompensasError, data: newRecompensa } = await supabaseAdmin
+        .from("recompensas")
+        .insert(novoRegistro)
+        .select()
 
       if (recompensasError) {
-        console.error("[v0 SERVER] ERRO ao criar recompensas:", recompensasError)
+        console.error("[v0 SERVER] ERRO COMPLETO ao criar recompensas:", JSON.stringify(recompensasError))
+        console.error("[v0 SERVER] Código do erro:", recompensasError.code)
+        console.error("[v0 SERVER] Mensagem do erro:", recompensasError.message)
+        console.error("[v0 SERVER] Detalhes do erro:", recompensasError.details)
+        console.error("[v0 SERVER] Hint do erro:", recompensasError.hint)
       } else {
-        console.error("[v0 SERVER] Novo registro de recompensas criado com primeira insígnia")
+        console.error("[v0 SERVER] Novo registro de recompensas criado com sucesso!")
+        console.error("[v0 SERVER] Recompensa criada:", JSON.stringify(newRecompensa))
       }
     }
 
