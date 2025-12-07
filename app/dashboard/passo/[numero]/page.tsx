@@ -101,7 +101,6 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
-    .eq("fase_numero", 1)
     .maybeSingle()
 
   const status = "pendente" // Status simplificado - agora controlado por perguntas_reflexivas

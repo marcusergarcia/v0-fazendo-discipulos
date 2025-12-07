@@ -19,7 +19,7 @@ interface ValidarReflexaoModalProps {
     conteudo_id: string
     xp_ganho?: number
     situacao?: string
-    passo_numero: number
+    passo_atual: number
   }
   discipuloId: string
   discipuloNome: string
@@ -120,7 +120,6 @@ export function ValidarReflexaoModal({
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipuloId)
-        .eq("passo_numero", reflexao.passo_numero)
         .single()
 
       console.log("[v0] Progresso encontrado:", progresso)
@@ -128,7 +127,7 @@ export function ValidarReflexaoModal({
       if (progresso) {
         let videos_assistidos = progresso.videos_assistidos || []
         let artigos_lidos = progresso.artigos_lidos || []
-        let pontuacaoAtual = progresso.pontuacao_total || 0
+        let pontuacaoAtual = progresso.pontuacao_passo_atual || 0
         let reflexoesConcluidas = progresso.reflexoes_concluidas || 0
 
         if (reflexao.tipo === "video") {
@@ -150,7 +149,7 @@ export function ValidarReflexaoModal({
           .update({
             videos_assistidos: reflexao.tipo === "video" ? videos_assistidos : progresso.videos_assistidos,
             artigos_lidos: reflexao.tipo === "artigo" ? artigos_lidos : progresso.artigos_lidos,
-            pontuacao_total: pontuacaoAtual,
+            pontuacao_passo_atual: pontuacaoAtual,
             reflexoes_concluidas: reflexoesConcluidas,
           })
           .eq("id", progresso.id)
@@ -186,7 +185,7 @@ export function ValidarReflexaoModal({
           .from("reflexoes_conteudo")
           .select("situacao")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_numero", passoAtual)
+          .eq("passo_atual", passoAtual)
 
         const todasReflexoesAprovadas =
           todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
@@ -195,7 +194,7 @@ export function ValidarReflexaoModal({
           .from("perguntas_reflexivas")
           .select("situacao")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_numero", passoAtual)
+          .eq("passo_atual", passoAtual)
           .maybeSingle()
 
         const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
@@ -240,21 +239,21 @@ export function ValidarReflexaoModal({
 
           const { data: progressoCompleto } = await supabase
             .from("progresso_fases")
-            .select("pontuacao_total")
+            .select("pontuacao_passo_atual")
             .eq("discipulo_id", discipuloId)
-            .eq("passo_numero", passoAtual)
             .single()
 
-          const pontosDoPassoCompleto = progressoCompleto?.pontuacao_total || 0
+          const pontosDoPassoCompleto = progressoCompleto?.pontuacao_passo_atual || 0
 
           await supabase
             .from("progresso_fases")
             .update({
-              completado: true,
-              data_completado: new Date().toISOString(),
+              pontuacao_passo_atual: 0,
+              reflexoes_concluidas: 0,
+              videos_assistidos: [],
+              artigos_lidos: [],
             })
             .eq("discipulo_id", discipuloId)
-            .eq("passo_numero", passoAtual)
 
           const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
 
@@ -271,39 +270,6 @@ export function ValidarReflexaoModal({
 
           if (proximoPasso <= 10) {
             await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", discipuloId)
-
-            const { data: progressoExistente } = await supabase
-              .from("progresso_fases")
-              .select("id")
-              .eq("discipulo_id", discipuloId)
-              .eq("passo_numero", proximoPasso)
-              .maybeSingle()
-
-            if (!progressoExistente) {
-              const { data: progressoAtualCompleto } = await supabase
-                .from("progresso_fases")
-                .select("fase_numero")
-                .eq("discipulo_id", discipuloId)
-                .eq("passo_numero", passoAtual)
-                .single()
-
-              const faseNumero = progressoAtualCompleto?.fase_numero || 1
-
-              await supabase.from("progresso_fases").insert({
-                discipulo_id: discipuloId,
-                fase_numero: faseNumero,
-                passo_numero: proximoPasso,
-                pontuacao_total: 0,
-                completado: false,
-                videos_assistidos: [],
-                artigos_lidos: [],
-                reflexoes_concluidas: 0,
-                data_inicio: new Date().toISOString(),
-                dias_no_passo: 0,
-                alertado_tempo_excessivo: false,
-                enviado_para_validacao: false,
-              })
-            }
 
             console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
             toast.success(`Parabéns! Passo ${passoAtual} concluído. Passo ${proximoPasso} liberado!`)

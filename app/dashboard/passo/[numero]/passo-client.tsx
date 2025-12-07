@@ -132,6 +132,27 @@ export default function PassoClient({
   const [enviandoPerguntasReflexivas, setEnviandoPerguntasReflexivas] = useState(false)
 
   useEffect(() => {
+    const carregarReflexoes = async () => {
+      const supabase = createClient()
+
+      const { data } = await supabase
+        .from("reflexoes_conteudo")
+        .select("*")
+        .eq("discipulo_id", discipulo.id)
+        .eq("passo_numero", numero)
+
+      if (data) {
+        // Filtra apenas as reflexões aprovadas ou pendentes para exibição
+        const reflexoesFiltradas = data.filter((r) => r.situacao === "aprovado" || r.situacao === "enviado")
+        // Para fins de exibição e controle, podemos apenas considerar as reflexões aprovadas/pendentes
+        // Se precisar do histórico completo, ajuste aqui.
+      }
+    }
+
+    carregarReflexoes()
+  }, [discipulo.id, numero])
+
+  useEffect(() => {
     if (!discipulo) return
 
     const buscarSubmissaoExistente = async () => {
@@ -424,7 +445,7 @@ export default function PassoClient({
   const temProgressoParaResetar = () => {
     const temVideos = videosAssistidos.length > 0
     const temArtigos = artigosLidos.length > 0
-    const temResposta = progresso?.resposta_pergunta || progresso?.resposta_missao
+    const temResposta = progresso?.rascunho_resposta // Check for draft, not necessarily submitted answer
     return temVideos || temArtigos || temResposta
   }
 
@@ -531,7 +552,7 @@ export default function PassoClient({
             <div className="flex gap-2">
               <Badge className="bg-accent/10 text-accent border-accent/20 self-start sm:self-auto">
                 <Award className="w-3 h-3 mr-1" />
-                {progresso?.pontuacao_total || 0} XP ganhos
+                {progresso?.pontuacao_passo_atual || 0} XP ganhos
               </Badge>
               <Badge className="bg-primary/10 text-primary border-primary/20 self-start sm:self-auto">
                 <Target className="w-3 h-3 mr-1" />+{passo.xp} XP disponível

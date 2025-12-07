@@ -17,7 +17,7 @@ interface AvaliarPerguntaReflexivaModalProps {
   resposta: string
   discipuloId: string
   discipuloNome: string
-  passoNumero: number
+  passoAtual: number
   faseNumero: number
   perguntasReflexivasId: string
   situacaoAtual?: string
@@ -30,7 +30,7 @@ export function AvaliarPerguntaReflexivaModal({
   resposta,
   discipuloId,
   discipuloNome,
-  passoNumero,
+  passoAtual,
   faseNumero,
   perguntasReflexivasId,
   situacaoAtual,
@@ -110,14 +110,13 @@ export function AvaliarPerguntaReflexivaModal({
           .from("progresso_fases")
           .select("*")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_numero", passoNumero)
           .single()
 
         if (progresso) {
-          const pontuacaoAtual = progresso.pontuacao_total || 0
+          const pontuacaoAtual = progresso.pontuacao_passo_atual || 0
           const novaPontuacao = pontuacaoAtual + xpTotal
 
-          await supabase.from("progresso_fases").update({ pontuacao_total: novaPontuacao }).eq("id", progresso.id)
+          await supabase.from("progresso_fases").update({ pontuacao_passo_atual: novaPontuacao }).eq("id", progresso.id)
 
           console.log("[v0] ✅ XP total adicionado ao passo:", xpTotal)
         }
@@ -128,7 +127,6 @@ export function AvaliarPerguntaReflexivaModal({
           .select("id")
           .eq("tipo", "perguntas_reflexivas")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_numero", passoNumero)
           .maybeSingle()
 
         if (notificacao) {
@@ -137,7 +135,7 @@ export function AvaliarPerguntaReflexivaModal({
         }
 
         // Verificar se pode liberar próximo passo
-        await verificarLiberacaoProximoPasso(discipuloId, passoNumero, xpTotal)
+        await verificarLiberacaoProximoPasso(discipuloId, passoAtual, xpTotal)
 
         toast.success(`Todas as perguntas aprovadas! +${xpTotal} XP concedido ao discípulo`)
       } else {
@@ -164,7 +162,7 @@ export function AvaliarPerguntaReflexivaModal({
       .from("reflexoes_conteudo")
       .select("situacao")
       .eq("discipulo_id", discipuloId)
-      .eq("passo_numero", passoAtual)
+      .eq("passo_atual", passoAtual)
 
     const todasReflexoesAprovadas =
       todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
@@ -201,20 +199,20 @@ export function AvaliarPerguntaReflexivaModal({
     // Marcar passo como completado
     const { data: progresso } = await supabase
       .from("progresso_fases")
-      .select("pontuacao_total")
+      .select("pontuacao_passo_atual")
       .eq("discipulo_id", discipuloId)
-      .eq("passo_numero", passoAtual)
       .single()
 
     if (progresso) {
       await supabase
         .from("progresso_fases")
         .update({
-          completado: true,
-          data_completado: new Date().toISOString(),
+          pontuacao_passo_atual: 0,
+          reflexoes_concluidas: 0,
+          videos_assistidos: [],
+          artigos_lidos: [],
         })
         .eq("discipulo_id", discipuloId)
-        .eq("passo_numero", passoAtual)
 
       // Transferir XP para o discípulo
       const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
@@ -222,7 +220,7 @@ export function AvaliarPerguntaReflexivaModal({
       if (disc) {
         await supabase
           .from("discipulos")
-          .update({ xp_total: (disc.xp_total || 0) + progresso.pontuacao_total })
+          .update({ xp_total: (disc.xp_total || 0) + progresso.pontuacao_passo_atual })
           .eq("id", discipuloId)
       }
 

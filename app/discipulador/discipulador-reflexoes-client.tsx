@@ -1,10 +1,9 @@
 "use client"
 
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { ValidarReflexaoModal } from "@/components/validar-reflexao-modal"
-import AvaliarRespostasModal from "@/components/avaliar-respostas-modal"
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle } from "lucide-react"
 
 interface Reflexao {
   id: string
@@ -21,8 +20,8 @@ interface Reflexao {
 interface RespostaPassoAtual {
   id: string
   discipulo_id: string
-  fase_numero: number
-  passo_numero: number
+  fase_atual: number
+  passo_atual: number
   pergunta: string
   resposta_pergunta: string
   missao_pratica: string
@@ -40,13 +39,7 @@ interface ReflexoesClientProps {
   situacao?: string | null
 }
 
-export function ReflexoesClient({
-  reflexao,
-  discipuloId,
-  discipuloNome,
-  xp,
-  situacao,
-}: ReflexoesClientProps) {
+export function ReflexoesClient({ reflexao, discipuloId, discipuloNome, xp, situacao }: ReflexoesClientProps) {
   const router = useRouter()
 
   const handleAprovado = (xpConcedido: number) => {
@@ -57,8 +50,7 @@ export function ReflexoesClient({
 
   const situacaoAtual = reflexao?.situacao || situacao
 
-
-  if (situacaoAtual === 'aprovado') {
+  if (situacaoAtual === "aprovado") {
     return (
       <Badge variant="default" className="bg-green-600 hover:bg-green-700">
         <CheckCircle className="w-3 h-3 mr-1" />
@@ -67,7 +59,7 @@ export function ReflexoesClient({
     )
   }
 
-  if (reflexao && situacaoAtual === 'enviado') {
+  if (reflexao && situacaoAtual === "enviado") {
     return (
       <ValidarReflexaoModal
         reflexao={reflexao}
@@ -78,5 +70,9 @@ export function ReflexoesClient({
     )
   }
 
-  return null
+  return (
+    <Badge variant="outline" className="text-muted-foreground">
+      Não iniciado
+    </Badge>
+  )
 }

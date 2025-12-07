@@ -79,7 +79,6 @@ export default async function DiscipuladorPage() {
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipulo.id)
-        .eq("passo_numero", discipulo.passo_atual)
         .maybeSingle()
 
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
@@ -134,10 +133,21 @@ export default async function DiscipuladorPage() {
           })
         })
 
-        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[discipulo.passo_atual as keyof typeof PERGUNTAS_POR_PASSO] || []
+        const faseAtualDiscipulo = progressoAtual?.fase_atual || discipulo.fase_atual
+        const passoAtualDiscipulo = progressoAtual?.passo_atual || discipulo.passo_atual
+
+        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[passoAtualDiscipulo as keyof typeof PERGUNTAS_POR_PASSO] || []
         const perguntasResposta = perguntasDiscipulo.find(
-          (p) => p.fase_numero === discipulo.fase_atual && p.passo_numero === discipulo.passo_atual,
+          (p) => p.fase_numero === faseAtualDiscipulo && p.passo_numero === passoAtualDiscipulo,
         )
+
+        console.log("[v0] DEBUG Perguntas Resposta Encontrada:", {
+          discipulo_id: discipulo.id,
+          fase_numero: faseAtualDiscipulo,
+          passo_numero: passoAtualDiscipulo,
+          encontrou: !!perguntasResposta,
+          perguntasResposta,
+        })
 
         perguntasPassoAtual.forEach((pergunta, index) => {
           const perguntaId = index + 1
@@ -152,24 +162,24 @@ export default async function DiscipuladorPage() {
             situacao: situacaoPergunta,
             xp: xpPergunta,
             temResposta: !!respostaEspecifica,
+            resposta: respostaEspecifica?.resposta ? "Sim" : "Não",
           })
 
-          if (respostaEspecifica && respostaEspecifica.resposta) {
-            tarefas.push({
-              id: `reflexiva-${perguntaId}`,
-              tipo: "reflexao_guiada",
-              titulo: pergunta,
-              concluido: situacaoPergunta === "aprovado",
-              perguntasRespostaId: perguntasResposta?.id,
-              perguntaId: perguntaId,
-              perguntaTexto: pergunta,
-              respostaIndividual: respostaEspecifica,
-              xp: xpPergunta,
-              situacao: situacaoPergunta,
-              faseNumero: discipulo.fase_atual,
-              passoNumero: discipulo.passo_atual,
-            })
-          }
+          // Adiciona TODAS as perguntas do passo atual
+          tarefas.push({
+            id: `reflexiva-${perguntaId}`,
+            tipo: "reflexao_guiada",
+            titulo: pergunta,
+            concluido: situacaoPergunta === "aprovado",
+            perguntasRespostaId: perguntasResposta?.id,
+            perguntaId: perguntaId,
+            perguntaTexto: pergunta,
+            respostaIndividual: respostaEspecifica,
+            xp: xpPergunta,
+            situacao: situacaoPergunta,
+            faseNumero: faseAtualDiscipulo,
+            passoNumero: passoAtualDiscipulo,
+          })
         })
       }
 

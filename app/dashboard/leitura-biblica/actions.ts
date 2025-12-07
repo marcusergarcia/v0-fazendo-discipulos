@@ -81,17 +81,15 @@ export async function marcarCapituloLido(livroId: number, numeroCapitulo: number
 
   const { data: progressoAtual } = await supabase
     .from("progresso_fases")
-    .select("pontuacao_total")
+    .select("pontuacao_passo_atual")
     .eq("discipulo_id", discipulo.id)
-    .eq("passo_numero", discipulo.passo_atual)
     .single()
 
   if (progressoAtual) {
     await supabase
       .from("progresso_fases")
-      .update({ pontuacao_total: (progressoAtual.pontuacao_total || 0) + 5 })
+      .update({ pontuacao_passo_atual: (progressoAtual.pontuacao_passo_atual || 0) + 5 })
       .eq("discipulo_id", discipulo.id)
-      .eq("passo_numero", discipulo.passo_atual)
 
     console.log("[v0] +5 XP adicionado ao passo atual")
   }
@@ -160,17 +158,15 @@ export async function desmarcarCapituloLido(livroId: number, numeroCapitulo: num
 
   const { data: progressoAtual } = await supabase
     .from("progresso_fases")
-    .select("pontuacao_total")
+    .select("pontuacao_passo_atual")
     .eq("discipulo_id", discipulo.id)
-    .eq("passo_numero", discipulo.passo_atual)
     .single()
 
   if (progressoAtual) {
     await supabase
       .from("progresso_fases")
-      .update({ pontuacao_total: Math.max(0, (progressoAtual.pontuacao_total || 0) - 5) })
+      .update({ pontuacao_passo_atual: Math.max(0, (progressoAtual.pontuacao_passo_atual || 0) - 5) })
       .eq("discipulo_id", discipulo.id)
-      .eq("passo_numero", discipulo.passo_atual)
   }
 
   return { success: true }
