@@ -1025,16 +1025,24 @@ export default function PassoClient({
 
                       <div className="space-y-4">
                         <p className="text-sm font-medium text-amber-900">Suas respostas:</p>
-                        {submissaoPerguntasReflexivas.respostas.map(
-                          (item: { resposta: string; pergunta_id: number }, index: number) => (
+                        {perguntasReflexivasList.map((pergunta, index) => {
+                          const respostaSalva = submissaoPerguntasReflexivas.respostas.find(
+                            (r: { resposta: string; pergunta_id: number }) => r.pergunta_id === index + 1,
+                          )
+
+                          return (
                             <div key={index} className="bg-white rounded-lg p-4 border border-amber-200">
                               <p className="text-xs font-medium text-amber-700 mb-2">
-                                Pergunta {index + 1}: {perguntasReflexivasList[index]}
+                                Pergunta {index + 1}: {pergunta}
                               </p>
-                              <p className="text-sm text-gray-700">{item.resposta}</p>
+                              {respostaSalva ? (
+                                <p className="text-sm text-gray-700">{respostaSalva.resposta}</p>
+                              ) : (
+                                <p className="text-sm text-gray-400 italic">Resposta não enviada</p>
+                              )}
                             </div>
-                          ),
-                        )}
+                          )
+                        })}
                       </div>
                     </div>
                   ) : (
