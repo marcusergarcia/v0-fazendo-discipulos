@@ -83,6 +83,19 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     if (updateError) throw new Error(`Erro ao atualizar discípulo: ${updateError.message}`)
 
+    const { error: recompensaError } = await supabaseAdmin.from("recompensas").insert({
+      discipulo_id: discipuloId,
+      tipo_recompensa: "boas_vindas",
+      nome_recompensa: "Bem-vindo ao Fazendo Discípulos!",
+      descricao: "Você foi aprovado e começou sua jornada de discipulado!",
+      conquistado_em: new Date().toISOString(),
+    })
+
+    if (recompensaError) {
+      console.error("[v0] Erro ao criar recompensa inicial:", recompensaError)
+      // Não falhar a aprovação por causa disso
+    }
+
     await supabaseAdmin
       .from("notificacoes")
       .delete()
@@ -102,13 +115,13 @@ export async function aprovarDiscipulo(discipuloId: string) {
     revalidatePath("/discipulador/aprovar")
     revalidatePath("/dashboard/arvore")
 
-    const linkBoasVindas = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fazendodiscipulos.vercel.app'}/boas-vindas?novo=true`
-    
-    return { 
-      success: true, 
+    const linkBoasVindas = `${process.env.NEXT_PUBLIC_SITE_URL || "https://fazendodiscipulos.vercel.app"}/boas-vindas?novo=true`
+
+    return {
+      success: true,
       userId,
       linkBoasVindas,
-      email: discipulo.email_temporario 
+      email: discipulo.email_temporario,
     }
   } catch (error) {
     console.error("[v0] Erro ao aprovar discípulo:", error)
