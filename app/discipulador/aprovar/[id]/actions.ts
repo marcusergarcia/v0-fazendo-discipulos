@@ -140,7 +140,7 @@ export async function aprovarDiscipulo(discipuloId: string) {
     revalidatePath("/discipulador/aprovar")
     revalidatePath("/dashboard/arvore")
 
-    const linkBoasVindas = `${process.env.NEXT_PUBLIC_SITE_URL || "https://fazendodiscipulos.vercel.app"}/boas-vindas?novo=true`
+    const linkBoasVindas = `${process.env.NEXT_PUBLIC_SITE_URL || "https://fazendodiscipulos.vercel.app"}/boas-vindas-discipulo`
 
     return {
       success: true,
