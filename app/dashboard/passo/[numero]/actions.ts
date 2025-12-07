@@ -774,6 +774,11 @@ export async function liberarProximoPasso() {
     return { success: false, error: "Erro ao liberar próximo passo" }
   }
 
+  // Adicionar a lógica para resetar o 'enviado_para_validacao' aqui, caso necessário,
+  // ou chamar a nova função 'marcarEnviadoParaValidacao' se o fluxo for diferente.
+  // Por enquanto, assumimos que avançar de passo já resetará o estado de validação,
+  // ou que a lógica de validação é tratada separadamente.
+
   return {
     success: true,
     proximoPasso,
@@ -939,7 +944,6 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.log("[v0 SERVER] Atualizando progresso para próximo passo...")
 
-    // Atualizando progresso para próximo passo...
     const { error: updateProgressoError } = await supabaseAdmin
       .from("progresso_fases")
       .update({
@@ -949,6 +953,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
         reflexoes_concluidas: 0,
         videos_assistidos: [],
         artigos_lidos: [],
+        enviado_para_validacao: false, // Resetar para false ao avançar
       })
       .eq("discipulo_id", discipulo.id)
 
@@ -1631,4 +1636,20 @@ export async function verificarPassoCompleto(numero: number) {
     respostasAprovadas: respostasAprovadas,
     leituraSemanalConcluida: leituraSemanalConcluida,
   }
+}
+
+export async function marcarEnviadoParaValidacao(discipuloId: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("progresso_fases")
+    .update({ enviado_para_validacao: true })
+    .eq("discipulo_id", discipuloId)
+
+  if (error) {
+    console.error("[v0 SERVER] ERRO ao marcar como enviado:", error)
+    return { error: error.message }
+  }
+
+  return { success: true }
 }
