@@ -35,97 +35,63 @@ export async function aprovarDiscipulo(discipuloId: string) {
 
     let userId: string
 
-    // Tentar buscar usuário existente por email
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
     const existingUser = existingUsers?.users.find((u) => u.email === discipulo.email_temporario)
 
     if (existingUser) {
-      // Se usuário já existe, usar o ID existente e atualizar a senha
-      userId = existingUser.id
-      console.log("[v0] Usuário Auth já existe, reutilizando:", userId)
+      console.log("[v0] Usuário Auth existente encontrado, deletando:", existingUser.id)
 
-      // Atualizar senha do usuário existente
-      const { error: updateAuthError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-        password: discipulo.senha_temporaria,
-        email_confirm: true,
-      })
+      // Deletar profile antigo se existir
+      await supabaseAdmin.from("profiles").delete().eq("id", existingUser.id)
 
-      if (updateAuthError) {
-        console.error("[v0] Erro ao atualizar senha do usuário existente:", updateAuthError)
+      // Deletar usuário Auth antigo
+      const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id)
+
+      if (deleteAuthError) {
+        console.error("[v0] Erro ao deletar usuário Auth existente:", deleteAuthError)
+        throw new Error(`Não foi possível remover usuário existente: ${deleteAuthError.message}`)
       }
-    } else {
-      // Criar novo usuário Auth
-      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: discipulo.email_temporario,
-        password: discipulo.senha_temporaria,
-        email_confirm: true,
-      })
 
-      if (authError) throw new Error(`Erro ao criar usuário: ${authError.message}`)
-      if (!authData.user) throw new Error("Erro ao criar usuário")
-
-      userId = authData.user.id
-      console.log("[v0] Novo usuário Auth criado:", userId)
+      console.log("[v0] Usuário Auth existente deletado com sucesso")
     }
 
-    // Verificar se profile já existe
-    const { data: existingProfile } = await supabaseAdmin.from("profiles").select("id").eq("id", userId).single()
+    // Criar novo usuário Auth
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: discipulo.email_temporario,
+      password: discipulo.senha_temporaria,
+      email_confirm: true,
+    })
 
-    if (existingProfile) {
-      // Atualizar profile existente
-      const { error: profileError } = await supabaseAdmin
-        .from("profiles")
-        .update({
-          email: discipulo.email_temporario,
-          nome_completo: discipulo.nome_completo_temp,
-          telefone: discipulo.telefone_temp,
-          igreja: discipulo.igreja_temp,
-          genero: discipulo.genero_temp,
-          etnia: discipulo.etnia_temp,
-          data_nascimento: discipulo.data_nascimento_temp,
-          foto_perfil_url: discipulo.foto_perfil_url_temp,
-          aceitou_lgpd: discipulo.aceitou_lgpd,
-          aceitou_compromisso: discipulo.aceitou_compromisso,
-          data_aceite_termos: discipulo.data_aceite_termos,
-          localizacao_cadastro: discipulo.localizacao_cadastro,
-          latitude_cadastro: discipulo.latitude_cadastro,
-          longitude_cadastro: discipulo.longitude_cadastro,
-          data_cadastro: discipulo.data_cadastro,
-          hora_cadastro: discipulo.hora_cadastro,
-          semana_cadastro: discipulo.semana_cadastro,
-          status: "ativo",
-        })
-        .eq("id", userId)
+    if (authError) throw new Error(`Erro ao criar usuário: ${authError.message}`)
+    if (!authData.user) throw new Error("Erro ao criar usuário")
 
-      if (profileError) throw new Error(`Erro ao atualizar perfil: ${profileError.message}`)
-      console.log("[v0] Profile existente atualizado")
-    } else {
-      // Criar novo profile
-      const { error: profileError } = await supabaseAdmin.from("profiles").insert({
-        id: userId,
-        email: discipulo.email_temporario,
-        nome_completo: discipulo.nome_completo_temp,
-        telefone: discipulo.telefone_temp,
-        igreja: discipulo.igreja_temp,
-        genero: discipulo.genero_temp,
-        etnia: discipulo.etnia_temp,
-        data_nascimento: discipulo.data_nascimento_temp,
-        foto_perfil_url: discipulo.foto_perfil_url_temp,
-        aceitou_lgpd: discipulo.aceitou_lgpd,
-        aceitou_compromisso: discipulo.aceitou_compromisso,
-        data_aceite_termos: discipulo.data_aceite_termos,
-        localizacao_cadastro: discipulo.localizacao_cadastro,
-        latitude_cadastro: discipulo.latitude_cadastro,
-        longitude_cadastro: discipulo.longitude_cadastro,
-        data_cadastro: discipulo.data_cadastro,
-        hora_cadastro: discipulo.hora_cadastro,
-        semana_cadastro: discipulo.semana_cadastro,
-        status: "ativo",
-      })
+    userId = authData.user.id
+    console.log("[v0] Novo usuário Auth criado:", userId)
 
-      if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
-      console.log("[v0] Novo profile criado")
-    }
+    const { error: profileError } = await supabaseAdmin.from("profiles").insert({
+      id: userId,
+      email: discipulo.email_temporario,
+      nome_completo: discipulo.nome_completo_temp,
+      telefone: discipulo.telefone_temp,
+      igreja: discipulo.igreja_temp,
+      genero: discipulo.genero_temp,
+      etnia: discipulo.etnia_temp,
+      data_nascimento: discipulo.data_nascimento_temp,
+      foto_perfil_url: discipulo.foto_perfil_url_temp,
+      aceitou_lgpd: discipulo.aceitou_lgpd,
+      aceitou_compromisso: discipulo.aceitou_compromisso,
+      data_aceite_termos: discipulo.data_aceite_termos,
+      localizacao_cadastro: discipulo.localizacao_cadastro,
+      latitude_cadastro: discipulo.latitude_cadastro,
+      longitude_cadastro: discipulo.longitude_cadastro,
+      data_cadastro: discipulo.data_cadastro,
+      hora_cadastro: discipulo.hora_cadastro,
+      semana_cadastro: discipulo.semana_cadastro,
+      status: "ativo",
+    })
+
+    if (profileError) throw new Error(`Erro ao criar perfil: ${profileError.message}`)
+    console.log("[v0] Novo profile criado")
 
     const { error: updateError } = await supabaseAdmin
       .from("discipulos")
