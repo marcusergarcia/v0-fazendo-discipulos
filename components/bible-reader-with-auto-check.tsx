@@ -314,17 +314,21 @@ export function BibleReaderWithAutoCheck({
     console.log("[v0] Capítulo atual:", currentChapter)
     console.log("[v0] Capítulo anterior será:", currentChapter - 1)
 
-    if (currentChapter > startChapter) {
-      const novoCapitulo = currentChapter - 1
-      const idRealAnterior = getCapituloIdReal(novoCapitulo)
-      const jaLidoAnterior = capitulosLidos.has(idRealAnterior)
+    const limiteInferior = modoNavegacaoLivre ? 1 : startChapter
 
-      console.log("[v0] ID real do capítulo anterior:", idRealAnterior)
-      console.log("[v0] Capítulo anterior já lido?", jaLidoAnterior)
+    if (currentChapter > limiteInferior) {
+      const novoCapitulo = currentChapter - 1
+
+      if (!modoNavegacaoLivre) {
+        const idRealAnterior = getCapituloIdReal(novoCapitulo)
+        const jaLidoAnterior = capitulosLidos.has(idRealAnterior)
+        console.log("[v0] ID real do capítulo anterior:", idRealAnterior)
+        console.log("[v0] Capítulo anterior já lido?", jaLidoAnterior)
+      }
 
       handleChapterChange(novoCapitulo)
     } else {
-      console.log("[v0] ⚠ Já está no primeiro capítulo da semana")
+      console.log("[v0] ⚠ Já está no primeiro capítulo", modoNavegacaoLivre ? "do livro" : "da semana")
     }
   }
 
@@ -333,17 +337,21 @@ export function BibleReaderWithAutoCheck({
     console.log("[v0] Capítulo atual:", currentChapter)
     console.log("[v0] Próximo capítulo será:", currentChapter + 1)
 
-    if (currentChapter < endChapter) {
-      const novoCapitulo = currentChapter + 1
-      const idRealProximo = getCapituloIdReal(novoCapitulo)
-      const jaLidoProximo = capitulosLidos.has(idRealProximo)
+    const limiteSuperior = modoNavegacaoLivre ? 150 : endChapter
 
-      console.log("[v0] ID real do próximo capítulo:", idRealProximo)
-      console.log("[v0] Próximo capítulo já lido?", jaLidoProximo)
+    if (currentChapter < limiteSuperior) {
+      const novoCapitulo = currentChapter + 1
+
+      if (!modoNavegacaoLivre) {
+        const idRealProximo = getCapituloIdReal(novoCapitulo)
+        const jaLidoProximo = capitulosLidos.has(idRealProximo)
+        console.log("[v0] ID real do próximo capítulo:", idRealProximo)
+        console.log("[v0] Próximo capítulo já lido?", jaLidoProximo)
+      }
 
       handleChapterChange(novoCapitulo)
     } else {
-      console.log("[v0] ⚠ Já está no último capítulo da semana")
+      console.log("[v0] ⚠ Já está no último capítulo", modoNavegacaoLivre ? "do livro" : "da semana")
     }
   }
 
@@ -977,7 +985,7 @@ export function BibleReaderWithAutoCheck({
             <Button
               variant="outline"
               onClick={handlePrevChapter}
-              disabled={currentChapter <= startChapter || loading}
+              disabled={modoNavegacaoLivre ? currentChapter <= 1 || loading : currentChapter <= startChapter || loading}
               className="flex-1 bg-transparent"
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
@@ -985,13 +993,13 @@ export function BibleReaderWithAutoCheck({
             </Button>
 
             <span className="text-sm text-muted-foreground whitespace-nowrap px-2">
-              {currentChapter} / {endChapter}
+              {modoNavegacaoLivre ? `Cap. ${currentChapter}` : `${currentChapter} / ${endChapter}`}
             </span>
 
             <Button
               variant="outline"
               onClick={handleNextChapter}
-              disabled={currentChapter >= endChapter || loading}
+              disabled={modoNavegacaoLivre ? loading : currentChapter >= endChapter || loading}
               className="flex-1"
             >
               Próximo
@@ -1115,21 +1123,23 @@ export function BibleReaderWithAutoCheck({
                 variant="outline"
                 size="sm"
                 onClick={handlePrevChapter}
-                disabled={currentChapter <= startChapter || loading}
+                disabled={
+                  modoNavegacaoLivre ? currentChapter <= 1 || loading : currentChapter <= startChapter || loading
+                }
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 Anterior
               </Button>
 
               <span className="text-sm text-muted-foreground">
-                {currentChapter} / {endChapter}
+                {modoNavegacaoLivre ? `Cap. ${currentChapter}` : `${currentChapter} / ${endChapter}`}
               </span>
 
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleNextChapter}
-                disabled={currentChapter >= endChapter || loading}
+                disabled={modoNavegacaoLivre ? loading : currentChapter >= endChapter || loading}
               >
                 Próximo
                 <ChevronRight className="w-4 h-4 ml-1" />
