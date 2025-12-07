@@ -925,21 +925,35 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
 
     console.error("[v0 SERVER] Discípulo atualizado com sucesso")
 
-    // Adicionando insígnia ao array...
     console.error("[v0 SERVER] Adicionando insígnia ao array...")
 
     const insignia = `Passo ${numeroPasso} Concluído`
 
-    const { error: insigniaError } = await supabaseAdmin.rpc("adicionar_insignia", {
-      p_discipulo_id: discipulo.id,
-      p_insignia: insignia,
-    })
+    // Buscar recompensas atuais
+    const { data: recompensaAtual, error: fetchRecompensaError } = await supabaseAdmin
+      .from("recompensas")
+      .select("insignias")
+      .eq("discipulo_id", discipulo.id)
+      .single()
 
-    if (insigniaError) {
-      console.error("[v0 SERVER] ERRO ao adicionar insígnia:", insigniaError)
-      // Não lançar erro - continuar mesmo se a insígnia falhar
+    if (fetchRecompensaError) {
+      console.error("[v0 SERVER] ERRO ao buscar recompensas:", fetchRecompensaError)
     } else {
-      console.error("[v0 SERVER] Insígnia adicionada com sucesso!")
+      // Adicionar nova insígnia ao array existente
+      const insigniasAtuais = Array.isArray(recompensaAtual?.insignias) ? recompensaAtual.insignias : []
+
+      const novasInsignias = [...insigniasAtuais, insignia]
+
+      const { error: insigniaError } = await supabaseAdmin
+        .from("recompensas")
+        .update({ insignias: novasInsignias })
+        .eq("discipulo_id", discipulo.id)
+
+      if (insigniaError) {
+        console.error("[v0 SERVER] ERRO ao adicionar insígnia:", insigniaError)
+      } else {
+        console.error("[v0 SERVER] Insígnia adicionada com sucesso!")
+      }
     }
 
     console.log("[v0 SERVER] Atualizando progresso para próximo passo...")
@@ -963,9 +977,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     }
     console.error("[v0 SERVER] Próximo passo atualizado com sucesso")
 
-    console.error("[v0 SERVER] Revalidando páginas...")
-    revalidatePath(`/dashboard/passo/${numeroPasso}`)
-    revalidatePath(`/dashboard/passo/${proximoPasso}`)
+    console.error("[v0 SERVER] Revalidando cache...")
     revalidatePath("/dashboard")
 
     console.error("[v0 SERVER] ===== FIM receberRecompensasEAvancar - SUCESSO =====")
@@ -973,6 +985,7 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
     return {
       success: true,
       message: `Você avançou para o passo ${proximoPasso}!`,
+      proximoPasso: proximoPasso,
     }
   } catch (error) {
     console.error("[v0 SERVER] ERRO GERAL:", error)

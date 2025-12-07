@@ -125,7 +125,7 @@ export default function PassoClient({
 
   const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<{
     situacao: string
-    respostas: any[] // Changed to 'any[]' to accommodate the new structure { resposta: string; pergunta_id: number }
+    respostas: any[] // Changed to 'any[]' to accommodate the new structure { pergunta_id: number; resposta: string; situacao: string; xp_ganho: number }
     xp_ganho: number
   } | null>(null)
 
@@ -486,14 +486,17 @@ export default function PassoClient({
           description: resultado.message || "Você avançou para o próximo passo!",
         })
 
-        // Redirecionar para o próximo passo
-        window.location.href = `/dashboard/passo/${numero + 1}`
+        setTimeout(() => {
+          const proximoPasso = numero === 10 ? 1 : numero + 1
+          window.location.href = `/dashboard/passo/${proximoPasso}`
+        }, 500)
       } else {
         toast({
           title: "Erro ao receber recompensas",
           description: resultado.error || "Tente novamente.",
           variant: "destructive",
         })
+        setProcessandoRecompensas(false)
       }
     } catch (error) {
       console.error("Erro ao receber recompensas:", error)
@@ -502,7 +505,6 @@ export default function PassoClient({
         description: "Ocorreu um erro ao processar. Tente novamente.",
         variant: "destructive",
       })
-    } finally {
       setProcessandoRecompensas(false)
     }
   }
