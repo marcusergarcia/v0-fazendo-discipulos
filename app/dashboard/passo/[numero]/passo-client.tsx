@@ -27,6 +27,9 @@ import {
   ExternalLink,
   RotateCcw,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  Home,
 } from "lucide-react"
 import Link from "next/link"
 // import { supabase } from "@/lib/supabase"
@@ -1322,6 +1325,47 @@ export default function PassoClient({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div className="border-t bg-card mt-8">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between gap-4">
+            {/* Botão Voltar */}
+            {numero === 1 ? (
+              <Link href="/dashboard">
+                <Button variant="outline" className="gap-2 bg-transparent">
+                  <Home className="w-4 h-4" />
+                  Voltar para Página Inicial
+                </Button>
+              </Link>
+            ) : (
+              <Link href={`/dashboard/passo/${numero - 1}`}>
+                <Button variant="outline" className="gap-2 bg-transparent">
+                  <ChevronLeft className="w-4 h-4" />
+                  Voltar ao Passo {numero - 1}
+                </Button>
+              </Link>
+            )}
+
+            {/* Indicador do passo atual */}
+            <div className="text-center hidden sm:block">
+              <p className="text-sm font-medium">Passo {numero} de 10</p>
+              <p className="text-xs text-muted-foreground">{passo.fase}</p>
+            </div>
+
+            {/* Botão Avançar - só mostra se o próximo passo estiver liberado */}
+            {discipulo.passo_atual > numero && numero < 10 ? (
+              <Link href={`/dashboard/passo/${numero + 1}`}>
+                <Button variant="default" className="gap-2">
+                  Ir para Passo {numero + 1}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            ) : (
+              <div className="w-[180px]" /> // Espaço vazio para manter o layout centralizado
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
