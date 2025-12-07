@@ -185,7 +185,6 @@ export default function PassoClient({
   }, [discipulo, numero])
 
   const handleEnviarPerguntasReflexivas = async () => {
-    // Validar que todas as perguntas foram respondidas
     if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
       toast({
         title: "Atenção",
@@ -198,12 +197,13 @@ export default function PassoClient({
     setEnviandoPerguntasReflexivas(true)
 
     try {
-      // Chamar server action com as 3 respostas
-      const resultado = await enviarPerguntasReflexivas(numero, {
-        pergunta1: respostasPerguntasReflexivas[0] || "",
-        pergunta2: respostasPerguntasReflexivas[1] || "",
-        pergunta3: respostasPerguntasReflexivas[2] || "",
+      const respostasObj: Record<string, string> = {}
+      perguntasReflexivasList.forEach((_, index) => {
+        respostasObj[`pergunta${index + 1}`] = respostasPerguntasReflexivas[index] || ""
       })
+
+      // Chamar server action com todas as respostas
+      const resultado = await enviarPerguntasReflexivas(numero, respostasObj)
 
       if (resultado.error) {
         throw new Error(resultado.error)

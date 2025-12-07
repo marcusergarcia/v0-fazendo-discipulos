@@ -995,47 +995,37 @@ export async function receberRecompensasEAvancar(numeroPasso: number) {
   }
 }
 
-export async function enviarPerguntasReflexivas(
-  numero: number,
-  respostas: { pergunta1: string; pergunta2: string; pergunta3: string },
-) {
+export async function enviarPerguntasReflexivas(numero: number, respostas: Record<string, string>) {
   console.log("[v0] SERVER: enviarPerguntasReflexivas iniciada")
   console.log("[v0] SERVER: Passo:", numero)
   console.log("[v0] SERVER: Respostas recebidas:", Object.keys(respostas))
 
-  const supabase = await createClient()
   const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
   })
+  const supabase = await createClient()
 
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser()
-
-  console.log("[v0] SERVER: User ID:", user?.id)
-  console.log("[v0] SERVER: User Error:", userError)
 
   if (!user) {
     console.error("[v0] SERVER: Usuário não autenticado")
     return { success: false, error: "Usuário não autenticado" }
   }
 
+  console.log("[v0] SERVER: Buscando discípulo...")
   const { data: discipulo, error: discipuloError } = await supabase
     .from("discipulos")
     .select("*")
     .eq("user_id", user.id)
     .single()
 
-  console.log("[v0] SERVER: Discípulo ID:", discipulo?.id)
-  console.log("[v0] SERVER: Discipulador ID:", discipulo?.discipulador_id)
-  console.log("[v0] SERVER: Discipulo Error:", discipuloError)
-
-  if (!discipulo) {
-    console.error("[v0] SERVER: Discípulo não encontrado")
+  if (discipuloError || !discipulo) {
+    console.error("[v0] SERVER: Erro ao buscar discípulo:", discipuloError)
     return { success: false, error: "Discípulo não encontrado" }
   }
 
@@ -1043,13 +1033,15 @@ export async function enviarPerguntasReflexivas(
   if (discipulo.discipulador_id) {
     console.log("[v0] SERVER: Criando notificação para discipulador...")
 
+    const numPerguntas = Object.keys(respostas).length
+
     const { data: novaNotificacao, error: notifError } = await supabaseAdmin
       .from("notificacoes")
       .insert({
         user_id: discipulo.discipulador_id,
         tipo: "perguntas_reflexivas",
         titulo: "Novas perguntas reflexivas",
-        mensagem: `Seu discípulo respondeu as 3 perguntas reflexivas do Passo ${numero}.`,
+        mensagem: `Seu discípulo respondeu as ${numPerguntas} perguntas reflexivas do Passo ${numero}.`,
         link: `/discipulador`,
       })
       .select("id")
@@ -1063,20 +1055,22 @@ export async function enviarPerguntasReflexivas(
     }
   }
 
-  const respostasArray = [
-    { pergunta_id: 1, resposta: respostas.pergunta1 },
-    { pergunta_id: 2, resposta: respostas.pergunta2 },
-    { pergunta_id: 3, resposta: respostas.pergunta3 },
-  ]
+  const respostasArray = Object.keys(respostas)
+    .sort() // Garante ordem pergunta1, pergunta2, pergunta3, pergunta4...
+    .map((key, index) => ({
+      pergunta_id: index + 1,
+      resposta: respostas[key],
+    }))
 
   console.log("[v0] SERVER: Inserindo perguntas reflexivas na tabela...")
+  console.log("[v0] SERVER: Respostas array:", respostasArray)
 
   const { error: insertError } = await supabase.from("perguntas_reflexivas").upsert(
     {
       discipulo_id: discipulo.id,
       fase_numero: discipulo.fase_atual || 1,
       passo_numero: numero,
-      respostas: respostasArray, // Array JSONB com as 3 respostas
+      respostas: respostasArray, // Array JSONB com todas as respostas
       situacao: "enviado",
       xp_ganho: 0,
       discipulador_id: discipulo.discipulador_id,
