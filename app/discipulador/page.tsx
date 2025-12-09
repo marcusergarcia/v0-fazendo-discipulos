@@ -435,16 +435,8 @@ export default async function DiscipuladorPage() {
                                       discipuloNome={nome}
                                       xp={tarefa.xp}
                                       situacao={tarefa.situacao}
+                                      concluido={tarefa.concluido}
                                     />
-                                    {!tarefa.reflexao &&
-                                      !tarefa.xp &&
-                                      (tarefa.concluido ? (
-                                        <Badge variant="outline">Concluído</Badge>
-                                      ) : (
-                                        <Badge variant="outline" className="text-muted-foreground">
-                                          Não iniciado
-                                        </Badge>
-                                      ))}
                                   </>
                                 )}
                               </div>
