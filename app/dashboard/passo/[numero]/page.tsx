@@ -111,7 +111,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   let leiturasSemana: any[] = []
   let capitulosLidos: number[] = []
 
-  if (numero === 1 || numero === 2 || numero === 3 || numero === 4 || numero === 5) {
+  if (numero === 1 || numero === 2 || numero === 3 || numero === 4 || numero === 5 || numero === 6) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")
       .select("capitulos_lidos")

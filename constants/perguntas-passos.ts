@@ -26,6 +26,11 @@ export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
     "Reconciliação com Deus significa que a guerra acabou — você não é mais inimigo, mas filho amado! Como essa verdade transforma sua maneira de se relacionar com Deus? Você ainda se aproxima Dele com medo e insegurança, ou com confiança de filho reconciliado? De que formas práticas você pode viver essa paz conquistada na cruz em seus relacionamentos diários?",
     "Redenção significa que você foi 'comprado de volta' — você não pertence mais ao pecado, mas a Cristo! 1 Coríntios 6:19-20 declara: 'Vocês não são de si mesmos; foram comprados por alto preço'. Como essa verdade impacta suas escolhas diárias? Em quais áreas da sua vida você precisa lembrar que foi redimido e agora pertence completamente a Jesus? Como você pode honrar esse 'alto preço' que Cristo pagou?",
   ],
+  6: [
+    "A morte de Jesus não foi um acidente trágico, mas o cumprimento do plano perfeito de Deus para sua salvação. Como essa verdade muda sua perspectiva sobre o sofrimento e o sacrifício? De que maneiras você pode valorizar mais profundamente o preço que Cristo pagou por você na cruz? Que sacrifícios Deus está pedindo de você hoje como resposta ao sacrifício de Jesus?",
+    "1 Coríntios 15:14 declara: 'Se Cristo não ressuscitou, é vã a nossa pregação, e vã também a vossa fé'. A ressurreição é a prova definitiva de que Jesus é Deus e de que Ele venceu a morte. Como essa certeza fortalece sua fé nos momentos de dúvida? O que muda na sua vida sabendo que o mesmo poder que ressuscitou Jesus dos mortos está disponível para você hoje?",
+    "A morte de Cristo nos traz perdão, e a ressurreição nos dá vida nova e esperança eterna. Romanos 6:4 nos convida a 'viver uma vida nova' pelo poder da ressurreição. Que áreas da sua vida refletem essa 'vida nova' em Cristo? Quais hábitos, pensamentos ou relacionamentos ainda precisam experimentar o poder transformador da ressurreição? Como você pode morrer para o velho homem e ressuscitar para uma nova maneira de viver?",
+  ],
 }
 
 // Mantendo compatibilidade com código existente

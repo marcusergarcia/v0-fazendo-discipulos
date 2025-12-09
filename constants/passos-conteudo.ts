@@ -438,6 +438,73 @@ export const PASSOS_CONTEUDO = {
     icone: "✝️",
     xp: 100,
   },
+  6: {
+    titulo: "A Morte e Ressurreição de Cristo",
+    descricao: "Cristo venceu o pecado e a morte através do Seu sacrifício e ressurreição.",
+    videos: [
+      {
+        id: 1,
+        titulo: "A Ressurreição de Jesus",
+        url: "https://www.youtube.com/watch?v=Yb8fhqyRRzE",
+        duracao: "4:50",
+        descricao:
+          "BibleProject explica o significado profundo da ressurreição de Jesus e sua importância central para a fé cristã.",
+      },
+      {
+        id: 2,
+        titulo: "Por que Jesus morreu?",
+        url: "https://www.youtube.com/watch?v=Mp7hdzdyCYc",
+        duracao: "5:30",
+        descricao: "Douglas Gonçalves explica o propósito e significado da morte de Cristo na cruz.",
+      },
+      {
+        id: 3,
+        titulo: "A realidade da ressurreição",
+        url: "https://www.youtube.com/watch?v=Qay3tKtkpNY",
+        duracao: "6:15",
+        descricao: "Hernandes Dias Lopes apresenta evidências e o impacto da ressurreição de Jesus.",
+      },
+    ],
+    artigos: [
+      {
+        id: 1,
+        titulo: "A Morte de Jesus Cristo",
+        descricao:
+          "A morte de Jesus não foi uma derrota, mas o cumprimento do plano divino de salvação. Isaías 53 profetizou o Servo Sofredor que levaria sobre si os pecados da humanidade. Jesus morreu voluntariamente como substituto perfeito, pagando a dívida que não podíamos pagar, satisfazendo a justiça de Deus e abrindo o caminho para nossa reconciliação com o Pai.",
+        url: "https://pt.wikipedia.org/wiki/Morte_de_Jesus",
+      },
+      {
+        id: 2,
+        titulo: "A Ressurreição: Prova e Poder",
+        descricao:
+          "A ressurreição de Jesus ao terceiro dia é o evento que valida todo o cristianismo. Romanos 4:25 declara que Ele foi entregue por nossas transgressões e ressuscitou para nossa justificação. A ressurreição provou que Jesus é quem dizia ser, que o Pai aceitou Seu sacrifício, e que Ele tem poder sobre a morte. É a garantia da nossa própria ressurreição futura.",
+        url: "https://pt.wikipedia.org/wiki/Ressurrei%C3%A7%C3%A3o_de_Jesus",
+      },
+      {
+        id: 3,
+        titulo: "Expiação e Justificação",
+        descricao:
+          "A expiação é o ato pelo qual Jesus removeu nossos pecados através de Seu sangue derramado na cruz. A justificação é o resultado: Deus nos declara justos, não por nossos méritos, mas pela fé em Cristo. 1 Coríntios 15:3-4 resume: 'Cristo morreu pelos nossos pecados... e ressuscitou ao terceiro dia'. Sua morte trouxe perdão; Sua ressurreição trouxe vida nova e esperança eterna.",
+        url: "https://pt.wikipedia.org/wiki/Expia%C3%A7%C3%A3o",
+      },
+    ],
+    leituraSemanal: {
+      semana: 6,
+      tema: "Lucas: O Filho do Homem",
+      livro: "Lucas",
+      capituloInicio: 1,
+      capituloFim: 8,
+      totalCapitulos: 8,
+      descricao:
+        "Conheça Jesus como o Filho do Homem que veio buscar e salvar o perdido, apresentado por Lucas com detalhes históricos e compaixão.",
+    },
+    perguntaChave: "O que muda na vida de uma pessoa porque Jesus ressuscitou?",
+    missao:
+      "Assistir a uma pregação ou estudo sobre a ressurreição e enviar ao discipulador um resumo de 5 a 8 linhas sobre o que mais impactou.",
+    recompensa: "Nova Vida",
+    icone: "⚰️",
+    xp: 100,
+  },
 }
 
 export type PassoNumero = keyof typeof PASSOS_CONTEUDO

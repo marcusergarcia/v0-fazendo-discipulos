@@ -109,6 +109,26 @@ export const RESUMOS_GERAIS_PASSOS = {
       },
     ],
   },
+  6: {
+    titulo: "A Morte e Ressurreição de Cristo",
+    topicos: [
+      {
+        titulo: "A Morte: O Cumprimento do Plano Divino",
+        descricao:
+          "A morte de Jesus não foi uma tragédia, mas o cumprimento perfeito do plano eterno de salvação. Isaías 53 profetizou o Servo Sofredor que levaria sobre si os pecados da humanidade. Jesus morreu voluntariamente como substituto perfeito, pagando a dívida que não podíamos pagar, satisfazendo a justiça de Deus e abrindo o caminho para nossa reconciliação com o Pai. 1 Coríntios 15:3 declara: 'Cristo morreu pelos nossos pecados, segundo as Escrituras'.",
+      },
+      {
+        titulo: "A Ressurreição: A Prova e o Poder",
+        descricao:
+          "A ressurreição de Jesus ao terceiro dia é o evento que valida todo o cristianismo. Romanos 4:25 declara que Ele 'foi entregue por nossas transgressões e ressuscitou para nossa justificação'. A ressurreição provou que Jesus é quem dizia ser, que o Pai aceitou Seu sacrifício, e que Ele tem poder absoluto sobre a morte. É a garantia da nossa própria ressurreição futura e da vida eterna em Cristo.",
+      },
+      {
+        titulo: "O Significado Pessoal da Cruz",
+        descricao:
+          "A cruz não é apenas um evento histórico — é a demonstração suprema do amor de Deus por você! Através da morte de Cristo, recebemos perdão completo e paz com Deus. Através da ressurreição, recebemos vida nova, poder do Espírito Santo e a esperança da eternidade. A pergunta crucial não é apenas 'O que aconteceu na cruz?', mas 'Como a cruz transforma MINHA vida hoje?' A resposta a essa pergunta define o seu destino eterno e o propósito da sua existência.",
+      },
+    ],
+  },
 } as const
 
 export type ResumoGeralPasso = {
