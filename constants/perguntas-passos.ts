@@ -20,6 +20,12 @@ export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
     "Tiago 4:4 diz que 'a amizade com o mundo é inimizade com Deus'. Antes de conhecer Cristo, você reconhece que era inimigo de Deus ao amar o pecado? Como Jesus destruiu essa barreira de inimizade na cruz e ofereceu paz e reconciliação? De que formas práticas você demonstra hoje que é amigo de Deus e não do pecado?",
     "Jesus declarou: 'Todo o que comete pecado é escravo do pecado' (João 8:34). Você já se sentiu acorrentado em uma prisão invisível, querendo mudar mas não conseguindo? Quais áreas específicas de sua vida ainda lutam contra essa escravidão? Como Romanos 6:18 ('Libertados do pecado, vocês se tornaram servos da justiça') se aplica à sua jornada de libertação através do poder de Cristo?",
   ],
+  5: [
+    "Como você compreende a substituição vicária de Cristo na cruz? De que maneiras específicas você tem experimentado a liberdade de saber que Jesus tomou o SEU lugar, carregando a punição que você merecia? Em quais áreas da sua vida você ainda carrega culpa desnecessária, mesmo sabendo que Cristo já pagou completamente por seus pecados?",
+    "A ressurreição de Jesus não é apenas sobre Ele vencer a morte — é sobre VOCÊ receber nova vida! Romanos 6:4 diz que 'fomos sepultados com ele na morte, para que, assim como Cristo foi ressuscitado... também nós vivamos uma vida nova'. Quais sinais de 'vida nova' você tem visto em sua jornada? Que áreas da sua vida ainda parecem 'mortas' e precisam do poder da ressurreição de Cristo?",
+    "Reconciliação com Deus significa que a guerra acabou — você não é mais inimigo, mas filho amado! Como essa verdade transforma sua maneira de se relacionar com Deus? Você ainda se aproxima Dele com medo e insegurança, ou com confiança de filho reconciliado? De que formas práticas você pode viver essa paz conquistada na cruz em seus relacionamentos diários?",
+    "Redenção significa que você foi 'comprado de volta' — você não pertence mais ao pecado, mas a Cristo! 1 Coríntios 6:19-20 declara: 'Vocês não são de si mesmos; foram comprados por alto preço'. Como essa verdade impacta suas escolhas diárias? Em quais áreas da sua vida você precisa lembrar que foi redimido e agora pertence completamente a Jesus? Como você pode honrar esse 'alto preço' que Cristo pagou?",
+  ],
 }
 
 // Mantendo compatibilidade com código existente

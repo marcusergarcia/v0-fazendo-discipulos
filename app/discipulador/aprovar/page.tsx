@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from 'next/navigation'
+import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { NotificacoesDropdown } from "@/components/notificacoes-dropdown"
-import { Clock, Mail, MapPin, Calendar, Phone, Church, ArrowLeft } from 'lucide-react'
+import { Clock, Mail, MapPin, Calendar, Phone, Church, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 export default async function AprovarDiscipulosPage() {
@@ -19,6 +19,8 @@ export default async function AprovarDiscipulosPage() {
     redirect("/auth/login")
   }
 
+  console.log("[v0] AprovarDiscipulosPage - userId:", user.id)
+
   const { data: discipulosPendentes } = await supabase
     .from("discipulos")
     .select("*")
@@ -26,6 +28,18 @@ export default async function AprovarDiscipulosPage() {
     .eq("aprovado_discipulador", false)
     .is("user_id", null)
     .order("created_at", { ascending: false })
+
+  console.log("[v0] Discípulos pendentes encontrados:", discipulosPendentes?.length || 0)
+
+  const { data: notificacoesAprovacao } = await supabase
+    .from("notificacoes")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("tipo", "mensagem")
+    .eq("titulo", "Novo Discípulo Aguardando Aprovação")
+
+  console.log("[v0] Notificações de aprovação encontradas:", notificacoesAprovacao?.length || 0)
+  console.log("[v0] Notificações:", notificacoesAprovacao)
 
   return (
     <div className="min-h-screen bg-background">
