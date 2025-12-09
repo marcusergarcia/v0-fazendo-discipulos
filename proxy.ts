@@ -11,29 +11,45 @@ export async function proxy(request: NextRequest) {
 
   // Se as variáveis não existem, apenas continue sem autenticação
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('[v0] Supabase environment variables not found in proxy. Skipping authentication check.')
+    console.warn("[v0] Supabase environment variables not found in proxy. Skipping authentication check.")
     return supabaseResponse
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+        supabaseResponse = NextResponse.next({
+          request,
+        })
+        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
       },
     },
-  )
+  })
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Se não está autenticado e não é rota pública, redireciona para login
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith("/convite/") &&
+    !request.nextUrl.pathname.startsWith("/auth/") &&
+    !request.nextUrl.pathname.startsWith("/aguardando-aprovacao") &&
+    request.nextUrl.pathname !== "/" &&
+    (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
+  ) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    url.searchParams.set("redirectedFrom", request.nextUrl.pathname)
+    return NextResponse.redirect(url)
+  }
+
+  // Rotas públicas - não precisa verificar autenticação
   if (
     request.nextUrl.pathname.startsWith("/convite/") ||
     request.nextUrl.pathname.startsWith("/auth/") ||
@@ -43,10 +59,7 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  // Usuário autenticado tentando acessar login/signup - redireciona para dashboard
   if (
     user &&
     (request.nextUrl.pathname.startsWith("/auth/login") || request.nextUrl.pathname.startsWith("/auth/sign-up"))
@@ -56,6 +69,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Verifica status do usuário em rotas protegidas
   if (
     user &&
     (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
@@ -73,15 +87,6 @@ export async function proxy(request: NextRequest) {
       url.pathname = "/aguardando-aprovacao"
       return NextResponse.redirect(url)
     }
-  }
-
-  if (
-    !user &&
-    (request.nextUrl.pathname.startsWith("/dashboard") || request.nextUrl.pathname.startsWith("/discipulador"))
-  ) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
-    return NextResponse.redirect(url)
   }
 
   return supabaseResponse
