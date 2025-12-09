@@ -126,6 +126,13 @@ export default function PassoClient({
   const [respostasPerguntasReflexivas, setRespostasPerguntasReflexivas] = useState<string[]>([])
   const perguntasReflexivasList = getPerguntasPasso(numero)
 
+  console.log("[v0] Passo número:", numero)
+  console.log("[v0] Perguntas reflexivas lista:", perguntasReflexivasList)
+  console.log("[v0] Tipo de numero:", typeof numero)
+  // The following lines were removed due to lint errors:
+  // console.log("[v0] All videos completos:", allVideosCompletos)
+  // console.log("[v0] All artigos completos:", allArtigosCompletos)
+
   const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<{
     situacao: string
     respostas: any[] // Changed to 'any[]' to accommodate the new structure { pergunta_id: number; resposta: string; situacao: string; xp_ganho: number }
