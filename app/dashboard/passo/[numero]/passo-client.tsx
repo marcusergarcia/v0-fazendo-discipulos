@@ -616,7 +616,7 @@ export default function PassoClient({
         </Card>
 
         {/* Leitura Bíblica Semanal */}
-        {(numero === 1 || numero === 2 || numero === 3 || numero === 4) && (
+        {(numero === 1 || numero === 2 || numero === 3 || numero === 4 || numero === 5) && (
           <Card className="mb-6 border-2 border-primary/20">
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -790,6 +790,48 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 4"
                             : "Iniciar Leitura da Semana 4"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {numero === 5 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "Jesus em ação - Parte 2"}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Acompanhe a jornada de Jesus até a cruz, Sua morte, ressurreição e a comissão final aos discípulos."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          Marcos 9-16
+                        </Badge>
+                        <span className="text-muted-foreground">8 capítulos</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Parabéns! Você completou o Evangelho de Marcos! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Você testemunhou a cruz, a ressurreição e o poder transformador de Cristo! Continue firme
+                              na jornada.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=5">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 5"
+                            : "Iniciar Leitura da Semana 5"}
                         </Button>
                       </Link>
                     )}
