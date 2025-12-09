@@ -84,6 +84,31 @@ export const RESUMOS_GERAIS_PASSOS = {
       },
     ],
   },
+  5: {
+    titulo: "A Provisão Divina",
+    topicos: [
+      {
+        titulo: "Substituição: Cristo Tomou Nosso Lugar",
+        descricao:
+          "Jesus não apenas morreu por nós, mas EM NOSSO LUGAR! Na cruz, Cristo assumiu voluntariamente a culpa e a punição que deveríamos receber. 2 Coríntios 5:21 declara que 'Deus fez Cristo, que não tinha pecado, ser pecado por nós, para que nele nos tornássemos justiça de Deus'. Essa troca maravilhosa nos justifica completamente diante do Pai.",
+      },
+      {
+        titulo: "Ressurreição: Vitória sobre a Morte",
+        descricao:
+          "A ressurreição é a prova definitiva de que Jesus é Deus e de que o pecado e a morte foram vencidos! Efésios 2:5 proclama que Deus 'nos deu vida juntamente com Cristo'. A ressurreição não é apenas sobre o futuro no céu, mas sobre viver uma NOVA VIDA agora, com o poder do Espírito Santo que ressuscitou Jesus dos mortos habitando em nós.",
+      },
+      {
+        titulo: "Reconciliação: De Inimigos a Filhos",
+        descricao:
+          "Pela cruz, Jesus demoliu o muro de separação entre nós e Deus. Romanos 5:10 revela que 'éramos inimigos de Deus', mas através do sangue de Cristo fomos reconciliados! Colossenses 1:21-22 declara: 'Vocês, que antes eram estranhos e inimigos... agora foram reconciliados'. Não somos mais escravos fugitivos — somos FILHOS adotados com acesso total à presença do Pai!",
+      },
+      {
+        titulo: "Redenção: Comprados com Sangue",
+        descricao:
+          "Redenção significa 'comprar de volta', como pagar um resgate para libertar um escravo. Colossenses 1:13-14 proclama: 'Ele nos libertou do domínio das trevas e nos transportou para o Reino do Filho amado, em quem temos a redenção, a saber, o perdão dos pecados'. Não fomos redimidos com ouro ou prata, mas com o precioso sangue de Cristo — a vida do próprio Filho de Deus!",
+      },
+    ],
+  },
 } as const
 
 export type ResumoGeralPasso = {
