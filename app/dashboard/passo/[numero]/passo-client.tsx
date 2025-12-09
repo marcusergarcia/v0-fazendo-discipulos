@@ -772,16 +772,17 @@ export default function PassoClient({
                 {numero === 6 && (
                   <>
                     <div className="rounded-lg bg-card border p-4">
-                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "Lucas: O Filho do Homem"}</h4>
+                      <h4 className="font-semibold text-lg mb-2">
+                        {temaSemana || "Jesus, o Messias prometido - Parte 1"}
+                      </h4>
                       <p className="text-sm text-muted-foreground mb-3">
-                        {descricaoSemana ||
-                          "Conheça Jesus como o Filho do Homem que veio buscar e salvar o perdido, apresentado por Lucas com detalhes históricos e compaixão."}
+                        {descricaoSemana || "Jesus cumpre as profecias e ensina com autoridade"}
                       </p>
                       <div className="flex items-center gap-2 text-sm">
                         <Badge variant="outline" className="font-mono">
-                          Lucas 1-8
+                          Mateus 1-14
                         </Badge>
-                        <span className="text-muted-foreground">8 capítulos</span>
+                        <span className="text-muted-foreground">14 capítulos</span>
                       </div>
                     </div>
                     {statusLeituraSemana === "concluida" ? (
@@ -790,11 +791,11 @@ export default function PassoClient({
                           <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                           <div>
                             <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                              Excelente! Você começou a conhecer o Evangelho de Lucas! 🎉
+                              Excelente! Você começou a conhecer o Evangelho de Mateus! 🎉
                             </p>
                             <p className="text-sm text-green-700 dark:text-green-300">
-                              Continue descobrindo Jesus como o Salvador compassivo que veio buscar e salvar os
-                              perdidos.
+                              Continue descobrindo Jesus como o Messias prometido que cumpre as profecias e ensina com
+                              autoridade.
                             </p>
                           </div>
                         </div>
