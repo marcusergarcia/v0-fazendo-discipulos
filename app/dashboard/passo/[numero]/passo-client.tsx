@@ -45,7 +45,7 @@ import {
   receberRecompensasEAvancar,
   enviarPerguntasReflexivas, // Importar a nova server action
 } from "./actions"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { TextWithBibleLinks } from "@/components/text-with-bible-links"
 import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
@@ -126,20 +126,12 @@ export default function PassoClient({
   const [respostasPerguntasReflexivas, setRespostasPerguntasReflexivas] = useState<string[]>([])
   const perguntasReflexivasList = getPerguntasPasso(numero)
 
-  console.log("[v0] Passo número:", numero)
-  console.log("[v0] Perguntas reflexivas lista:", perguntasReflexivasList)
-  console.log("[v0] Tipo de numero:", typeof numero)
-  // The following lines were removed due to lint errors:
-  // console.log("[v0] All videos completos:", allVideosCompletos)
-  // console.log("[v0] All artigos completos:", allArtigosCompletos)
+  // State for submissaoPerguntasReflexivas
+  const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<any>(null) // Initialize with null
+  const [enviandoPerguntasReflexivas, setEnviandoPerguntasReflexivas] = useState(false) // Initialize with false
 
-  const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<{
-    situacao: string
-    respostas: any[] // Changed to 'any[]' to accommodate the new structure { pergunta_id: number; resposta: string; situacao: string; xp_ganho: number }
-    xp_ganho: number
-  } | null>(null)
-
-  const [enviandoPerguntasReflexivas, setEnviandoPerguntasReflexivas] = useState(false)
+  // Store the fetched reflexoes in state
+  const [reflexoes, setReflexoes] = useState<any[]>([])
 
   useEffect(() => {
     const carregarReflexoes = async () => {
@@ -152,44 +144,35 @@ export default function PassoClient({
         .eq("passo_numero", numero)
 
       if (data) {
-        // Filtra apenas as reflexões aprovadas ou pendentes para exibição
-        const reflexoesFiltradas = data.filter((r) => r.situacao === "aprovado" || r.situacao === "enviado")
-        // Para fins de exibição e controle, podemos apenas considerar as reflexões aprovadas/pendentes
-        // Se precisar do histórico completo, ajuste aqui.
+        setReflexoes(data)
       }
     }
 
     carregarReflexoes()
   }, [discipulo.id, numero])
 
-  useEffect(() => {
-    if (!discipulo) return
+  const buscarSubmissaoPerguntasReflexivas = useCallback(async () => {
+    if (!discipulo?.id) return
 
-    const buscarSubmissaoExistente = async () => {
-      console.log("[v0] Buscando submissão de perguntas reflexivas para discipulo:", discipulo.id, "passo:", numero)
+    const supabase = createClient()
 
-      const supabase = createClient()
+    const { data, error } = await supabase
+      .from("perguntas_reflexivas")
+      .select("situacao, respostas, xp_ganho")
+      .eq("discipulo_id", discipulo.id)
+      .eq("passo_numero", numero)
+      .maybeSingle()
 
-      const { data, error } = await supabase
-        .from("perguntas_reflexivas")
-        .select("situacao, respostas, xp_ganho")
-        .eq("discipulo_id", discipulo.id)
-        .eq("passo_numero", numero)
-        .maybeSingle()
-
-      console.log("[v0] Resultado busca perguntas reflexivas - Data:", data, "Error:", error)
-
-      if (data && !error) {
-        console.log("[v0] Submissão encontrada! Situação:", data.situacao, "XP:", data.xp_ganho)
-        setSubmissaoPerguntasReflexivas(data)
-      } else {
-        console.log("[v0] Nenhuma submissão encontrada")
-        setSubmissaoPerguntasReflexivas(null)
-      }
+    if (data && !error) {
+      setSubmissaoPerguntasReflexivas(data)
+    } else {
+      setSubmissaoPerguntasReflexivas(null)
     }
-
-    buscarSubmissaoExistente()
   }, [discipulo, numero])
+
+  useEffect(() => {
+    buscarSubmissaoPerguntasReflexivas()
+  }, [buscarSubmissaoPerguntasReflexivas])
 
   const handleEnviarPerguntasReflexivas = async () => {
     if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
@@ -238,67 +221,40 @@ export default function PassoClient({
 
   const isPrMarcus = discipulo?.user_id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
 
-  const todasReflexoesAprovadas = () => {
+  const todasReflexoesAprovadas = useCallback(() => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
-    if (todosConteudos.length === 0) return false
-
-    const todasAprovadas = todosConteudos.every((conteudo) => conteudo.reflexao_situacao?.toLowerCase() === "aprovado")
-
-    console.log("[v0] Verificando reflexões aprovadas:")
-    console.log("[v0] Total de conteúdos:", todosConteudos.length)
-    console.log(
-      "[v0] Situações:",
-      todosConteudos.map((c) => ({ id: c.id, situacao: c.reflexao_situacao })),
-    )
-    console.log("[v0] Todas aprovadas:", todasAprovadas)
+    const todasAprovadas = todosConteudos.every((conteudo) => {
+      const reflexao = reflexoes.find((r) => r.conteudo_id === conteudo.id)
+      return reflexao?.reflexao_situacao === "aprovada"
+    })
 
     const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
-    console.log("[v0] Total esperado:", totalEsperado)
-    console.log("[v0] Resultado final:", todasAprovadas && todosConteudos.length === totalEsperado)
-
     return todasAprovadas && todosConteudos.length === totalEsperado
-  }
+  }, [passo.videos, passo.artigos, reflexoes])
 
   const perguntasReflexivasEnviadas = perguntasReflexivas?.situacao === "enviado"
   const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
 
   const todasTarefasAprovadas = todasReflexoesAprovadas() && perguntasReflexivasAprovadas
 
-  const leituraBiblicaConcluida = () => {
+  const leituraBiblicaConcluida = useCallback(() => {
     if (!leiturasSemana || leiturasSemana.length === 0) return false
 
-    const todosCapitulosLidos = leiturasSemana.every((capitulo) => capitulosLidos.includes(capitulo.id))
-
-    console.log("[v0] Verificando leitura bíblica:")
-    console.log("[v0] Leituras da semana:", leiturasSemana)
-    console.log("[v0] Total de capítulos da semana:", leiturasSemana.length)
-    console.log("[v0] Capítulos lidos array:", capitulosLidos)
-    console.log("[v0] Total capítulos lidos:", capitulosLidos.length)
-    console.log("[v0] Todos capítulos lidos:", todosCapitulosLidos)
+    const capitulosLidosIds = capitulosLidos || [] // Ensure capitulosLidos is treated as an array
+    const todosCapitulosLidos = leiturasSemana.every((capitulo) => capitulosLidosIds.includes(capitulo.id))
 
     return todosCapitulosLidos
-  }
+  }, [leiturasSemana, capitulosLidos])
 
   const jaAvancou = discipulo.passo_atual > numero
 
-  const podeReceberRecompensas = jaAvancou
-    ? false // Se já avançou, não pode receber recompensas novamente
-    : isPrMarcus
-      ? todasTarefasAprovadas && leituraBiblicaConcluida()
-      : todasTarefasAprovadas && leituraBiblicaConcluida() && status !== "validado"
+  const podeReceberRecompensas = useMemo(() => {
+    if (isPrMarcus) return false // Pr. Marcus has a different flow
+    if (jaAvancou) return false // If already advanced, cannot receive rewards again
 
-  console.log("[v0] Verificando se pode receber recompensas:")
-  console.log("[v0] isPrMarcus:", isPrMarcus)
-  console.log("[v0] jaAvancou:", jaAvancou)
-  console.log("[v0] passo_atual do discípulo:", discipulo.passo_atual)
-  console.log("[v0] número do passo da página:", numero)
-  console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
-  console.log("[v0] perguntasReflexivas?.situacao:", perguntasReflexivas?.situacao)
-  console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
-  console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida())
-  console.log("[v0] status:", status)
-  console.log("[v0] podeReceberRecompensas:", podeReceberRecompensas)
+    return todasTarefasAprovadas && leituraBiblicaConcluida() && status !== "validado"
+  }, [isPrMarcus, jaAvancou, todasTarefasAprovadas, leituraBiblicaConcluida, status])
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()
@@ -362,13 +318,6 @@ export default function PassoClient({
         ...new Set(perguntasReflexivasParaExcluir.map((p) => p.id).filter((id) => id !== undefined)),
       ]
 
-      console.log(
-        "[v0] CLIENT: Resetando - Reflexões IDs:",
-        reflexoesIds.length,
-        "Perguntas IDs:",
-        perguntasIdsUnicos.length,
-      )
-
       const resultado = await resetarProgresso(numero, reflexoesIds, perguntasIdsUnicos)
       if (resultado.success) {
         setModalResetAberto(false)
@@ -384,30 +333,26 @@ export default function PassoClient({
     }
   }
 
-  const abrirModal = (tipo: "video" | "artigo", id: string) => {
-    console.log("[v0] Abrindo modal - tipo:", tipo, "id:", id, "passo:", numero)
+  const abrirModal = useCallback(
+    (tipo: "video" | "artigo", id: string) => {
+      setTipoConteudo(tipo)
+      setConteudoId(id)
+      setModalAberto(true)
 
-    setTipoConteudo(tipo)
-    setConteudoId(id)
-    setModalAberto(true)
+      const chave = `passo${numero}-${tipo}-${id}`
+      const resumo = RESUMOS_CONTEUDO[chave]
 
-    const chave = `passo${numero}-${tipo}-${id}`
-    console.log("[v0] Buscando resumo com chave:", chave)
-    console.log("[v0] RESUMOS_CONTEUDO disponíveis:", Object.keys(RESUMOS_CONTEUDO))
+      if (resumo) {
+        setResumoAtual(resumo)
+      } else {
+        setResumoAtual("")
+      }
+    },
+    [numero],
+  )
 
-    const resumo = RESUMOS_CONTEUDO[chave]
-    console.log("[v0] Resumo encontrado:", resumo)
-
-    if (resumo) {
-      setResumoAtual(resumo)
-    } else {
-      setResumoAtual("")
-      console.log("[v0] Nenhum resumo encontrado para:", chave)
-    }
-  }
-
-  const enviarReflexao = async () => {
-    if (!reflexao.trim() || reflexao.trim().length < 20) {
+  const enviarReflexao = async (reflexaoText: string) => {
+    if (!reflexaoText.trim() || reflexaoText.trim().length < 20) {
       toast({
         title: "Atenção",
         description: "Por favor, escreva uma reflexão de pelo menos 20 caracteres",
@@ -418,34 +363,24 @@ export default function PassoClient({
 
     if (enviandoReflexao) return
 
-    console.log("[v0] === INICIANDO ENVIO DE REFLEXÃO ===")
-    console.log("[v0] Tipo:", tipoConteudo)
-    console.log("[v0] Conteúdo ID:", conteudoId)
-    console.log("[v0] Reflexão:", reflexao.substring(0, 50) + "...")
-    console.log("[v0] Passo número:", numero)
-
     setEnviandoReflexao(true)
     try {
-      console.log("[v0] Chamando action...")
       let result
       if (tipoConteudo === "video") {
-        console.log("[v0] Concluindo vídeo com reflexão...")
         const video = passo.videos.find((v) => v.id === conteudoId)
-        result = await concluirVideoComReflexao(numero, conteudoId, video?.titulo || "Vídeo", reflexao)
+        result = await concluirVideoComReflexao(numero, conteudoId, video?.titulo || "Vídeo", reflexaoText)
       } else {
-        console.log("[v0] Concluindo artigo com reflexão...")
         const artigo = passo.artigos.find((a) => a.id === conteudoId)
-        result = await concluirArtigoComReflexao(numero, conteudoId, artigo?.titulo || "Artigo", reflexao)
+        result = await concluirArtigoComReflexao(numero, conteudoId, artigo?.titulo || "Artigo", reflexaoText)
       }
-      console.log("[v0] Action executada com sucesso! Resultado:", result)
 
       toast({ title: "Sucesso!", description: "Sua reflexão foi enviada com sucesso!" })
       setModalAberto(false)
       setReflexao("")
       window.location.reload()
     } catch (error) {
-      console.error("[v0] ERRO ao enviar reflexão:", error)
-      console.error("[v0] Detalhes do erro:", JSON.stringify(error, null, 2))
+      console.error("ERRO ao enviar reflexão:", error)
+      console.error("Detalhes do erro:", JSON.stringify(error, null, 2))
       toast({ title: "Erro", description: "Erro ao enviar reflexão. Tente novamente.", variant: "destructive" })
     } finally {
       setEnviandoReflexao(false)
@@ -519,7 +454,7 @@ export default function PassoClient({
     }
   }
 
-  const todasReflexoesCompletadas = () => {
+  const todasReflexoesCompletadas = useCallback(() => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
     if (todosConteudos.length === 0) return false
@@ -528,20 +463,9 @@ export default function PassoClient({
       (conteudo) => conteudo.reflexao_situacao !== null && conteudo.reflexao_situacao !== undefined,
     )
 
-    console.log("[v0] Verificando reflexões completadas:")
-    console.log("[v0] Total de conteúdos:", todosConteudos.length)
-    console.log(
-      "[v0] Situações:",
-      todosConteudos.map((c) => ({ id: c.id, situacao: c.reflexao_situacao })),
-    )
-    console.log("[v0] Todas completadas:", todasCompletadas)
-    // Fix: The variable "todos" and "companias" were not declared. They were likely intended to be "conteudos".
-    // Corrected the comparison to use the `todosConteudos.length` directly.
     const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
-    console.log("[v0] Resultado final:", todasCompletadas && todosConteudos.length === totalEsperado)
-
     return todasCompletadas && todosConteudos.length === totalEsperado
-  }
+  }, [passo.videos, passo.artigos])
 
   return (
     <div className="min-h-screen bg-background">
@@ -894,20 +818,20 @@ export default function PassoClient({
 
         {/* Vídeos Educacionais */}
         {passo.videos && passo.videos.length > 0 && (
-          <Card className="mb-6 border-primary/30">
+          <Card className="mb-6 border-accent/30">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Play className="w-5 h-5 text-primary" />
+                    <Play className="w-5 h-5 text-accent" />
                     Assista e Aprenda
                   </CardTitle>
-                  <CardDescription>Vídeos curtos para aprofundar seu entendimento</CardDescription>
+                  <CardDescription>Vídeos selecionados para sua jornada espiritual</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {passo.videos.map((video: any) => {
+              {(passo.videos || []).map((video: any) => {
                 const assistido = videosAssistidos.includes(video.id)
                 const temReflexao = video.reflexao_situacao !== null && video.reflexao_situacao !== undefined
                 const reflexaoAprovada = video.reflexao_situacao === "aprovado"
@@ -981,7 +905,7 @@ export default function PassoClient({
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              {passo.artigos.map((artigo: any) => {
+              {(passo.artigos || []).map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
                 const temReflexao = artigo.reflexao_situacao !== null && artigo.reflexao_situacao !== undefined
                 const reflexaoAprovada = artigo.reflexao_situacao === "aprovado"
@@ -1260,7 +1184,7 @@ export default function PassoClient({
             <Button variant="outline" onClick={() => setModalAberto(false)} disabled={enviandoReflexao}>
               Cancelar
             </Button>
-            <Button onClick={enviarReflexao} disabled={enviandoReflexao || reflexao.trim().length < 20}>
+            <Button onClick={() => enviarReflexao(reflexao)} disabled={enviandoReflexao || reflexao.trim().length < 20}>
               {enviandoReflexao ? "Enviando..." : "Enviar Reflexão"}
             </Button>
           </DialogFooter>

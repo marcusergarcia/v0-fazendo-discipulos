@@ -156,7 +156,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   // Adicionar informações de situação aos vídeos e artigos
   const passoComReflexoes = {
     ...passo,
-    videos: passo.videos?.map((video: any) => {
+    videos: (passo.videos || []).map((video: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === video.id && r.tipo === "video")
       return {
         ...video,
@@ -164,7 +164,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
         reflexao_xp: reflexao?.xp_ganho || null,
       }
     }),
-    artigos: passo.artigos?.map((artigo: any) => {
+    artigos: (passo.artigos || []).map((artigo: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === artigo.id && r.tipo === "artigo")
       return {
         ...artigo,
