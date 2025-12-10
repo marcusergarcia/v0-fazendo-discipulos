@@ -121,17 +121,6 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
       console.log("[v0] Referências de perguntas_reflexivas limpas com sucesso")
     }
 
-    const { error: reflexoesError } = await supabase
-      .from("reflexoes_conteudo")
-      .update({ notificacao_id: null })
-      .in("notificacao_id", notificacaoIds)
-
-    if (reflexoesError) {
-      console.error("[v0] Erro ao limpar referências de reflexoes_conteudo:", reflexoesError)
-    } else {
-      console.log("[v0] Referências de reflexoes_conteudo limpas com sucesso")
-    }
-
     const { error: deleteError, count } = await supabase.from("notificacoes").delete().eq("user_id", userId).select()
 
     if (deleteError) {

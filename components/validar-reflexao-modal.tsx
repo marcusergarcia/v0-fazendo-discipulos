@@ -66,10 +66,12 @@ export function ValidarReflexaoModal({
       }
 
       const { data: reflexaoAtual, error: selectError } = await supabase
-        .from("reflexoes_conteudo")
-        .select("id, situacao, xp_ganho")
-        .eq("id", reflexao.id)
-        .single()
+        .from("reflexoes_passo")
+        .select("id, tipo, conteudos_ids, feedbacks")
+        .eq("discipulo_id", discipuloId)
+        .eq("passo_numero", reflexao.passo_atual)
+        .eq("tipo", reflexao.tipo)
+        .maybeSingle()
 
       console.log("[v0] Reflexão encontrada no banco:", reflexaoAtual)
 
@@ -80,7 +82,10 @@ export function ValidarReflexaoModal({
         return
       }
 
-      if (reflexaoAtual.situacao === "aprovado") {
+      const feedbacksArray = (reflexaoAtual.feedbacks as any[]) || []
+      const jaTemFeedback = feedbacksArray.some((f: any) => f.conteudo_id === reflexao.conteudo_id)
+
+      if (jaTemFeedback) {
         console.log("[v0] Reflexão já aprovada, cancelando")
         toast.error("Esta reflexão já foi aprovada por outro processo")
         setLoading(false)
@@ -89,15 +94,23 @@ export function ValidarReflexaoModal({
       }
 
       console.log("[v0] Atualizando reflexão para aprovado...")
+
+      const novoFeedback = {
+        conteudo_id: reflexao.conteudo_id,
+        feedback: feedback,
+        xp_ganho: xpConcedido,
+        data_aprovacao: new Date().toISOString(),
+        situacao: "aprovado",
+      }
+
+      const feedbacksAtualizados = [...feedbacksArray, novoFeedback]
+
       const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
-        .from("reflexoes_conteudo")
+        .from("reflexoes_passo")
         .update({
-          feedback_discipulador: feedback,
-          xp_ganho: xpConcedido,
-          data_aprovacao: new Date().toISOString(),
-          situacao: "aprovado",
+          feedbacks: feedbacksAtualizados,
         })
-        .eq("id", reflexao.id)
+        .eq("id", reflexaoAtual.id)
         .select()
 
       if (updateReflexaoError) {
@@ -140,7 +153,6 @@ export function ValidarReflexaoModal({
           )
         }
 
-        // Adicionar XP à pontuação total do passo
         pontuacaoAtual += xpConcedido
         reflexoesConcluidas += 1
 
@@ -170,8 +182,6 @@ export function ValidarReflexaoModal({
         console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
       }
 
-      // Agora verifica apenas perguntas_reflexivas e leitura bíblica
-
       const { data: discipuloInfo } = await supabase
         .from("discipulos")
         .select("passo_atual")
@@ -182,13 +192,19 @@ export function ValidarReflexaoModal({
         const passoAtual = discipuloInfo.passo_atual
 
         const { data: todasReflexoes } = await supabase
-          .from("reflexoes_conteudo")
-          .select("situacao")
+          .from("reflexoes_passo")
+          .select("tipo, conteudos_ids, feedbacks")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_atual", passoAtual)
+          .eq("passo_numero", passoAtual)
 
-        const todasReflexoesAprovadas =
-          todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
+        let todasReflexoesAprovadas = false
+        if (todasReflexoes && todasReflexoes.length > 0) {
+          todasReflexoesAprovadas = todasReflexoes.every((r: any) => {
+            const feedbacks = (r.feedbacks as any[]) || []
+            const conteudos = r.conteudos_ids || []
+            return conteudos.every((conteudoId: string) => feedbacks.some((f: any) => f.conteudo_id === conteudoId))
+          })
+        }
 
         const { data: perguntasReflexivas } = await supabase
           .from("perguntas_reflexivas")
