@@ -187,17 +187,15 @@ export default async function DiscipuladorPage() {
           const respostasArray = Array.isArray(perguntasResposta?.respostas) ? perguntasResposta.respostas : []
           const respostaEspecifica = respostasArray.find((r: any) => r.pergunta_id === perguntaId)
 
-          // Determine situacao: if perguntasResposta exists with respostas array, check individual feedback
           let situacaoPergunta = null
           let xpPergunta = null
 
-          if (respostaEspecifica) {
-            // Resposta exists, check if has feedback (aprovado) or still waiting (enviado)
-            if (respostaEspecifica.xp_ganho !== undefined && respostaEspecifica.xp_ganho !== null) {
-              situacaoPergunta = "aprovado"
-              xpPergunta = respostaEspecifica.xp_ganho
-            } else {
-              situacaoPergunta = "enviado" // Waiting for approval
+          if (respostaEspecifica && perguntasResposta) {
+            // Use the global situacao from the perguntasResposta object
+            situacaoPergunta = perguntasResposta.situacao
+            // XP is distributed equally when approved, but stored globally
+            if (situacaoPergunta === "aprovado") {
+              xpPergunta = Math.floor((perguntasResposta.xp_ganho || 0) / perguntasPassoAtual.length)
             }
           }
 
@@ -207,6 +205,7 @@ export default async function DiscipuladorPage() {
             xp: xpPergunta,
             temResposta: !!respostaEspecifica,
             resposta: respostaEspecifica?.resposta ? "Sim" : "Não",
+            situacaoGlobal: perguntasResposta?.situacao,
           })
 
           tarefas.push({
