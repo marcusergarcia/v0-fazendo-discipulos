@@ -65,7 +65,7 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
         await supabase.from("notificacoes").insert({
           user_id: discipulo.discipulador_id,
           discipulo_id: discipulo.id,
-          tipo: "reflexao_video",
+          tipo: "reflexao",
           titulo: "Nova reflexão de vídeo",
           mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
           lida: false,
@@ -103,7 +103,7 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
         await supabase.from("notificacoes").insert({
           user_id: discipulo.discipulador_id,
           discipulo_id: discipulo.id,
-          tipo: "reflexao_video",
+          tipo: "reflexao",
           titulo: "Nova reflexão de vídeo",
           mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
           lida: false,
@@ -184,7 +184,7 @@ export async function concluirArtigoComReflexao(
         await supabase.from("notificacoes").insert({
           user_id: discipulo.discipulador_id,
           discipulo_id: discipulo.id,
-          tipo: "reflexao_artigo",
+          tipo: "reflexao",
           titulo: "Nova reflexão de artigo",
           mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
           lida: false,
@@ -222,7 +222,7 @@ export async function concluirArtigoComReflexao(
         await supabase.from("notificacoes").insert({
           user_id: discipulo.discipulador_id,
           discipulo_id: discipulo.id,
-          tipo: "reflexao_artigo",
+          tipo: "reflexao",
           titulo: "Nova reflexão de artigo",
           mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
           lida: false,
