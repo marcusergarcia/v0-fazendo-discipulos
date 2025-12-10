@@ -457,14 +457,20 @@ export default async function DiscipuladorPage() {
                                   )
                                 ) : (
                                   <>
-                                    <ReflexoesClient
-                                      reflexao={tarefa.reflexao}
-                                      discipuloId={discipulo.id}
-                                      discipuloNome={nome}
-                                      xp={tarefa.xp}
-                                      situacao={tarefa.situacao}
-                                      concluido={tarefa.concluido}
-                                    />
+                                    {!tarefa.reflexao ? (
+                                      <Badge variant="outline" className="text-muted-foreground">
+                                        Não iniciado
+                                      </Badge>
+                                    ) : (
+                                      <ReflexoesClient
+                                        reflexao={tarefa.reflexao}
+                                        discipuloId={discipulo.id}
+                                        discipuloNome={nome}
+                                        xp={tarefa.xp}
+                                        situacao={tarefa.situacao}
+                                        concluido={tarefa.concluido}
+                                      />
+                                    )}
                                   </>
                                 )}
                               </div>
