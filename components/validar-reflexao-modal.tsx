@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Clock, CheckCircle, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { aprovarReflexao } from "@/app/discipulador/actions"
 
 interface ValidarReflexaoModalProps {
   reflexao: {
@@ -40,7 +40,6 @@ export function ValidarReflexaoModal({
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
-  const supabase = createClient()
 
   async function handleAprovar() {
     if (!feedback.trim()) {
@@ -51,254 +50,30 @@ export function ValidarReflexaoModal({
     setLoading(true)
 
     try {
-      console.log("[v0] ===== INICIANDO APROVAÇÃO DE REFLEXÃO =====")
-      console.log("[v0] Reflexão ID:", reflexao.id)
-      console.log("[v0] Discípulo ID:", discipuloId)
-      console.log("[v0] Tipo:", reflexao.tipo)
-      console.log("[v0] Conteúdo ID:", reflexao.conteudo_id)
-      console.log("[v0] Situação atual:", reflexao.situacao)
-
-      if (reflexao.situacao === "aprovado") {
-        toast.error("Esta reflexão já foi aprovada anteriormente")
-        setLoading(false)
-        setOpen(false)
-        return
-      }
-
-      const { data: reflexaoAtual, error: selectError } = await supabase
-        .from("reflexoes_passo")
-        .select("id, tipo, conteudos_ids, feedbacks")
-        .eq("discipulo_id", discipuloId)
-        .eq("passo_numero", reflexao.passo_atual)
-        .eq("tipo", reflexao.tipo)
-        .maybeSingle()
-
-      console.log("[v0] Reflexão encontrada no banco:", reflexaoAtual)
-
-      if (selectError || !reflexaoAtual) {
-        console.error("[v0] ERRO: Reflexão não encontrada!", selectError)
-        toast.error("Erro: Reflexão não encontrada no banco de dados")
-        setLoading(false)
-        return
-      }
-
-      const feedbacksArray = (reflexaoAtual.feedbacks as any[]) || []
-      const jaTemFeedback = feedbacksArray.some((f: any) => f.conteudo_id === reflexao.conteudo_id)
-
-      if (jaTemFeedback) {
-        console.log("[v0] Reflexão já aprovada, cancelando")
-        toast.error("Esta reflexão já foi aprovada por outro processo")
-        setLoading(false)
-        setOpen(false)
-        return
-      }
-
-      console.log("[v0] Atualizando reflexão para aprovado...")
-
-      const novoFeedback = {
-        conteudo_id: reflexao.conteudo_id,
+      const result = await aprovarReflexao({
+        reflexaoId: reflexao.id,
+        discipuloId: discipuloId,
+        passoAtual: reflexao.passo_atual,
+        tipo: reflexao.tipo,
+        conteudoId: reflexao.conteudo_id,
         feedback: feedback,
-        xp_ganho: xpConcedido,
-        data_aprovacao: new Date().toISOString(),
-        situacao: "aprovado",
-      }
+        xpConcedido: xpConcedido,
+      })
 
-      const feedbacksAtualizados = [...feedbacksArray, novoFeedback]
-
-      const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
-        .from("reflexoes_passo")
-        .update({
-          feedbacks: feedbacksAtualizados,
-        })
-        .eq("id", reflexaoAtual.id)
-        .select()
-
-      if (updateReflexaoError) {
-        console.error("[v0] ERRO ao atualizar reflexão:", updateReflexaoError)
-        toast.error("Erro ao atualizar reflexão: " + updateReflexaoError.message)
-        setLoading(false)
+      if (!result.success) {
+        toast.error(result.error || "Erro ao aprovar reflexão")
         return
       }
 
-      console.log("[v0] Reflexão atualizada com sucesso:", reflexaoAtualizada)
-
-      if (!reflexaoAtualizada || reflexaoAtualizada.length === 0) {
-        console.error("[v0] ERRO: Nenhuma linha foi atualizada!")
-        toast.error("Erro: Nenhuma reflexão foi atualizada")
-        setLoading(false)
-        return
+      if (result.warning) {
+        toast.warning(result.warning)
       }
 
-      const { data: progresso } = await supabase
-        .from("progresso_fases")
-        .select("*")
-        .eq("discipulo_id", discipuloId)
-        .single()
-
-      console.log("[v0] Progresso encontrado:", progresso)
-
-      if (progresso) {
-        let videos_assistidos = progresso.videos_assistidos || []
-        let artigos_lidos = progresso.artigos_lidos || []
-        let pontuacaoAtual = progresso.pontuacao_passo_atual || 0
-        let reflexoesConcluidas = progresso.reflexoes_concluidas || 0
-
-        if (reflexao.tipo === "video") {
-          videos_assistidos = videos_assistidos.map((v: any) =>
-            v.id === reflexao.conteudo_id ? { ...v, xp_ganho: xpConcedido, avaliado: true } : v,
-          )
-        } else {
-          artigos_lidos = artigos_lidos.map((a: any) =>
-            a.id === reflexao.conteudo_id ? { ...a, xp_ganho: xpConcedido, avaliado: true } : a,
-          )
-        }
-
-        pontuacaoAtual += xpConcedido
-        reflexoesConcluidas += 1
-
-        await supabase
-          .from("progresso_fases")
-          .update({
-            videos_assistidos: reflexao.tipo === "video" ? videos_assistidos : progresso.videos_assistidos,
-            artigos_lidos: reflexao.tipo === "artigo" ? artigos_lidos : progresso.artigos_lidos,
-            pontuacao_passo_atual: pontuacaoAtual,
-            reflexoes_concluidas: reflexoesConcluidas,
-          })
-          .eq("id", progresso.id)
-
-        console.log("[v0] ✅ XP adicionado à pontuação do passo:", xpConcedido)
-      }
-
-      const { data: notificacao } = await supabase
-        .from("notificacoes")
-        .select("id")
-        .eq("reflexao_id", reflexao.id)
-        .maybeSingle()
-
-      console.log("[v0] Notificação encontrada:", notificacao)
-
-      if (notificacao) {
-        const { error: deleteNotifError } = await supabase.from("notificacoes").delete().eq("id", notificacao.id)
-        console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
-      }
-
-      const { data: discipuloInfo } = await supabase
-        .from("discipulos")
-        .select("passo_atual")
-        .eq("id", discipuloId)
-        .single()
-
-      if (discipuloInfo) {
-        const passoAtual = discipuloInfo.passo_atual
-
-        const { data: todasReflexoes } = await supabase
-          .from("reflexoes_passo")
-          .select("tipo, conteudos_ids, feedbacks")
-          .eq("discipulo_id", discipuloId)
-          .eq("passo_numero", passoAtual)
-
-        let todasReflexoesAprovadas = false
-        if (todasReflexoes && todasReflexoes.length > 0) {
-          todasReflexoesAprovadas = todasReflexoes.every((r: any) => {
-            const feedbacks = (r.feedbacks as any[]) || []
-            const conteudos = r.conteudos_ids || []
-            return conteudos.every((conteudoId: string) => feedbacks.some((f: any) => f.conteudo_id === conteudoId))
-          })
-        }
-
-        const { data: perguntasReflexivas } = await supabase
-          .from("perguntas_reflexivas")
-          .select("situacao")
-          .eq("discipulo_id", discipuloId)
-          .eq("passo_atual", passoAtual)
-          .maybeSingle()
-
-        const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
-
-        if (todasReflexoesAprovadas && perguntasReflexivasAprovadas) {
-          console.log("[v0] Todas as reflexões e perguntas reflexivas aprovadas! Verificando leitura bíblica...")
-
-          const semanaCorrespondente = passoAtual
-
-          const { data: planoSemana } = await supabase
-            .from("plano_leitura_biblica")
-            .select("capitulos_semana")
-            .eq("semana", semanaCorrespondente)
-            .single()
-
-          let leituraBiblicaConcluida = false
-          if (planoSemana && planoSemana.capitulos_semana) {
-            const { data: leiturasDiscipulo } = await supabase
-              .from("leituras_capitulos")
-              .select("capitulos_lidos")
-              .eq("discipulo_id", discipuloId)
-              .single()
-
-            const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
-            const capitulosSemana = planoSemana.capitulos_semana
-            leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
-
-            console.log("[v0] Verificação leitura bíblica:", {
-              semana: semanaCorrespondente,
-              capitulosSemana,
-              capitulosLidos: Array.from(capitulosLidos),
-              leituraConcluida: leituraBiblicaConcluida,
-            })
-          }
-
-          if (!leituraBiblicaConcluida) {
-            toast.warning(`Leitura bíblica da semana ${semanaCorrespondente} ainda não foi concluída`)
-            setLoading(false)
-            setOpen(false)
-            return
-          }
-
-          const { data: progressoCompleto } = await supabase
-            .from("progresso_fases")
-            .select("pontuacao_passo_atual")
-            .eq("discipulo_id", discipuloId)
-            .single()
-
-          const pontosDoPassoCompleto = progressoCompleto?.pontuacao_passo_atual || 0
-
-          await supabase
-            .from("progresso_fases")
-            .update({
-              pontuacao_passo_atual: 0,
-              reflexoes_concluidas: 0,
-              videos_assistidos: [],
-              artigos_lidos: [],
-            })
-            .eq("discipulo_id", discipuloId)
-
-          const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
-
-          if (disc) {
-            await supabase
-              .from("discipulos")
-              .update({ xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto })
-              .eq("id", discipuloId)
-
-            console.log("[v0] ✅ Transferidos", pontosDoPassoCompleto, "XP do passo para xp_total do discípulo")
-          }
-
-          const proximoPasso = passoAtual + 1
-
-          if (proximoPasso <= 10) {
-            await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", discipuloId)
-
-            console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
-            toast.success(`Parabéns! Passo ${passoAtual} concluído. Passo ${proximoPasso} liberado!`)
-          }
-        }
-      }
-
-      console.log("[v0] ===== APROVAÇÃO CONCLUÍDA COM SUCESSO =====")
-      toast.success(`Reflexão aprovada! +${xpConcedido} XP será creditado ao completar o passo`)
+      toast.success(result.message)
       setOpen(false)
 
       if (onAprovado) {
-        onAprovado(xpConcedido)
+        onAprovado(result.xpConcedido!)
       }
     } catch (error) {
       console.error("[v0] Erro ao aprovar reflexão:", error)
