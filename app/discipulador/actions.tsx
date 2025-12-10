@@ -331,7 +331,6 @@ export async function aprovarPerguntaReflexiva(data: {
         .select("id")
         .eq("tipo", "perguntas_reflexivas")
         .eq("discipulo_id", data.discipuloId)
-        .eq("passo_numero", data.passoAtual)
         .maybeSingle()
 
       if (notificacao) {

@@ -181,8 +181,11 @@ export default async function DiscipuladorPage() {
           let xpPergunta = null
 
           if (respostaEspecifica && perguntasResposta) {
-            situacaoPergunta = perguntasResposta.situacao
-            if (situacaoPergunta === "aprovado") {
+            situacaoPergunta = respostaEspecifica.situacao || perguntasResposta.situacao
+
+            if (respostaEspecifica.situacao === "aprovado") {
+              xpPergunta = respostaEspecifica.xp_ganho
+            } else if (perguntasResposta.situacao === "aprovado") {
               xpPergunta = Math.floor((perguntasResposta.xp_ganho || 0) / perguntasPassoAtual.length)
             }
           }
