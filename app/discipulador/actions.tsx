@@ -179,7 +179,7 @@ export async function aprovarReflexao(data: {
           })
           .eq("discipulo_id", data.discipuloId)
 
-        // Adicionar XP ao total do discípulo
+        // Transferir XP para o discípulo
         const { data: disc } = await adminClient
           .from("discipulos")
           .select("xp_total, passo_atual")
@@ -226,5 +226,239 @@ export async function aprovarReflexao(data: {
     return { success: false, error: "Erro ao aprovar reflexão" }
   } finally {
     revalidatePath("/discipulador")
+  }
+}
+
+export async function aprovarPerguntaReflexiva(data: {
+  perguntasReflexivasId: string
+  perguntaId: number
+  discipuloId: string
+  passoAtual: number
+  faseNumero: number
+  feedback: string
+  xpConcedido: number
+}) {
+  const adminClient = createAdminClient()
+
+  try {
+    console.log("[v0] ===== INICIANDO APROVAÇÃO DE PERGUNTA REFLEXIVA INDIVIDUAL =====")
+    console.log("[v0] Perguntas Reflexivas ID:", data.perguntasReflexivasId)
+    console.log("[v0] Pergunta ID:", data.perguntaId)
+
+    // Buscar o registro atual
+    const { data: perguntasReflexivas, error: selectError } = await adminClient
+      .from("perguntas_reflexivas")
+      .select("*")
+      .eq("id", data.perguntasReflexivasId)
+      .maybeSingle()
+
+    if (selectError || !perguntasReflexivas) {
+      console.error("[v0] ERRO: Perguntas reflexivas não encontradas!", selectError)
+      return { success: false, error: "Perguntas reflexivas não encontradas" }
+    }
+
+    const respostasArray = (perguntasReflexivas.respostas as any[]) || []
+
+    // Encontrar a resposta específica desta pergunta
+    const respostaIndex = respostasArray.findIndex((r: any) => r.pergunta_id === data.perguntaId)
+
+    if (respostaIndex === -1) {
+      console.error("[v0] ERRO: Resposta não encontrada para pergunta_id", data.perguntaId)
+      return { success: false, error: "Resposta não encontrada" }
+    }
+
+    // Atualizar esta resposta específica com o feedback
+    respostasArray[respostaIndex] = {
+      ...respostasArray[respostaIndex],
+      situacao: "aprovado",
+      xp_ganho: data.xpConcedido,
+      feedback: data.feedback,
+      data_aprovacao: new Date().toISOString(),
+    }
+
+    // Verificar se todas as perguntas foram aprovadas
+    const todasAprovadas = respostasArray.every((r: any) => r.situacao === "aprovado")
+    const xpTotal = respostasArray.reduce((sum: number, r: any) => sum + (r.xp_ganho || 0), 0)
+
+    console.log("[v0] Todas aprovadas?", todasAprovadas, "XP Total:", xpTotal)
+
+    // Atualizar o registro
+    const updateData: any = {
+      respostas: respostasArray,
+    }
+
+    // Se todas foram aprovadas, atualizar status global
+    if (todasAprovadas) {
+      updateData.situacao = "aprovado"
+      updateData.xp_ganho = xpTotal
+      updateData.data_aprovacao = new Date().toISOString()
+    }
+
+    const { error: updateError } = await adminClient
+      .from("perguntas_reflexivas")
+      .update(updateData)
+      .eq("id", data.perguntasReflexivasId)
+
+    if (updateError) {
+      console.error("[v0] ERRO ao atualizar:", updateError)
+      return { success: false, error: updateError.message }
+    }
+
+    // Atualizar progresso_fases
+    const { data: progresso } = await adminClient
+      .from("progresso_fases")
+      .select("*")
+      .eq("discipulo_id", data.discipuloId)
+      .single()
+
+    if (progresso) {
+      const pontuacaoAtual = progresso.pontuacao_passo_atual || 0
+
+      await adminClient
+        .from("progresso_fases")
+        .update({
+          pontuacao_passo_atual: pontuacaoAtual + data.xpConcedido,
+        })
+        .eq("id", progresso.id)
+
+      console.log("[v0] XP adicionado à pontuação do passo:", data.xpConcedido)
+    }
+
+    // Se todas foram aprovadas, deletar notificação
+    if (todasAprovadas) {
+      const { data: notificacao } = await adminClient
+        .from("notificacoes")
+        .select("id")
+        .eq("tipo", "perguntas_reflexivas")
+        .eq("discipulo_id", data.discipuloId)
+        .eq("passo_numero", data.passoAtual)
+        .maybeSingle()
+
+      if (notificacao) {
+        await adminClient.from("notificacoes").delete().eq("id", notificacao.id)
+        console.log("[v0] Notificação removida")
+      }
+
+      // Verificar se pode liberar próximo passo
+      await verificarLiberacaoProximoPasso(adminClient, data.discipuloId, data.passoAtual, xpTotal)
+
+      console.log("[v0] ===== TODAS PERGUNTAS APROVADAS - XP TOTAL:", xpTotal, "=====")
+      return {
+        success: true,
+        message: `Todas as perguntas aprovadas! +${xpTotal} XP concedido ao discípulo`,
+        todasAprovadas: true,
+        xpTotal,
+      }
+    }
+
+    console.log("[v0] ===== APROVAÇÃO DA PERGUNTA", data.perguntaId, "CONCLUÍDA =====")
+    return {
+      success: true,
+      message: `Pergunta ${data.perguntaId} aprovada! +${data.xpConcedido} XP`,
+      todasAprovadas: false,
+    }
+  } catch (error) {
+    console.error("[v0] Erro ao aprovar pergunta reflexiva:", error)
+    return { success: false, error: "Erro ao aprovar pergunta reflexiva" }
+  } finally {
+    revalidatePath("/discipulador")
+  }
+}
+
+async function verificarLiberacaoProximoPasso(
+  adminClient: any,
+  discipuloId: string,
+  passoAtual: number,
+  xpPerguntasReflexivas: number,
+) {
+  // Verificar reflexoes_passo (videos e artigos)
+  const { data: reflexoesPasso } = await adminClient
+    .from("reflexoes_passo")
+    .select("tipo, feedbacks, conteudos_ids")
+    .eq("discipulo_id", discipuloId)
+    .eq("passo_numero", passoAtual)
+
+  if (!reflexoesPasso || reflexoesPasso.length === 0) {
+    console.log("[v0] Reflexões de conteúdo ainda pendentes")
+    return
+  }
+
+  // Verificar se todos os vídeos e artigos foram aprovados
+  const todasReflexoesAprovadas = reflexoesPasso.every((r: any) => {
+    const feedbacks = (r.feedbacks as any[]) || []
+    const conteudos = r.conteudos_ids || []
+    return conteudos.every((conteudoId: string) => feedbacks.some((f: any) => f.conteudo_id === conteudoId))
+  })
+
+  if (!todasReflexoesAprovadas) {
+    console.log("[v0] Reflexões de conteúdo ainda pendentes")
+    return
+  }
+
+  // Verificar leitura bíblica
+  const { data: planoSemana } = await adminClient
+    .from("plano_leitura_biblica")
+    .select("capitulos_semana")
+    .eq("semana", passoAtual)
+    .single()
+
+  let leituraConcluida = false
+  if (planoSemana) {
+    const { data: leituras } = await adminClient
+      .from("leituras_capitulos")
+      .select("capitulos_lidos")
+      .eq("discipulo_id", discipuloId)
+      .single()
+
+    const capitulosLidos = new Set(leituras?.capitulos_lidos || [])
+    leituraConcluida = planoSemana.capitulos_semana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
+  }
+
+  if (!leituraConcluida) {
+    console.log("[v0] Leitura bíblica ainda não foi concluída")
+    return
+  }
+
+  // Marcar passo como completado e liberar próximo
+  const { data: progresso } = await adminClient
+    .from("progresso_fases")
+    .select("pontuacao_passo_atual")
+    .eq("discipulo_id", discipuloId)
+    .single()
+
+  if (progresso) {
+    const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
+
+    // Resetar progresso do passo
+    await adminClient
+      .from("progresso_fases")
+      .update({
+        pontuacao_passo_atual: 0,
+        reflexoes_concluidas: 0,
+        videos_assistidos: [],
+        artigos_lidos: [],
+      })
+      .eq("discipulo_id", discipuloId)
+
+    // Transferir XP para o discípulo
+    const { data: disc } = await adminClient
+      .from("discipulos")
+      .select("xp_total, passo_atual")
+      .eq("id", discipuloId)
+      .single()
+
+    if (disc) {
+      const proximoPasso = passoAtual + 1
+
+      await adminClient
+        .from("discipulos")
+        .update({
+          xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
+          passo_atual: proximoPasso <= 10 ? proximoPasso : disc.passo_atual,
+        })
+        .eq("id", discipuloId)
+
+      console.log("[v0] Passo", passoAtual, "concluído! Passo", proximoPasso, "liberado!")
+    }
   }
 }

@@ -63,14 +63,16 @@ export default async function DiscipuladorPage() {
     .select("*")
     .in("discipulo_id", discipuloIds)
 
-  console.log("[v0] Perguntas reflexivas:", perguntasReflexivas)
-
   const dadosPorDiscipulo = await Promise.all(
     discipulosComPerfil.map(async (discipulo) => {
       const reflexoesDiscipulo = todasReflexoes?.filter((r) => r.discipulo_id === discipulo.id) || []
       const progressosDiscipulo = progressosPendentes?.filter((p) => p.discipulo_id === discipulo.id) || []
 
       const perguntasDiscipulo = perguntasReflexivas?.filter((p) => p.discipulo_id === discipulo.id) || []
+
+      const perguntasResposta = perguntasDiscipulo.find(
+        (pr) => pr.discipulo_id === discipulo.id && pr.fase_numero === 1 && pr.passo_numero === 1,
+      )
 
       const { data: progressoAtual } = await supabase
         .from("progresso_fases")
@@ -167,50 +169,19 @@ export default async function DiscipuladorPage() {
         const faseAtualDiscipulo = progressoAtual?.fase_atual || discipulo.fase_atual
         const passoAtualDiscipulo = progressoAtual?.passo_atual || discipulo.passo_atual
 
-        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[passoAtualDiscipulo as keyof typeof PERGUNTAS_POR_PASSO] || []
-        const perguntasResposta = perguntasDiscipulo.find(
-          (p) => p.fase_numero === faseAtualDiscipulo && p.passo_numero === passoAtualDiscipulo,
-        )
-
-        console.log("[v0] DEBUG Perguntas Resposta Encontrada:", {
-          discipulo_id: discipulo.id,
-          fase_numero: faseAtualDiscipulo,
-          passo_numero: passoAtualDiscipulo,
-          encontrou: !!perguntasResposta,
-          perguntasResposta,
-          totalPerguntasDiscipulo: perguntasDiscipulo.length,
-          perguntasDiscipulo: perguntasDiscipulo.map((p) => ({
-            id: p.id,
-            fase: p.fase_numero,
-            passo: p.passo_numero,
-            situacao: p.situacao,
-            respostas: p.respostas,
-          })),
-        })
+        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[1 as keyof typeof PERGUNTAS_POR_PASSO] || []
 
         perguntasPassoAtual.forEach((pergunta, index) => {
           const perguntaId = index + 1
 
-          // Check if respostas exists and is an array
           const respostasArray = Array.isArray(perguntasResposta?.respostas) ? perguntasResposta.respostas : []
           const respostaEspecifica = respostasArray.find((r: any) => r.pergunta_id === perguntaId)
-
-          console.log("[v0] DEBUG Processando Pergunta Individual:", {
-            perguntaId,
-            perguntaTexto: pergunta,
-            respostasArrayLength: respostasArray.length,
-            respostasArray,
-            respostaEspecifica,
-            encontrou: !!respostaEspecifica,
-          })
 
           let situacaoPergunta = null
           let xpPergunta = null
 
           if (respostaEspecifica && perguntasResposta) {
-            // Use the global situacao from the perguntasResposta object
             situacaoPergunta = perguntasResposta.situacao
-            // XP is distributed equally when approved, but stored globally
             if (situacaoPergunta === "aprovado") {
               xpPergunta = Math.floor((perguntasResposta.xp_ganho || 0) / perguntasPassoAtual.length)
             }
@@ -266,7 +237,6 @@ export default async function DiscipuladorPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Estatísticas */}
         <div className="grid md:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
@@ -373,7 +343,6 @@ export default async function DiscipuladorPage() {
 
               return (
                 <TabsContent key={discipulo.id} value={discipulo.id} className="space-y-6">
-                  {/* Card do Discípulo */}
                   <Card>
                     <CardContent className="py-6">
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">

@@ -506,30 +506,36 @@ export async function enviarPerguntasReflexivas(passoNumero: number, respostas: 
       }
     })
 
+    let notificacaoId = null
+    if (discipulo.discipulador_id) {
+      const { data: notificacao } = await adminClient
+        .from("notificacoes")
+        .insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "perguntas_reflexivas",
+          titulo: "Perguntas reflexivas enviadas",
+          mensagem: `Perguntas reflexivas do Passo ${passoNumero} enviadas`,
+          lida: false,
+        })
+        .select()
+        .single()
+
+      if (notificacao) {
+        notificacaoId = notificacao.id
+      }
+    }
+
     await adminClient.from("perguntas_reflexivas").insert({
       discipulo_id: discipulo.id,
+      discipulador_id: discipulo.discipulador_id,
       fase_numero: discipulo.fase_atual,
       passo_numero: passoNumero,
-      respostas: respostasArray, // Use array format
+      respostas: respostasArray,
       situacao: "enviado",
+      notificacao_id: notificacaoId,
+      data_envio: new Date().toISOString(),
     })
-
-    const { data: discipuladorRelacao } = await adminClient
-      .from("discipulos")
-      .select("discipulador_id")
-      .eq("id", discipulo.id)
-      .single()
-
-    if (discipuladorRelacao?.discipulador_id) {
-      await adminClient.from("notificacoes").insert({
-        user_id: discipuladorRelacao.discipulador_id,
-        discipulo_id: discipulo.id,
-        tipo: "perguntas_reflexivas",
-        titulo: "Perguntas reflexivas enviadas",
-        mensagem: `Perguntas reflexivas do Passo ${passoNumero} enviadas`,
-        lida: false,
-      })
-    }
 
     revalidatePath(`/dashboard/passo/${passoNumero}`)
     return { success: true }

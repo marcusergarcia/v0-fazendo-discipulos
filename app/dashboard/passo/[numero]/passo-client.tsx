@@ -163,9 +163,6 @@ export default function PassoClient({
       .eq("passo_numero", numero)
       .maybeSingle()
 
-    console.log("[v0] Perguntas reflexivas data:", data)
-    console.log("[v0] Perguntas reflexivas error:", error)
-
     if (data && !error) {
       setSubmissaoPerguntasReflexivas(data)
     } else {
@@ -265,15 +262,6 @@ export default function PassoClient({
   const jaAvancou = discipulo.passo_atual > numero
 
   const podeReceberRecompensas = useMemo(() => {
-    console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
-    console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
-    console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
-    console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
-    console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida)
-    console.log("[v0] status:", status)
-    console.log("[v0] jaAvancou:", jaAvancou)
-    console.log("[v0] isPrMarcus:", isPrMarcus)
-
     if (isPrMarcus) return false // Pr. Marcus has a different flow
     if (jaAvancou) return false // If already advanced, cannot receive rewards again
 

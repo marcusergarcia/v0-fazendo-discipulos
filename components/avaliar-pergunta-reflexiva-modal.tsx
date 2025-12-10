@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Loader2, Clock } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { aprovarPerguntaReflexiva } from "@/app/discipulador/actions"
 
 interface AvaliarPerguntaReflexivaModalProps {
   perguntaTexto: string
@@ -52,97 +53,22 @@ export function AvaliarPerguntaReflexivaModal({
     setLoading(true)
 
     try {
-      console.log("[v0] ===== INICIANDO APROVAÇÃO DE PERGUNTA REFLEXIVA INDIVIDUAL =====")
-      console.log("[v0] Pergunta ID:", perguntaId, "Perguntas Reflexivas ID:", perguntasReflexivasId)
-
-      // Buscar o registro atual
-      const { data: perguntasReflexivas, error: fetchError } = await supabase
-        .from("perguntas_reflexivas")
-        .select("respostas, situacao")
-        .eq("id", perguntasReflexivasId)
-        .single()
-
-      if (fetchError || !perguntasReflexivas) {
-        throw new Error("Erro ao buscar perguntas reflexivas")
-      }
-
-      // Atualizar o array de respostas com o feedback e status desta pergunta específica
-      const respostasAtualizadas = (perguntasReflexivas.respostas as any[]).map((r: any) => {
-        if (r.pergunta_id === perguntaId) {
-          return {
-            ...r,
-            situacao: "aprovado",
-            xp_ganho: xpConcedido,
-            feedback: feedback,
-            data_aprovacao: new Date().toISOString(),
-          }
-        }
-        return r
+      const result = await aprovarPerguntaReflexiva({
+        perguntasReflexivasId,
+        perguntaId,
+        discipuloId,
+        passoAtual,
+        faseNumero,
+        feedback: feedback.trim(),
+        xpConcedido,
       })
 
-      // Verificar se todas as 3 perguntas foram aprovadas
-      const todasAprovadas = respostasAtualizadas.every((r: any) => r.situacao === "aprovado")
-      const xpTotal = respostasAtualizadas.reduce((sum: number, r: any) => sum + (r.xp_ganho || 0), 0)
-
-      console.log("[v0] Todas aprovadas?", todasAprovadas, "XP Total:", xpTotal)
-
-      // Atualizar o registro
-      const { error: updateError } = await supabase
-        .from("perguntas_reflexivas")
-        .update({
-          respostas: respostasAtualizadas,
-          ...(todasAprovadas && {
-            situacao: "aprovado",
-            xp_ganho: xpTotal,
-            data_aprovacao: new Date().toISOString(),
-          }),
-        })
-        .eq("id", perguntasReflexivasId)
-
-      if (updateError) {
-        console.error("[v0] ERRO ao atualizar:", updateError)
-        throw new Error(updateError.message)
+      if (!result.success) {
+        toast.error(result.error || "Erro ao aprovar pergunta reflexiva")
+        return
       }
 
-      // Se todas foram aprovadas, adicionar XP ao progresso
-      if (todasAprovadas) {
-        const { data: progresso } = await supabase
-          .from("progresso_fases")
-          .select("*")
-          .eq("discipulo_id", discipuloId)
-          .single()
-
-        if (progresso) {
-          const pontuacaoAtual = progresso.pontuacao_passo_atual || 0
-          const novaPontuacao = pontuacaoAtual + xpTotal
-
-          await supabase.from("progresso_fases").update({ pontuacao_passo_atual: novaPontuacao }).eq("id", progresso.id)
-
-          console.log("[v0] ✅ XP total adicionado ao passo:", xpTotal)
-        }
-
-        // Remover notificação se existir
-        const { data: notificacao } = await supabase
-          .from("notificacoes")
-          .select("id")
-          .eq("tipo", "perguntas_reflexivas")
-          .eq("discipulo_id", discipuloId)
-          .maybeSingle()
-
-        if (notificacao) {
-          await supabase.from("notificacoes").delete().eq("id", notificacao.id)
-          console.log("[v0] Notificação removida")
-        }
-
-        // Verificar se pode liberar próximo passo
-        await verificarLiberacaoProximoPasso(discipuloId, passoAtual, xpTotal)
-
-        toast.success(`Todas as perguntas aprovadas! +${xpTotal} XP concedido ao discípulo`)
-      } else {
-        toast.success(`Pergunta ${perguntaId} aprovada! +${xpConcedido} XP`)
-      }
-
-      console.log("[v0] ===== APROVAÇÃO CONCLUÍDA =====")
+      toast.success(result.message)
       setOpen(false)
       router.refresh()
     } catch (error) {
