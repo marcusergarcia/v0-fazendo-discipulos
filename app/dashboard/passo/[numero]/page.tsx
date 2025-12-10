@@ -8,18 +8,13 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   const { numero: numeroParam } = await params
   const numero = Number.parseInt(numeroParam)
 
-  console.log("[v0] PassoPage - Número recebido:", numero)
-
   if (isNaN(numero) || numero < 1 || numero > 10) {
-    console.log("[v0] PassoPage - Número inválido")
     notFound()
   }
 
   const passo = PASSOS_CONTEUDO[numero]
-  console.log("[v0] PassoPage - Passo encontrado:", !!passo)
 
   if (!passo) {
-    console.log("[v0] PassoPage - Passo não existe no PASSOS_CONTEUDO")
     notFound()
   }
 
@@ -33,15 +28,11 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     redirect("/auth/login")
   }
 
-  console.log("[v0] PassoPage - User ID:", user.id)
-
   const { data: discipulo, error: discipuloError } = await supabase
     .from("discipulos")
     .select("*")
     .eq("user_id", user.id)
     .single()
-
-  console.log("[v0] PassoPage - Discipulo:", !!discipulo, "Error:", discipuloError)
 
   if (!discipulo) {
     redirect("/dashboard")
@@ -57,9 +48,6 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .maybeSingle()
 
-  console.log("[v0] PassoPage - Progresso:", !!progresso, "Error:", progressoError)
-
-  // Se não existe progresso, criar registro inicial
   let progressoAtual = progresso
   if (!progressoAtual) {
     const { data: novoProgresso, error: novoProgressoError } = await supabase
@@ -75,11 +63,9 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       .select()
       .single()
 
-    console.log("[v0] PassoPage - Novo progresso criado:", !!novoProgresso, "Error:", novoProgressoError)
     progressoAtual = novoProgresso
   }
 
-  // Passos completados = passo_atual - 1 do discípulo
   const passosCompletados = (discipulo.passo_atual || 1) - 1
 
   const { data: discipuladorData } = await supabase
@@ -96,20 +82,6 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
-  console.log("[v0] PassoPage - Reflexoes Passo query result:", {
-    discipuloId: discipulo.id,
-    passoNumero: numero,
-    totalReflexoes: reflexoesPasso?.length || 0,
-    error: reflexoesError,
-    reflexoesDetalhadas: reflexoesPasso?.map((r) => ({
-      id: r.id,
-      tipo: r.tipo,
-      conteudos_ids: r.conteudos_ids,
-      feedbacks: r.feedbacks,
-      situacao: r.situacao,
-    })),
-  })
-
   const { data: perguntasReflexivas } = await supabase
     .from("perguntas_reflexivas")
     .select("*")
@@ -117,7 +89,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("passo_numero", numero)
     .maybeSingle()
 
-  const status = "pendente" // Status simplificado - agora controlado por perguntas_reflexivas
+  const status = "pendente"
 
   let statusLeituraSemana: "nao_iniciada" | "pendente" | "concluida" = "nao_iniciada"
   let temaSemana = ""
@@ -132,16 +104,11 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       .eq("usuario_id", user.id)
       .single()
 
-    console.log("[v0] PassoPage - Leitura capítulos:", !!leituraCapitulos, "Error:", leituraError)
-
-    // Buscar capítulos da semana específica no plano de leitura
     const { data: planoSemana, error: planoError } = await supabase
       .from("plano_leitura_biblica")
       .select("semana, tema, descricao, capitulos_semana")
       .eq("semana", numero)
       .single()
-
-    console.log("[v0] PassoPage - Plano semana:", !!planoSemana, "Error:", planoError)
 
     if (leituraCapitulos && planoSemana) {
       capitulosLidos = leituraCapitulos.capitulos_lidos || []
@@ -152,9 +119,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
       leiturasSemana = capitulosSemana.map((cap: number) => ({ id: cap }))
 
-      // Verificar se TODOS os capítulos da semana foram lidos
       const todosLidos = capitulosSemana.every((cap: number) => capitulosLidos.includes(cap))
-      // Verificar se ALGUM capítulo foi lido
       const algumLido = capitulosSemana.some((cap: number) => capitulosLidos.includes(cap))
 
       if (todosLidos) {
@@ -167,24 +132,13 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     }
   }
 
-  // Adicionar informações de situação aos vídeos e artigos
-  console.log("[v0] ===== MAPEAMENTO DE VÍDEOS =====")
   const passoComReflexoes = {
     ...passo,
     videos: (passo.videos || []).map((video: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
-      console.log(`[v0] Video ${video.id}:`, {
-        encontrouReflexao: !!reflexao,
-        tipoReflexao: reflexao?.tipo,
-        conteudosIds: reflexao?.conteudos_ids,
-        temFeedbacks: !!reflexao?.feedbacks,
-        feedbacks: reflexao?.feedbacks,
-      })
-      // Determinar situacao a partir de feedbacks
       let situacao = null
       if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
         const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
-        console.log(`[v0] Video ${video.id} - Feedback encontrado:`, feedback)
         if (feedback) {
           situacao = "aprovada"
         }
@@ -197,18 +151,9 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     }),
     artigos: (passo.artigos || []).map((artigo: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
-      console.log(`[v0] Artigo ${artigo.id}:`, {
-        encontrouReflexao: !!reflexao,
-        tipoReflexao: reflexao?.tipo,
-        conteudosIds: reflexao?.conteudos_ids,
-        temFeedbacks: !!reflexao?.feedbacks,
-        feedbacks: reflexao?.feedbacks,
-      })
-      // Determinar situacao a partir de feedbacks
       let situacao = null
       if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
         const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
-        console.log(`[v0] Artigo ${artigo.id} - Feedback encontrado:`, feedback)
         if (feedback) {
           situacao = "aprovada"
         }
@@ -220,9 +165,6 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       }
     }),
   }
-  console.log("[v0] ===== FIM MAPEAMENTO =====")
-
-  console.log("[v0] PassoPage - Renderizando PassoClient")
 
   return (
     <PassoClient

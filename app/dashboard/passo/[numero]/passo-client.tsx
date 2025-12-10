@@ -222,40 +222,14 @@ export default function PassoClient({
   const isPrMarcus = discipulo?.user_id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
 
   // </CHANGE>
-
   const todasReflexoesAprovadas = useCallback(() => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
-
-    console.log("[v0] ===== DEBUG REFLEXÕES =====")
-    console.log("[v0] Total de conteúdos:", todosConteudos.length)
-    console.log("[v0] Total de reflexões no banco:", reflexoes.length)
-    console.log(
-      "[v0] Reflexões completas:",
-      reflexoes.map((r) => ({
-        id: r.id,
-        tipo: r.tipo,
-        conteudos_ids: r.conteudos_ids,
-        reflexao_situacao: r.reflexao_situacao,
-        feedbacks: r.feedbacks,
-      })),
-    )
-
-    todosConteudos.forEach((conteudo) => {
-      console.log(`[v0] Conteúdo ${conteudo.id} (${conteudo.titulo}):`, {
-        temReflexao: !!conteudo.reflexao_situacao,
-        situacao: conteudo.reflexao_situacao || "não encontrada",
-        aprovada: conteudo.reflexao_situacao === "aprovada",
-      })
-    })
 
     const todasAprovadas = todosConteudos.every((conteudo) => {
       return conteudo.reflexao_situacao === "aprovada"
     })
 
     const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
-    console.log("[v0] Todas aprovadas?", todasAprovadas)
-    console.log("[v0] Total esperado:", totalEsperado)
-    console.log("[v0] ===== FIM DEBUG REFLEXÕES =====")
 
     return todasAprovadas && todosConteudos.length === totalEsperado
   }, [passo.videos, passo.artigos, reflexoes])
