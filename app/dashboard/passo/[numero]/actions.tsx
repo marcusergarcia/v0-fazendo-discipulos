@@ -500,6 +500,7 @@ export async function enviarPerguntasReflexivas(passoNumero: number, respostas: 
 
     await adminClient.from("perguntas_reflexivas").insert({
       discipulo_id: discipulo.id,
+      fase_numero: discipulo.fase_atual,
       passo_numero: passoNumero,
       respostas,
       situacao: "enviado",
