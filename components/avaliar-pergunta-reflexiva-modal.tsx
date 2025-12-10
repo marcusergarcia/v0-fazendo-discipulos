@@ -158,14 +158,23 @@ export function AvaliarPerguntaReflexivaModal({
     passoAtual: number,
     xpPerguntasReflexivas: number,
   ) {
-    const { data: todasReflexoes } = await supabase
-      .from("reflexoes_conteudo")
-      .select("situacao")
+    // Changed from reflexoes_conteudo to reflexoes_passo
+    const { data: reflexoesPasso } = await supabase
+      .from("reflexoes_passo")
+      .select("tipo, feedbacks")
       .eq("discipulo_id", discipuloId)
-      .eq("passo_atual", passoAtual)
+      .eq("passo_numero", passoAtual)
 
-    const todasReflexoesAprovadas =
-      todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
+    // Check if all videos and articles have feedbacks (approved)
+    const videoReflexao = reflexoesPasso?.find((r) => r.tipo === "video")
+    const artigoReflexao = reflexoesPasso?.find((r) => r.tipo === "artigo")
+
+    const videosAprovados =
+      videoReflexao?.feedbacks && Array.isArray(videoReflexao.feedbacks) && videoReflexao.feedbacks.length > 0
+    const artigosAprovados =
+      artigoReflexao?.feedbacks && Array.isArray(artigoReflexao.feedbacks) && artigoReflexao.feedbacks.length > 0
+
+    const todasReflexoesAprovadas = videosAprovados && artigosAprovados
 
     if (!todasReflexoesAprovadas) {
       console.log("[v0] Reflexões de conteúdo ainda pendentes")

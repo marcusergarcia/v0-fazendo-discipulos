@@ -42,15 +42,14 @@ export default async function TarefasDiscipuloPage({
     redirect("/discipulador")
   }
 
-  // Buscar reflexões do discípulo
-  const { data: reflexoes, error: reflexoesError } = await supabase
-    .from("reflexoes_conteudo")
+  // Buscar reflexões agrupadas por tipo
+  const { data: reflexoesPasso, error: reflexoesError } = await supabase
+    .from("reflexoes_passo")
     .select("*")
     .eq("discipulo_id", discipuloId)
-    .order("data_criacao", { ascending: false })
+    .order("created_at", { ascending: false })
 
-  console.log("[v0] Reflexões encontradas:", reflexoes?.length || 0)
-  console.log("[v0] IDs das reflexões:", reflexoes?.map((r) => r.id) || [])
+  console.log("[v0] Reflexões (reflexoes_passo) encontradas:", reflexoesPasso?.length || 0)
   if (reflexoesError) console.log("[v0] Erro ao buscar reflexões:", reflexoesError)
 
   // Buscar progresso pendente
@@ -136,11 +135,11 @@ export default async function TarefasDiscipuloPage({
         )}
 
         {/* Reflexões sobre Conteúdos */}
-        {reflexoes && reflexoes.length > 0 && (
+        {reflexoesPasso && reflexoesPasso.length > 0 && (
           <div>
             <h2 className="text-xl font-bold mb-4">Reflexões sobre Conteúdos</h2>
             <div className="grid gap-4">
-              {reflexoes.map((reflexao) => (
+              {reflexoesPasso.map((reflexao) => (
                 <Card key={reflexao.id}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -151,21 +150,26 @@ export default async function TarefasDiscipuloPage({
                           <FileText className="w-4 h-4 text-primary" />
                         )}
                         <CardTitle className="text-base">
-                          {reflexao.titulo ||
-                            `${reflexao.tipo === "video" ? "Vídeo" : "Artigo"} - Fase ${reflexao.fase_atual}, Passo ${reflexao.passo_atual}`}
+                          {reflexao.tipo === "video" ? "Vídeos" : "Artigos"} - Passo {reflexao.passo_numero}
                         </CardTitle>
                       </div>
-                      <Badge variant="secondary">Reflexão</Badge>
+                      <Badge variant="secondary">{reflexao.conteudos_ids?.length || 0} reflexões</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm font-medium mb-2">Reflexão do Discípulo:</p>
-                      <div className="bg-muted p-4 rounded-lg">
-                        <p className="text-sm whitespace-pre-wrap">{reflexao.reflexao}</p>
+                      <p className="text-sm font-medium mb-2">Conteúdos com reflexão:</p>
+                      <div className="bg-muted p-4 rounded-lg space-y-2">
+                        {reflexao.conteudos_ids?.map((conteudoId: string, idx: number) => (
+                          <div key={idx} className="text-sm">
+                            <strong>{conteudoId}:</strong> {reflexao.reflexoes?.[conteudoId] || "Sem reflexão"}
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <AprovarTarefaForm tipo="reflexao" tarefaId={reflexao.id} discipuloId={discipuloId} xpBase={20} />
+                    <p className="text-xs text-muted-foreground">
+                      Use a página individual do passo para avaliar cada reflexão
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -173,7 +177,7 @@ export default async function TarefasDiscipuloPage({
           </div>
         )}
 
-        {(!progressos || progressos.length === 0) && (!reflexoes || reflexoes.length === 0) && (
+        {(!progressos || progressos.length === 0) && (!reflexoesPasso || reflexoesPasso.length === 0) && (
           <Card>
             <CardContent className="py-12 text-center">
               <CheckCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />

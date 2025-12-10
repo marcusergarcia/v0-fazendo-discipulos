@@ -26,9 +26,9 @@ export default async function AguardandoAprovacaoPage() {
   const passoAtual = discipulo.passo_atual
 
   // Verificar status do passo
-  const { data: reflexoes } = await supabase
-    .from("reflexoes_conteudo")
-    .select("situacao")
+  const { data: reflexoesPasso } = await supabase
+    .from("reflexoes_passo")
+    .select("tipo, feedbacks")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoAtual)
 
@@ -39,7 +39,16 @@ export default async function AguardandoAprovacaoPage() {
     .eq("passo_numero", passoAtual)
     .maybeSingle()
 
-  const reflexoesAprovadas = reflexoes?.every((r) => r.situacao === "aprovado") || false
+  // Check if all videos and articles have feedbacks
+  const videoReflexao = reflexoesPasso?.find((r) => r.tipo === "video")
+  const artigoReflexao = reflexoesPasso?.find((r) => r.tipo === "artigo")
+
+  const videosAprovados =
+    videoReflexao?.feedbacks && Array.isArray(videoReflexao.feedbacks) && videoReflexao.feedbacks.length > 0
+  const artigosAprovados =
+    artigoReflexao?.feedbacks && Array.isArray(artigoReflexao.feedbacks) && artigoReflexao.feedbacks.length > 0
+
+  const reflexoesAprovadas = videosAprovados && artigosAprovados
   const perguntasAprovadas = perguntasReflexivas?.situacao === "aprovado" || false
   const tudoAprovado = reflexoesAprovadas && perguntasAprovadas
 
