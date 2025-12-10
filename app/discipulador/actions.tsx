@@ -1,3 +1,5 @@
+"use server"
+
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
@@ -10,8 +12,6 @@ export async function aprovarReflexao(data: {
   feedback: string
   xpConcedido: number
 }) {
-  "use server"
-
   const adminClient = createAdminClient()
 
   try {
