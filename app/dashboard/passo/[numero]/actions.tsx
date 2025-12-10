@@ -381,6 +381,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     .maybeSingle()
 
   console.log("[v0] SERVER: Registro tipo=video existente?", !!reflexaoExistente)
+  console.log("[v0] SERVER: conteudos_ids atuais:", reflexaoExistente?.conteudos_ids)
+  console.log("[v0] SERVER: videoId sendo adicionado:", videoId)
 
   let notificacaoId: string | null = null
 
@@ -390,18 +392,27 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
     if (!conteudosIdsAtualizados.includes(videoId)) {
       conteudosIdsAtualizados.push(videoId)
+      console.log("[v0] SERVER: VideoId adicionado ao array:", videoId)
+    } else {
+      console.log("[v0] SERVER: VideoId já existe no array:", videoId)
     }
+
+    console.log("[v0] SERVER: conteudos_ids atualizados:", conteudosIdsAtualizados)
 
     const reflexoesAtualizadas = {
       ...(reflexaoExistente.reflexoes || {}),
       [videoId]: reflexao,
     }
 
+    console.log("[v0] SERVER: reflexoes keys atualizadas:", Object.keys(reflexoesAtualizadas))
+
     const feedbacksAtualizados = ((reflexaoExistente.feedbacks as any[]) || []).filter(
       (f: any) => f.conteudo_id !== videoId,
     )
 
-    const { error: updateError } = await supabase
+    console.log("[v0] SERVER: feedbacks após remoção:", feedbacksAtualizados.length)
+
+    const { data: updateData, error: updateError } = await supabase
       .from("reflexoes_passo")
       .update({
         conteudos_ids: conteudosIdsAtualizados,
@@ -410,13 +421,15 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         situacao: "enviado",
       })
       .eq("id", reflexaoExistente.id)
+      .select()
 
     if (updateError) {
-      console.error("[v0] SERVER: Erro ao atualizar reflexão:", updateError)
-      throw new Error("Erro ao atualizar reflexão")
+      console.log("[v0] SERVER: ❌ Erro ao atualizar reflexão:", updateError)
+      throw new Error(`Erro ao atualizar reflexão: ${updateError.message}`)
     }
 
     console.log("[v0] SERVER: ✅ Reflexão atualizada com sucesso!")
+    console.log("[v0] SERVER: Dados atualizados:", updateData)
 
     if (discipulo.discipulador_id) {
       console.log("[v0] SERVER: Criando notificação para reflexão atualizada...")

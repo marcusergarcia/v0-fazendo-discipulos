@@ -137,10 +137,17 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     videos: (passo.videos || []).map((video: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
       let situacao = null
-      if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
-        const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
-        if (feedback) {
-          situacao = "aprovada"
+      if (reflexao && reflexao.reflexoes && reflexao.reflexoes[video.id]) {
+        // Reflexão existe, agora verificar se tem feedback
+        if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
+          const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
+          if (feedback) {
+            situacao = "aprovada"
+          } else {
+            situacao = "aguardando_aprovacao"
+          }
+        } else {
+          situacao = "aguardando_aprovacao"
         }
       }
       return {
@@ -152,10 +159,17 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     artigos: (passo.artigos || []).map((artigo: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
       let situacao = null
-      if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
-        const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
-        if (feedback) {
-          situacao = "aprovada"
+      if (reflexao && reflexao.reflexoes && reflexao.reflexoes[artigo.id]) {
+        // Reflexão existe, agora verificar se tem feedback
+        if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
+          const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
+          if (feedback) {
+            situacao = "aprovada"
+          } else {
+            situacao = "aguardando_aprovacao"
+          }
+        } else {
+          situacao = "aguardando_aprovacao"
         }
       }
       return {
