@@ -150,45 +150,63 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     videos: (passo.videos || []).map((video: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
       let situacao = null
-      if (reflexao && reflexao.reflexoes && reflexao.reflexoes[video.id]) {
-        // Reflexão existe, agora verificar se tem feedback
-        if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
-          const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
-          if (feedback) {
-            situacao = "aprovada"
+      let xp = null
+
+      if (reflexao && reflexao.reflexoes && Array.isArray(reflexao.reflexoes)) {
+        // Buscar a reflexão individual no array
+        const reflexaoIndividual = reflexao.reflexoes.find((r: any) => r.conteudo_id === video.id)
+
+        if (reflexaoIndividual) {
+          // Reflexão existe, agora verificar se tem feedback
+          if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
+            const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
+            if (feedback) {
+              situacao = "aprovado" // Usar "aprovado" não "aprovada"
+              xp = feedback.xp_ganho
+            } else {
+              situacao = "enviado" // Usar "enviado" para aguardando aprovação
+            }
           } else {
-            situacao = "aguardando_aprovacao"
+            situacao = "enviado"
           }
-        } else {
-          situacao = "aguardando_aprovacao"
         }
       }
+
       return {
         ...video,
         reflexao_situacao: situacao,
-        reflexao_xp: reflexao?.feedbacks?.find((f: any) => f.conteudo_id === video.id)?.xp_ganho || null,
+        reflexao_xp: xp,
       }
     }),
     artigos: (passo.artigos || []).map((artigo: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
       let situacao = null
-      if (reflexao && reflexao.reflexoes && reflexao.reflexoes[artigo.id]) {
-        // Reflexão existe, agora verificar se tem feedback
-        if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
-          const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
-          if (feedback) {
-            situacao = "aprovada"
+      let xp = null
+
+      if (reflexao && reflexao.reflexoes && Array.isArray(reflexao.reflexoes)) {
+        // Buscar a reflexão individual no array
+        const reflexaoIndividual = reflexao.reflexoes.find((r: any) => r.conteudo_id === artigo.id)
+
+        if (reflexaoIndividual) {
+          // Reflexão existe, agora verificar se tem feedback
+          if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
+            const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
+            if (feedback) {
+              situacao = "aprovado" // Usar "aprovado" não "aprovada"
+              xp = feedback.xp_ganho
+            } else {
+              situacao = "enviado" // Usar "enviado" para aguardando aprovação
+            }
           } else {
-            situacao = "aguardando_aprovacao"
+            situacao = "enviado"
           }
-        } else {
-          situacao = "aguardando_aprovacao"
         }
       }
+
       return {
         ...artigo,
         reflexao_situacao: situacao,
-        reflexao_xp: reflexao?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)?.xp_ganho || null,
+        reflexao_xp: xp,
       }
     }),
   }

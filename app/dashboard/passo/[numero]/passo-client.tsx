@@ -221,18 +221,17 @@ export default function PassoClient({
 
   const isPrMarcus = discipulo?.user_id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
 
-  // </CHANGE>
   const todasReflexoesAprovadas = useCallback(() => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
     const todasAprovadas = todosConteudos.every((conteudo) => {
-      return conteudo.reflexao_situacao === "aprovada"
+      return conteudo.reflexao_situacao === "aprovado"
     })
 
     const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
 
     return todasAprovadas && todosConteudos.length === totalEsperado
-  }, [passo.videos, passo.artigos, reflexoes])
+  }, [passo.videos, passo.artigos])
   // </CHANGE>
 
   const perguntasReflexivasEnviadas = perguntasReflexivas?.situacao === "enviado"
@@ -857,8 +856,8 @@ export default function PassoClient({
               {(passo.videos || []).map((video: any) => {
                 const assistido = videosAssistidos.includes(video.id)
                 const temReflexao = video.reflexao_situacao !== null && video.reflexao_situacao !== undefined
-                const reflexaoAprovada = video.reflexao_situacao === "aprovada"
-                const reflexaoPendente = temReflexao && !reflexaoAprovada
+                const reflexaoAprovada = video.reflexao_situacao === "aprovado"
+                const reflexaoPendente = video.reflexao_situacao === "enviado"
 
                 return (
                   <div
@@ -931,8 +930,8 @@ export default function PassoClient({
               {(passo.artigos || []).map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
                 const temReflexao = artigo.reflexao_situacao !== null && artigo.reflexao_situacao !== undefined
-                const reflexaoAprovada = artigo.reflexao_situacao === "aprovada"
-                const reflexaoPendente = temReflexao && !reflexaoAprovada
+                const reflexaoAprovada = artigo.reflexao_situacao === "aprovado"
+                const reflexaoPendente = artigo.reflexao_situacao === "enviado"
 
                 return (
                   <div
