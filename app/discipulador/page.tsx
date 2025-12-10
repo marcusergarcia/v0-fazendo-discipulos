@@ -96,7 +96,7 @@ export default async function DiscipuladorPage() {
             : null
 
           const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === video.id)
-          const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
+          const situacao = feedback ? "aprovado" : reflexaoRecord ? "enviado" : null
 
           tarefas.push({
             id: video.id,
@@ -137,8 +137,7 @@ export default async function DiscipuladorPage() {
             : null
 
           const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)
-
-          const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
+          const situacao = feedback ? "aprovado" : reflexaoRecord ? "enviado" : null
 
           tarefas.push({
             id: artigo.id,
