@@ -1065,7 +1065,10 @@ export default function PassoClient({
                       <div className="space-y-4">
                         <p className="text-sm font-medium text-amber-900">Suas respostas:</p>
                         {perguntasReflexivasList.map((pergunta, index) => {
-                          const respostaSalva = submissaoPerguntasReflexivas.respostas.find(
+                          const respostas = Array.isArray(submissaoPerguntasReflexivas?.respostas)
+                            ? submissaoPerguntasReflexivas.respostas
+                            : []
+                          const respostaSalva = respostas.find(
                             (r: { resposta: string; pergunta_id: number }) => r.pergunta_id === index + 1,
                           )
 
@@ -1248,13 +1251,16 @@ export default function PassoClient({
                   Reflexões que serão excluídas ({reflexoesParaExcluir.length}):
                 </p>
                 <div className="space-y-2">
-                  {reflexoesParaExcluir.map((reflexao) => (
-                    <div key={reflexao.id} className="bg-background/50 rounded p-3 text-sm">
+                  {reflexoesParaExcluir.map((reflexao, idx) => (
+                    <div
+                      key={`${reflexao.id}-${reflexao.conteudo_id || idx}`}
+                      className="bg-background/50 rounded p-3 text-sm"
+                    >
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="text-xs">
                           {reflexao.tipo === "video" ? "🎥 Vídeo" : "📄 Artigo"}
                         </Badge>
-                        <span className="font-medium">{reflexao.titulo}</span>
+                        <span className="font-medium">{reflexao.conteudo_id || reflexao.titulo}</span>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         ID: {reflexao.id.slice(0, 8)}... • Notificação:{" "}

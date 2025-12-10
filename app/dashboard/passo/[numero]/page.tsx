@@ -132,6 +132,19 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     }
   }
 
+  const videosAssistidos: string[] = []
+  const artigosLidos: string[] = []
+
+  if (reflexoesPasso) {
+    for (const reflexao of reflexoesPasso) {
+      if (reflexao.tipo === "video" && reflexao.conteudos_ids) {
+        videosAssistidos.push(...reflexao.conteudos_ids)
+      } else if (reflexao.tipo === "artigo" && reflexao.conteudos_ids) {
+        artigosLidos.push(...reflexao.conteudos_ids)
+      }
+    }
+  }
+
   const passoComReflexoes = {
     ...passo,
     videos: (passo.videos || []).map((video: any) => {
@@ -187,8 +200,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       discipulo={{ ...discipulo, nome_completo: nomeDiscipulo }}
       progresso={progressoAtual}
       passosCompletados={passosCompletados}
-      videosAssistidos={progressoAtual?.videos_assistidos || []}
-      artigosLidos={progressoAtual?.artigos_lidos || []}
+      videosAssistidos={videosAssistidos}
+      artigosLidos={artigosLidos}
       status={status}
       discipuladorId={discipuladorId}
       statusLeituraSemana={statusLeituraSemana}

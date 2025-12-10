@@ -20,16 +20,13 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
     } = await supabase.auth.getUser()
     if (!user) throw new Error("Usuário não autenticado")
 
-    // Buscar discípulo
     const { data: discipulo } = await supabase
       .from("discipulos")
-      .select("id, fase_atual, user_id")
+      .select("id, fase_atual, user_id, discipulador_id")
       .eq("user_id", user.id)
       .single()
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
-
-    console.log("[v0] concluirVideoComReflexao - videoId:", videoId, "titulo:", titulo)
 
     const { data: reflexaoExistente, error: selectError } = await supabase
       .from("reflexoes_passo")
@@ -44,15 +41,12 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       throw selectError
     }
 
-    console.log("[v0] reflexaoExistente:", reflexaoExistente ? "SIM" : "NÃO")
-
     if (!reflexaoExistente) {
-      console.log("[v0] Inserindo novo registro tipo=video")
-
       const { data: novaReflexao, error: insertError } = await supabase
         .from("reflexoes_passo")
         .insert({
           discipulo_id: discipulo.id,
+          discipulador_id: discipulo.discipulador_id,
           fase_numero: discipulo.fase_atual,
           passo_numero: passoNumero,
           tipo: "video",
@@ -66,27 +60,17 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
         .single()
 
       if (insertError) throw insertError
-      console.log("[v0] Registro inserido com sucesso, id:", novaReflexao.id)
 
+      revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, videoId }
     } else {
-      console.log("[v0] Atualizando registro existente, id:", reflexaoExistente.id)
-      console.log("[v0] conteudos_ids ANTES:", reflexaoExistente.conteudos_ids)
-      console.log("[v0] reflexoes ANTES:", Object.keys(reflexaoExistente.reflexoes || {}))
-
       const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
       const reflexoesAtualizadas = { ...((reflexaoExistente.reflexoes as Record<string, string>) || {}) }
 
       if (!conteudosIdsAtualizados.includes(videoId)) {
         conteudosIdsAtualizados.push(videoId)
-        console.log("[v0] Adicionando videoId ao array:", videoId)
-      } else {
-        console.log("[v0] videoId já existe no array, apenas atualizando reflexão")
       }
       reflexoesAtualizadas[videoId] = reflexao
-
-      console.log("[v0] conteudos_ids DEPOIS:", conteudosIdsAtualizados)
-      console.log("[v0] reflexoes DEPOIS:", Object.keys(reflexoesAtualizadas))
 
       const adminClient = createAdminClient()
 
@@ -99,21 +83,16 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
         .eq("id", reflexaoExistente.id)
         .select()
 
-      if (updateError) {
-        console.error("[v0] ERRO no UPDATE:", updateError)
-        throw updateError
-      }
-
-      console.log("[v0] UPDATE executado com sucesso - dados:", updateData)
-
+      if (updateError) throw updateError
       if (!updateData || updateData.length === 0) {
         throw new Error("UPDATE não retornou dados")
       }
 
+      revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, videoId }
     }
   } catch (error) {
-    console.error("[v0] ERRO GERAL em concluirVideoComReflexao:", error)
+    console.error("Erro em concluirVideoComReflexao:", error)
     throw error
   }
 }
@@ -140,13 +119,11 @@ export async function concluirArtigoComReflexao(
 
     const { data: discipulo } = await supabase
       .from("discipulos")
-      .select("id, fase_atual")
+      .select("id, fase_atual, discipulador_id")
       .eq("user_id", user.id)
       .single()
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
-
-    console.log("[v0] concluirArtigoComReflexao - artigoId:", artigoId, "titulo:", titulo)
 
     const { data: reflexaoExistente, error: selectError } = await supabase
       .from("reflexoes_passo")
@@ -161,15 +138,12 @@ export async function concluirArtigoComReflexao(
       throw selectError
     }
 
-    console.log("[v0] reflexaoExistente:", reflexaoExistente ? "SIM" : "NÃO")
-
     if (!reflexaoExistente) {
-      console.log("[v0] Inserindo novo registro tipo=artigo")
-
       const { data: novaReflexao, error: insertError } = await supabase
         .from("reflexoes_passo")
         .insert({
           discipulo_id: discipulo.id,
+          discipulador_id: discipulo.discipulador_id,
           fase_numero: discipulo.fase_atual,
           passo_numero: passoNumero,
           tipo: "artigo",
@@ -183,27 +157,17 @@ export async function concluirArtigoComReflexao(
         .single()
 
       if (insertError) throw insertError
-      console.log("[v0] Registro inserido com sucesso, id:", novaReflexao.id)
 
+      revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, artigoId }
     } else {
-      console.log("[v0] Atualizando registro existente, id:", reflexaoExistente.id)
-      console.log("[v0] conteudos_ids ANTES:", reflexaoExistente.conteudos_ids)
-      console.log("[v0] reflexoes ANTES:", Object.keys(reflexaoExistente.reflexoes || {}))
-
       const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
       const reflexoesAtualizadas = { ...((reflexaoExistente.reflexoes as Record<string, string>) || {}) }
 
       if (!conteudosIdsAtualizados.includes(artigoId)) {
         conteudosIdsAtualizados.push(artigoId)
-        console.log("[v0] Adicionando artigoId ao array:", artigoId)
-      } else {
-        console.log("[v0] artigoId já existe no array, apenas atualizando reflexão")
       }
       reflexoesAtualizadas[artigoId] = reflexao
-
-      console.log("[v0] conteudos_ids DEPOIS:", conteudosIdsAtualizados)
-      console.log("[v0] reflexoes DEPOIS:", Object.keys(reflexoesAtualizadas))
 
       const adminClient = createAdminClient()
 
@@ -216,21 +180,16 @@ export async function concluirArtigoComReflexao(
         .eq("id", reflexaoExistente.id)
         .select()
 
-      if (updateError) {
-        console.error("[v0] ERRO no UPDATE:", updateError)
-        throw updateError
-      }
-
-      console.log("[v0] UPDATE executado com sucesso - dados:", updateData)
-
+      if (updateError) throw updateError
       if (!updateData || updateData.length === 0) {
         throw new Error("UPDATE não retornou dados")
       }
 
+      revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, artigoId }
     }
   } catch (error) {
-    console.error("[v0] ERRO GERAL em concluirArtigoComReflexao:", error)
+    console.error("Erro em concluirArtigoComReflexao:", error)
     throw error
   }
 }
@@ -286,24 +245,45 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
     const { data: discipulo } = await supabase.from("discipulos").select("id").eq("user_id", user.id).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
+    // Use admin client for DELETE operations to bypass RLS
+    const adminClient = createAdminClient()
+
     if (reflexoesIds.length > 0) {
-      await supabase.from("reflexoes_passo").delete().in("id", reflexoesIds)
+      const { error: deleteReflexoesError } = await adminClient.from("reflexoes_passo").delete().in("id", reflexoesIds)
+
+      if (deleteReflexoesError) {
+        console.error("Erro ao deletar reflexões:", deleteReflexoesError)
+        throw deleteReflexoesError
+      }
     }
 
     if (perguntasIds.length > 0) {
-      await supabase.from("perguntas_reflexivas").delete().in("id", perguntasIds)
+      const { error: deletePerguntasError } = await adminClient
+        .from("perguntas_reflexivas")
+        .delete()
+        .in("id", perguntasIds)
+
+      if (deletePerguntasError) {
+        console.error("Erro ao deletar perguntas:", deletePerguntasError)
+        throw deletePerguntasError
+      }
     }
 
-    await supabase
+    // Update progresso_fases to reset counters
+    const { error: updateError } = await adminClient
       .from("progresso_fases")
       .update({
         videos_assistidos: [],
         artigos_lidos: [],
         reflexoes_concluidas: 0,
         pontuacao_passo_atual: 0,
-        rascunho_resposta: null,
       })
       .eq("discipulo_id", discipulo.id)
+
+    if (updateError) {
+      console.error("Erro ao atualizar progresso:", updateError)
+      throw updateError
+    }
 
     revalidatePath(`/dashboard/passo/${passoNumero}`)
     return { success: true }
@@ -330,6 +310,21 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoNumero)
 
+  const reflexoesExpandidas = (reflexoes || []).flatMap((reflexao) => {
+    const conteudosIds = reflexao.conteudos_ids || []
+    const reflexoesObj = (reflexao.reflexoes as Record<string, string>) || {}
+
+    // Criar uma entrada para cada conteudo_id no array
+    return conteudosIds.map((conteudoId: string) => ({
+      id: reflexao.id, // ID do registro original (para deletar)
+      conteudo_id: conteudoId, // ID individual do conteudo
+      tipo: reflexao.tipo,
+      titulo: conteudoId, // Usar o ID como título temporário
+      reflexao: reflexoesObj[conteudoId] || "",
+      notificacao_id: reflexao.notificacao_id,
+    }))
+  })
+
   const { data: perguntasReflexivas } = await supabase
     .from("perguntas_reflexivas")
     .select("*")
@@ -337,7 +332,7 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
     .eq("passo_numero", passoNumero)
 
   return {
-    reflexoes: reflexoes || [],
+    reflexoes: reflexoesExpandidas,
     perguntasReflexivas: perguntasReflexivas || [],
   }
 }
