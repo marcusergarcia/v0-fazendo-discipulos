@@ -221,6 +221,8 @@ export default function PassoClient({
 
   const isPrMarcus = discipulo?.user_id === "f7ff6309-32a3-45c8-96a6-b76a687f2e7a"
 
+  // </CHANGE>
+
   const todasReflexoesAprovadas = useCallback(() => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
@@ -233,23 +235,21 @@ export default function PassoClient({
         id: r.id,
         tipo: r.tipo,
         conteudos_ids: r.conteudos_ids,
-        situacao: r.reflexao_situacao,
+        reflexao_situacao: r.reflexao_situacao,
         feedbacks: r.feedbacks,
       })),
     )
 
     todosConteudos.forEach((conteudo) => {
-      const reflexao = reflexoes.find((r) => r.conteudos_ids?.includes(conteudo.id))
       console.log(`[v0] Conteúdo ${conteudo.id} (${conteudo.titulo}):`, {
-        temReflexao: !!reflexao,
-        situacao: reflexao?.reflexao_situacao || "não encontrada",
-        aprovada: reflexao?.reflexao_situacao === "aprovada",
+        temReflexao: !!conteudo.reflexao_situacao,
+        situacao: conteudo.reflexao_situacao || "não encontrada",
+        aprovada: conteudo.reflexao_situacao === "aprovada",
       })
     })
 
     const todasAprovadas = todosConteudos.every((conteudo) => {
-      const reflexao = reflexoes.find((r) => r.conteudos_ids?.includes(conteudo.id))
-      return reflexao?.reflexao_situacao === "aprovada"
+      return conteudo.reflexao_situacao === "aprovada"
     })
 
     const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
@@ -259,6 +259,7 @@ export default function PassoClient({
 
     return todasAprovadas && todosConteudos.length === totalEsperado
   }, [passo.videos, passo.artigos, reflexoes])
+  // </CHANGE>
 
   const perguntasReflexivasEnviadas = perguntasReflexivas?.situacao === "enviado"
   const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
@@ -945,7 +946,7 @@ export default function PassoClient({
               {(passo.artigos || []).map((artigo: any) => {
                 const lido = artigosLidos.includes(artigo.id)
                 const temReflexao = artigo.reflexao_situacao !== null && artigo.reflexao_situacao !== undefined
-                const reflexaoAprovada = artigo.reflexao_situacao === "aprovado"
+                const reflexaoAprovada = artigo.reflexao_situacao === "aprovada"
                 const reflexaoPendente = temReflexao && !reflexaoAprovada
 
                 return (

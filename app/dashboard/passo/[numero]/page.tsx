@@ -101,13 +101,12 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     passoNumero: numero,
     totalReflexoes: reflexoesPasso?.length || 0,
     error: reflexoesError,
-    reflexoes: reflexoesPasso?.map((r) => ({
+    reflexoesDetalhadas: reflexoesPasso?.map((r) => ({
       id: r.id,
       tipo: r.tipo,
       conteudos_ids: r.conteudos_ids,
+      feedbacks: r.feedbacks,
       situacao: r.situacao,
-      has_feedbacks: !!r.feedbacks,
-      has_reflexoes: !!r.reflexoes,
     })),
   })
 
@@ -169,25 +168,59 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   }
 
   // Adicionar informações de situação aos vídeos e artigos
+  console.log("[v0] ===== MAPEAMENTO DE VÍDEOS =====")
   const passoComReflexoes = {
     ...passo,
     videos: (passo.videos || []).map((video: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
+      console.log(`[v0] Video ${video.id}:`, {
+        encontrouReflexao: !!reflexao,
+        tipoReflexao: reflexao?.tipo,
+        conteudosIds: reflexao?.conteudos_ids,
+        temFeedbacks: !!reflexao?.feedbacks,
+        feedbacks: reflexao?.feedbacks,
+      })
+      // Determinar situacao a partir de feedbacks
+      let situacao = null
+      if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
+        const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
+        console.log(`[v0] Video ${video.id} - Feedback encontrado:`, feedback)
+        if (feedback) {
+          situacao = "aprovada"
+        }
+      }
       return {
         ...video,
-        reflexao_situacao: reflexao?.situacao || null,
-        reflexao_xp: reflexao?.xp_ganho || null,
+        reflexao_situacao: situacao,
+        reflexao_xp: reflexao?.feedbacks?.find((f: any) => f.conteudo_id === video.id)?.xp_ganho || null,
       }
     }),
     artigos: (passo.artigos || []).map((artigo: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
+      console.log(`[v0] Artigo ${artigo.id}:`, {
+        encontrouReflexao: !!reflexao,
+        tipoReflexao: reflexao?.tipo,
+        conteudosIds: reflexao?.conteudos_ids,
+        temFeedbacks: !!reflexao?.feedbacks,
+        feedbacks: reflexao?.feedbacks,
+      })
+      // Determinar situacao a partir de feedbacks
+      let situacao = null
+      if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
+        const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
+        console.log(`[v0] Artigo ${artigo.id} - Feedback encontrado:`, feedback)
+        if (feedback) {
+          situacao = "aprovada"
+        }
+      }
       return {
         ...artigo,
-        reflexao_situacao: reflexao?.situacao || null,
-        reflexao_xp: reflexao?.xp_ganho || null,
+        reflexao_situacao: situacao,
+        reflexao_xp: reflexao?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)?.xp_ganho || null,
       }
     }),
   }
+  console.log("[v0] ===== FIM MAPEAMENTO =====")
 
   console.log("[v0] PassoPage - Renderizando PassoClient")
 
