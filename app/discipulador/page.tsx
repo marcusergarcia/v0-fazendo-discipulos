@@ -91,7 +91,9 @@ export default async function DiscipuladorPage() {
             (r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id),
           )
 
-          const reflexaoTexto = reflexaoRecord?.reflexoes?.[video.id] || null
+          const reflexaoTexto = reflexaoRecord?.reflexoes
+            ? (reflexaoRecord.reflexoes as any[]).find((r: any) => r.conteudo_id === video.id)?.reflexao
+            : null
 
           const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === video.id)
           const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
@@ -130,9 +132,12 @@ export default async function DiscipuladorPage() {
             (r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id),
           )
 
-          const reflexaoTexto = reflexaoRecord?.reflexoes?.[artigo.id] || null
+          const reflexaoTexto = reflexaoRecord?.reflexoes
+            ? (reflexaoRecord.reflexoes as any[]).find((r: any) => r.conteudo_id === artigo.id)?.reflexao
+            : null
 
           const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)
+
           const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
 
           tarefas.push({

@@ -45,7 +45,6 @@ export async function aprovarReflexao(data: {
       conteudo_id: data.conteudoId,
       feedback_discipulador: data.feedback,
       xp_ganho: data.xpConcedido,
-      data_aprovacao: new Date().toISOString(),
     })
 
     // Calcular XP total ganho nesta reflexão

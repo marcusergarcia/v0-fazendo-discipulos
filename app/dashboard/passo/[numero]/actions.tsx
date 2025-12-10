@@ -1,9 +1,28 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
+
+async function getCurrentUser() {
+  const cookieStore = await cookies()
+  const authToken = cookieStore.get("sb-zacorypxicbzjplijtbm-auth-token")
+
+  if (!authToken) {
+    throw new Error("Usuário não autenticado")
+  }
+
+  // Parse the auth token to get user ID
+  try {
+    const tokenData = JSON.parse(authToken.value)
+    const userId = tokenData?.user?.id
+    if (!userId) throw new Error("User ID not found in token")
+    return { id: userId }
+  } catch (e) {
+    throw new Error("Token inválido")
+  }
+}
 
 /**
  * Concluir vídeo com reflexão
@@ -12,15 +31,13 @@ import { redirect } from "next/navigation"
  * - Se existe: UPDATE adicionando videoId aos arrays conteudos_ids e reflexoes
  */
 export async function concluirVideoComReflexao(passoNumero: number, videoId: string, titulo: string, reflexao: string) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error("Usuário não autenticado")
 
-    const { data: discipulo } = await supabase
+    const { data: discipulo } = await adminClient
       .from("discipulos")
       .select("id, fase_atual, user_id, discipulador_id")
       .eq("user_id", user.id)
@@ -28,7 +45,7 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
-    const { data: reflexaoExistente, error: selectError } = await supabase
+    const { data: reflexaoExistente, error: selectError } = await adminClient
       .from("reflexoes_passo")
       .select("*")
       .eq("discipulo_id", discipulo.id)
@@ -40,8 +57,6 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
     if (selectError && selectError.code !== "PGRST116") {
       throw selectError
     }
-
-    const adminClient = createAdminClient()
 
     if (!reflexaoExistente) {
       let notificacaoId = null
@@ -166,15 +181,13 @@ export async function concluirArtigoComReflexao(
   titulo: string,
   reflexao: string,
 ) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error("Usuário não autenticado")
 
-    const { data: discipulo } = await supabase
+    const { data: discipulo } = await adminClient
       .from("discipulos")
       .select("id, fase_atual, discipulador_id")
       .eq("user_id", user.id)
@@ -182,7 +195,7 @@ export async function concluirArtigoComReflexao(
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
-    const { data: reflexaoExistente, error: selectError } = await supabase
+    const { data: reflexaoExistente, error: selectError } = await adminClient
       .from("reflexoes_passo")
       .select("*")
       .eq("discipulo_id", discipulo.id)
@@ -194,8 +207,6 @@ export async function concluirArtigoComReflexao(
     if (selectError && selectError.code !== "PGRST116") {
       throw selectError
     }
-
-    const adminClient = createAdminClient()
 
     if (!reflexaoExistente) {
       let notificacaoId = null
@@ -309,14 +320,12 @@ export async function concluirArtigoComReflexao(
 }
 
 export async function salvarRascunho(passoNumero: number, formData: FormData) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error("Não autenticado")
 
-  const { data: discipulo } = await supabase.from("discipulos").select("id").eq("user_id", user.id).single()
+  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", user.id).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
   const rascunho = {
@@ -324,7 +333,7 @@ export async function salvarRascunho(passoNumero: number, formData: FormData) {
     missao: formData.get("resposta_missao"),
   }
 
-  await supabase
+  await adminClient
     .from("progresso_fases")
     .update({ rascunho_resposta: JSON.stringify(rascunho) })
     .eq("discipulo_id", discipulo.id)
@@ -333,14 +342,12 @@ export async function salvarRascunho(passoNumero: number, formData: FormData) {
 }
 
 export async function enviarParaValidacao(passoNumero: number, formData: FormData) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error("Não autenticado")
 
-  const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+  const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
   revalidatePath(`/dashboard/passo/${passoNumero}`)
@@ -348,19 +355,14 @@ export async function enviarParaValidacao(passoNumero: number, formData: FormDat
 }
 
 export async function resetarProgresso(passoNumero: number, reflexoesIds: string[], perguntasIds: string[]) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error("Não autenticado")
 
-    const { data: discipulo } = await supabase.from("discipulos").select("id").eq("user_id", user.id).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", user.id).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
-
-    // Use admin client for DELETE operations to bypass RLS
-    const adminClient = createAdminClient()
 
     if (reflexoesIds.length > 0) {
       const { error: deleteReflexoesError } = await adminClient.from("reflexoes_passo").delete().in("id", reflexoesIds)
@@ -383,7 +385,6 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
       }
     }
 
-    // Update progresso_fases to reset counters
     const { error: updateError } = await adminClient
       .from("progresso_fases")
       .update({
@@ -408,17 +409,15 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
 }
 
 export async function buscarReflexoesParaReset(passoNumero: number) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getCurrentUser()
   if (!user) throw new Error("Não autenticado")
 
-  const { data: discipulo } = await supabase.from("discipulos").select("id").eq("user_id", user.id).single()
+  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", user.id).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
-  const { data: reflexoes } = await supabase
+  const { data: reflexoes } = await adminClient
     .from("reflexoes_passo")
     .select("*")
     .eq("discipulo_id", discipulo.id)
@@ -438,7 +437,7 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
     }))
   })
 
-  const { data: perguntasReflexivas } = await supabase
+  const { data: perguntasReflexivas } = await adminClient
     .from("perguntas_reflexivas")
     .select("*")
     .eq("discipulo_id", discipulo.id)
@@ -451,18 +450,16 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
 }
 
 export async function receberRecompensasEAvancar(passoNumero: number) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error("Não autenticado")
 
-    const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
-    const { data: progresso } = await supabase
+    const { data: progresso } = await adminClient
       .from("progresso_fases")
       .select("pontuacao_passo_atual")
       .eq("discipulo_id", discipulo.id)
@@ -470,7 +467,7 @@ export async function receberRecompensasEAvancar(passoNumero: number) {
 
     const xpGanho = progresso?.pontuacao_passo_atual || 0
 
-    await supabase
+    await adminClient
       .from("discipulos")
       .update({
         xp_total: (discipulo.xp_total || 0) + xpGanho,
@@ -478,7 +475,7 @@ export async function receberRecompensasEAvancar(passoNumero: number) {
       })
       .eq("id", discipulo.id)
 
-    await supabase
+    await adminClient
       .from("progresso_fases")
       .update({
         pontuacao_passo_atual: 0,
@@ -497,32 +494,30 @@ export async function receberRecompensasEAvancar(passoNumero: number) {
 }
 
 export async function enviarPerguntasReflexivas(passoNumero: number, respostas: Record<string, string>) {
-  const supabase = await createClient()
+  const adminClient = createAdminClient()
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getCurrentUser()
     if (!user) throw new Error("Não autenticado")
 
-    const { data: discipulo } = await supabase.from("discipulos").select("*").eq("user_id", user.id).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
-    await supabase.from("perguntas_reflexivas").insert({
+    await adminClient.from("perguntas_reflexivas").insert({
       discipulo_id: discipulo.id,
       passo_numero: passoNumero,
       respostas,
       situacao: "enviado",
     })
 
-    const { data: discipuladorRelacao } = await supabase
+    const { data: discipuladorRelacao } = await adminClient
       .from("discipulos")
       .select("discipulador_id")
       .eq("id", discipulo.id)
       .single()
 
     if (discipuladorRelacao?.discipulador_id) {
-      await supabase.from("notificacoes").insert({
+      await adminClient.from("notificacoes").insert({
         user_id: discipuladorRelacao.discipulador_id,
         discipulo_id: discipulo.id,
         tipo: "perguntas_reflexivas",
