@@ -163,6 +163,9 @@ export default function PassoClient({
       .eq("passo_numero", numero)
       .maybeSingle()
 
+    console.log("[v0] Perguntas reflexivas data:", data)
+    console.log("[v0] Perguntas reflexivas error:", error)
+
     if (data && !error) {
       setSubmissaoPerguntasReflexivas(data)
     } else {
