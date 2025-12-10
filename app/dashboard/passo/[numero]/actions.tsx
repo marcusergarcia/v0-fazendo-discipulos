@@ -28,6 +28,8 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
+    console.log("[v0] concluirVideoComReflexao - videoId:", videoId, "titulo:", titulo)
+
     const { data: reflexaoExistente, error: selectError } = await supabase
       .from("reflexoes_passo")
       .select("*")
@@ -41,7 +43,11 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       throw selectError
     }
 
+    console.log("[v0] reflexaoExistente:", reflexaoExistente ? "SIM" : "NÃO")
+
     if (!reflexaoExistente) {
+      console.log("[v0] Inserindo novo registro tipo=video")
+
       const { data: novaReflexao, error: insertError } = await supabase
         .from("reflexoes_passo")
         .insert({
@@ -59,38 +65,27 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
         .single()
 
       if (insertError) throw insertError
-
-      // Criar notificação
-      const { data: discipuladorRelacao } = await supabase
-        .from("discipulos")
-        .select("discipulador_id")
-        .eq("id", discipulo.id)
-        .single()
-
-      if (discipuladorRelacao?.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          discipulador_id: discipuladorRelacao.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao_enviada",
-          mensagem: `Nova reflexão de vídeo "${titulo}" enviada`,
-          reflexao_id: novaReflexao.id,
-        })
-      }
+      console.log("[v0] Registro inserido com sucesso, id:", novaReflexao.id)
 
       return { success: true, videoId }
     } else {
-      const conteudosIdsAtualizados = reflexaoExistente.conteudos_ids || []
-      const reflexoesAtualizadas = (reflexaoExistente.reflexoes as Record<string, string>) || {}
+      console.log("[v0] Atualizando registro existente, id:", reflexaoExistente.id)
+      console.log("[v0] conteudos_ids ANTES:", reflexaoExistente.conteudos_ids)
+      console.log("[v0] reflexoes ANTES:", Object.keys(reflexaoExistente.reflexoes || {}))
 
-      // Verificar se já existe esta reflexão
-      if (conteudosIdsAtualizados.includes(videoId)) {
-        // Atualizar reflexão existente
-        reflexoesAtualizadas[videoId] = reflexao
-      } else {
-        // Adicionar nova reflexão
+      const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
+      const reflexoesAtualizadas = { ...((reflexaoExistente.reflexoes as Record<string, string>) || {}) }
+
+      if (!conteudosIdsAtualizados.includes(videoId)) {
         conteudosIdsAtualizados.push(videoId)
-        reflexoesAtualizadas[videoId] = reflexao
+        console.log("[v0] Adicionando videoId ao array:", videoId)
+      } else {
+        console.log("[v0] videoId já existe no array, apenas atualizando reflexão")
       }
+      reflexoesAtualizadas[videoId] = reflexao
+
+      console.log("[v0] conteudos_ids DEPOIS:", conteudosIdsAtualizados)
+      console.log("[v0] reflexoes DEPOIS:", Object.keys(reflexoesAtualizadas))
 
       const { error: updateError } = await supabase
         .from("reflexoes_passo")
@@ -100,29 +95,17 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
         })
         .eq("id", reflexaoExistente.id)
 
-      if (updateError) throw updateError
-
-      // Criar/atualizar notificação
-      const { data: discipuladorRelacao } = await supabase
-        .from("discipulos")
-        .select("discipulador_id")
-        .eq("id", discipulo.id)
-        .single()
-
-      if (discipuladorRelacao?.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          discipulador_id: discipuladorRelacao.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao_enviada",
-          mensagem: `Reflexão de vídeo "${titulo}" atualizada`,
-          reflexao_id: reflexaoExistente.id,
-        })
+      if (updateError) {
+        console.error("[v0] ERRO no UPDATE:", updateError)
+        throw updateError
       }
+
+      console.log("[v0] UPDATE executado com sucesso")
 
       return { success: true, videoId }
     }
   } catch (error) {
-    console.error("[SERVER] Erro ao concluir vídeo:", error)
+    console.error("[v0] ERRO GERAL em concluirVideoComReflexao:", error)
     throw error
   }
 }
@@ -155,6 +138,8 @@ export async function concluirArtigoComReflexao(
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
+    console.log("[v0] concluirArtigoComReflexao - artigoId:", artigoId, "titulo:", titulo)
+
     const { data: reflexaoExistente, error: selectError } = await supabase
       .from("reflexoes_passo")
       .select("*")
@@ -168,7 +153,11 @@ export async function concluirArtigoComReflexao(
       throw selectError
     }
 
+    console.log("[v0] reflexaoExistente:", reflexaoExistente ? "SIM" : "NÃO")
+
     if (!reflexaoExistente) {
+      console.log("[v0] Inserindo novo registro tipo=artigo")
+
       const { data: novaReflexao, error: insertError } = await supabase
         .from("reflexoes_passo")
         .insert({
@@ -186,34 +175,27 @@ export async function concluirArtigoComReflexao(
         .single()
 
       if (insertError) throw insertError
-
-      const { data: discipuladorRelacao } = await supabase
-        .from("discipulos")
-        .select("discipulador_id")
-        .eq("id", discipulo.id)
-        .single()
-
-      if (discipuladorRelacao?.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          discipulador_id: discipuladorRelacao.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao_enviada",
-          mensagem: `Nova reflexão de artigo "${titulo}" enviada`,
-          reflexao_id: novaReflexao.id,
-        })
-      }
+      console.log("[v0] Registro inserido com sucesso, id:", novaReflexao.id)
 
       return { success: true, artigoId }
     } else {
-      const conteudosIdsAtualizados = reflexaoExistente.conteudos_ids || []
-      const reflexoesAtualizadas = (reflexaoExistente.reflexoes as Record<string, string>) || {}
+      console.log("[v0] Atualizando registro existente, id:", reflexaoExistente.id)
+      console.log("[v0] conteudos_ids ANTES:", reflexaoExistente.conteudos_ids)
+      console.log("[v0] reflexoes ANTES:", Object.keys(reflexaoExistente.reflexoes || {}))
 
-      if (conteudosIdsAtualizados.includes(artigoId)) {
-        reflexoesAtualizadas[artigoId] = reflexao
-      } else {
+      const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
+      const reflexoesAtualizadas = { ...((reflexaoExistente.reflexoes as Record<string, string>) || {}) }
+
+      if (!conteudosIdsAtualizados.includes(artigoId)) {
         conteudosIdsAtualizados.push(artigoId)
-        reflexoesAtualizadas[artigoId] = reflexao
+        console.log("[v0] Adicionando artigoId ao array:", artigoId)
+      } else {
+        console.log("[v0] artigoId já existe no array, apenas atualizando reflexão")
       }
+      reflexoesAtualizadas[artigoId] = reflexao
+
+      console.log("[v0] conteudos_ids DEPOIS:", conteudosIdsAtualizados)
+      console.log("[v0] reflexoes DEPOIS:", Object.keys(reflexoesAtualizadas))
 
       const { error: updateError } = await supabase
         .from("reflexoes_passo")
@@ -223,28 +205,17 @@ export async function concluirArtigoComReflexao(
         })
         .eq("id", reflexaoExistente.id)
 
-      if (updateError) throw updateError
-
-      const { data: discipuladorRelacao } = await supabase
-        .from("discipulos")
-        .select("discipulador_id")
-        .eq("id", discipulo.id)
-        .single()
-
-      if (discipuladorRelacao?.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          discipulador_id: discipuladorRelacao.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao_enviada",
-          mensagem: `Reflexão de artigo "${titulo}" atualizada`,
-          reflexao_id: reflexaoExistente.id,
-        })
+      if (updateError) {
+        console.error("[v0] ERRO no UPDATE:", updateError)
+        throw updateError
       }
+
+      console.log("[v0] UPDATE executado com sucesso")
 
       return { success: true, artigoId }
     }
   } catch (error) {
-    console.error("[SERVER] Erro ao concluir artigo:", error)
+    console.error("[v0] ERRO GERAL em concluirArtigoComReflexao:", error)
     throw error
   }
 }
@@ -429,10 +400,12 @@ export async function enviarPerguntasReflexivas(passoNumero: number, respostas: 
 
     if (discipuladorRelacao?.discipulador_id) {
       await supabase.from("notificacoes").insert({
-        discipulador_id: discipuladorRelacao.discipulador_id,
+        user_id: discipuladorRelacao.discipulador_id,
         discipulo_id: discipulo.id,
         tipo: "perguntas_reflexivas",
+        titulo: "Perguntas reflexivas enviadas",
         mensagem: `Perguntas reflexivas do Passo ${passoNumero} enviadas`,
+        lida: false,
       })
     }
 
