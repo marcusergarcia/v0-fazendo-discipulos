@@ -178,6 +178,14 @@ export default async function DiscipuladorPage() {
           passo_numero: passoAtualDiscipulo,
           encontrou: !!perguntasResposta,
           perguntasResposta,
+          totalPerguntasDiscipulo: perguntasDiscipulo.length,
+          perguntasDiscipulo: perguntasDiscipulo.map((p) => ({
+            id: p.id,
+            fase: p.fase_numero,
+            passo: p.passo_numero,
+            situacao: p.situacao,
+            respostas: p.respostas,
+          })),
         })
 
         perguntasPassoAtual.forEach((pergunta, index) => {
@@ -186,6 +194,15 @@ export default async function DiscipuladorPage() {
           // Check if respostas exists and is an array
           const respostasArray = Array.isArray(perguntasResposta?.respostas) ? perguntasResposta.respostas : []
           const respostaEspecifica = respostasArray.find((r: any) => r.pergunta_id === perguntaId)
+
+          console.log("[v0] DEBUG Processando Pergunta Individual:", {
+            perguntaId,
+            perguntaTexto: pergunta,
+            respostasArrayLength: respostasArray.length,
+            respostasArray,
+            respostaEspecifica,
+            encontrou: !!respostaEspecifica,
+          })
 
           let situacaoPergunta = null
           let xpPergunta = null
@@ -198,15 +215,6 @@ export default async function DiscipuladorPage() {
               xpPergunta = Math.floor((perguntasResposta.xp_ganho || 0) / perguntasPassoAtual.length)
             }
           }
-
-          console.log("[v0] DEBUG Pergunta Reflexiva Individual:", {
-            pergunta_id: perguntaId,
-            situacao: situacaoPergunta,
-            xp: xpPergunta,
-            temResposta: !!respostaEspecifica,
-            resposta: respostaEspecifica?.resposta ? "Sim" : "Não",
-            situacaoGlobal: perguntasResposta?.situacao,
-          })
 
           tarefas.push({
             id: `reflexiva-${perguntaId}`,
