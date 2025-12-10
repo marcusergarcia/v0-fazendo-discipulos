@@ -240,7 +240,7 @@ export default function PassoClient({
 
   const todasTarefasAprovadas = todasReflexoesAprovadas() && perguntasReflexivasAprovadas
 
-  const leituraBiblicaConcluida = useCallback(() => {
+  const leituraBiblicaConcluida = useMemo(() => {
     if (!leiturasSemana || leiturasSemana.length === 0) return false
 
     const capitulosLidosIds = capitulosLidos || []
@@ -249,23 +249,34 @@ export default function PassoClient({
     return todosCapitulosLidos
   }, [leiturasSemana, capitulosLidos])
 
+  // const jaAvancou = discipulo.passo_atual > numero
+
+  // console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
+  // console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
+  // console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
+  // console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
+  // console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida())
+  // console.log("[v0] status:", status)
+  // console.log("[v0] jaAvancou:", jaAvancou)
+  // console.log("[v0] isPrMarcus:", isPrMarcus)
+
   const jaAvancou = discipulo.passo_atual > numero
 
-  console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
-  console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
-  console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
-  console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
-  console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida())
-  console.log("[v0] status:", status)
-  console.log("[v0] jaAvancou:", jaAvancou)
-  console.log("[v0] isPrMarcus:", isPrMarcus)
-
   const podeReceberRecompensas = useMemo(() => {
+    console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
+    console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
+    console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
+    console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
+    console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida)
+    console.log("[v0] status:", status)
+    console.log("[v0] jaAvancou:", jaAvancou)
+    console.log("[v0] isPrMarcus:", isPrMarcus)
+
     if (isPrMarcus) return false // Pr. Marcus has a different flow
     if (jaAvancou) return false // If already advanced, cannot receive rewards again
 
-    return todasTarefasAprovadas && leituraBiblicaConcluida() && status !== "validado"
-  }, [isPrMarcus, jaAvancou, todasTarefasAprovadas, leituraBiblicaConcluida, status])
+    return todasTarefasAprovadas && leituraBiblicaConcluida && status !== "validado"
+  }, [isPrMarcus, jaAvancou, todasTarefasAprovadas, leituraBiblicaConcluida, perguntasReflexivasAprovadas, status])
 
   const handleSalvarRascunho = async () => {
     const formData = new FormData()

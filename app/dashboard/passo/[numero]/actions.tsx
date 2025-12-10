@@ -373,43 +373,97 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
 
   const { data: reflexaoExistente } = await supabase
     .from("reflexoes_passo")
-    .select("id, notificacao_id, conteudos_ids, reflexoes")
+    .select("id, notificacao_id, conteudos_ids, reflexoes, feedbacks")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "video")
-    .contains("conteudos_ids", [videoId])
     .maybeSingle()
 
-  console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
+  console.log("[v0] SERVER: Registro tipo=video existente?", !!reflexaoExistente)
 
   let notificacaoId: string | null = null
 
-  if (!reflexaoExistente && discipulo.discipulador_id) {
-    console.log("[v0] SERVER: Criando notificação para discipulador...")
+  if (reflexaoExistente) {
+    console.log("[v0] SERVER: Atualizando registro existente...")
 
-    const { data: novaNotificacao, error: notifError } = await supabaseAdmin
-      .from("notificacoes")
-      .insert({
-        user_id: discipulo.discipulador_id,
-        tipo: "reflexao",
-        titulo: "Nova reflexão de vídeo",
-        mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão no Passo ${numero}.`,
-        link: `/discipulador`,
-      })
-      .select("id")
-      .single()
-
-    if (notifError) {
-      console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
-    } else {
-      console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
-      notificacaoId = novaNotificacao.id
+    const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
+    if (!conteudosIdsAtualizados.includes(videoId)) {
+      conteudosIdsAtualizados.push(videoId)
     }
-  }
 
-  if (!reflexaoExistente) {
-    console.log("[v0] SERVER: Inserindo nova reflexão...")
+    const reflexoesAtualizadas = {
+      ...(reflexaoExistente.reflexoes || {}),
+      [videoId]: reflexao,
+    }
+
+    const feedbacksAtualizados = ((reflexaoExistente.feedbacks as any[]) || []).filter(
+      (f: any) => f.conteudo_id !== videoId,
+    )
+
+    const { error: updateError } = await supabase
+      .from("reflexoes_passo")
+      .update({
+        conteudos_ids: conteudosIdsAtualizados,
+        reflexoes: reflexoesAtualizadas,
+        feedbacks: feedbacksAtualizados,
+        situacao: "enviado",
+      })
+      .eq("id", reflexaoExistente.id)
+
+    if (updateError) {
+      console.error("[v0] SERVER: Erro ao atualizar reflexão:", updateError)
+      throw new Error("Erro ao atualizar reflexão")
+    }
+
+    console.log("[v0] SERVER: ✅ Reflexão atualizada com sucesso!")
+
+    if (discipulo.discipulador_id) {
+      console.log("[v0] SERVER: Criando notificação para reflexão atualizada...")
+      const { data: novaNotificacao, error: notifError } = await supabaseAdmin
+        .from("notificacoes")
+        .insert({
+          user_id: discipulo.discipulador_id,
+          tipo: "reflexao",
+          titulo: "Reflexão de vídeo enviada",
+          mensagem: `Seu discípulo enviou uma reflexão do vídeo "${titulo}" no Passo ${numero}.`,
+          link: `/discipulador`,
+          reflexao_id: reflexaoExistente.id,
+        })
+        .select("id")
+        .single()
+
+      if (notifError) {
+        console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
+      } else {
+        console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+      }
+    }
+  } else {
+    if (discipulo.discipulador_id) {
+      console.log("[v0] SERVER: Criando notificação para discipulador...")
+
+      const { data: novaNotificacao, error: notifError } = await supabaseAdmin
+        .from("notificacoes")
+        .insert({
+          user_id: discipulo.discipulador_id,
+          tipo: "reflexao",
+          titulo: "Nova reflexão de vídeo",
+          mensagem: `Seu discípulo completou o vídeo "${titulo}" com uma reflexão no Passo ${numero}.`,
+          link: `/discipulador`,
+        })
+        .select("id")
+        .single()
+
+      if (notifError) {
+        console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
+      } else {
+        console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+        notificacaoId = novaNotificacao.id
+      }
+    }
+
+    console.log("[v0] SERVER: Inserindo novo registro tipo=video...")
     const { data: novaReflexao, error: reflexaoError } = await supabase
       .from("reflexoes_passo")
       .insert({
@@ -421,8 +475,9 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
         conteudos_ids: [videoId],
         titulo: titulo,
         reflexoes: { [videoId]: reflexao },
+        feedbacks: [],
         notificacao_id: notificacaoId,
-        situacao: "enviado", // Marcar como enviado
+        situacao: "enviado",
       })
       .select("id")
       .single()
@@ -486,6 +541,8 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     }
   }
 
+  // </CHANGE> Add revalidatePath to update UI after submission
+  // The page will update when the modal closes and user navigates
   return { success: true, videoId }
 }
 
@@ -629,6 +686,8 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     }
   }
 
+  // </CHANGE> Removed revalidatePath calls that were causing "Failed to fetch" errors
+  // The page will update when the modal closes and user navigates
   return { success: true, artigoId }
 }
 
