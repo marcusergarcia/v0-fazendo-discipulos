@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -22,7 +23,7 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
     // Buscar discípulo
     const { data: discipulo } = await supabase
       .from("discipulos")
-      .select("id, fase_atual")
+      .select("id, fase_atual, user_id")
       .eq("user_id", user.id)
       .single()
 
@@ -87,20 +88,27 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       console.log("[v0] conteudos_ids DEPOIS:", conteudosIdsAtualizados)
       console.log("[v0] reflexoes DEPOIS:", Object.keys(reflexoesAtualizadas))
 
-      const { error: updateError } = await supabase
+      const adminClient = createAdminClient()
+
+      const { data: updateData, error: updateError } = await adminClient
         .from("reflexoes_passo")
         .update({
           conteudos_ids: conteudosIdsAtualizados,
           reflexoes: reflexoesAtualizadas,
         })
         .eq("id", reflexaoExistente.id)
+        .select()
 
       if (updateError) {
         console.error("[v0] ERRO no UPDATE:", updateError)
         throw updateError
       }
 
-      console.log("[v0] UPDATE executado com sucesso")
+      console.log("[v0] UPDATE executado com sucesso - dados:", updateData)
+
+      if (!updateData || updateData.length === 0) {
+        throw new Error("UPDATE não retornou dados")
+      }
 
       return { success: true, videoId }
     }
@@ -197,20 +205,27 @@ export async function concluirArtigoComReflexao(
       console.log("[v0] conteudos_ids DEPOIS:", conteudosIdsAtualizados)
       console.log("[v0] reflexoes DEPOIS:", Object.keys(reflexoesAtualizadas))
 
-      const { error: updateError } = await supabase
+      const adminClient = createAdminClient()
+
+      const { data: updateData, error: updateError } = await adminClient
         .from("reflexoes_passo")
         .update({
           conteudos_ids: conteudosIdsAtualizados,
           reflexoes: reflexoesAtualizadas,
         })
         .eq("id", reflexaoExistente.id)
+        .select()
 
       if (updateError) {
         console.error("[v0] ERRO no UPDATE:", updateError)
         throw updateError
       }
 
-      console.log("[v0] UPDATE executado com sucesso")
+      console.log("[v0] UPDATE executado com sucesso - dados:", updateData)
+
+      if (!updateData || updateData.length === 0) {
+        throw new Error("UPDATE não retornou dados")
+      }
 
       return { success: true, artigoId }
     }
