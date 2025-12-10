@@ -1,27 +1,22 @@
 "use server"
 
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
 
 async function getCurrentUser() {
-  const cookieStore = await cookies()
-  const authToken = cookieStore.get("sb-zacorypxicbzjplijtbm-auth-token")
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
 
-  if (!authToken) {
+  if (error || !user) {
     throw new Error("Usuário não autenticado")
   }
 
-  // Parse the auth token to get user ID
-  try {
-    const tokenData = JSON.parse(authToken.value)
-    const userId = tokenData?.user?.id
-    if (!userId) throw new Error("User ID not found in token")
-    return { id: userId }
-  } catch (e) {
-    throw new Error("Token inválido")
-  }
+  return user
 }
 
 /**
