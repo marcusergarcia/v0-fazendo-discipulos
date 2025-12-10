@@ -138,7 +138,7 @@ export default function PassoClient({
       const supabase = createClient()
 
       const { data } = await supabase
-        .from("reflexoes_conteudo")
+        .from("reflexoes_passo")
         .select("*")
         .eq("discipulo_id", discipulo.id)
         .eq("passo_numero", numero)
@@ -227,9 +227,19 @@ export default function PassoClient({
     console.log("[v0] ===== DEBUG REFLEXÕES =====")
     console.log("[v0] Total de conteúdos:", todosConteudos.length)
     console.log("[v0] Total de reflexões no banco:", reflexoes.length)
+    console.log(
+      "[v0] Reflexões completas:",
+      reflexoes.map((r) => ({
+        id: r.id,
+        tipo: r.tipo,
+        conteudos_ids: r.conteudos_ids,
+        situacao: r.reflexao_situacao,
+        feedbacks: r.feedbacks,
+      })),
+    )
 
     todosConteudos.forEach((conteudo) => {
-      const reflexao = reflexoes.find((r) => r.conteudo_id === conteudo.id)
+      const reflexao = reflexoes.find((r) => r.conteudos_ids?.includes(conteudo.id))
       console.log(`[v0] Conteúdo ${conteudo.id} (${conteudo.titulo}):`, {
         temReflexao: !!reflexao,
         situacao: reflexao?.reflexao_situacao || "não encontrada",
@@ -238,7 +248,7 @@ export default function PassoClient({
     })
 
     const todasAprovadas = todosConteudos.every((conteudo) => {
-      const reflexao = reflexoes.find((r) => r.conteudo_id === conteudo.id)
+      const reflexao = reflexoes.find((r) => r.conteudos_ids?.includes(conteudo.id))
       return reflexao?.reflexao_situacao === "aprovada"
     })
 

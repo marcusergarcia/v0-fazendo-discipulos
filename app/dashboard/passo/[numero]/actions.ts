@@ -102,7 +102,7 @@ export async function buscarReflexoesParaReset(numero: number) {
   console.log("[v0] SERVER: Buscando reflexões de vídeos/artigos - discipulo_id:", discipulo.id, "passo:", numero)
 
   const { data: reflexoes, error } = await supabase
-    .from("reflexoes_conteudo")
+    .from("reflexoes_passo")
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
@@ -190,7 +190,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
     let pontosVideosArtigos = 0
     if (reflexoesIds.length > 0) {
       const { data: reflexoesResetadas } = await supabase
-        .from("reflexoes_conteudo")
+        .from("reflexoes_passo")
         .select("xp_ganho")
         .in("id", reflexoesIds)
         .eq("situacao", "aprovado")
@@ -251,7 +251,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
     if (reflexoesIds.length > 0) {
       console.log("[v0] Buscando reflexões com seus IDs de notificações...")
       const { data: reflexoes, error: errorBuscar } = await supabaseAdmin
-        .from("reflexoes_conteudo")
+        .from("reflexoes_passo")
         .select("id, notificacao_id")
         .in("id", reflexoesIds)
 
@@ -277,7 +277,7 @@ export async function resetarProgresso(numero: number, reflexoesIds: string[], p
       }
 
       console.log("[v0] Excluindo", reflexoesIds.length, "reflexões...")
-      const { error: errorExcluir } = await supabaseAdmin.from("reflexoes_conteudo").delete().in("id", reflexoesIds)
+      const { error: errorExcluir } = await supabaseAdmin.from("reflexoes_passo").delete().in("id", reflexoesIds)
 
       if (errorExcluir) {
         console.error("[v0] ERRO ao excluir reflexões:", errorExcluir)
@@ -371,15 +371,14 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
     throw new Error("Discípulo não encontrado")
   }
 
-  console.log("[v0] SERVER: Verificando reflexão existente...")
   const { data: reflexaoExistente } = await supabase
-    .from("reflexoes_conteudo")
-    .select("id, notificacao_id")
+    .from("reflexoes_passo")
+    .select("id, notificacao_id, conteudos_ids, reflexoes")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "video")
-    .eq("conteudo_id", videoId)
+    .contains("conteudos_ids", [videoId])
     .maybeSingle()
 
   console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
@@ -412,16 +411,16 @@ export async function concluirVideoComReflexao(numero: number, videoId: string, 
   if (!reflexaoExistente) {
     console.log("[v0] SERVER: Inserindo nova reflexão...")
     const { data: novaReflexao, error: reflexaoError } = await supabase
-      .from("reflexoes_conteudo")
+      .from("reflexoes_passo")
       .insert({
         discipulo_id: discipulo.id,
         discipulador_id: discipulo.discipulador_id,
         fase_numero: 1,
         passo_numero: numero,
         tipo: "video",
-        conteudo_id: videoId,
+        conteudos_ids: [videoId],
         titulo: titulo,
-        reflexao: reflexao,
+        reflexoes: { [videoId]: reflexao },
         notificacao_id: notificacaoId,
         situacao: "enviado", // Marcar como enviado
       })
@@ -521,15 +520,14 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     throw new Error("Discípulo não encontrado")
   }
 
-  console.log("[v0] SERVER: Verificando reflexão existente...")
   const { data: reflexaoExistente } = await supabase
-    .from("reflexoes_conteudo")
-    .select("id, notificacao_id")
+    .from("reflexoes_passo")
+    .select("id, notificacao_id, conteudos_ids, reflexoes")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "artigo")
-    .eq("conteudo_id", artigoId)
+    .contains("conteudos_ids", [artigoId])
     .maybeSingle()
 
   console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
@@ -554,7 +552,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
     if (notifError) {
       console.error("[v0] SERVER: Erro ao criar notificação:", notifError)
     } else {
-      console.log("[v0] SERVER: ✅ Notificação criada com ID:", novaNotificacao.id)
+      console.log("[v0] SERVER: Notificação criada com ID:", novaNotificacao.id)
       notificacaoId = novaNotificacao.id
     }
   }
@@ -562,16 +560,16 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
   if (!reflexaoExistente) {
     console.log("[v0] SERVER: Inserindo nova reflexão...")
     const { data: novaReflexao, error: reflexaoError } = await supabase
-      .from("reflexoes_conteudo")
+      .from("reflexoes_passo")
       .insert({
         discipulo_id: discipulo.id,
         discipulador_id: discipulo.discipulador_id,
         fase_numero: 1,
         passo_numero: numero,
         tipo: "artigo",
-        conteudo_id: artigoId,
+        conteudos_ids: [artigoId],
         titulo: titulo,
-        reflexao: reflexao,
+        reflexoes: { [artigoId]: reflexao },
         notificacao_id: notificacaoId,
         situacao: "enviado", // Marcar como enviado
       })
@@ -582,7 +580,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
       console.error("[v0] SERVER: Erro ao inserir reflexão:", reflexaoError)
       throw new Error("Erro ao salvar reflexão")
     } else {
-      console.log("[v0] SERVER: ✅ Reflexão inserida com sucesso! ID:", novaReflexao.id)
+      console.log("[v0] SERVER: Reflexão inserida com sucesso! ID:", novaReflexao.id)
 
       if (notificacaoId) {
         const { error: updateError } = await supabaseAdmin
@@ -593,7 +591,7 @@ export async function concluirArtigoComReflexao(numero: number, artigoId: string
         if (updateError) {
           console.error("[v0] SERVER: Erro ao atualizar notificação:", updateError)
         } else {
-          console.log("[v0] SERVER: ✅ Notificação atualizada com reflexao_id")
+          console.log("[v0] SERVER: Notificação atualizada com reflexao_id")
         }
       }
     }
@@ -659,7 +657,7 @@ export async function verificarCondicoesPasso(numero: number) {
 
   // Verificar todas as reflexões do passo
   const { data: reflexoes } = await supabase
-    .from("reflexoes_conteudo")
+    .from("reflexoes_passo")
     .select("situacao")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
@@ -1117,7 +1115,7 @@ export async function recalcularProgressoPasso(numero: number) {
   }
 
   const { data: reflexoes, error: reflexoesError } = await supabase
-    .from("reflexoes_conteudo")
+    .from("reflexoes_passo")
     .select("xp_ganho")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
@@ -1181,7 +1179,7 @@ export async function buscarTarefasPasso(numero: number) {
   console.log("[v0] SERVER: Buscando reflexões para discípulo", discipulo.id, "no passo", numero)
 
   const { data: reflexoes, error } = await supabase
-    .from("reflexoes_conteudo")
+    .from("reflexoes_passo")
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
@@ -1239,7 +1237,7 @@ export async function resetarReflexoes(numero: number) {
 
   try {
     const { error: deleteReflexoesError } = await supabaseAdmin
-      .from("reflexoes_conteudo")
+      .from("reflexoes_passo")
       .delete()
       .eq("discipulo_id", discipulo.id)
       .eq("passo_numero", numero)
@@ -1294,13 +1292,13 @@ export async function salvarReflexaoVideo(numero: number, videoId: string, titul
 
   console.log("[v0] SERVER: Verificando reflexão existente...")
   const { data: reflexaoExistente } = await supabase
-    .from("reflexoes_conteudo")
-    .select("id, notificacao_id")
+    .from("reflexoes_passo")
+    .select("id, notificacao_id, conteudos_ids, reflexoes")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "video")
-    .eq("conteudo_id", videoId)
+    .contains("conteudos_ids", [videoId])
     .maybeSingle()
 
   console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
@@ -1333,16 +1331,16 @@ export async function salvarReflexaoVideo(numero: number, videoId: string, titul
   if (!reflexaoExistente) {
     console.log("[v0] SERVER: Inserindo nova reflexão...")
     const { data: novaReflexao, error: reflexaoError } = await supabase
-      .from("reflexoes_conteudo")
+      .from("reflexoes_passo")
       .insert({
         discipulo_id: discipulo.id,
         discipulador_id: discipulo.discipulador_id,
         fase_numero: 1,
         passo_numero: numero,
         tipo: "video",
-        conteudo_id: videoId,
+        conteudos_ids: [videoId],
         titulo: titulo,
-        reflexao: reflexao,
+        reflexoes: { [videoId]: reflexao },
         notificacao_id: notificacaoId,
         situacao: "enviado", // Marcar como enviado
       })
@@ -1432,13 +1430,13 @@ export async function salvarReflexaoArtigo(numero: number, artigoId: string, tit
 
   console.log("[v0] SERVER: Verificando reflexão existente...")
   const { data: reflexaoExistente } = await supabase
-    .from("reflexoes_conteudo")
-    .select("id, notificacao_id")
+    .from("reflexoes_passo")
+    .select("id, notificacao_id, conteudos_ids, reflexoes")
     .eq("discipulo_id", discipulo.id)
     .eq("fase_numero", 1)
     .eq("passo_numero", numero)
     .eq("tipo", "artigo")
-    .eq("conteudo_id", artigoId)
+    .contains("conteudos_ids", [artigoId])
     .maybeSingle()
 
   console.log("[v0] SERVER: Reflexão existente?", !!reflexaoExistente)
@@ -1471,16 +1469,16 @@ export async function salvarReflexaoArtigo(numero: number, artigoId: string, tit
   if (!reflexaoExistente) {
     console.log("[v0] SERVER: Inserindo nova reflexão...")
     const { data: novaReflexao, error: reflexaoError } = await supabase
-      .from("reflexoes_conteudo")
+      .from("reflexoes_passo")
       .insert({
         discipulo_id: discipulo.id,
         discipulador_id: discipulo.discipulador_id,
         fase_numero: 1,
         passo_numero: numero,
         tipo: "artigo",
-        conteudo_id: artigoId,
+        conteudos_ids: [artigoId],
         titulo: titulo,
-        reflexao: reflexao,
+        reflexoes: { [artigoId]: reflexao },
         notificacao_id: notificacaoId,
         situacao: "enviado", // Marcar como enviado
       })
@@ -1568,7 +1566,7 @@ export async function verificarPassoCompleto(numero: number) {
 
   // Verificar todas as reflexões do passo
   const { data: reflexoes } = await supabase
-    .from("reflexoes_conteudo")
+    .from("reflexoes_passo")
     .select("situacao")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)

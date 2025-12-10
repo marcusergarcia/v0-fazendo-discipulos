@@ -90,11 +90,26 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
 
   const discipuladorId = discipuladorData?.discipulador_id || null
 
-  const { data: reflexoesPasso } = await supabase
-    .from("reflexoes_conteudo")
-    .select("conteudo_id, tipo, situacao, xp_ganho")
+  const { data: reflexoesPasso, error: reflexoesError } = await supabase
+    .from("reflexoes_passo")
+    .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
+
+  console.log("[v0] PassoPage - Reflexoes Passo query result:", {
+    discipuloId: discipulo.id,
+    passoNumero: numero,
+    totalReflexoes: reflexoesPasso?.length || 0,
+    error: reflexoesError,
+    reflexoes: reflexoesPasso?.map((r) => ({
+      id: r.id,
+      tipo: r.tipo,
+      conteudos_ids: r.conteudos_ids,
+      situacao: r.situacao,
+      has_feedbacks: !!r.feedbacks,
+      has_reflexoes: !!r.reflexoes,
+    })),
+  })
 
   const { data: perguntasReflexivas } = await supabase
     .from("perguntas_reflexivas")
@@ -157,7 +172,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   const passoComReflexoes = {
     ...passo,
     videos: (passo.videos || []).map((video: any) => {
-      const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === video.id && r.tipo === "video")
+      const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
       return {
         ...video,
         reflexao_situacao: reflexao?.situacao || null,
@@ -165,7 +180,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       }
     }),
     artigos: (passo.artigos || []).map((artigo: any) => {
-      const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === artigo.id && r.tipo === "artigo")
+      const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
       return {
         ...artigo,
         reflexao_situacao: reflexao?.situacao || null,
