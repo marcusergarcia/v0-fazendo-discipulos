@@ -82,8 +82,6 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
 
-  console.log("[v0] SERVER: reflexoesPasso data:", JSON.stringify(reflexoesPasso, null, 2))
-
   const { data: perguntasReflexivas } = await supabase
     .from("perguntas_reflexivas")
     .select("*")
@@ -138,21 +136,13 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     ...passo,
     videos: (passo.videos || []).map((video: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
-
       let situacao = null
-      if (reflexao) {
-        // Check if there's a feedback for this specific video
-        const feedback = reflexao.feedbacks?.find((f: any) => f.conteudo_id === video.id)
+      if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
+        const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
         if (feedback) {
           situacao = "aprovada"
-        } else if (reflexao.reflexoes?.[video.id]) {
-          // If there's a reflexão text but no feedback, it's awaiting approval
-          situacao = "aguardando_aprovacao"
         }
       }
-
-      console.log("[v0] SERVER: Video", video.id, "- reflexao?", !!reflexao, "situacao:", situacao)
-
       return {
         ...video,
         reflexao_situacao: situacao,
@@ -161,21 +151,13 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     }),
     artigos: (passo.artigos || []).map((artigo: any) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
-
       let situacao = null
-      if (reflexao) {
-        // Check if there's a feedback for this specific artigo
-        const feedback = reflexao.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)
+      if (reflexao?.feedbacks && Array.isArray(reflexao.feedbacks)) {
+        const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
         if (feedback) {
           situacao = "aprovada"
-        } else if (reflexao.reflexoes?.[artigo.id]) {
-          // If there's a reflexão text but no feedback, it's awaiting approval
-          situacao = "aguardando_aprovacao"
         }
       }
-
-      console.log("[v0] SERVER: Artigo", artigo.id, "- reflexao?", !!reflexao, "situacao:", situacao)
-
       return {
         ...artigo,
         reflexao_situacao: situacao,
