@@ -24,10 +24,8 @@ export async function aprovarReflexao(data: {
     // Buscar reflexão atual
     const { data: reflexaoAtual, error: selectError } = await adminClient
       .from("reflexoes_passo")
-      .select("id, tipo, conteudos_ids, feedbacks")
-      .eq("discipulo_id", data.discipuloId)
-      .eq("passo_numero", data.passoAtual)
-      .eq("tipo", data.tipo)
+      .select("id, tipo, conteudos_ids, feedbacks, discipulo_id, passo_numero")
+      .eq("id", data.reflexaoId)
       .maybeSingle()
 
     if (selectError || !reflexaoAtual) {
