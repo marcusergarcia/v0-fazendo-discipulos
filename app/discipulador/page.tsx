@@ -52,7 +52,7 @@ export default async function DiscipuladorPage() {
   const discipuloIds = discipulos?.map((d) => d.id) || []
 
   const { data: todasReflexoes } = await supabase
-    .from("reflexoes_conteudo")
+    .from("reflexoes_passo")
     .select("*, situacao")
     .eq("discipulador_id", user.id)
 

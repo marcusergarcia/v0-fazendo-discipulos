@@ -65,22 +65,22 @@ export function ValidarReflexaoModal({
         return
       }
 
-      const { data: reflexaoAtual, error: selectError } = await supabase
-        .from("reflexoes_conteudo")
-        .select("id, situacao, xp_ganho")
+      const { data: reflexaoPassoAtual, error: selectError } = await supabase
+        .from("reflexoes_passo")
+        .select("id, situacao, reflexoes")
         .eq("id", reflexao.id)
         .single()
 
-      console.log("[v0] Reflexão encontrada no banco:", reflexaoAtual)
+      console.log("[v0] Reflexão encontrada no banco:", reflexaoPassoAtual)
 
-      if (selectError || !reflexaoAtual) {
+      if (selectError || !reflexaoPassoAtual) {
         console.error("[v0] ERRO: Reflexão não encontrada!", selectError)
         toast.error("Erro: Reflexão não encontrada no banco de dados")
         setLoading(false)
         return
       }
 
-      if (reflexaoAtual.situacao === "aprovado") {
+      if (reflexaoPassoAtual.situacao === "aprovado") {
         console.log("[v0] Reflexão já aprovada, cancelando")
         toast.error("Esta reflexão já foi aprovada por outro processo")
         setLoading(false)
@@ -88,14 +88,28 @@ export function ValidarReflexaoModal({
         return
       }
 
-      console.log("[v0] Atualizando reflexão para aprovado...")
-      const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
-        .from("reflexoes_conteudo")
-        .update({
-          feedback_discipulador: feedback,
+      const reflexoesAtualizadas = {
+        ...reflexaoPassoAtual.reflexoes,
+        [reflexao.conteudo_id]: {
+          ...reflexaoPassoAtual.reflexoes[reflexao.conteudo_id],
+          situacao: "aprovado",
           xp_ganho: xpConcedido,
           data_aprovacao: new Date().toISOString(),
-          situacao: "aprovado",
+        },
+      }
+
+      const todasAprovadas = Object.values(reflexoesAtualizadas).every((r: any) => r.situacao === "aprovado")
+
+      const { data: reflexaoAtualizada, error: updateReflexaoError } = await supabase
+        .from("reflexoes_passo")
+        .update({
+          reflexoes: reflexoesAtualizadas,
+          situacao: todasAprovadas ? "aprovado" : "pendente",
+          feedbacks: {
+            ...(reflexaoPassoAtual.feedbacks || {}),
+            [reflexao.conteudo_id]: feedback,
+          },
+          data_aprovacao: todasAprovadas ? new Date().toISOString() : null,
         })
         .eq("id", reflexao.id)
         .select()
@@ -108,13 +122,6 @@ export function ValidarReflexaoModal({
       }
 
       console.log("[v0] Reflexão atualizada com sucesso:", reflexaoAtualizada)
-
-      if (!reflexaoAtualizada || reflexaoAtualizada.length === 0) {
-        console.error("[v0] ERRO: Nenhuma linha foi atualizada!")
-        toast.error("Erro: Nenhuma reflexão foi atualizada")
-        setLoading(false)
-        return
-      }
 
       const { data: progresso } = await supabase
         .from("progresso_fases")
@@ -140,7 +147,6 @@ export function ValidarReflexaoModal({
           )
         }
 
-        // Adicionar XP à pontuação total do passo
         pontuacaoAtual += xpConcedido
         reflexoesConcluidas += 1
 
@@ -170,8 +176,6 @@ export function ValidarReflexaoModal({
         console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
       }
 
-      // Agora verifica apenas perguntas_reflexivas e leitura bíblica
-
       const { data: discipuloInfo } = await supabase
         .from("discipulos")
         .select("passo_atual")
@@ -181,20 +185,20 @@ export function ValidarReflexaoModal({
       if (discipuloInfo) {
         const passoAtual = discipuloInfo.passo_atual
 
-        const { data: todasReflexoes } = await supabase
-          .from("reflexoes_conteudo")
+        const { data: reflexoesPasso } = await supabase
+          .from("reflexoes_passo")
           .select("situacao")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_atual", passoAtual)
+          .eq("passo_numero", passoAtual)
+          .maybeSingle()
 
-        const todasReflexoesAprovadas =
-          todasReflexoes && todasReflexoes.length > 0 ? todasReflexoes.every((r) => r.situacao === "aprovado") : false
+        const todasReflexoesAprovadas = reflexoesPasso?.situacao === "aprovado" || false
 
         const { data: perguntasReflexivas } = await supabase
           .from("perguntas_reflexivas")
           .select("situacao")
           .eq("discipulo_id", discipuloId)
-          .eq("passo_atual", passoAtual)
+          .eq("passo_numero", passoAtual)
           .maybeSingle()
 
         const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
