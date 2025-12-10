@@ -21,10 +21,9 @@ export async function aprovarReflexao(data: {
     console.log("[v0] Tipo:", data.tipo)
     console.log("[v0] Conteúdo ID:", data.conteudoId)
 
-    // Buscar reflexão atual
     const { data: reflexaoAtual, error: selectError } = await adminClient
       .from("reflexoes_passo")
-      .select("id, tipo, conteudos_ids, feedbacks, discipulo_id, passo_numero")
+      .select("id, tipo, conteudos_ids, feedbacks, xp_ganho, discipulo_id, passo_numero")
       .eq("id", data.reflexaoId)
       .maybeSingle()
 
@@ -33,30 +32,41 @@ export async function aprovarReflexao(data: {
       return { success: false, error: "Reflexão não encontrada" }
     }
 
-    // Verificar se já tem feedback
     const feedbacksArray = (reflexaoAtual.feedbacks as any[]) || []
-    const jaTemFeedback = feedbacksArray.some((f: any) => f.conteudo_id === data.conteudoId)
 
-    if (jaTemFeedback) {
+    // Verificar se já tem feedback para este conteúdo
+    const feedbackExistente = feedbacksArray.find((f: any) => f.conteudo_id === data.conteudoId)
+    if (feedbackExistente) {
       console.log("[v0] Reflexão já aprovada")
       return { success: false, error: "Reflexão já aprovada" }
     }
 
-    // Adicionar novo feedback
-    const novoFeedback = {
+    feedbacksArray.push({
       conteudo_id: data.conteudoId,
-      feedback: data.feedback,
+      feedback_discipulador: data.feedback,
       xp_ganho: data.xpConcedido,
       data_aprovacao: new Date().toISOString(),
-      situacao: "aprovado",
-    }
+    })
 
-    const feedbacksAtualizados = [...feedbacksArray, novoFeedback]
+    // Calcular XP total ganho nesta reflexão
+    const xpTotalReflexao = feedbacksArray.reduce((sum: number, f: any) => sum + (f.xp_ganho || 0), 0)
 
-    // Atualizar reflexão com feedback
+    // Verificar se todos os conteúdos foram aprovados
+    const conteudosIds = reflexaoAtual.conteudos_ids || []
+    const todosConteudosAprovados = conteudosIds.every((id: string) =>
+      feedbacksArray.some((f: any) => f.conteudo_id === id),
+    )
+
+    const novoStatus = todosConteudosAprovados ? "aprovado" : "enviado"
+
+    // Atualizar reflexão com feedback, xp_ganho e situacao
     const { data: reflexaoAtualizada, error: updateError } = await adminClient
       .from("reflexoes_passo")
-      .update({ feedbacks: feedbacksAtualizados })
+      .update({
+        feedbacks: feedbacksArray,
+        xp_ganho: xpTotalReflexao,
+        situacao: novoStatus,
+      })
       .eq("id", reflexaoAtual.id)
       .select()
 
@@ -65,7 +75,7 @@ export async function aprovarReflexao(data: {
       return { success: false, error: "Erro ao atualizar reflexão" }
     }
 
-    console.log("[v0] Reflexão atualizada com sucesso")
+    console.log("[v0] Reflexão atualizada com sucesso - Status:", novoStatus)
 
     // Atualizar progresso_fases
     const { data: progresso } = await adminClient
