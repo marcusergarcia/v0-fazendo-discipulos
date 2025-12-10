@@ -44,28 +44,12 @@ const PassoClient = () => {
   const todasReflexoesAprovadas = useCallback(() => {
     const todosConteudos = [...(passo.videos || []), ...(passo.artigos || [])]
 
-    console.log("[v0] ===== DEBUG REFLEXÕES =====")
-    console.log("[v0] Total de conteúdos:", todosConteudos.length)
-    console.log("[v0] Total de reflexões no banco:", reflexoes.length)
-
-    todosConteudos.forEach((conteudo) => {
-      const reflexao = reflexoes.find((r) => r.conteudo_id === conteudo.id)
-      console.log(`[v0] Conteúdo ${conteudo.id} (${conteudo.titulo}):`, {
-        temReflexao: !!reflexao,
-        situacao: reflexao?.situacao || "não encontrada",
-        aprovada: reflexao?.situacao === "aprovada",
-      })
-    })
-
     const todasAprovadas = todosConteudos.every((conteudo) => {
       const reflexao = reflexoes.find((r) => r.conteudo_id === conteudo.id)
       return reflexao?.situacao === "aprovada"
     })
 
     const totalEsperado = (passo.videos?.length || 0) + (passo.artigos?.length || 0)
-    console.log("[v0] Todas aprovadas?", todasAprovadas)
-    console.log("[v0] Total esperado:", totalEsperado)
-    console.log("[v0] ===== FIM DEBUG REFLEXÕES =====")
 
     return todasAprovadas && todosConteudos.length === totalEsperado
   }, [passo.videos, passo.artigos, reflexoes])
