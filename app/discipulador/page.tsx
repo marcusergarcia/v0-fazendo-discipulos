@@ -91,6 +91,9 @@ export default async function DiscipuladorPage() {
             (r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id),
           )
 
+          const reflexaoIndex = reflexaoRecord?.conteudos_ids?.indexOf(video.id) ?? -1
+          const reflexaoTexto = reflexaoIndex >= 0 ? reflexaoRecord?.reflexoes?.[reflexaoIndex] : null
+
           const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === video.id)
           const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
 
@@ -101,7 +104,14 @@ export default async function DiscipuladorPage() {
             concluido: !!videoAssistido,
             reflexao: reflexaoRecord
               ? {
-                  ...reflexaoRecord,
+                  id: reflexaoRecord.id,
+                  discipulo_id: reflexaoRecord.discipulo_id,
+                  tipo: "video",
+                  conteudo_id: video.id,
+                  titulo: video.titulo,
+                  reflexao: reflexaoTexto || "",
+                  criado_em: reflexaoRecord.criado_em,
+                  passo_atual: reflexaoRecord.passo_numero,
                   xp_ganho: feedback?.xp_ganho || null,
                   situacao: situacao,
                   feedback: feedback,
@@ -121,6 +131,9 @@ export default async function DiscipuladorPage() {
             (r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id),
           )
 
+          const reflexaoIndex = reflexaoRecord?.conteudos_ids?.indexOf(artigo.id) ?? -1
+          const reflexaoTexto = reflexaoIndex >= 0 ? reflexaoRecord?.reflexoes?.[reflexaoIndex] : null
+
           const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)
           const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
 
@@ -131,7 +144,14 @@ export default async function DiscipuladorPage() {
             concluido: !!artigoLido,
             reflexao: reflexaoRecord
               ? {
-                  ...reflexaoRecord,
+                  id: reflexaoRecord.id,
+                  discipulo_id: reflexaoRecord.discipulo_id,
+                  tipo: "artigo",
+                  conteudo_id: artigo.id,
+                  titulo: artigo.titulo,
+                  reflexao: reflexaoTexto || "",
+                  criado_em: reflexaoRecord.criado_em,
+                  passo_atual: reflexaoRecord.passo_numero,
                   xp_ganho: feedback?.xp_ganho || null,
                   situacao: situacao,
                   feedback: feedback,
