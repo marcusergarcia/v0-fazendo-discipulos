@@ -76,9 +76,14 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
           tipo: "video",
           titulo: titulo,
           conteudos_ids: [videoId],
-          reflexoes: {
-            [videoId]: reflexao,
-          },
+          reflexoes: [
+            {
+              titulo: titulo,
+              reflexao: reflexao,
+              conteudo_id: videoId,
+              resumo: "",
+            },
+          ],
           feedbacks: [],
           situacao: "enviado",
           notificacao_id: notificacaoId,
@@ -92,12 +97,28 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       return { success: true, videoId }
     } else {
       const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
-      const reflexoesAtualizadas = { ...((reflexaoExistente.reflexoes as Record<string, string>) || {}) }
+      const reflexoesAtualizadas = [...((reflexaoExistente.reflexoes as any[]) || [])]
 
       if (!conteudosIdsAtualizados.includes(videoId)) {
         conteudosIdsAtualizados.push(videoId)
+        reflexoesAtualizadas.push({
+          titulo: titulo,
+          reflexao: reflexao,
+          conteudo_id: videoId,
+          resumo: "",
+        })
+      } else {
+        // Update existing reflexao if videoId already exists
+        const index = reflexoesAtualizadas.findIndex((r: any) => r.conteudo_id === videoId)
+        if (index !== -1) {
+          reflexoesAtualizadas[index] = {
+            titulo: titulo,
+            reflexao: reflexao,
+            conteudo_id: videoId,
+            resumo: "",
+          }
+        }
       }
-      reflexoesAtualizadas[videoId] = reflexao
 
       if (discipulo.discipulador_id) {
         await adminClient.from("notificacoes").insert({
@@ -209,9 +230,14 @@ export async function concluirArtigoComReflexao(
           tipo: "artigo",
           titulo: titulo,
           conteudos_ids: [artigoId],
-          reflexoes: {
-            [artigoId]: reflexao,
-          },
+          reflexoes: [
+            {
+              titulo: titulo,
+              reflexao: reflexao,
+              conteudo_id: artigoId,
+              resumo: "",
+            },
+          ],
           feedbacks: [],
           situacao: "enviado",
           notificacao_id: notificacaoId,
@@ -225,12 +251,28 @@ export async function concluirArtigoComReflexao(
       return { success: true, artigoId }
     } else {
       const conteudosIdsAtualizados = [...(reflexaoExistente.conteudos_ids || [])]
-      const reflexoesAtualizadas = { ...((reflexaoExistente.reflexoes as Record<string, string>) || {}) }
+      const reflexoesAtualizadas = [...((reflexaoExistente.reflexoes as any[]) || [])]
 
       if (!conteudosIdsAtualizados.includes(artigoId)) {
         conteudosIdsAtualizados.push(artigoId)
+        reflexoesAtualizadas.push({
+          titulo: titulo,
+          reflexao: reflexao,
+          conteudo_id: artigoId,
+          resumo: "",
+        })
+      } else {
+        // Update existing reflexao if artigoId already exists
+        const index = reflexoesAtualizadas.findIndex((r: any) => r.conteudo_id === artigoId)
+        if (index !== -1) {
+          reflexoesAtualizadas[index] = {
+            titulo: titulo,
+            reflexao: reflexao,
+            conteudo_id: artigoId,
+            resumo: "",
+          }
+        }
       }
-      reflexoesAtualizadas[artigoId] = reflexao
 
       if (discipulo.discipulador_id) {
         await adminClient.from("notificacoes").insert({
@@ -383,16 +425,15 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
     .eq("passo_numero", passoNumero)
 
   const reflexoesExpandidas = (reflexoes || []).flatMap((reflexao) => {
-    const conteudosIds = reflexao.conteudos_ids || []
-    const reflexoesObj = (reflexao.reflexoes as Record<string, string>) || {}
+    const reflexoesArray = (reflexao.reflexoes as any[]) || []
 
-    // Criar uma entrada para cada conteudo_id no array
-    return conteudosIds.map((conteudoId: string) => ({
+    // Return each reflexao object from the array
+    return reflexoesArray.map((reflexaoObj: any) => ({
       id: reflexao.id, // ID do registro original (para deletar)
-      conteudo_id: conteudoId, // ID individual do conteudo
+      conteudo_id: reflexaoObj.conteudo_id,
       tipo: reflexao.tipo,
-      titulo: conteudoId, // Usar o ID como título temporário
-      reflexao: reflexoesObj[conteudoId] || "",
+      titulo: reflexaoObj.titulo,
+      reflexao: reflexaoObj.reflexao,
       notificacao_id: reflexao.notificacao_id,
     }))
   })
