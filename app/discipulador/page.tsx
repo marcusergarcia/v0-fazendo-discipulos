@@ -87,22 +87,28 @@ export default async function DiscipuladorPage() {
             ? (progressoAtual.videos_assistidos as any[]).find((v: any) => v.id === video.id)
             : null
 
-          const reflexao = reflexoesDiscipulo.find((r) => r.conteudo_id === video.id && r.tipo === "video")
+          const reflexaoRecord = reflexoesDiscipulo.find(
+            (r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id),
+          )
+
+          const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === video.id)
+          const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
 
           tarefas.push({
             id: video.id,
             tipo: "video",
             titulo: video.titulo,
             concluido: !!videoAssistido,
-            reflexao: reflexao
+            reflexao: reflexaoRecord
               ? {
-                  ...reflexao,
-                  xp_ganho: reflexao.xp_ganho || null,
-                  situacao: reflexao.situacao || null,
+                  ...reflexaoRecord,
+                  xp_ganho: feedback?.xp_ganho || null,
+                  situacao: situacao,
+                  feedback: feedback,
                 }
               : null,
-            xp: reflexao?.xp_ganho || null,
-            situacao: reflexao?.situacao || null,
+            xp: feedback?.xp_ganho || null,
+            situacao: situacao,
           })
         })
 
@@ -111,22 +117,28 @@ export default async function DiscipuladorPage() {
             ? (progressoAtual.artigos_lidos as any[]).find((a: any) => a.id === artigo.id)
             : null
 
-          const reflexao = reflexoesDiscipulo.find((r) => r.conteudo_id === artigo.id && r.tipo === "artigo")
+          const reflexaoRecord = reflexoesDiscipulo.find(
+            (r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id),
+          )
+
+          const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)
+          const situacao = feedback ? "aprovada" : reflexaoRecord ? "enviado" : null
 
           tarefas.push({
             id: artigo.id,
             tipo: "artigo",
             titulo: artigo.titulo,
             concluido: !!artigoLido,
-            reflexao: reflexao
+            reflexao: reflexaoRecord
               ? {
-                  ...reflexao,
-                  xp_ganho: reflexao.xp_ganho || null,
-                  situacao: reflexao.situacao || null,
+                  ...reflexaoRecord,
+                  xp_ganho: feedback?.xp_ganho || null,
+                  situacao: situacao,
+                  feedback: feedback,
                 }
               : null,
-            xp: reflexao?.xp_ganho || null,
-            situacao: reflexao?.situacao || null,
+            xp: feedback?.xp_ganho || null,
+            situacao: situacao,
           })
         })
 
@@ -150,7 +162,6 @@ export default async function DiscipuladorPage() {
           const perguntaId = index + 1
           const respostaEspecifica = perguntasResposta?.respostas?.find((r: any) => r.pergunta_id === perguntaId)
 
-          // Status individual de cada pergunta
           const situacaoPergunta = respostaEspecifica?.situacao || null
           const xpPergunta = respostaEspecifica?.xp_ganho || null
 
@@ -162,7 +173,6 @@ export default async function DiscipuladorPage() {
             resposta: respostaEspecifica?.resposta ? "Sim" : "Não",
           })
 
-          // Adiciona TODAS as perguntas do passo atual
           tarefas.push({
             id: `reflexiva-${perguntaId}`,
             tipo: "reflexao_guiada",
@@ -261,7 +271,6 @@ export default async function DiscipuladorPage() {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
