@@ -70,9 +70,5 @@ export function ReflexoesClient({ reflexao, discipuloId, discipuloNome, xp, situ
     )
   }
 
-  return (
-    <Badge variant="outline" className="text-muted-foreground">
-      Não iniciado
-    </Badge>
-  )
+  return null
 }
