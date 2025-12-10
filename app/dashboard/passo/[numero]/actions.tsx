@@ -41,8 +41,32 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       throw selectError
     }
 
+    const adminClient = createAdminClient()
+
     if (!reflexaoExistente) {
-      const { data: novaReflexao, error: insertError } = await supabase
+      let notificacaoId = null
+
+      // Create notification first if discipulador exists
+      if (discipulo.discipulador_id) {
+        const { data: notificacao } = await adminClient
+          .from("notificacoes")
+          .insert({
+            user_id: discipulo.discipulador_id,
+            discipulo_id: discipulo.id,
+            tipo: "reflexao",
+            titulo: "Nova reflexão de vídeo",
+            mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
+            lida: false,
+          })
+          .select()
+          .single()
+
+        if (notificacao) {
+          notificacaoId = notificacao.id
+        }
+      }
+
+      const { data: novaReflexao, error: insertError } = await adminClient
         .from("reflexoes_passo")
         .insert({
           discipulo_id: discipulo.id,
@@ -50,27 +74,19 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
           fase_numero: discipulo.fase_atual,
           passo_numero: passoNumero,
           tipo: "video",
+          titulo: titulo,
           conteudos_ids: [videoId],
           reflexoes: {
             [videoId]: reflexao,
           },
           feedbacks: [],
+          situacao: "enviado",
+          notificacao_id: notificacaoId,
         })
         .select()
         .single()
 
       if (insertError) throw insertError
-
-      if (discipulo.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de vídeo",
-          mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
-          lida: false,
-        })
-      }
 
       revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, videoId }
@@ -83,7 +99,16 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       }
       reflexoesAtualizadas[videoId] = reflexao
 
-      const adminClient = createAdminClient()
+      if (discipulo.discipulador_id) {
+        await adminClient.from("notificacoes").insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "reflexao",
+          titulo: "Nova reflexão de vídeo",
+          mensagem: `Reflexão adicional do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
+          lida: false,
+        })
+      }
 
       const { data: updateData, error: updateError } = await adminClient
         .from("reflexoes_passo")
@@ -97,17 +122,6 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       if (updateError) throw updateError
       if (!updateData || updateData.length === 0) {
         throw new Error("UPDATE não retornou dados")
-      }
-
-      if (discipulo.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de vídeo",
-          mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
-          lida: false,
-        })
       }
 
       revalidatePath(`/dashboard/passo/${passoNumero}`)
@@ -160,8 +174,32 @@ export async function concluirArtigoComReflexao(
       throw selectError
     }
 
+    const adminClient = createAdminClient()
+
     if (!reflexaoExistente) {
-      const { data: novaReflexao, error: insertError } = await supabase
+      let notificacaoId = null
+
+      // Create notification first if discipulador exists
+      if (discipulo.discipulador_id) {
+        const { data: notificacao } = await adminClient
+          .from("notificacoes")
+          .insert({
+            user_id: discipulo.discipulador_id,
+            discipulo_id: discipulo.id,
+            tipo: "reflexao",
+            titulo: "Nova reflexão de artigo",
+            mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
+            lida: false,
+          })
+          .select()
+          .single()
+
+        if (notificacao) {
+          notificacaoId = notificacao.id
+        }
+      }
+
+      const { data: novaReflexao, error: insertError } = await adminClient
         .from("reflexoes_passo")
         .insert({
           discipulo_id: discipulo.id,
@@ -169,27 +207,19 @@ export async function concluirArtigoComReflexao(
           fase_numero: discipulo.fase_atual,
           passo_numero: passoNumero,
           tipo: "artigo",
+          titulo: titulo,
           conteudos_ids: [artigoId],
           reflexoes: {
             [artigoId]: reflexao,
           },
           feedbacks: [],
+          situacao: "enviado",
+          notificacao_id: notificacaoId,
         })
         .select()
         .single()
 
       if (insertError) throw insertError
-
-      if (discipulo.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de artigo",
-          mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
-          lida: false,
-        })
-      }
 
       revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, artigoId }
@@ -202,7 +232,16 @@ export async function concluirArtigoComReflexao(
       }
       reflexoesAtualizadas[artigoId] = reflexao
 
-      const adminClient = createAdminClient()
+      if (discipulo.discipulador_id) {
+        await adminClient.from("notificacoes").insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "reflexao",
+          titulo: "Nova reflexão de artigo",
+          mensagem: `Reflexão adicional do artigo "${titulo}" no Passo ${passoNumero} enviada`,
+          lida: false,
+        })
+      }
 
       const { data: updateData, error: updateError } = await adminClient
         .from("reflexoes_passo")
@@ -216,17 +255,6 @@ export async function concluirArtigoComReflexao(
       if (updateError) throw updateError
       if (!updateData || updateData.length === 0) {
         throw new Error("UPDATE não retornou dados")
-      }
-
-      if (discipulo.discipulador_id) {
-        await supabase.from("notificacoes").insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de artigo",
-          mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
-          lida: false,
-        })
       }
 
       revalidatePath(`/dashboard/passo/${passoNumero}`)
