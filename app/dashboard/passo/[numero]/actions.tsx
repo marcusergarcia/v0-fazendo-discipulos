@@ -61,6 +61,17 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
 
       if (insertError) throw insertError
 
+      if (discipulo.discipulador_id) {
+        await supabase.from("notificacoes").insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "reflexao_video",
+          titulo: "Nova reflexão de vídeo",
+          mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
+          lida: false,
+        })
+      }
+
       revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, videoId }
     } else {
@@ -86,6 +97,17 @@ export async function concluirVideoComReflexao(passoNumero: number, videoId: str
       if (updateError) throw updateError
       if (!updateData || updateData.length === 0) {
         throw new Error("UPDATE não retornou dados")
+      }
+
+      if (discipulo.discipulador_id) {
+        await supabase.from("notificacoes").insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "reflexao_video",
+          titulo: "Nova reflexão de vídeo",
+          mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
+          lida: false,
+        })
       }
 
       revalidatePath(`/dashboard/passo/${passoNumero}`)
@@ -158,6 +180,17 @@ export async function concluirArtigoComReflexao(
 
       if (insertError) throw insertError
 
+      if (discipulo.discipulador_id) {
+        await supabase.from("notificacoes").insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "reflexao_artigo",
+          titulo: "Nova reflexão de artigo",
+          mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
+          lida: false,
+        })
+      }
+
       revalidatePath(`/dashboard/passo/${passoNumero}`)
       return { success: true, artigoId }
     } else {
@@ -183,6 +216,17 @@ export async function concluirArtigoComReflexao(
       if (updateError) throw updateError
       if (!updateData || updateData.length === 0) {
         throw new Error("UPDATE não retornou dados")
+      }
+
+      if (discipulo.discipulador_id) {
+        await supabase.from("notificacoes").insert({
+          user_id: discipulo.discipulador_id,
+          discipulo_id: discipulo.id,
+          tipo: "reflexao_artigo",
+          titulo: "Nova reflexão de artigo",
+          mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
+          lida: false,
+        })
       }
 
       revalidatePath(`/dashboard/passo/${passoNumero}`)
