@@ -91,13 +91,10 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   const discipuladorId = discipuladorData?.discipulador_id || null
 
   const { data: reflexoesPasso } = await supabase
-    .from("reflexoes_passo")
-    .select("reflexoes, conteudos_ids, situacao")
+    .from("reflexoes_conteudo")
+    .select("conteudo_id, tipo, situacao, xp_ganho")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", numero)
-    .maybeSingle()
-
-  const reflexoesIndividuais = reflexoesPasso?.reflexoes || {}
 
   const { data: perguntasReflexivas } = await supabase
     .from("perguntas_reflexivas")
@@ -156,10 +153,11 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     }
   }
 
+  // Adicionar informações de situação aos vídeos e artigos
   const passoComReflexoes = {
     ...passo,
     videos: (passo.videos || []).map((video: any) => {
-      const reflexao = reflexoesIndividuais[video.id]
+      const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === video.id && r.tipo === "video")
       return {
         ...video,
         reflexao_situacao: reflexao?.situacao || null,
@@ -167,7 +165,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       }
     }),
     artigos: (passo.artigos || []).map((artigo: any) => {
-      const reflexao = reflexoesIndividuais[artigo.id]
+      const reflexao = reflexoesPasso?.find((r) => r.conteudo_id === artigo.id && r.tipo === "artigo")
       return {
         ...artigo,
         reflexao_situacao: reflexao?.situacao || null,

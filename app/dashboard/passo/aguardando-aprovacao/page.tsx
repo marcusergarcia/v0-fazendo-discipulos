@@ -25,12 +25,12 @@ export default async function AguardandoAprovacaoPage() {
 
   const passoAtual = discipulo.passo_atual
 
-  const { data: reflexoesPasso } = await supabase
-    .from("reflexoes_passo")
+  // Verificar status do passo
+  const { data: reflexoes } = await supabase
+    .from("reflexoes_conteudo")
     .select("situacao")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoAtual)
-    .maybeSingle()
 
   const { data: perguntasReflexivas } = await supabase
     .from("perguntas_reflexivas")
@@ -39,7 +39,7 @@ export default async function AguardandoAprovacaoPage() {
     .eq("passo_numero", passoAtual)
     .maybeSingle()
 
-  const reflexoesAprovadas = reflexoesPasso?.situacao === "aprovado" || false
+  const reflexoesAprovadas = reflexoes?.every((r) => r.situacao === "aprovado") || false
   const perguntasAprovadas = perguntasReflexivas?.situacao === "aprovado" || false
   const tudoAprovado = reflexoesAprovadas && perguntasAprovadas
 
