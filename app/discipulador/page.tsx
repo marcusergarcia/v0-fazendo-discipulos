@@ -182,10 +182,24 @@ export default async function DiscipuladorPage() {
 
         perguntasPassoAtual.forEach((pergunta, index) => {
           const perguntaId = index + 1
-          const respostaEspecifica = perguntasResposta?.respostas?.find((r: any) => r.pergunta_id === perguntaId)
 
-          const situacaoPergunta = respostaEspecifica?.situacao || null
-          const xpPergunta = respostaEspecifica?.xp_ganho || null
+          // Check if respostas exists and is an array
+          const respostasArray = Array.isArray(perguntasResposta?.respostas) ? perguntasResposta.respostas : []
+          const respostaEspecifica = respostasArray.find((r: any) => r.pergunta_id === perguntaId)
+
+          // Determine situacao: if perguntasResposta exists with respostas array, check individual feedback
+          let situacaoPergunta = null
+          let xpPergunta = null
+
+          if (respostaEspecifica) {
+            // Resposta exists, check if has feedback (aprovado) or still waiting (enviado)
+            if (respostaEspecifica.xp_ganho !== undefined && respostaEspecifica.xp_ganho !== null) {
+              situacaoPergunta = "aprovado"
+              xpPergunta = respostaEspecifica.xp_ganho
+            } else {
+              situacaoPergunta = "enviado" // Waiting for approval
+            }
+          }
 
           console.log("[v0] DEBUG Pergunta Reflexiva Individual:", {
             pergunta_id: perguntaId,

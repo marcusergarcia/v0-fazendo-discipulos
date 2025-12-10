@@ -498,11 +498,19 @@ export async function enviarPerguntasReflexivas(passoNumero: number, respostas: 
     const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
+    const respostasArray = Object.keys(respostas).map((key) => {
+      const perguntaId = Number.parseInt(key.replace("pergunta", ""))
+      return {
+        pergunta_id: perguntaId,
+        resposta: respostas[key],
+      }
+    })
+
     await adminClient.from("perguntas_reflexivas").insert({
       discipulo_id: discipulo.id,
       fase_numero: discipulo.fase_atual,
       passo_numero: passoNumero,
-      respostas,
+      respostas: respostasArray, // Use array format
       situacao: "enviado",
     })
 
