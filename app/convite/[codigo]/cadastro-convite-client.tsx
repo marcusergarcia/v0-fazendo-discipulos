@@ -10,9 +10,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Shield, UserPlus, Upload, MapPin, Calendar, Clock, ArrowRight, ArrowLeft, BookOpen, Scale, CheckCircle2 } from 'lucide-react'
+import {
+  Shield,
+  UserPlus,
+  Upload,
+  MapPin,
+  Calendar,
+  Clock,
+  ArrowRight,
+  ArrowLeft,
+  BookOpen,
+  Scale,
+  CheckCircle2,
+} from "lucide-react"
 import Image from "next/image"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 
 interface ConviteClientProps {
   convite: {
@@ -235,10 +247,12 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
 
       await supabase.from("notificacoes").insert({
         user_id: convite.discipulador_id,
-        tipo: "aprovacao_discipulo",
+        discipulo_id: resultado.discipuloId,
+        tipo: "novo_discipulo",
         titulo: "Novo Discípulo Aguardando Aprovação",
         mensagem: `${nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
-        link: `/discipulador/aprovar/${resultado.userId}`,
+        link: `/discipulador/aprovar/${resultado.discipuloId}`,
+        lida: false,
       })
 
       console.log("[v0] Notificação criada, redirecionando...")

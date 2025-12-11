@@ -24,7 +24,7 @@ export async function aprovarReflexao(data: {
 
     const { data: reflexaoAtual, error: selectError } = await adminClient
       .from("reflexoes_passo")
-      .select("id, tipo, conteudos_ids, feedbacks, xp_ganho, discipulo_id, passo_numero")
+      .select("id, tipo, conteudos_ids, feedbacks, xp_ganho, discipulo_id, passo_numero, notificacao_id")
       .eq("id", data.reflexaoId)
       .maybeSingle()
 
@@ -99,16 +99,20 @@ export async function aprovarReflexao(data: {
       console.log("[v0] XP adicionado à pontuação do passo:", data.xpConcedido)
     }
 
-    // Deletar notificação relacionada
-    const { data: notificacao } = await adminClient
-      .from("notificacoes")
-      .select("id")
-      .eq("reflexao_id", data.reflexaoId)
-      .maybeSingle()
+    if (todosConteudosAprovados && reflexaoAtual.notificacao_id) {
+      const { data: todasReflexoesDoTipo } = await adminClient
+        .from("reflexoes_passo")
+        .select("situacao")
+        .eq("discipulo_id", data.discipuloId)
+        .eq("passo_numero", data.passoAtual)
+        .eq("tipo", data.tipo)
 
-    if (notificacao) {
-      await adminClient.from("notificacoes").delete().eq("id", notificacao.id)
-      console.log("[v0] Notificação deletada")
+      const todasAprovadas = todasReflexoesDoTipo?.every((r: any) => r.situacao === "aprovado")
+
+      if (todasAprovadas) {
+        await adminClient.from("notificacoes").delete().eq("id", reflexaoAtual.notificacao_id)
+        console.log("[v0] Notificação deletada - todos os", data.tipo, "s aprovados")
+      }
     }
 
     // Verificar se todas as reflexões foram aprovadas
@@ -246,7 +250,6 @@ export async function aprovarPerguntaReflexiva(data: {
     console.log("[v0] Perguntas Reflexivas ID:", data.perguntasReflexivasId)
     console.log("[v0] Pergunta ID:", data.perguntaId)
 
-    // Buscar o registro atual
     const { data: perguntasReflexivas, error: selectError } = await adminClient
       .from("perguntas_reflexivas")
       .select("*")
@@ -260,7 +263,6 @@ export async function aprovarPerguntaReflexiva(data: {
 
     const respostasArray = (perguntasReflexivas.respostas as any[]) || []
 
-    // Encontrar a resposta específica desta pergunta
     const respostaIndex = respostasArray.findIndex((r: any) => r.pergunta_id === data.perguntaId)
 
     if (respostaIndex === -1) {
@@ -268,7 +270,6 @@ export async function aprovarPerguntaReflexiva(data: {
       return { success: false, error: "Resposta não encontrada" }
     }
 
-    // Atualizar esta resposta específica com o feedback
     respostasArray[respostaIndex] = {
       ...respostasArray[respostaIndex],
       situacao: "aprovado",
@@ -308,7 +309,6 @@ export async function aprovarPerguntaReflexiva(data: {
       xpTotal,
     )
 
-    // Atualizar o registro
     const updateData: any = {
       respostas: respostasArray,
     }
@@ -331,7 +331,6 @@ export async function aprovarPerguntaReflexiva(data: {
       return { success: false, error: updateError.message }
     }
 
-    // Atualizar progresso_fases
     const { data: progresso } = await adminClient
       .from("progresso_fases")
       .select("*")
@@ -351,21 +350,10 @@ export async function aprovarPerguntaReflexiva(data: {
       console.log("[v0] XP adicionado à pontuação do passo:", data.xpConcedido)
     }
 
-    // Se todas foram aprovadas, deletar notificação
-    if (todasAprovadas) {
-      const { data: notificacao } = await adminClient
-        .from("notificacoes")
-        .select("id")
-        .eq("tipo", "perguntas_reflexivas")
-        .eq("discipulo_id", data.discipuloId)
-        .maybeSingle()
+    if (todasAprovadas && perguntasReflexivas.notificacao_id) {
+      await adminClient.from("notificacoes").delete().eq("id", perguntasReflexivas.notificacao_id)
+      console.log("[v0] Notificação removida - todas as perguntas aprovadas")
 
-      if (notificacao) {
-        await adminClient.from("notificacoes").delete().eq("id", notificacao.id)
-        console.log("[v0] Notificação removida")
-      }
-
-      // Verificar se pode liberar próximo passo
       await verificarLiberacaoProximoPasso(adminClient, data.discipuloId, data.passoAtual, xpTotal)
 
       console.log("[v0] ===== TODAS PERGUNTAS APROVADAS - XP TOTAL:", xpTotal, "=====")

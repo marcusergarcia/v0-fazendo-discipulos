@@ -125,9 +125,9 @@ export async function aprovarDiscipulo(discipuloId: string) {
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
-      .eq("link", `/discipulador/aprovar/${discipuloId}`)
+      .eq("tipo", "novo_discipulo")
+      .eq("discipulo_id", discipuloId)
 
-    // Criar notificação de boas-vindas para o novo discípulo
     await supabaseAdmin.from("notificacoes").insert({
       user_id: userId,
       tipo: "aprovacao_aceita",
@@ -171,6 +171,13 @@ export async function rejeitarDiscipulo(discipuloId: string, motivo?: string) {
     if (!discipulo) {
       throw new Error("Discípulo não encontrado")
     }
+
+    await supabaseAdmin
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("tipo", "novo_discipulo")
+      .eq("discipulo_id", discipuloId)
 
     await supabaseAdmin
       .from("notificacoes")

@@ -44,23 +44,36 @@ export async function concluirVideoComReflexao(
     if (!reflexaoExistente) {
       let notificacaoId = null
 
-      // Create notification first if discipulador exists
       if (discipulo.discipulador_id) {
-        const { data: notificacao } = await adminClient
+        const { data: notificacaoExistente } = await adminClient
           .from("notificacoes")
-          .insert({
-            user_id: discipulo.discipulador_id,
-            discipulo_id: discipulo.id,
-            tipo: "reflexao",
-            titulo: "Nova reflexão de vídeo",
-            mensagem: `Reflexão do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
-            lida: false,
-          })
-          .select()
-          .single()
+          .select("id")
+          .eq("user_id", discipulo.discipulador_id)
+          .eq("discipulo_id", discipulo.id)
+          .eq("tipo", "reflexao_video")
+          .eq("link", `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`)
+          .maybeSingle()
 
-        if (notificacao) {
-          notificacaoId = notificacao.id
+        if (notificacaoExistente) {
+          notificacaoId = notificacaoExistente.id
+        } else {
+          const { data: notificacao } = await adminClient
+            .from("notificacoes")
+            .insert({
+              user_id: discipulo.discipulador_id,
+              discipulo_id: discipulo.id,
+              tipo: "reflexao_video",
+              titulo: "Nova reflexão de vídeo",
+              mensagem: `Reflexões de vídeo no Passo ${passoNumero}`,
+              link: `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`,
+              lida: false,
+            })
+            .select()
+            .single()
+
+          if (notificacao) {
+            notificacaoId = notificacao.id
+          }
         }
       }
 
@@ -106,7 +119,6 @@ export async function concluirVideoComReflexao(
           resumo: "",
         })
       } else {
-        // Update existing reflexao if videoId already exists
         const index = reflexoesAtualizadas.findIndex((r: any) => r.conteudo_id === videoId)
         if (index !== -1) {
           reflexoesAtualizadas[index] = {
@@ -116,17 +128,6 @@ export async function concluirVideoComReflexao(
             resumo: "",
           }
         }
-      }
-
-      if (discipulo.discipulador_id) {
-        await adminClient.from("notificacoes").insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de vídeo",
-          mensagem: `Reflexão adicional do vídeo "${titulo}" no Passo ${passoNumero} enviada`,
-          lida: false,
-        })
       }
 
       const { data: updateData, error: updateError } = await adminClient
@@ -163,7 +164,7 @@ export async function concluirArtigoComReflexao(
   artigoId: string,
   titulo: string,
   reflexao: string,
-  discipuloId: string, // Added discipuloId parameter
+  discipuloId: string,
 ) {
   const adminClient = createAdminClient()
 
@@ -192,23 +193,36 @@ export async function concluirArtigoComReflexao(
     if (!reflexaoExistente) {
       let notificacaoId = null
 
-      // Create notification first if discipulador exists
       if (discipulo.discipulador_id) {
-        const { data: notificacao } = await adminClient
+        const { data: notificacaoExistente } = await adminClient
           .from("notificacoes")
-          .insert({
-            user_id: discipulo.discipulador_id,
-            discipulo_id: discipulo.id,
-            tipo: "reflexao",
-            titulo: "Nova reflexão de artigo",
-            mensagem: `Reflexão do artigo "${titulo}" no Passo ${passoNumero} enviada`,
-            lida: false,
-          })
-          .select()
-          .single()
+          .select("id")
+          .eq("user_id", discipulo.discipulador_id)
+          .eq("discipulo_id", discipulo.id)
+          .eq("tipo", "reflexao_artigo")
+          .eq("link", `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`)
+          .maybeSingle()
 
-        if (notificacao) {
-          notificacaoId = notificacao.id
+        if (notificacaoExistente) {
+          notificacaoId = notificacaoExistente.id
+        } else {
+          const { data: notificacao } = await adminClient
+            .from("notificacoes")
+            .insert({
+              user_id: discipulo.discipulador_id,
+              discipulo_id: discipulo.id,
+              tipo: "reflexao_artigo",
+              titulo: "Nova reflexão de artigo",
+              mensagem: `Reflexões de artigo no Passo ${passoNumero}`,
+              link: `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`,
+              lida: false,
+            })
+            .select()
+            .single()
+
+          if (notificacao) {
+            notificacaoId = notificacao.id
+          }
         }
       }
 
@@ -254,7 +268,6 @@ export async function concluirArtigoComReflexao(
           resumo: "",
         })
       } else {
-        // Update existing reflexao if artigoId already exists
         const index = reflexoesAtualizadas.findIndex((r: any) => r.conteudo_id === artigoId)
         if (index !== -1) {
           reflexoesAtualizadas[index] = {
@@ -264,17 +277,6 @@ export async function concluirArtigoComReflexao(
             resumo: "",
           }
         }
-      }
-
-      if (discipulo.discipulador_id) {
-        await adminClient.from("notificacoes").insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "reflexao",
-          titulo: "Nova reflexão de artigo",
-          mensagem: `Reflexão adicional do artigo "${titulo}" no Passo ${passoNumero} enviada`,
-          lida: false,
-        })
       }
 
       const { data: updateData, error: updateError } = await adminClient
@@ -512,21 +514,35 @@ export async function enviarPerguntasReflexivas(
 
     let notificacaoId = null
     if (discipulo.discipulador_id) {
-      const { data: notificacao } = await adminClient
+      const { data: notificacaoExistente } = await adminClient
         .from("notificacoes")
-        .insert({
-          user_id: discipulo.discipulador_id,
-          discipulo_id: discipulo.id,
-          tipo: "perguntas_reflexivas",
-          titulo: "Perguntas reflexivas enviadas",
-          mensagem: `Perguntas reflexivas do Passo ${passoNumero} enviadas`,
-          lida: false,
-        })
-        .select()
-        .single()
+        .select("id")
+        .eq("user_id", discipulo.discipulador_id)
+        .eq("discipulo_id", discipulo.id)
+        .eq("tipo", "perguntas_reflexivas")
+        .eq("link", `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`)
+        .maybeSingle()
 
-      if (notificacao) {
-        notificacaoId = notificacao.id
+      if (notificacaoExistente) {
+        notificacaoId = notificacaoExistente.id
+      } else {
+        const { data: notificacao } = await adminClient
+          .from("notificacoes")
+          .insert({
+            user_id: discipulo.discipulador_id,
+            discipulo_id: discipulo.id,
+            tipo: "perguntas_reflexivas",
+            titulo: "Perguntas reflexivas enviadas",
+            mensagem: `Perguntas reflexivas do Passo ${passoNumero}`,
+            link: `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`,
+            lida: false,
+          })
+          .select()
+          .single()
+
+        if (notificacao) {
+          notificacaoId = notificacao.id
+        }
       }
     }
 
