@@ -449,19 +449,11 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
   }
 }
 
-export async function receberRecompensasEAvancar(passoNumero: number) {
+export async function receberRecompensasEAvancar(passoNumero: number, discipuloId: string) {
   const adminClient = createAdminClient()
 
   try {
-    const userId = await adminClient
-      .from("discipulos")
-      .select("user_id")
-      .eq("id", passoNumero)
-      .single()
-      .then((res) => res.data.user_id)
-    if (!userId) throw new Error("Não autenticado")
-
-    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", userId).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("id", discipuloId).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
     const { data: progresso } = await adminClient

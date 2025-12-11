@@ -439,7 +439,7 @@ export default function PassoClient({
       }
 
       // Chamar a função de receber recompensas (atualiza XP e avança)
-      const resultado = await receberRecompensasEAvancar(numero)
+      const resultado = await receberRecompensasEAvancar(numero, discipuloId)
 
       if (resultado.success) {
         toast({
