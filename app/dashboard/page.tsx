@@ -138,6 +138,44 @@ export default async function DashboardPage() {
     .eq("user_id", discipuladorProfile?.id || user.id)
     .eq("lida", false)
 
+  // Buscar discípulos do discipulador se ele for um discipulador
+  const { data: meusDiscipulos } = await supabase
+    .from("discipulos")
+    .select("id")
+    .eq("discipulador_id", user.id)
+    .eq("aprovado_discipulador", true)
+
+  const meusDiscipuloIds = meusDiscipulos?.map((d) => d.id) || []
+
+  let totalPendentesDiscipulador = 0
+
+  if (meusDiscipuloIds.length > 0) {
+    // Buscar reflexões pendentes (enviadas mas não aprovadas)
+    const { data: reflexoesPendentes } = await supabase
+      .from("reflexoes_passo")
+      .select("*")
+      .eq("discipulador_id", user.id)
+      .eq("situacao", "enviado")
+
+    // Buscar perguntas pendentes (enviadas mas não aprovadas)
+    const { data: perguntasPendentes } = await supabase
+      .from("perguntas_reflexivas")
+      .select("*")
+      .in("discipulo_id", meusDiscipuloIds)
+      .eq("situacao", "enviado")
+
+    // Buscar novos discípulos aguardando aprovação
+    const { data: discipulosPendentes } = await supabase
+      .from("discipulos")
+      .select("*")
+      .eq("discipulador_id", user.id)
+      .eq("aprovado_discipulador", false)
+      .is("user_id", null)
+
+    totalPendentesDiscipulador =
+      (reflexoesPendentes?.length || 0) + (perguntasPendentes?.length || 0) + (discipulosPendentes?.length || 0)
+  }
+
   const { data: progressoAtualData } = await supabase
     .from("progresso_fases")
     .select("pontuacao_passo_atual")
@@ -170,9 +208,9 @@ export default async function DashboardPage() {
                       <Button variant="ghost" size="sm" className="gap-1.5 relative h-9 px-2 sm:px-3">
                         <UsersRound className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0" />
                         <span className="text-xs sm:text-sm">Discipulador</span>
-                        {notificationCount && notificationCount > 0 && (
+                        {totalPendentesDiscipulador > 0 && (
                           <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                            {notificationCount > 9 ? "9+" : notificationCount}
+                            {totalPendentesDiscipulador > 9 ? "9+" : totalPendentesDiscipulador}
                           </Badge>
                         )}
                       </Button>
