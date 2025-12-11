@@ -277,6 +277,14 @@ export async function aprovarPerguntaReflexiva(data: {
       data_aprovacao: new Date().toISOString(),
     }
 
+    const { data: discipulo } = await adminClient
+      .from("discipulos")
+      .select("discipulador_id")
+      .eq("id", data.discipuloId)
+      .single()
+
+    const discipuladorId = discipulo?.discipulador_id
+
     const perguntasEsperadas = getPerguntasPasso(data.passoAtual)
     const totalPerguntasEsperadas = perguntasEsperadas.length
 
@@ -305,11 +313,12 @@ export async function aprovarPerguntaReflexiva(data: {
       respostas: respostasArray,
     }
 
-    // Se todas foram aprovadas, atualizar status global
     if (todasAprovadas) {
       updateData.situacao = "aprovado"
       updateData.xp_ganho = xpTotal
       updateData.data_aprovacao = new Date().toISOString()
+      updateData.discipulador_id = discipuladorId
+      updateData.feedback_discipulador = "Todas as perguntas reflexivas foram aprovadas"
     }
 
     const { error: updateError } = await adminClient
