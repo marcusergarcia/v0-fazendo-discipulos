@@ -33,7 +33,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 // import { supabase } from "@/lib/supabase"
-import { createClient } from "@/lib/supabase-browser"
+import { createClient } from "@/lib/supabase/client"
 import { toast } from "@/components/ui/use-toast"
 import {
   salvarRascunho,
@@ -161,26 +161,40 @@ export default function PassoClient({
     carregarReflexoes()
   }, [discipulo.id, numero, supabase])
 
-  const buscarSubmissaoPerguntasReflexivas = useCallback(async () => {
-    if (!discipulo?.id) return
-
-    const { data, error } = await supabase
-      .from("perguntas_reflexivas")
-      .select("situacao, respostas, xp_ganho")
-      .eq("discipulo_id", discipulo.id)
-      .eq("passo_numero", numero)
-      .maybeSingle()
-
-    if (data && !error) {
-      setSubmissaoPerguntasReflexivas(data)
-    } else {
-      setSubmissaoPerguntasReflexivas(null)
-    }
-  }, [discipulo, numero, supabase])
-
   useEffect(() => {
+    const buscarSubmissaoPerguntasReflexivas = async () => {
+      if (perguntasReflexivasList.length === 0) {
+        return
+      }
+
+      try {
+        const supabase = createClient()
+
+        const { data, error } = await supabase
+          .from("perguntas_reflexivas")
+          .select("respostas, situacao")
+          .eq("discipulo_id", discipuloId)
+          .eq("passo_numero", numero)
+          .maybeSingle()
+
+        if (error && error.code !== "PGRST116") {
+          console.error("Erro ao buscar submissão:", error)
+          return
+        }
+
+        if (data) {
+          setSubmissaoPerguntasReflexivas(data)
+          setRespostasPerguntasReflexivas(
+            perguntasReflexivasList.map((_, i) => data.respostas?.[`pergunta${i + 1}`] || ""),
+          )
+        }
+      } catch (error) {
+        console.error("Erro ao buscar submissão:", error)
+      }
+    }
+
     buscarSubmissaoPerguntasReflexivas()
-  }, [buscarSubmissaoPerguntasReflexivas])
+  }, [perguntasReflexivasList, discipuloId, numero])
 
   const handleEnviarPerguntasReflexivas = async () => {
     if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
@@ -402,10 +416,10 @@ export default function PassoClient({
       toast({ title: "Sucesso!", description: "Sua reflexão foi enviada com sucesso!" })
       setModalAberto(false)
       setReflexao("")
+
       window.location.reload()
     } catch (error) {
-      console.error("ERRO ao enviar reflexão:", error)
-      console.error("Detalhes do erro:", JSON.stringify(error, null, 2))
+      console.error("Erro ao enviar reflexão:", error)
       toast({ title: "Erro", description: "Erro ao enviar reflexão. Tente novamente.", variant: "destructive" })
     } finally {
       setEnviandoReflexao(false)

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Book, ChevronRight } from "lucide-react"
@@ -37,10 +37,7 @@ export function BibleNavigationMenu({
   useEffect(() => {
     async function carregarLivros() {
       console.log("[v0] 📖 Carregando livros da Bíblia...")
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
+      const supabase = createClient()
 
       const { data, error } = await supabase.from("livros_biblia").select("*").order("ordem")
 

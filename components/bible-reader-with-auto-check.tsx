@@ -19,7 +19,7 @@ import {
   X,
   Menu,
 } from "lucide-react"
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient } from "@/lib/supabase/client"
 import { marcarCapituloLido } from "@/app/dashboard/leitura-biblica/actions"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -155,10 +155,7 @@ export function BibleReaderWithAutoCheck({
       if (modoNavegacaoLivre) {
         console.log("[v0] 🔍 Buscando ID real do capítulo:", currentChapter, "do livro:", livroId)
 
-        const supabase = createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        )
+        const supabase = createClient()
 
         const { data, error } = await supabase
           .from("capitulos_biblia")
@@ -394,10 +391,7 @@ export function BibleReaderWithAutoCheck({
 
     const {
       data: { user },
-    } = await createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    ).auth.getUser()
+    } = await createClient().auth.getUser()
     if (!user) {
       toast.error("Você precisa estar logado para salvar marcações", {
         duration: 2000,
@@ -408,10 +402,7 @@ export function BibleReaderWithAutoCheck({
     const selectedText = currentSelection.text
     console.log("[v0] 💾 Salvando highlight:", selectedText, "cor:", selectedColor)
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
+    const supabase = createClient()
     const { data: existing } = await supabase
       .from("highlights_biblia")
       .select("id, marcacoes")
@@ -487,17 +478,11 @@ export function BibleReaderWithAutoCheck({
     const action = history[historyIndex]
     const {
       data: { user },
-    } = await createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    ).auth.getUser()
+    } = await createClient().auth.getUser()
     if (!user) return
 
     if (action.type === "add" && action.highlight.id) {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
+      const supabase = createClient()
       const { data: existing } = await supabase
         .from("highlights_biblia")
         .select("id, marcacoes")
@@ -529,17 +514,11 @@ export function BibleReaderWithAutoCheck({
     const action = history[historyIndex + 1]
     const {
       data: { user },
-    } = await createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    ).auth.getUser()
+    } = await createClient().auth.getUser()
     if (!user) return
 
     if (action.type === "add") {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
+      const supabase = createClient()
       const { data: existing } = await supabase
         .from("highlights_biblia")
         .select("id, marcacoes")
@@ -574,17 +553,11 @@ export function BibleReaderWithAutoCheck({
   const loadHighlights = async (chapter: number) => {
     const {
       data: { user },
-    } = await createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    ).auth.getUser()
+    } = await createClient().auth.getUser()
 
     if (!user) return
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    )
+    const supabase = createClient()
     const { data, error: highlightError } = await supabase
       .from("highlights_biblia")
       .select("id, marcacoes")
@@ -714,10 +687,7 @@ export function BibleReaderWithAutoCheck({
     setError(null)
 
     try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      )
+      const supabase = createClient()
 
       let capituloId = getCapituloIdReal(chapter)
 
