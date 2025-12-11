@@ -51,6 +51,14 @@ import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
 import { RESUMOS_GERAIS_PASSOS } from "@/constants/resumos-gerais-passos"
 
+let supabaseInstance: ReturnType<typeof createClient> | null = null
+const getSupabaseClient = () => {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient()
+  }
+  return supabaseInstance
+}
+
 type PassoClientProps = {
   numero: number
   passo: any
@@ -92,7 +100,7 @@ export default function PassoClient({
   capitulosLidos = [], // Inicializar com array vazio
   discipuloId, // Destructure discipuloId
 }: PassoClientProps) {
-  const [supabase] = useState(() => createClient())
+  const supabase = getSupabaseClient()
 
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
