@@ -100,19 +100,12 @@ export async function aprovarReflexao(data: {
     }
 
     if (todosConteudosAprovados && reflexaoAtual.notificacao_id) {
-      const { data: todasReflexoesDoTipo } = await adminClient
-        .from("reflexoes_passo")
-        .select("situacao")
-        .eq("discipulo_id", data.discipuloId)
-        .eq("passo_numero", data.passoAtual)
-        .eq("tipo", data.tipo)
+      console.log("[v0] Deletando notificação:", reflexaoAtual.notificacao_id)
 
-      const todasAprovadas = todasReflexoesDoTipo?.every((r: any) => r.situacao === "aprovado")
+      await adminClient.from("reflexoes_passo").update({ notificacao_id: null }).eq("id", reflexaoAtual.id)
 
-      if (todasAprovadas) {
-        await adminClient.from("notificacoes").delete().eq("id", reflexaoAtual.notificacao_id)
-        console.log("[v0] Notificação deletada - todos os", data.tipo, "s aprovados")
-      }
+      await adminClient.from("notificacoes").delete().eq("id", reflexaoAtual.notificacao_id)
+      console.log("[v0] Notificação removida - todos os", data.tipo, "s aprovados")
     }
 
     // Verificar se todas as reflexões foram aprovadas
@@ -372,6 +365,12 @@ export async function aprovarPerguntaReflexiva(data: {
 
     if (todasAprovadas && perguntasReflexivas.notificacao_id) {
       console.log("[v0] Deletando notificação:", perguntasReflexivas.notificacao_id)
+
+      await adminClient
+        .from("perguntas_reflexivas")
+        .update({ notificacao_id: null })
+        .eq("id", data.perguntasReflexivasId)
+
       await adminClient.from("notificacoes").delete().eq("id", perguntasReflexivas.notificacao_id)
       console.log("[v0] Notificação removida - todas as perguntas aprovadas")
 
@@ -457,14 +456,13 @@ async function verificarLiberacaoProximoPasso(
   // Marcar passo como completado e liberar próximo
   const { data: progresso } = await adminClient
     .from("progresso_fases")
-    .select("pontuacao_passo_atual")
+    .select("id, pontuacao_passo_atual")
     .eq("discipulo_id", discipuloId)
     .single()
 
   if (progresso) {
     const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
 
-    // Resetar progresso do passo
     await adminClient
       .from("progresso_fases")
       .update({
@@ -473,7 +471,7 @@ async function verificarLiberacaoProximoPasso(
         videos_assistidos: [],
         artigos_lidos: [],
       })
-      .eq("id", progresso.id)
+      .eq("discipulo_id", discipuloId)
 
     // Transferir XP para o discípulo
     const { data: disc } = await adminClient

@@ -45,6 +45,9 @@ export function AvaliarPerguntaReflexivaModal({
   const router = useRouter()
 
   async function handleAprovar() {
+    console.log("[v0] ===== MODAL: handleAprovar INICIADO =====")
+    console.log("[v0] MODAL: Feedback trim:", feedback.trim())
+
     if (!feedback.trim()) {
       toast.error("Por favor, adicione um feedback antes de aprovar")
       return
@@ -53,6 +56,16 @@ export function AvaliarPerguntaReflexivaModal({
     setLoading(true)
 
     try {
+      console.log("[v0] MODAL: Chamando aprovarPerguntaReflexiva com:", {
+        perguntasReflexivasId,
+        perguntaId,
+        discipuloId,
+        passoAtual,
+        faseNumero,
+        feedback: feedback.trim(),
+        xpConcedido,
+      })
+
       const result = await aprovarPerguntaReflexiva({
         perguntasReflexivasId,
         perguntaId,
@@ -63,6 +76,8 @@ export function AvaliarPerguntaReflexivaModal({
         xpConcedido,
       })
 
+      console.log("[v0] MODAL: Resultado da aprovação:", result)
+
       if (!result.success) {
         toast.error(result.error || "Erro ao aprovar pergunta reflexiva")
         return
@@ -72,7 +87,7 @@ export function AvaliarPerguntaReflexivaModal({
       setOpen(false)
       router.refresh()
     } catch (error) {
-      console.error("[v0] Erro ao aprovar:", error)
+      console.error("[v0] MODAL: Erro ao aprovar:", error)
       toast.error("Erro ao aprovar pergunta reflexiva")
     } finally {
       setLoading(false)

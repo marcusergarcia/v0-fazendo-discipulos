@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText } from "lucide-react"
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText, Bell } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
@@ -262,12 +262,25 @@ export default async function DiscipuladorPage() {
               <h1 className="text-3xl font-bold">Painel do Discipulador</h1>
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Voltar
-              </Button>
-            </Link>
+            <div className="flex items-center gap-3">
+              {totalAguardandoAprovacao > 0 && (
+                <div className="relative">
+                  <Bell className="w-6 h-6 text-warning" />
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs min-w-[20px] h-5 flex items-center justify-center"
+                  >
+                    {totalAguardandoAprovacao}
+                  </Badge>
+                </div>
+              )}
+              <Link href="/dashboard">
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
