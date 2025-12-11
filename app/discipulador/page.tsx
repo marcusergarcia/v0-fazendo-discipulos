@@ -470,7 +470,7 @@ export default async function DiscipuladorPage() {
                                       resposta={tarefa.respostaIndividual.resposta}
                                       discipuloId={discipulo.id}
                                       discipuloNome={nome}
-                                      passoNumero={tarefa.passoNumero}
+                                      passoAtual={tarefa.passoNumero} // Fixed prop name from passoNumero to passoAtual
                                       faseNumero={tarefa.faseNumero}
                                       perguntasReflexivasId={tarefa.perguntasRespostaId}
                                       situacaoAtual={tarefa.situacao}
