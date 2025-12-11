@@ -50,6 +50,7 @@ import { TextWithBibleLinks } from "@/components/text-with-bible-links"
 import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
 import { RESUMOS_GERAIS_PASSOS } from "@/constants/resumos-gerais-passos"
+import { ModalCelebracaoPasso } from "@/components/modal-celebracao-passo"
 
 // Removed: let supabaseInstance: ReturnType<typeof createClient> | null = null
 // Removed: const getSupabaseClient = () => {
@@ -101,6 +102,9 @@ export default function PassoClient({
   discipuloId, // Destructure discipuloId
 }: PassoClientProps) {
   const supabase = createClient()
+
+  const [mostrarCelebracao, setMostrarCelebracao] = useState(false)
+  const [xpGanhoTotal, setXpGanhoTotal] = useState(0)
 
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -172,7 +176,7 @@ export default function PassoClient({
 
         const { data, error } = await supabase
           .from("perguntas_reflexivas")
-          .select("respostas, situacao")
+          .select("respostas, situacao, xp_ganho") // Adicionar xp_ganho
           .eq("discipulo_id", discipuloId)
           .eq("passo_numero", numero)
           .maybeSingle()
@@ -195,6 +199,35 @@ export default function PassoClient({
 
     buscarSubmissaoPerguntasReflexivas()
   }, [perguntasReflexivasList, discipuloId, numero])
+
+  useEffect(() => {
+    async function verificarCelebracao() {
+      // Verifica se o passo atual foi recém-validado
+      if (status === "validado") {
+        // Verifica no localStorage se já mostrou a celebração deste passo
+        const chave = `celebracao_mostrada_${discipuloId}_passo_${numero}`
+        const jaMostrou = localStorage.getItem(chave)
+
+        if (!jaMostrou) {
+          // Busca o XP ganho no passo
+          const { data: progressoData } = await supabase
+            .from("progresso_fases")
+            .select("pontuacao_passo_atual")
+            .eq("discipulo_id", discipuloId)
+            .single()
+
+          const xp = progressoData?.pontuacao_passo_atual || 0
+          setXpGanhoTotal(xp)
+          setMostrarCelebracao(true)
+
+          // Marca como já mostrado
+          localStorage.setItem(chave, "true")
+        }
+      }
+    }
+
+    verificarCelebracao()
+  }, [status, discipuloId, numero, supabase])
 
   const handleEnviarPerguntasReflexivas = async () => {
     if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
@@ -1380,6 +1413,15 @@ export default function PassoClient({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {mostrarCelebracao && (
+        <ModalCelebracaoPasso
+          open={mostrarCelebracao}
+          onClose={() => setMostrarCelebracao(false)}
+          passoCompletado={numero}
+          xpGanho={xpGanhoTotal}
+        />
+      )}
 
       <div className="border-t bg-card mt-8">
         <div className="container mx-auto px-4 py-6">
