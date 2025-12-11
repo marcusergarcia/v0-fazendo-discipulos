@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import type React from "react"
+
+import { useEffect, useState, useRef, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
-import { Send, ArrowLeft, Check, CheckCheck } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Send, ArrowLeft, Check, CheckCheck } from "lucide-react"
+import { useRouter } from "next/navigation"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 
 interface Mensagem {
@@ -36,7 +38,7 @@ export default function ChatClient({
   const [novaMensagem, setNovaMensagem] = useState("")
   const [enviando, setEnviando] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
 
   const scrollToBottom = () => {
@@ -69,7 +71,7 @@ export default function ChatClient({
               .update({ lida: true, data_leitura: new Date().toISOString() })
               .eq("id", novaMensagem.id)
           }
-        }
+        },
       )
       .on(
         "postgres_changes",
@@ -81,10 +83,8 @@ export default function ChatClient({
         },
         (payload) => {
           const mensagemAtualizada = payload.new as Mensagem
-          setMensagens((prev) =>
-            prev.map((m) => (m.id === mensagemAtualizada.id ? mensagemAtualizada : m))
-          )
-        }
+          setMensagens((prev) => prev.map((m) => (m.id === mensagemAtualizada.id ? mensagemAtualizada : m)))
+        },
       )
       .subscribe()
 
@@ -142,16 +142,9 @@ export default function ChatClient({
           const ehMinhaMensagem = msg.remetente_id === userId
 
           return (
-            <div
-              key={msg.id}
-              className={`flex ${ehMinhaMensagem ? "justify-end" : "justify-start"}`}
-            >
+            <div key={msg.id} className={`flex ${ehMinhaMensagem ? "justify-end" : "justify-start"}`}>
               <Card
-                className={`max-w-[70%] p-3 ${
-                  ehMinhaMensagem
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
+                className={`max-w-[70%] p-3 ${ehMinhaMensagem ? "bg-primary text-primary-foreground" : "bg-muted"}`}
               >
                 <p className="whitespace-pre-wrap break-words">{msg.mensagem}</p>
                 <div className="flex items-center gap-1 justify-end mt-1">
@@ -198,9 +191,7 @@ export default function ChatClient({
             <Send className="h-5 w-5" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Pressione Enter para enviar, Shift+Enter para nova linha
-        </p>
+        <p className="text-xs text-muted-foreground mt-2">Pressione Enter para enviar, Shift+Enter para nova linha</p>
       </div>
     </div>
   )

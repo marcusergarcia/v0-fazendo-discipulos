@@ -4,8 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 
-export default async function PassoPage({ params }: { params: Promise<{ numero: string }> }) {
-  const { numero: numeroParam } = await params
+export default async function PassoPage({ params }: { params: { numero: string } }) {
+  const { numero: numeroParam } = params
   const numero = Number.parseInt(numeroParam)
 
   if (isNaN(numero) || numero < 1 || numero > 10) {
@@ -97,7 +97,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
   let leiturasSemana: any[] = []
   let capitulosLidos: number[] = []
 
-  if (numero === 1 || numero === 2 || numero === 3 || numero === 4 || numero === 5 || numero === 6) {
+  if (numero >= 1 && numero <= 6) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")
       .select("capitulos_lidos")
