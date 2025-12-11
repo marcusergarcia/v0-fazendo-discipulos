@@ -204,21 +204,31 @@ export default function PassoClient({
     const verificarCelebracao = async () => {
       const supabase = createClient()
 
+      console.log("[v0] Verificando celebração - status:", status, "discipuloId:", discipuloId, "numero:", numero)
+
       // Verifica se o passo atual foi validado e celebração ainda não foi vista
       if (status === "validado") {
-        const { data: progressoData } = await supabase
+        const { data: progressoData, error } = await supabase
           .from("progresso_fases")
-          .select("pontuacao_passo_atual, celebracao_vista")
+          .select("pontuacao_passo_atual, celebracao_vista, passo_atual")
           .eq("discipulo_id", discipuloId)
           .eq("passo_atual", numero)
           .single()
 
+        console.log("[v0] Dados do progresso:", progressoData)
+        console.log("[v0] Erro ao buscar progresso:", error)
+
         // Se a celebração ainda não foi vista, mostra o modal
         if (progressoData && !progressoData.celebracao_vista) {
           const xp = progressoData.pontuacao_passo_atual || 0
+          console.log("[v0] Mostrando celebração! XP:", xp)
           setXpGanhoTotal(xp)
           setMostrarCelebracao(true)
+        } else {
+          console.log("[v0] Celebração já foi vista ou dados não encontrados")
         }
+      } else {
+        console.log("[v0] Status não é 'validado', é:", status)
       }
     }
 

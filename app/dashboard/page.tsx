@@ -27,6 +27,7 @@ import {
   Book,
 } from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
+import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -182,6 +183,23 @@ export default async function DashboardPage() {
     .eq("discipulo_id", discipulo.id)
     .maybeSingle()
 
+  const { data: passoParaCelebrar } = await supabase
+    .from("progresso_passos")
+    .select("*")
+    .eq("discipulo_id", discipulo.id)
+    .eq("status", "validado")
+    .eq("celebracao_vista", false)
+    .order("passo_numero", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  console.log(
+    "[v0] Passo para celebrar:",
+    passoParaCelebrar?.passo_numero,
+    "Celebracao vista:",
+    passoParaCelebrar?.celebracao_vista,
+  )
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -326,6 +344,14 @@ export default async function DashboardPage() {
           </div>
         </div>
       </header>
+
+      {passoParaCelebrar && (
+        <DashboardCelebracaoClient
+          passoNumero={passoParaCelebrar.passo_numero}
+          faseNumero={passoParaCelebrar.fase_numero}
+          discipuloId={discipulo.id}
+        />
+      )}
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Profile Section */}
