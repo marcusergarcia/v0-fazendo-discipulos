@@ -129,10 +129,14 @@ export default async function DashboardPage() {
       etnia: profile?.etnia,
     })
 
+  // Primeiro buscar o ID do perfil do usuário
+  const { data: discipuladorProfile } = await supabase.from("profiles").select("id").eq("id", user.id).single()
+
   const { count: notificationCount } = await supabase
     .from("notificacoes")
     .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
+    .eq("user_id", discipuladorProfile?.id || user.id)
+    .eq("lida", false)
 
   const { data: progressoAtualData } = await supabase
     .from("progresso_fases")

@@ -23,10 +23,12 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
+  const { data: discipuladorProfile } = await supabase.from("profiles").select("id").eq("id", user.id).single()
+
   const { data: notificacoesNaoLidas } = await supabase
     .from("notificacoes")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", discipuladorProfile?.id || user.id)
     .eq("lida", false)
 
   const totalNotificacoesNaoLidas = notificacoesNaoLidas?.length || 0
