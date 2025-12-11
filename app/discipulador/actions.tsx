@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
+import { getPerguntasPasso } from "@/constants/perguntas-passos"
 
 export async function aprovarReflexao(data: {
   reflexaoId: string
@@ -276,11 +277,28 @@ export async function aprovarPerguntaReflexiva(data: {
       data_aprovacao: new Date().toISOString(),
     }
 
-    // Verificar se todas as perguntas foram aprovadas
-    const todasAprovadas = respostasArray.every((r: any) => r.situacao === "aprovado")
-    const xpTotal = respostasArray.reduce((sum: number, r: any) => sum + (r.xp_ganho || 0), 0)
+    const perguntasEsperadas = getPerguntasPasso(data.passoAtual)
+    const totalPerguntasEsperadas = perguntasEsperadas.length
 
-    console.log("[v0] Todas aprovadas?", todasAprovadas, "XP Total:", xpTotal)
+    const perguntasAprovadas = respostasArray.filter((r: any) => r.situacao === "aprovado").length
+    const todasAprovadas = perguntasAprovadas === totalPerguntasEsperadas
+
+    const xpTotal = respostasArray
+      .filter((r: any) => r.situacao === "aprovado")
+      .reduce((sum: number, r: any) => sum + (r.xp_ganho || 0), 0)
+
+    console.log(
+      "[v0] Passo:",
+      data.passoAtual,
+      "- Esperadas:",
+      totalPerguntasEsperadas,
+      "- Aprovadas:",
+      perguntasAprovadas,
+      "- Todas aprovadas?",
+      todasAprovadas,
+      "XP Total:",
+      xpTotal,
+    )
 
     // Atualizar o registro
     const updateData: any = {

@@ -94,6 +94,8 @@ export default async function DiscipuladorPage() {
         .from("progresso_fases")
         .select("*")
         .eq("discipulo_id", discipulo.id)
+        .eq("fase_atual", discipulo.fase_atual)
+        .eq("passo_atual", discipulo.passo_atual)
         .maybeSingle()
 
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
@@ -186,6 +188,13 @@ export default async function DiscipuladorPage() {
         const passoAtualDiscipulo = progressoAtual?.passo_atual || discipulo.passo_atual
 
         const perguntasPassoAtual = PERGUNTAS_POR_PASSO[passoAtualDiscipulo as keyof typeof PERGUNTAS_POR_PASSO] || []
+
+        console.log("[v0] Perguntas Passo Atual:", {
+          discipuloNome: discipulo.profile?.nome_completo,
+          passoAtual: passoAtualDiscipulo,
+          totalPerguntasNoArray: perguntasPassoAtual.length,
+          perguntas: perguntasPassoAtual,
+        })
 
         perguntasPassoAtual.forEach((pergunta, index) => {
           const perguntaId = index + 1
