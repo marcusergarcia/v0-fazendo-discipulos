@@ -247,8 +247,10 @@ export async function aprovarPerguntaReflexiva(data: {
 
   try {
     console.log("[v0] ===== INICIANDO APROVAÇÃO DE PERGUNTA REFLEXIVA INDIVIDUAL =====")
+    console.log("[v0] Params recebidos:", JSON.stringify(data, null, 2))
     console.log("[v0] Perguntas Reflexivas ID:", data.perguntasReflexivasId)
     console.log("[v0] Pergunta ID:", data.perguntaId)
+    console.log("[v0] Passo Atual:", data.passoAtual)
 
     const { data: perguntasReflexivas, error: selectError } = await adminClient
       .from("perguntas_reflexivas")
@@ -261,14 +263,29 @@ export async function aprovarPerguntaReflexiva(data: {
       return { success: false, error: "Perguntas reflexivas não encontradas" }
     }
 
+    console.log("[v0] Registro encontrado:", {
+      id: perguntasReflexivas.id,
+      passo_numero: perguntasReflexivas.passo_numero,
+      situacao: perguntasReflexivas.situacao,
+      respostas_count: perguntasReflexivas.respostas?.length,
+    })
+
     const respostasArray = (perguntasReflexivas.respostas as any[]) || []
+    console.log("[v0] Respostas no array:", respostasArray.length)
+    console.log("[v0] Respostas detalhadas:", JSON.stringify(respostasArray, null, 2))
 
     const respostaIndex = respostasArray.findIndex((r: any) => r.pergunta_id === data.perguntaId)
 
     if (respostaIndex === -1) {
       console.error("[v0] ERRO: Resposta não encontrada para pergunta_id", data.perguntaId)
+      console.error(
+        "[v0] IDs disponíveis:",
+        respostasArray.map((r: any) => r.pergunta_id),
+      )
       return { success: false, error: "Resposta não encontrada" }
     }
+
+    console.log("[v0] Resposta encontrada no index:", respostaIndex)
 
     respostasArray[respostaIndex] = {
       ...respostasArray[respostaIndex],
@@ -277,6 +294,8 @@ export async function aprovarPerguntaReflexiva(data: {
       feedback: data.feedback,
       data_aprovacao: new Date().toISOString(),
     }
+
+    console.log("[v0] Resposta atualizada:", respostasArray[respostaIndex])
 
     const { data: discipulo } = await adminClient
       .from("discipulos")
@@ -296,18 +315,13 @@ export async function aprovarPerguntaReflexiva(data: {
       .filter((r: any) => r.situacao === "aprovado")
       .reduce((sum: number, r: any) => sum + (r.xp_ganho || 0), 0)
 
-    console.log(
-      "[v0] Passo:",
-      data.passoAtual,
-      "- Esperadas:",
-      totalPerguntasEsperadas,
-      "- Aprovadas:",
-      perguntasAprovadas,
-      "- Todas aprovadas?",
-      todasAprovadas,
-      "XP Total:",
-      xpTotal,
-    )
+    console.log("[v0] ===== VERIFICAÇÃO DE APROVAÇÃO =====")
+    console.log("[v0] Passo Atual:", data.passoAtual)
+    console.log("[v0] Perguntas Esperadas:", totalPerguntasEsperadas)
+    console.log("[v0] Perguntas Aprovadas:", perguntasAprovadas)
+    console.log("[v0] Todas Aprovadas?", todasAprovadas)
+    console.log("[v0] XP Total:", xpTotal)
+    console.log("[v0] =====================================")
 
     const updateData: any = {
       respostas: respostasArray,
@@ -319,7 +333,11 @@ export async function aprovarPerguntaReflexiva(data: {
       updateData.data_aprovacao = new Date().toISOString()
       updateData.discipulador_id = discipuladorId
       updateData.feedback_discipulador = "Todas as perguntas reflexivas foram aprovadas"
+
+      console.log("[v0] TODAS PERGUNTAS APROVADAS! Atualizando campos globais:", updateData)
     }
+
+    console.log("[v0] Fazendo UPDATE com:", JSON.stringify(updateData, null, 2))
 
     const { error: updateError } = await adminClient
       .from("perguntas_reflexivas")
@@ -330,6 +348,8 @@ export async function aprovarPerguntaReflexiva(data: {
       console.error("[v0] ERRO ao atualizar:", updateError)
       return { success: false, error: updateError.message }
     }
+
+    console.log("[v0] UPDATE executado com sucesso!")
 
     const { data: progresso } = await adminClient
       .from("progresso_fases")
@@ -351,6 +371,7 @@ export async function aprovarPerguntaReflexiva(data: {
     }
 
     if (todasAprovadas && perguntasReflexivas.notificacao_id) {
+      console.log("[v0] Deletando notificação:", perguntasReflexivas.notificacao_id)
       await adminClient.from("notificacoes").delete().eq("id", perguntasReflexivas.notificacao_id)
       console.log("[v0] Notificação removida - todas as perguntas aprovadas")
 
@@ -452,7 +473,7 @@ async function verificarLiberacaoProximoPasso(
         videos_assistidos: [],
         artigos_lidos: [],
       })
-      .eq("discipulo_id", discipuloId)
+      .eq("id", progresso.id)
 
     // Transferir XP para o discípulo
     const { data: disc } = await adminClient
