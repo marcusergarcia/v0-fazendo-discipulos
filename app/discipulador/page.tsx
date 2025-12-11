@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText, Bell } from "lucide-react"
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { ReflexoesClient } from "./discipulador-reflexoes-client"
 import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 import { CopiarLinkBoasVindas } from "@/components/copiar-link-boas-vindas"
 import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
 import { AvaliarPerguntaReflexivaModal } from "@/components/avaliar-pergunta-reflexiva-modal"
+import { cn } from "@/lib/utils"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -22,6 +23,14 @@ export default async function DiscipuladorPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
+  const { data: notificacoesNaoLidas } = await supabase
+    .from("notificacoes")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("lida", false)
+
+  const totalNotificacoesNaoLidas = notificacoesNaoLidas?.length || 0
+
   const { data: discipulosPendentesAprovacao } = await supabase
     .from("discipulos")
     .select("*")
@@ -29,7 +38,7 @@ export default async function DiscipuladorPage() {
     .eq("aprovado_discipulador", false)
     .is("user_id", null)
 
-  const totalAguardandoAprovacao = discipulosPendentesAprovacao?.length || 0
+  const totalAguardandoAprovacao = totalNotificacoesNaoLidas + (discipulosPendentesAprovacao?.length || 0)
 
   const { data: discipulos } = await supabase
     .from("discipulos")
@@ -263,18 +272,21 @@ export default async function DiscipuladorPage() {
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Sino de notificações */}
               <div className="relative">
-                <Bell
-                  className={`w-6 h-6 ${totalAguardandoAprovacao > 0 ? "text-warning" : "text-muted-foreground"}`}
-                />
-                {totalAguardandoAprovacao > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs min-w-[20px] h-5 flex items-center justify-center"
-                  >
-                    {totalAguardandoAprovacao}
-                  </Badge>
-                )}
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell
+                    className={cn(
+                      "h-5 w-5",
+                      totalAguardandoAprovacao > 0 ? "text-yellow-500" : "text-muted-foreground",
+                    )}
+                  />
+                  {totalAguardandoAprovacao > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                      {totalAguardandoAprovacao}
+                    </Badge>
+                  )}
+                </Button>
               </div>
               <Link href="/dashboard">
                 <Button variant="outline" size="sm">
@@ -400,7 +412,7 @@ export default async function DiscipuladorPage() {
                         <div className="flex items-center gap-4 flex-1">
                           <div className="relative">
                             <Avatar className="w-20 h-20">
-                              <AvatarImage src={foto || "/placeholder.svg"} alt={nome} />
+                              <img src={foto || "/placeholder.svg"} alt={nome} />
                               <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                                 {iniciais}
                               </AvatarFallback>
