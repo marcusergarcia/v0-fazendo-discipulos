@@ -441,6 +441,7 @@ async function verificarLiberacaoProximoPasso(
         reflexoes_concluidas: 0,
         videos_assistidos: [],
         artigos_lidos: [],
+        celebracao_vista: false, // Reset para mostrar celebração do próximo passo
       })
       .eq("discipulo_id", discipuloId)
 
@@ -463,6 +464,7 @@ async function verificarLiberacaoProximoPasso(
         .eq("id", discipuloId)
 
       console.log("[v0] Passo", passoAtual, "concluído! Passo", proximoPasso, "liberado!")
+      console.log("[v0] celebracao_vista resetada - modal aparecerá no próximo login")
 
       return null
     }

@@ -201,33 +201,42 @@ export default function PassoClient({
   }, [perguntasReflexivasList, discipuloId, numero])
 
   useEffect(() => {
-    async function verificarCelebracao() {
-      // Verifica se o passo atual foi recém-validado
+    const verificarCelebracao = async () => {
+      const supabase = createClient()
+
+      // Verifica se o passo atual foi validado e celebração ainda não foi vista
       if (status === "validado") {
-        // Verifica no localStorage se já mostrou a celebração deste passo
-        const chave = `celebracao_mostrada_${discipuloId}_passo_${numero}`
-        const jaMostrou = localStorage.getItem(chave)
+        const { data: progressoData } = await supabase
+          .from("progresso_fases")
+          .select("pontuacao_passo_atual, celebracao_vista")
+          .eq("discipulo_id", discipuloId)
+          .eq("passo_atual", numero)
+          .single()
 
-        if (!jaMostrou) {
-          // Busca o XP ganho no passo
-          const { data: progressoData } = await supabase
-            .from("progresso_fases")
-            .select("pontuacao_passo_atual")
-            .eq("discipulo_id", discipuloId)
-            .single()
-
-          const xp = progressoData?.pontuacao_passo_atual || 0
+        // Se a celebração ainda não foi vista, mostra o modal
+        if (progressoData && !progressoData.celebracao_vista) {
+          const xp = progressoData.pontuacao_passo_atual || 0
           setXpGanhoTotal(xp)
           setMostrarCelebracao(true)
-
-          // Marca como já mostrado
-          localStorage.setItem(chave, "true")
         }
       }
     }
 
     verificarCelebracao()
-  }, [status, discipuloId, numero, supabase])
+  }, [status, discipuloId, numero])
+
+  const handleFecharCelebracao = async () => {
+    const supabase = createClient()
+
+    // Atualiza a flag no banco de dados
+    await supabase
+      .from("progresso_fases")
+      .update({ celebracao_vista: true })
+      .eq("discipulo_id", discipuloId)
+      .eq("passo_atual", numero)
+
+    setMostrarCelebracao(false)
+  }
 
   const handleEnviarPerguntasReflexivas = async () => {
     if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
@@ -1414,10 +1423,11 @@ export default function PassoClient({
         </DialogContent>
       </Dialog>
 
+      {/* Modal de Celebração */}
       {mostrarCelebracao && (
         <ModalCelebracaoPasso
           open={mostrarCelebracao}
-          onClose={() => setMostrarCelebracao(false)}
+          onClose={handleFecharCelebracao}
           passoCompletado={numero}
           xpGanho={xpGanhoTotal}
         />
