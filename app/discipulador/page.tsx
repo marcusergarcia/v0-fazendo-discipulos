@@ -263,17 +263,19 @@ export default async function DiscipuladorPage() {
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
             <div className="flex items-center gap-3">
-              {totalAguardandoAprovacao > 0 && (
-                <div className="relative">
-                  <Bell className="w-6 h-6 text-warning" />
+              <div className="relative">
+                <Bell
+                  className={`w-6 h-6 ${totalAguardandoAprovacao > 0 ? "text-warning" : "text-muted-foreground"}`}
+                />
+                {totalAguardandoAprovacao > 0 && (
                   <Badge
                     variant="destructive"
                     className="absolute -top-2 -right-2 px-1.5 py-0.5 text-xs min-w-[20px] h-5 flex items-center justify-center"
                   >
                     {totalAguardandoAprovacao}
                   </Badge>
-                </div>
-              )}
+                )}
+              </div>
               <Link href="/dashboard">
                 <Button variant="outline" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
