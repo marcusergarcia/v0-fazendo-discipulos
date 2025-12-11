@@ -253,7 +253,6 @@ export default function PassoClient({
 
     return todasAprovadas && todosConteudos.length === totalEsperado
   }, [passo.videos, passo.artigos])
-  // </CHANGE>
 
   const perguntasReflexivasEnviadas = perguntasReflexivas?.situacao === "enviado"
   const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
@@ -269,18 +268,19 @@ export default function PassoClient({
     return todosCapitulosLidos
   }, [leiturasSemana, capitulosLidos])
 
-  // const jaAvancou = discipulo.passo_atual > numero
-
-  // console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
-  // console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
-  // console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
-  // console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
-  // console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida())
-  // console.log("[v0] status:", status)
-  // console.log("[v0] jaAvancou:", jaAvancou)
-  // console.log("[v0] isPrMarcus:", isPrMarcus)
-
   const jaAvancou = discipulo.passo_atual > numero
+
+  console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
+  console.log("[v0] Passo:", numero)
+  console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
+  console.log("[v0] perguntasReflexivas:", perguntasReflexivas)
+  console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
+  console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
+  console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida)
+  console.log("[v0] status:", status)
+  console.log("[v0] jaAvancou:", jaAvancou)
+  console.log("[v0] discipulo.passo_atual:", discipulo.passo_atual)
+  console.log("[v0] isPrMarcus:", isPrMarcus)
 
   const podeReceberRecompensas = useMemo(() => {
     if (isPrMarcus) return false // Pr. Marcus has a different flow
