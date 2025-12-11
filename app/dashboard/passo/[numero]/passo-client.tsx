@@ -92,6 +92,8 @@ export default function PassoClient({
   capitulosLidos = [], // Inicializar com array vazio
   discipuloId, // Destructure discipuloId
 }: PassoClientProps) {
+  const [supabase] = useState(() => createClient())
+
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
     try {
@@ -137,8 +139,6 @@ export default function PassoClient({
 
   useEffect(() => {
     const carregarReflexoes = async () => {
-      const supabase = createClient()
-
       const { data } = await supabase
         .from("reflexoes_passo")
         .select("*")
@@ -151,12 +151,10 @@ export default function PassoClient({
     }
 
     carregarReflexoes()
-  }, [discipulo.id, numero])
+  }, [discipulo.id, numero, supabase])
 
   const buscarSubmissaoPerguntasReflexivas = useCallback(async () => {
     if (!discipulo?.id) return
-
-    const supabase = createClient()
 
     const { data, error } = await supabase
       .from("perguntas_reflexivas")
@@ -170,7 +168,7 @@ export default function PassoClient({
     } else {
       setSubmissaoPerguntasReflexivas(null)
     }
-  }, [discipulo, numero])
+  }, [discipulo, numero, supabase])
 
   useEffect(() => {
     buscarSubmissaoPerguntasReflexivas()
@@ -423,7 +421,6 @@ export default function PassoClient({
     try {
       // Se for Pr. Marcus, aprovar automaticamente primeiro
       if (isPrMarcus) {
-        const supabase = createClient()
         const { error: aprovacaoError } = await supabase.rpc("aprovar_tarefas_pr_marcus", {
           p_fase_numero: 1,
           p_passo_numero: numero,

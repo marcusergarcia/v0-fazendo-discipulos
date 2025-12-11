@@ -131,7 +131,7 @@ export async function aprovarReflexao(data: {
       .from("perguntas_reflexivas")
       .select("situacao")
       .eq("discipulo_id", data.discipuloId)
-      .eq("passo_atual", data.passoAtual)
+      .eq("passo_numero", data.passoAtual)
       .maybeSingle()
 
     const perguntasReflexivasAprovadas = perguntasReflexivas?.situacao === "aprovado"
