@@ -461,3 +461,195 @@ async function verificarLiberacaoProximoPasso(
     }
   }
 }
+
+export async function aprovarPerguntasReflexivas(data: {
+  perguntasId: string
+  discipuloId: string
+  feedback: string
+  xpConcedido: number
+  faseNumero: number
+  passoNumero: number
+  situacaoAtual: string
+}) {
+  const adminClient = createAdminClient()
+
+  try {
+    console.log("[v0] ===== INICIANDO APROVAÇÃO DE PERGUNTAS REFLEXIVAS (TODAS) =====")
+    console.log("[v0] Perguntas ID:", data.perguntasId)
+    console.log("[v0] Discípulo ID:", data.discipuloId)
+    console.log("[v0] Situação atual:", data.situacaoAtual)
+
+    if (data.situacaoAtual === "aprovado") {
+      return { error: "Estas perguntas já foram aprovadas anteriormente" }
+    }
+
+    // Atualizar perguntas reflexivas
+    const { error: updateError } = await adminClient
+      .from("perguntas_reflexivas")
+      .update({
+        feedback_discipulador: data.feedback,
+        xp_ganho: data.xpConcedido,
+        data_aprovacao: new Date().toISOString(),
+        situacao: "aprovado",
+      })
+      .eq("id", data.perguntasId)
+
+    if (updateError) {
+      console.error("[v0] ERRO ao atualizar perguntas:", updateError)
+      return { error: "Erro ao atualizar perguntas: " + updateError.message }
+    }
+
+    console.log("[v0] Perguntas atualizadas com sucesso")
+
+    // Atualizar progresso_fases
+    const { data: progresso } = await adminClient
+      .from("progresso_fases")
+      .select("*")
+      .eq("discipulo_id", data.discipuloId)
+      .single()
+
+    if (progresso) {
+      const pontuacaoAtual = progresso.pontuacao_passo_atual || 0
+      const novaPontuacao = pontuacaoAtual + data.xpConcedido
+
+      await adminClient
+        .from("progresso_fases")
+        .update({
+          pontuacao_passo_atual: novaPontuacao,
+        })
+        .eq("discipulo_id", data.discipuloId)
+
+      console.log("[v0] ✅ XP adicionado à pontuação do passo:", data.xpConcedido)
+    }
+
+    // Deletar notificação
+    const { data: notificacao } = await adminClient
+      .from("notificacoes")
+      .select("id")
+      .eq("tipo", "perguntas_reflexivas")
+      .eq("discipulo_id", data.discipuloId)
+      .maybeSingle()
+
+    if (notificacao) {
+      await adminClient.from("notificacoes").delete().eq("id", notificacao.id)
+      console.log("[v0] Notificação deletada")
+    }
+
+    // Verificar se pode liberar próximo passo
+    const { data: discipuloInfo } = await adminClient
+      .from("discipulos")
+      .select("passo_atual")
+      .eq("id", data.discipuloId)
+      .single()
+
+    if (discipuloInfo) {
+      const passoAtual = discipuloInfo.passo_atual
+
+      // Verificar reflexões
+      const { data: reflexoesPasso } = await adminClient
+        .from("reflexoes_passo")
+        .select("tipo, feedbacks, conteudos_ids")
+        .eq("discipulo_id", data.discipuloId)
+        .eq("passo_numero", passoAtual)
+
+      const todasReflexoesAprovadas =
+        reflexoesPasso &&
+        reflexoesPasso.length > 0 &&
+        reflexoesPasso.every((r: any) => {
+          const feedbacks = (r.feedbacks as any[]) || []
+          const conteudos = r.conteudos_ids || []
+          return conteudos.every((conteudoId: string) => feedbacks.some((f: any) => f.conteudo_id === conteudoId))
+        })
+
+      if (todasReflexoesAprovadas) {
+        console.log("[v0] Todas as reflexões e perguntas aprovadas! Verificando leitura bíblica...")
+
+        const semanaCorrespondente = passoAtual
+
+        const { data: planoSemana } = await adminClient
+          .from("plano_leitura_biblica")
+          .select("capitulos_semana")
+          .eq("semana", semanaCorrespondente)
+          .single()
+
+        let leituraBiblicaConcluida = false
+        if (planoSemana && planoSemana.capitulos_semana) {
+          const { data: leiturasDiscipulo } = await adminClient
+            .from("leituras_capitulos")
+            .select("capitulos_lidos")
+            .eq("discipulo_id", data.discipuloId)
+            .single()
+
+          const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
+          const capitulosSemana = planoSemana.capitulos_semana
+          leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
+
+          console.log("[v0] Verificação leitura bíblica:", {
+            semana: semanaCorrespondente,
+            leituraConcluida: leituraBiblicaConcluida,
+          })
+        }
+
+        if (!leituraBiblicaConcluida) {
+          console.log("[v0] Leitura bíblica pendente")
+          return {
+            success: true,
+            leituraPendente: semanaCorrespondente,
+          }
+        }
+
+        // Transferir XP e liberar próximo passo
+        const { data: progressoCompleto } = await adminClient
+          .from("progresso_fases")
+          .select("pontuacao_passo_atual")
+          .eq("discipulo_id", data.discipuloId)
+          .single()
+
+        const pontosDoPassoCompleto = progressoCompleto?.pontuacao_passo_atual || 0
+
+        await adminClient
+          .from("progresso_fases")
+          .update({
+            pontuacao_passo_atual: 0,
+            reflexoes_concluidas: 0,
+            videos_assistidos: [],
+            artigos_lidos: [],
+          })
+          .eq("discipulo_id", data.discipuloId)
+
+        const { data: disc } = await adminClient
+          .from("discipulos")
+          .select("xp_total")
+          .eq("id", data.discipuloId)
+          .single()
+
+        if (disc) {
+          const proximoPasso = passoAtual + 1
+
+          await adminClient
+            .from("discipulos")
+            .update({
+              xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
+              passo_atual: proximoPasso <= 10 ? proximoPasso : passoAtual,
+            })
+            .eq("id", data.discipuloId)
+
+          console.log("[v0] ✅ Transferidos", pontosDoPassoCompleto, "XP e passo", proximoPasso, "liberado")
+
+          return {
+            success: true,
+            proximoPasso: proximoPasso <= 10 ? proximoPasso : null,
+          }
+        }
+      }
+    }
+
+    console.log("[v0] ===== APROVAÇÃO CONCLUÍDA COM SUCESSO =====")
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Erro ao aprovar perguntas reflexivas:", error)
+    return { error: "Erro ao aprovar perguntas reflexivas" }
+  } finally {
+    revalidatePath("/discipulador")
+  }
+}

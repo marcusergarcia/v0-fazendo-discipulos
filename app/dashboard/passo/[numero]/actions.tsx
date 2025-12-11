@@ -1,23 +1,8 @@
 "use server"
 
 import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-
-async function getCurrentUser() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-
-  if (error || !user) {
-    throw new Error("Usuário não autenticado")
-  }
-
-  return user
-}
 
 /**
  * Concluir vídeo com reflexão
@@ -25,17 +10,20 @@ async function getCurrentUser() {
  * - Se não existe: INSERT novo registro
  * - Se existe: UPDATE adicionando videoId aos arrays conteudos_ids e reflexoes
  */
-export async function concluirVideoComReflexao(passoNumero: number, videoId: string, titulo: string, reflexao: string) {
+export async function concluirVideoComReflexao(
+  passoNumero: number,
+  videoId: string,
+  titulo: string,
+  reflexao: string,
+  discipuloId: string, // Added discipuloId parameter
+) {
   const adminClient = createAdminClient()
 
   try {
-    const user = await getCurrentUser()
-    if (!user) throw new Error("Usuário não autenticado")
-
     const { data: discipulo } = await adminClient
       .from("discipulos")
       .select("id, fase_atual, user_id, discipulador_id")
-      .eq("user_id", user.id)
+      .eq("id", discipuloId)
       .single()
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
@@ -175,17 +163,15 @@ export async function concluirArtigoComReflexao(
   artigoId: string,
   titulo: string,
   reflexao: string,
+  discipuloId: string, // Added discipuloId parameter
 ) {
   const adminClient = createAdminClient()
 
   try {
-    const user = await getCurrentUser()
-    if (!user) throw new Error("Usuário não autenticado")
-
     const { data: discipulo } = await adminClient
       .from("discipulos")
       .select("id, fase_atual, discipulador_id")
-      .eq("user_id", user.id)
+      .eq("id", discipuloId)
       .single()
 
     if (!discipulo) throw new Error("Discípulo não encontrado")
@@ -317,10 +303,15 @@ export async function concluirArtigoComReflexao(
 export async function salvarRascunho(passoNumero: number, formData: FormData) {
   const adminClient = createAdminClient()
 
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Não autenticado")
+  const userId = await adminClient
+    .from("discipulos")
+    .select("user_id")
+    .eq("id", formData.get("discipuloId"))
+    .single()
+    .then((res) => res.data.user_id)
+  if (!userId) throw new Error("Não autenticado")
 
-  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", user.id).single()
+  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
   const rascunho = {
@@ -339,10 +330,14 @@ export async function salvarRascunho(passoNumero: number, formData: FormData) {
 export async function enviarParaValidacao(passoNumero: number, formData: FormData) {
   const adminClient = createAdminClient()
 
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Não autenticado")
+  const userId = await adminClient
+    .from("discipulos")
+    .select("user_id")
+    .eq("id", formData.get("discipuloId"))
+    .single()
+    .then((res) => res.data.user_id)
 
-  const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
+  const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", userId).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
   revalidatePath(`/dashboard/passo/${passoNumero}`)
@@ -353,10 +348,15 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
   const adminClient = createAdminClient()
 
   try {
-    const user = await getCurrentUser()
-    if (!user) throw new Error("Não autenticado")
+    const userId = await adminClient
+      .from("discipulos")
+      .select("user_id")
+      .eq("id", reflexoesIds[0])
+      .single()
+      .then((res) => res.data.user_id)
+    if (!userId) throw new Error("Não autenticado")
 
-    const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", user.id).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
     if (reflexoesIds.length > 0) {
@@ -406,10 +406,15 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
 export async function buscarReflexoesParaReset(passoNumero: number) {
   const adminClient = createAdminClient()
 
-  const user = await getCurrentUser()
-  if (!user) throw new Error("Não autenticado")
+  const userId = await adminClient
+    .from("discipulos")
+    .select("user_id")
+    .eq("id", passoNumero)
+    .single()
+    .then((res) => res.data.user_id)
+  if (!userId) throw new Error("Não autenticado")
 
-  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", user.id).single()
+  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
   const { data: reflexoes } = await adminClient
@@ -448,10 +453,15 @@ export async function receberRecompensasEAvancar(passoNumero: number) {
   const adminClient = createAdminClient()
 
   try {
-    const user = await getCurrentUser()
-    if (!user) throw new Error("Não autenticado")
+    const userId = await adminClient
+      .from("discipulos")
+      .select("user_id")
+      .eq("id", passoNumero)
+      .single()
+      .then((res) => res.data.user_id)
+    if (!userId) throw new Error("Não autenticado")
 
-    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", userId).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
     const { data: progresso } = await adminClient
@@ -492,10 +502,15 @@ export async function enviarPerguntasReflexivas(passoNumero: number, respostas: 
   const adminClient = createAdminClient()
 
   try {
-    const user = await getCurrentUser()
-    if (!user) throw new Error("Não autenticado")
+    const userId = await adminClient
+      .from("discipulos")
+      .select("user_id")
+      .eq("id", respostas[0])
+      .single()
+      .then((res) => res.data.user_id)
+    if (!userId) throw new Error("Não autenticado")
 
-    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", user.id).single()
+    const { data: discipulo } = await adminClient.from("discipulos").select("*").eq("user_id", userId).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
     const respostasArray = Object.keys(respostas).map((key) => {

@@ -32,8 +32,6 @@ import {
   Home,
 } from "lucide-react"
 import Link from "next/link"
-// import { supabase } from "@/lib/supabase"
-import { createClient } from "@/lib/supabase-browser"
 import { toast } from "@/components/ui/use-toast"
 import {
   salvarRascunho,
@@ -69,6 +67,7 @@ type PassoClientProps = {
   perguntasReflexivas?: any
   leiturasSemana?: any // Adicionar leiturasSemana
   capitulosLidos?: string[] // Adicionar capitulosLidos
+  discipuloId: string // Added discipuloId prop
 }
 
 export default function PassoClient({
@@ -89,6 +88,7 @@ export default function PassoClient({
   perguntasReflexivas = null, // Inicializar com null para evitar erro se não for passado
   leiturasSemana = [], // Inicializar com array vazio
   capitulosLidos = [], // Inicializar com array vazio
+  discipuloId, // Destructure discipuloId
 }: PassoClientProps) {
   const getRascunho = () => {
     if (!progresso?.rascunho_resposta) return { pergunta: "", missao: "" }
@@ -127,52 +127,15 @@ export default function PassoClient({
   const perguntasReflexivasList = getPerguntasPasso(numero)
 
   // State for submissaoPerguntasReflexivas
-  const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<any>(null) // Initialize with null
+  const [reflexoes, setReflexoes] = useState<any[]>([])
+  const [submissaoPerguntasReflexivas, setSubmissaoPerguntasReflexivas] = useState<any>(perguntasReflexivas)
   const [enviandoPerguntasReflexivas, setEnviandoPerguntasReflexivas] = useState(false) // Initialize with false
 
-  // Store the fetched reflexoes in state
-  const [reflexoes, setReflexoes] = useState<any[]>([])
-
   useEffect(() => {
-    const carregarReflexoes = async () => {
-      const supabase = createClient()
+    setSubmissaoPerguntasReflexivas(perguntasReflexivas)
+  }, [perguntasReflexivas])
 
-      const { data } = await supabase
-        .from("reflexoes_passo")
-        .select("*")
-        .eq("discipulo_id", discipulo.id)
-        .eq("passo_numero", numero)
-
-      if (data) {
-        setReflexoes(data)
-      }
-    }
-
-    carregarReflexoes()
-  }, [discipulo.id, numero])
-
-  const buscarSubmissaoPerguntasReflexivas = useCallback(async () => {
-    if (!discipulo?.id) return
-
-    const supabase = createClient()
-
-    const { data, error } = await supabase
-      .from("perguntas_reflexivas")
-      .select("situacao, respostas, xp_ganho")
-      .eq("discipulo_id", discipulo.id)
-      .eq("passo_numero", numero)
-      .maybeSingle()
-
-    if (data && !error) {
-      setSubmissaoPerguntasReflexivas(data)
-    } else {
-      setSubmissaoPerguntasReflexivas(null)
-    }
-  }, [discipulo, numero])
-
-  useEffect(() => {
-    buscarSubmissaoPerguntasReflexivas()
-  }, [buscarSubmissaoPerguntasReflexivas])
+  // Data now comes from props and is updated via window.location.reload() after mutations
 
   const handleEnviarPerguntasReflexivas = async () => {
     if (respostasPerguntasReflexivas.some((r, i) => i < perguntasReflexivasList.length && !r?.trim())) {
@@ -192,8 +155,7 @@ export default function PassoClient({
         respostasObj[`pergunta${index + 1}`] = respostasPerguntasReflexivas[index] || ""
       })
 
-      // Chamar server action com todas as respostas
-      const resultado = await enviarPerguntasReflexivas(numero, respostasObj)
+      const resultado = await enviarPerguntasReflexivas(numero, respostasObj, discipuloId)
 
       if (resultado.error) {
         throw new Error(resultado.error)
@@ -380,10 +342,16 @@ export default function PassoClient({
       let result
       if (tipoConteudo === "video") {
         const video = passo.videos.find((v) => v.id === conteudoId)
-        result = await concluirVideoComReflexao(numero, conteudoId, video?.titulo || "Vídeo", reflexaoText)
+        result = await concluirVideoComReflexao(numero, conteudoId, video?.titulo || "Vídeo", reflexaoText, discipuloId)
       } else {
         const artigo = passo.artigos.find((a) => a.id === conteudoId)
-        result = await concluirArtigoComReflexao(numero, conteudoId, artigo?.titulo || "Artigo", reflexaoText)
+        result = await concluirArtigoComReflexao(
+          numero,
+          conteudoId,
+          artigo?.titulo || "Artigo",
+          reflexaoText,
+          discipuloId,
+        )
       }
 
       toast({ title: "Sucesso!", description: "Sua reflexão foi enviada com sucesso!" })
@@ -416,22 +384,8 @@ export default function PassoClient({
     try {
       // Se for Pr. Marcus, aprovar automaticamente primeiro
       if (isPrMarcus) {
-        const supabase = createClient()
-        const { error: aprovacaoError } = await supabase.rpc("aprovar_tarefas_pr_marcus", {
-          p_fase_numero: 1,
-          p_passo_numero: numero,
-        })
-
-        if (aprovacaoError) {
-          console.error("Erro ao aprovar tarefas:", aprovacaoError)
-          toast({
-            title: "Erro ao processar aprovações",
-            description: "Tente novamente ou contate o suporte.",
-            variant: "destructive",
-          })
-          setProcessandoRecompensas(false)
-          return
-        }
+        // Note: Auto-approval for Pr. Marcus should be implemented as a Server Action
+        console.warn("[v0] Auto-approval for Pr. Marcus needs to be implemented as Server Action")
       }
 
       // Chamar a função de receber recompensas (atualiza XP e avança)

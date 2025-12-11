@@ -7,9 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { FileText, CheckCircle, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
+import { aprovarPerguntasReflexivas } from "@/app/discipulador/actions"
 
 interface PerguntaResposta {
   pergunta_id: number
@@ -42,7 +42,6 @@ export function AvaliarPerguntasReflexivasModal({
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
-  const supabase = createClient()
 
   const perguntasTexto = PERGUNTAS_POR_PASSO[perguntasResposta.passo_numero] || []
 
@@ -55,190 +54,37 @@ export function AvaliarPerguntasReflexivasModal({
     setLoading(true)
 
     try {
-      console.log("[v0] ===== INICIANDO APROVAÇÃO DE PERGUNTAS REFLEXIVAS =====")
-      console.log("[v0] Perguntas ID:", perguntasResposta.id)
-      console.log("[v0] Discípulo ID:", discipuloId)
-      console.log("[v0] Situação atual:", perguntasResposta.situacao)
+      const result = await aprovarPerguntasReflexivas({
+        perguntasId: perguntasResposta.id,
+        discipuloId,
+        feedback,
+        xpConcedido,
+        faseNumero: perguntasResposta.fase_numero,
+        passoNumero: perguntasResposta.passo_numero,
+        situacaoAtual: perguntasResposta.situacao,
+      })
 
-      if (perguntasResposta.situacao === "aprovado") {
-        toast.error("Estas perguntas já foram aprovadas anteriormente")
-        setLoading(false)
-        setOpen(false)
-        return
-      }
-
-      console.log("[v0] Atualizando perguntas reflexivas para aprovado...")
-      const { data: perguntasAtualizadas, error: updateError } = await supabase
-        .from("perguntas_reflexivas")
-        .update({
-          feedback_discipulador: feedback,
-          xp_ganho: xpConcedido,
-          data_aprovacao: new Date().toISOString(),
-          situacao: "aprovado",
-        })
-        .eq("id", perguntasResposta.id)
-        .select()
-
-      if (updateError) {
-        console.error("[v0] ERRO ao atualizar perguntas:", updateError)
-        toast.error("Erro ao atualizar perguntas: " + updateError.message)
+      if (result.error) {
+        toast.error(result.error)
         setLoading(false)
         return
       }
 
-      console.log("[v0] Perguntas atualizadas com sucesso:", perguntasAtualizadas)
-
-      const { data: progresso } = await supabase
-        .from("progresso_fases")
-        .select("*")
-        .eq("discipulo_id", discipuloId)
-        .single()
-
-      console.log("[v0] Progresso encontrado:", progresso)
-
-      if (progresso) {
-        const pontuacaoAtual = progresso.pontuacao_passo_atual || 0
-        const novaPontuacao = pontuacaoAtual + xpConcedido
-
-        await supabase
-          .from("progresso_fases")
-          .update({
-            pontuacao_passo_atual: novaPontuacao,
-          })
-          .eq("discipulo_id", discipuloId)
-
-        console.log("[v0] ✅ XP adicionado à pontuação do passo:", xpConcedido)
+      if (result.proximoPasso) {
+        toast.success(`Parabéns! Passo ${result.proximoPasso - 1} concluído. Passo ${result.proximoPasso} liberado!`)
+      } else if (result.leituraPendente) {
+        toast.warning(`Leitura bíblica da semana ${result.leituraPendente} ainda não foi concluída`)
+      } else {
+        toast.success(`Perguntas reflexivas aprovadas! +${xpConcedido} XP concedido`)
       }
 
-      const { data: notificacao } = await supabase
-        .from("notificacoes")
-        .select("id")
-        .eq("perguntas_reflexivas_id", perguntasResposta.id)
-        .maybeSingle()
-
-      console.log("[v0] Notificação de perguntas reflexivas encontrada:", notificacao)
-
-      if (notificacao) {
-        const { error: deleteNotifError } = await supabase.from("notificacoes").delete().eq("id", notificacao.id)
-        console.log("[v0] Notificação deletada. Erro?", deleteNotifError)
-      }
-
-      const { data: discipuloInfo } = await supabase
-        .from("discipulos")
-        .select("passo_atual")
-        .eq("id", discipuloId)
-        .single()
-
-      console.log("[v0] Discipulo info encontrado:", discipuloInfo)
-
-      if (discipuloInfo) {
-        const passoAtual = discipuloInfo.passo_atual
-
-        const { data: reflexoesPasso } = await supabase
-          .from("reflexoes_passo")
-          .select("tipo, feedbacks")
-          .eq("discipulo_id", discipuloId)
-          .eq("passo_numero", passoAtual)
-
-        // Check if all videos and articles have feedbacks (approved)
-        const videoReflexao = reflexoesPasso?.find((r) => r.tipo === "video")
-        const artigoReflexao = reflexoesPasso?.find((r) => r.tipo === "artigo")
-
-        const videosAprovados =
-          videoReflexao?.feedbacks && Array.isArray(videoReflexao.feedbacks) && videoReflexao.feedbacks.length > 0
-        const artigosAprovados =
-          artigoReflexao?.feedbacks && Array.isArray(artigoReflexao.feedbacks) && artigoReflexao.feedbacks.length > 0
-
-        const todasReflexoesAprovadas = videosAprovados && artigosAprovados
-
-        const perguntasReflexivasAprovadas = true
-
-        if (todasReflexoesAprovadas && perguntasReflexivasAprovadas) {
-          console.log("[v0] Todas as reflexões e perguntas reflexivas aprovadas! Verificando leitura bíblica...")
-
-          const semanaCorrespondente = passoAtual
-
-          const { data: planoSemana } = await supabase
-            .from("plano_leitura_biblica")
-            .select("capitulos_semana")
-            .eq("semana", semanaCorrespondente)
-            .single()
-
-          let leituraBiblicaConcluida = false
-          if (planoSemana && planoSemana.capitulos_semana) {
-            const { data: leiturasDiscipulo } = await supabase
-              .from("leituras_capitulos")
-              .select("capitulos_lidos")
-              .eq("discipulo_id", discipuloId)
-              .single()
-
-            const capitulosLidos = new Set(leiturasDiscipulo?.capitulos_lidos || [])
-            const capitulosSemana = planoSemana.capitulos_semana
-            leituraBiblicaConcluida = capitulosSemana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
-
-            console.log("[v0] Verificação leitura bíblica:", {
-              semana: semanaCorrespondente,
-              capitulosSemana,
-              capitulosLidos: Array.from(capitulosLidos),
-              leituraConcluida: leituraBiblicaConcluida,
-            })
-          }
-
-          if (!leituraBiblicaConcluida) {
-            toast.warning(`Leitura bíblica da semana ${semanaCorrespondente} ainda não foi concluída`)
-            setLoading(false)
-            setOpen(false)
-            onAprovado?.(xpConcedido)
-            return
-          }
-
-          const { data: progressoCompleto } = await supabase
-            .from("progresso_fases")
-            .select("pontuacao_passo_atual")
-            .eq("discipulo_id", discipuloId)
-            .single()
-
-          const pontosDoPassoCompleto = progressoCompleto?.pontuacao_passo_atual || 0
-
-          await supabase
-            .from("progresso_fases")
-            .update({
-              pontuacao_passo_atual: 0,
-              reflexoes_concluidas: 0,
-              videos_assistidos: [],
-              artigos_lidos: [],
-            })
-            .eq("discipulo_id", discipuloId)
-
-          const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
-
-          if (disc) {
-            await supabase
-              .from("discipulos")
-              .update({ xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto })
-              .eq("id", discipuloId)
-
-            console.log("[v0] ✅ Transferidos", pontosDoPassoCompleto, "XP do passo para xp_total do discípulo")
-          }
-
-          const proximoPasso = passoAtual + 1
-
-          if (proximoPasso <= 10) {
-            await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", discipuloId)
-
-            console.log(`[v0] Passo ${proximoPasso} liberado automaticamente!`)
-            toast.success(`Parabéns! Passo ${passoAtual} concluído. Passo ${proximoPasso} liberado!`)
-          }
-        }
-      }
-
-      console.log("[v0] ===== APROVAÇÃO CONCLUÍDA COM SUCESSO =====")
-      toast.success(`Perguntas reflexivas aprovadas! +${xpConcedido} XP concedido`)
       setOpen(false)
 
       if (onAprovado) {
         onAprovado(xpConcedido)
       }
+
+      window.location.reload()
     } catch (error) {
       console.error("[v0] Erro ao aprovar perguntas reflexivas:", error)
       toast.error("Erro ao aprovar perguntas reflexivas")

@@ -228,6 +228,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       perguntasReflexivas={perguntasReflexivas}
       leiturasSemana={leiturasSemana}
       capitulosLidos={capitulosLidos}
+      discipuloId={discipulo.id} // Added discipuloId prop to pass to client
     />
   )
 }

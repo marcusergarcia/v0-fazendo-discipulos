@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Loader2, Clock } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { aprovarPerguntaReflexiva } from "@/app/discipulador/actions"
 
@@ -41,7 +40,6 @@ export function AvaliarPerguntaReflexivaModal({
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(false)
   const [xpConcedido, setXpConcedido] = useState(20)
-  const supabase = createClient()
   const router = useRouter()
 
   async function handleAprovar() {
@@ -76,96 +74,6 @@ export function AvaliarPerguntaReflexivaModal({
       toast.error("Erro ao aprovar pergunta reflexiva")
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function verificarLiberacaoProximoPasso(
-    discipuloId: string,
-    passoAtual: number,
-    xpPerguntasReflexivas: number,
-  ) {
-    // Changed from reflexoes_conteudo to reflexoes_passo
-    const { data: reflexoesPasso } = await supabase
-      .from("reflexoes_passo")
-      .select("tipo, feedbacks")
-      .eq("discipulo_id", discipuloId)
-      .eq("passo_numero", passoAtual)
-
-    // Check if all videos and articles have feedbacks (approved)
-    const videoReflexao = reflexoesPasso?.find((r) => r.tipo === "video")
-    const artigoReflexao = reflexoesPasso?.find((r) => r.tipo === "artigo")
-
-    const videosAprovados =
-      videoReflexao?.feedbacks && Array.isArray(videoReflexao.feedbacks) && videoReflexao.feedbacks.length > 0
-    const artigosAprovados =
-      artigoReflexao?.feedbacks && Array.isArray(artigoReflexao.feedbacks) && artigoReflexao.feedbacks.length > 0
-
-    const todasReflexoesAprovadas = videosAprovados && artigosAprovados
-
-    if (!todasReflexoesAprovadas) {
-      console.log("[v0] Reflexões de conteúdo ainda pendentes")
-      return
-    }
-
-    // Verificar leitura bíblica
-    const { data: planoSemana } = await supabase
-      .from("plano_leitura_biblica")
-      .select("capitulos_semana")
-      .eq("semana", passoAtual)
-      .single()
-
-    let leituraConcluida = false
-    if (planoSemana) {
-      const { data: leituras } = await supabase
-        .from("leituras_capitulos")
-        .select("capitulos_lidos")
-        .eq("discipulo_id", discipuloId)
-        .single()
-
-      const capitulosLidos = new Set(leituras?.capitulos_lidos || [])
-      leituraConcluida = planoSemana.capitulos_semana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
-    }
-
-    if (!leituraConcluida) {
-      toast.warning(`Leitura bíblica da semana ${passoAtual} ainda não foi concluída`)
-      return
-    }
-
-    // Marcar passo como completado
-    const { data: progresso } = await supabase
-      .from("progresso_fases")
-      .select("pontuacao_passo_atual")
-      .eq("discipulo_id", discipuloId)
-      .single()
-
-    if (progresso) {
-      await supabase
-        .from("progresso_fases")
-        .update({
-          pontuacao_passo_atual: 0,
-          reflexoes_concluidas: 0,
-          videos_assistidos: [],
-          artigos_lidos: [],
-        })
-        .eq("discipulo_id", discipuloId)
-
-      // Transferir XP para o discípulo
-      const { data: disc } = await supabase.from("discipulos").select("xp_total").eq("id", discipuloId).single()
-
-      if (disc) {
-        await supabase
-          .from("discipulos")
-          .update({ xp_total: (disc.xp_total || 0) + progresso.pontuacao_passo_atual })
-          .eq("id", discipuloId)
-      }
-
-      // Liberar próximo passo
-      const proximoPasso = passoAtual + 1
-      if (proximoPasso <= 10) {
-        await supabase.from("discipulos").update({ passo_atual: proximoPasso }).eq("id", discipuloId)
-
-        toast.success(`Passo ${passoAtual} concluído! Passo ${proximoPasso} liberado!`)
-      }
     }
   }
 

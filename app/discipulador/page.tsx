@@ -71,8 +71,24 @@ export default async function DiscipuladorPage() {
       const perguntasDiscipulo = perguntasReflexivas?.filter((p) => p.discipulo_id === discipulo.id) || []
 
       const perguntasResposta = perguntasDiscipulo.find(
-        (pr) => pr.discipulo_id === discipulo.id && pr.fase_numero === 1 && pr.passo_numero === 1,
+        (pr) =>
+          pr.discipulo_id === discipulo.id &&
+          pr.fase_numero === discipulo.fase_atual &&
+          pr.passo_numero === discipulo.passo_atual,
       )
+
+      console.log("[v0] Perguntas Debug:", {
+        discipuloNome: discipulo.profile?.nome_completo,
+        passoAtual: discipulo.passo_atual,
+        totalPerguntasDiscipulo: perguntasDiscipulo.length,
+        perguntasResposta: perguntasResposta
+          ? {
+              id: perguntasResposta.id,
+              situacao: perguntasResposta.situacao,
+              respostas: perguntasResposta.respostas,
+            }
+          : null,
+      })
 
       const { data: progressoAtual } = await supabase
         .from("progresso_fases")
@@ -169,7 +185,7 @@ export default async function DiscipuladorPage() {
         const faseAtualDiscipulo = progressoAtual?.fase_atual || discipulo.fase_atual
         const passoAtualDiscipulo = progressoAtual?.passo_atual || discipulo.passo_atual
 
-        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[1 as keyof typeof PERGUNTAS_POR_PASSO] || []
+        const perguntasPassoAtual = PERGUNTAS_POR_PASSO[passoAtualDiscipulo as keyof typeof PERGUNTAS_POR_PASSO] || []
 
         perguntasPassoAtual.forEach((pergunta, index) => {
           const perguntaId = index + 1
@@ -203,6 +219,14 @@ export default async function DiscipuladorPage() {
             situacao: situacaoPergunta,
             faseNumero: faseAtualDiscipulo,
             passoNumero: passoAtualDiscipulo,
+          })
+
+          console.log("[v0] Tarefa Pergunta Criada:", {
+            perguntaId,
+            situacao: situacaoPergunta,
+            xp: xpPergunta,
+            respostaEspecifica,
+            temRespostaIndividual: !!respostaEspecifica,
           })
         })
       }
