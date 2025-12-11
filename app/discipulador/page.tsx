@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText, Bell } from "lucide-react"
+import { Users, MessageCircle, CheckCircle, Clock, TrendingUp, ArrowLeft, Video, FileText } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
@@ -13,7 +13,7 @@ import { generateAvatar, calcularIdade } from "@/lib/generate-avatar"
 import { CopiarLinkBoasVindas } from "@/components/copiar-link-boas-vindas"
 import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
 import { AvaliarPerguntaReflexivaModal } from "@/components/avaliar-pergunta-reflexiva-modal"
-import { cn } from "@/lib/utils"
+import { SinoNotificacoesDiscipulador } from "@/components/sino-notificacoes-discipulador"
 
 export default async function DiscipuladorPage() {
   const supabase = await createClient()
@@ -25,13 +25,7 @@ export default async function DiscipuladorPage() {
 
   const { data: discipuladorProfile } = await supabase.from("profiles").select("id").eq("id", user.id).single()
 
-  const { data: notificacoesNaoLidas } = await supabase
-    .from("notificacoes")
-    .select("*")
-    .eq("user_id", discipuladorProfile?.id || user.id)
-    .eq("lida", false)
-
-  const totalNotificacoesNaoLidas = notificacoesNaoLidas?.length || 0
+  // Ao invés disso, vamos contar diretamente reflexões e perguntas pendentes
 
   const { data: discipulosPendentesAprovacao } = await supabase
     .from("discipulos")
@@ -40,13 +34,32 @@ export default async function DiscipuladorPage() {
     .eq("aprovado_discipulador", false)
     .is("user_id", null)
 
-  const totalAguardandoAprovacao = totalNotificacoesNaoLidas + (discipulosPendentesAprovacao?.length || 0)
-
   const { data: discipulos } = await supabase
     .from("discipulos")
     .select("*")
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
+
+  const discipuloIds = discipulos?.map((d) => d.id) || []
+
+  const { data: todasReflexoes } = await supabase.from("reflexoes_passo").select("*").eq("discipulador_id", user.id)
+
+  const { data: perguntasReflexivas } = await supabase
+    .from("perguntas_reflexivas")
+    .select("*")
+    .in("discipulo_id", discipuloIds)
+
+  const reflexoesPendentes = todasReflexoes?.filter((r) => r.situacao === "enviado").length || 0
+  const perguntasPendentes = perguntasReflexivas?.filter((p) => p.situacao === "enviado").length || 0
+
+  const totalAguardandoAprovacao = reflexoesPendentes + perguntasPendentes + (discipulosPendentesAprovacao?.length || 0)
+
+  console.log("[v0] Contador de Aprovações:", {
+    reflexoesPendentes,
+    perguntasPendentes,
+    novosDisciplos: discipulosPendentesAprovacao?.length || 0,
+    total: totalAguardandoAprovacao,
+  })
 
   const discipulosComPerfil = await Promise.all(
     (discipulos || []).map(async (disc) => {
@@ -60,24 +73,10 @@ export default async function DiscipuladorPage() {
     }),
   )
 
-  const discipuloIds = discipulos?.map((d) => d.id) || []
-
-  const { data: todasReflexoes } = await supabase.from("reflexoes_passo").select("*").eq("discipulador_id", user.id)
-
-  const { data: progressosPendentes } = await supabase
-    .from("progresso_fases")
-    .select("*")
-    .in("discipulo_id", discipuloIds)
-
-  const { data: perguntasReflexivas } = await supabase
-    .from("perguntas_reflexivas")
-    .select("*")
-    .in("discipulo_id", discipuloIds)
-
   const dadosPorDiscipulo = await Promise.all(
     discipulosComPerfil.map(async (discipulo) => {
       const reflexoesDiscipulo = todasReflexoes?.filter((r) => r.discipulo_id === discipulo.id) || []
-      const progressosDiscipulo = progressosPendentes?.filter((p) => p.discipulo_id === discipulo.id) || []
+      const progressosDiscipulo = discipulo.progresso_fases || []
 
       const perguntasDiscipulo = perguntasReflexivas?.filter((p) => p.discipulo_id === discipulo.id) || []
 
@@ -101,13 +100,12 @@ export default async function DiscipuladorPage() {
           : null,
       })
 
-      const { data: progressoAtual } = await supabase
-        .from("progresso_fases")
-        .select("*")
-        .eq("discipulo_id", discipulo.id)
-        .eq("fase_atual", discipulo.fase_atual)
-        .eq("passo_atual", discipulo.passo_atual)
-        .maybeSingle()
+      const progressoAtual = progressosDiscipulo.find(
+        (p) =>
+          p.discipulo_id === discipulo.id &&
+          p.fase_atual === discipulo.fase_atual &&
+          p.passo_atual === discipulo.passo_atual,
+      )
 
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
       const tarefas = []
@@ -274,25 +272,34 @@ export default async function DiscipuladorPage() {
               <p className="text-muted-foreground mt-1">Acompanhe e valide seus discípulos</p>
             </div>
             <div className="flex items-center gap-3">
-              {/* Sino de notificações */}
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell
-                    className={cn(
-                      "h-5 w-5",
-                      totalAguardandoAprovacao > 0 ? "text-yellow-500" : "text-muted-foreground",
-                    )}
-                  />
-                  {totalAguardandoAprovacao > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
-                      {totalAguardandoAprovacao}
-                    </Badge>
-                  )}
-                </Button>
-              </div>
+              <SinoNotificacoesDiscipulador
+                totalNotificacoes={totalAguardandoAprovacao}
+                notificacoes={[
+                  ...todasReflexoes
+                    .filter((r) => r.situacao === "enviado")
+                    .map((r) => ({
+                      tipo: "reflexao_enviada",
+                      discipulo_nome:
+                        discipulos.find((d) => d.id === r.discipulo_id)?.nome_completo_temp || "Discípulo",
+                      passo: r.passo_numero,
+                    })),
+                  ...perguntasReflexivas
+                    .filter((p) => p.situacao === "enviado")
+                    .map((p) => ({
+                      tipo: "pergunta_enviada",
+                      discipulo_nome:
+                        discipulos.find((d) => d.id === p.discipulo_id)?.nome_completo_temp || "Discípulo",
+                      passo: p.passo_numero,
+                    })),
+                  ...discipulosPendentesAprovacao.map((d) => ({
+                    tipo: "novo_discipulo",
+                    discipulo_nome: d.nome_completo_temp || "Novo Discípulo",
+                  })),
+                ]}
+              />
               <Link href="/dashboard">
-                <Button variant="outline" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                <Button variant="outline" className="gap-2 bg-transparent">
+                  <ArrowLeft className="h-4 w-4" />
                   Voltar
                 </Button>
               </Link>

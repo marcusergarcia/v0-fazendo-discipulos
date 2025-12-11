@@ -201,6 +201,11 @@ export async function aprovarReflexao(data: {
             success: true,
             message: `Reflexão aprovada! Passo ${data.passoAtual} concluído. Passo ${proximoPasso} liberado!`,
             xpConcedido: data.xpConcedido,
+            celebracao: {
+              passoCompletado: data.passoAtual,
+              xpGanho: pontosDoPassoCompleto,
+              proximoPasso: proximoPasso,
+            },
           }
         }
       } else {
@@ -374,14 +379,22 @@ export async function aprovarPerguntaReflexiva(data: {
       await adminClient.from("notificacoes").delete().eq("id", perguntasReflexivas.notificacao_id)
       console.log("[v0] Notificação removida - todas as perguntas aprovadas")
 
-      await verificarLiberacaoProximoPasso(adminClient, data.discipuloId, data.passoAtual, xpTotal)
-
-      console.log("[v0] ===== TODAS PERGUNTAS APROVADAS - XP TOTAL:", xpTotal, "=====")
-      return {
-        success: true,
-        message: `Todas as perguntas aprovadas! +${xpTotal} XP concedido ao discípulo`,
-        todasAprovadas: true,
+      const celebracaoDados = await verificarLiberacaoProximoPasso(
+        adminClient,
+        data.discipuloId,
+        data.passoAtual,
         xpTotal,
+      )
+
+      if (celebracaoDados) {
+        console.log("[v0] ===== TODAS PERGUNTAS APROVADAS - XP TOTAL:", xpTotal, "=====")
+        return {
+          success: true,
+          message: `Todas as perguntas aprovadas! +${xpTotal} XP concedido ao discípulo`,
+          todasAprovadas: true,
+          xpTotal,
+          celebracao: celebracaoDados, // Adicionar dados da celebração
+        }
       }
     }
 
@@ -414,7 +427,7 @@ async function verificarLiberacaoProximoPasso(
 
   if (!reflexoesPasso || reflexoesPasso.length === 0) {
     console.log("[v0] Reflexões de conteúdo ainda pendentes")
-    return
+    return null
   }
 
   // Verificar se todos os vídeos e artigos foram aprovados
@@ -426,7 +439,7 @@ async function verificarLiberacaoProximoPasso(
 
   if (!todasReflexoesAprovadas) {
     console.log("[v0] Reflexões de conteúdo ainda pendentes")
-    return
+    return null
   }
 
   // Verificar leitura bíblica
@@ -450,7 +463,7 @@ async function verificarLiberacaoProximoPasso(
 
   if (!leituraConcluida) {
     console.log("[v0] Leitura bíblica ainda não foi concluída")
-    return
+    return null
   }
 
   // Marcar passo como completado e liberar próximo
@@ -492,6 +505,91 @@ async function verificarLiberacaoProximoPasso(
         .eq("id", discipuloId)
 
       console.log("[v0] Passo", passoAtual, "concluído! Passo", proximoPasso, "liberado!")
+
+      return {
+        passoCompletado: passoAtual,
+        xpGanho: pontosDoPassoCompleto,
+        proximoPasso: proximoPasso,
+      }
     }
+  }
+
+  return null
+}
+
+export async function limparTodasNotificacoes() {
+  const adminClient = createAdminClient()
+
+  try {
+    console.log("[v0] Limpando todas as notificações do discipulador")
+
+    // Buscar o usuário atual
+    const {
+      data: { user },
+      error: userError,
+    } = await adminClient.auth.getUser()
+
+    if (userError || !user) {
+      console.error("[v0] Erro ao buscar usuário:", userError)
+      return { success: false, error: "Usuário não encontrado" }
+    }
+
+    // Buscar o perfil do discipulador
+    const { data: profile } = await adminClient.from("profiles").select("id").eq("id", user.id).single()
+
+    if (!profile) {
+      return { success: false, error: "Perfil não encontrado" }
+    }
+
+    // Limpar notificações de reflexões enviadas
+    const { data: reflexoesEnviadas } = await adminClient
+      .from("reflexoes_passo")
+      .update({ notificacao_id: null })
+      .eq("discipulador_id", user.id)
+      .eq("situacao", "enviado")
+      .select()
+
+    // Limpar notificações de perguntas enviadas
+    const { data: perguntasEnviadas } = await adminClient
+      .from("perguntas_reflexivas")
+      .update({ notificacao_id: null })
+      .match({ situacao: "enviado" })
+      .select()
+
+    // Deletar notificações relacionadas
+    const notificacoesIds: string[] = []
+
+    if (reflexoesEnviadas) {
+      reflexoesEnviadas.forEach((r: any) => {
+        if (r.notificacao_id) notificacoesIds.push(r.notificacao_id)
+      })
+    }
+
+    if (perguntasEnviadas) {
+      perguntasEnviadas.forEach((p: any) => {
+        if (p.notificacao_id) notificacoesIds.push(p.notificacao_id)
+      })
+    }
+
+    if (notificacoesIds.length > 0) {
+      await adminClient.from("notificacoes").delete().in("id", notificacoesIds)
+    }
+
+    // Deletar notificações de novos discípulos não lidas
+    await adminClient
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", profile.id)
+      .eq("tipo", "novo_discipulo")
+      .eq("lida", false)
+
+    console.log("[v0] Notificações limpas com sucesso")
+
+    revalidatePath("/discipulador")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Erro ao limpar notificações:", error)
+    return { success: false, error: "Erro ao limpar notificações" }
   }
 }

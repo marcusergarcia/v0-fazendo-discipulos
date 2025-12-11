@@ -1156,21 +1156,7 @@ export default function PassoClient({
 
         {/* Seção removida: Card "Suas Respostas" com pergunta única e missão */}
 
-        {podeReceberRecompensas && (
-          <Card className="mb-6 border-primary/50 bg-primary/5">
-            <CardContent className="pt-6">
-              <div className="flex justify-center">
-                <button
-                  onClick={handleReceberRecompensas}
-                  disabled={processandoRecompensas}
-                  className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:from-amber-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {processandoRecompensas ? "Processando..." : "🎉 Receber Recompensas e Avançar Próximo Passo"}
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* O sistema agora avança automaticamente quando o discipulador aprovar todas as tarefas */}
 
         {discipuladorId ? (
           <Link href={`/dashboard/chat/com/${discipuladorId}`}>
