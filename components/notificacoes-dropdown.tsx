@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -26,32 +27,112 @@ type Notificacao = {
   tipo: string
 }
 
-export function NotificacoesDropdown({
-  userId,
-  notificacoesIniciais = [],
-}: {
-  userId: string
-  notificacoesIniciais?: Notificacao[]
-}) {
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>(notificacoesIniciais)
+export function NotificacoesDropdown({ userId }: { userId: string }) {
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([])
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
-  const naoLidas = notificacoes.length
+  const naoLidas = notificacoes.filter((n) => !n.lida).length
+
+  useEffect(() => {
+    carregarNotificacoes()
+
+    // Atualizar notificações em tempo real
+    const channel = supabase
+      .channel("notificacoes-changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notificacoes",
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          carregarNotificacoes()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId])
+
+  async function carregarNotificacoes() {
+    const { data, error } = await supabase
+      .from("notificacoes")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("lida", false) // Apenas notificações não lidas
+      .order("created_at", { ascending: false })
+      .limit(10)
+
+    if (!error && data) {
+      setNotificacoes(data)
+    }
+    setLoading(false)
+  }
 
   async function marcarComoLida(notificacao: Notificacao) {
+    // Excluir a notificação do banco
+    await supabase.from("notificacoes").delete().eq("id", notificacao.id)
+
+    // Atualizar a lista localmente
     setNotificacoes((prev) => prev.filter((n) => n.id !== notificacao.id))
 
     if (notificacao.link) {
       router.push(notificacao.link)
     }
-
-    router.refresh()
   }
 
   async function marcarTodasComoLidas() {
+    console.log("[v0] Iniciando limpeza de todas as notificações para userId:", userId)
+
+    const { data: notificacoesDoUsuario, error: notifError } = await supabase
+      .from("notificacoes")
+      .select("id")
+      .eq("user_id", userId)
+
+    if (notifError) {
+      console.error("[v0] Erro ao buscar notificações:", notifError)
+      return
+    }
+
+    if (!notificacoesDoUsuario || notificacoesDoUsuario.length === 0) {
+      console.log("[v0] Nenhuma notificação encontrada para deletar")
+      setNotificacoes([])
+      return
+    }
+
+    const notificacaoIds = notificacoesDoUsuario.map((n) => n.id)
+    console.log("[v0] Total de notificações a deletar:", notificacaoIds.length)
+    console.log("[v0] IDs das notificações:", notificacaoIds)
+
+    const { error: perguntasError } = await supabase
+      .from("perguntas_reflexivas")
+      .update({ notificacao_id: null })
+      .in("notificacao_id", notificacaoIds)
+
+    if (perguntasError) {
+      console.error("[v0] Erro ao limpar referências de perguntas_reflexivas:", perguntasError)
+    } else {
+      console.log("[v0] Referências de perguntas_reflexivas limpas com sucesso")
+    }
+
+    const { error: deleteError, count } = await supabase.from("notificacoes").delete().eq("user_id", userId).select()
+
+    if (deleteError) {
+      console.error("[v0] Erro ao deletar notificações:", deleteError)
+    } else {
+      console.log("[v0] Notificações deletadas com sucesso. Count:", count)
+    }
+
     setNotificacoes([])
 
-    router.refresh()
+    // Reload to ensure sync with database
+    carregarNotificacoes()
   }
 
   return (
@@ -79,19 +160,21 @@ export function NotificacoesDropdown({
           )}
         </div>
         <DropdownMenuSeparator />
-        {notificacoes.length === 0 ? (
+        {loading ? (
+          <div className="p-4 text-center text-sm text-muted-foreground">Carregando...</div>
+        ) : notificacoes.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">Nenhuma notificação</div>
         ) : (
           <div className="max-h-[400px] overflow-y-auto">
             {notificacoes.map((notificacao) => (
               <DropdownMenuItem
                 key={notificacao.id}
-                className="cursor-pointer flex-col items-start gap-1 p-3 bg-primary/5"
+                className={`cursor-pointer flex-col items-start gap-1 p-3 ${!notificacao.lida ? "bg-primary/5" : ""}`}
                 onClick={() => marcarComoLida(notificacao)}
               >
                 <div className="flex items-start justify-between w-full gap-2">
                   <div className="font-medium text-sm">{notificacao.titulo}</div>
-                  <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />
+                  {!notificacao.lida && <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1" />}
                 </div>
                 <div className="text-xs text-muted-foreground">{notificacao.mensagem}</div>
                 <div className="text-xs text-muted-foreground">

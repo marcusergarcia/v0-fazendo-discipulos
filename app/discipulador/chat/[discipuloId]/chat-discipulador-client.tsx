@@ -1,15 +1,13 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft, Send, MessageCircle, Check, CheckCheck } from "lucide-react"
+import { ArrowLeft, Send, MessageCircle, Check, CheckCheck } from 'lucide-react'
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 
 type Mensagem = {
   id: string
@@ -40,7 +38,7 @@ export default function ChatDiscipuladorClient({
   const [novaMensagem, setNovaMensagem] = useState("")
   const [enviando, setEnviando] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const supabase = useMemo(() => createClient(), [])
+  const supabase = createClient()
   const router = useRouter()
 
   const scrollToBottom = () => {
@@ -53,19 +51,19 @@ export default function ChatDiscipuladorClient({
 
   useEffect(() => {
     const channel = supabase
-      .channel("mensagens-discipulador")
+      .channel('mensagens-discipulador')
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "INSERT",
-          schema: "public",
-          table: "mensagens",
+          event: 'INSERT',
+          schema: 'public',
+          table: 'mensagens',
           filter: `discipulo_id=eq.${discipuloId}`,
         },
         (payload) => {
           const novaMensagem = payload.new as Mensagem
           setMensagens((prev) => [...prev, novaMensagem])
-
+          
           // Se a mensagem é do discípulo, marcar como lida automaticamente
           if (novaMensagem.remetente_id === discipuloUserId) {
             supabase
@@ -75,25 +73,31 @@ export default function ChatDiscipuladorClient({
               .then(() => {
                 setMensagens((prev) =>
                   prev.map((msg) =>
-                    msg.id === novaMensagem.id ? { ...msg, lida: true, data_leitura: new Date().toISOString() } : msg,
-                  ),
+                    msg.id === novaMensagem.id
+                      ? { ...msg, lida: true, data_leitura: new Date().toISOString() }
+                      : msg
+                  )
                 )
               })
           }
-        },
+        }
       )
       .on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "UPDATE",
-          schema: "public",
-          table: "mensagens",
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'mensagens',
           filter: `discipulo_id=eq.${discipuloId}`,
         },
         (payload) => {
           const mensagemAtualizada = payload.new as Mensagem
-          setMensagens((prev) => prev.map((msg) => (msg.id === mensagemAtualizada.id ? mensagemAtualizada : msg)))
-        },
+          setMensagens((prev) =>
+            prev.map((msg) =>
+              msg.id === mensagemAtualizada.id ? mensagemAtualizada : msg
+            )
+          )
+        }
       )
       .subscribe()
 
@@ -104,7 +108,7 @@ export default function ChatDiscipuladorClient({
 
   const enviarMensagem = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    
     if (!novaMensagem.trim() || enviando) return
 
     setEnviando(true)
@@ -140,7 +144,9 @@ export default function ChatDiscipuladorClient({
             </Link>
             <div className="flex-1">
               <h1 className="text-xl font-bold">Chat com {discipuloNome}</h1>
-              <p className="text-sm text-muted-foreground">Converse sobre a jornada do discípulo</p>
+              <p className="text-sm text-muted-foreground">
+                Converse sobre a jornada do discípulo
+              </p>
             </div>
           </div>
         </div>
@@ -160,7 +166,9 @@ export default function ChatDiscipuladorClient({
                 mensagens.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`p-4 rounded-lg ${msg.remetente_id === userId ? "bg-primary/10 ml-8" : "bg-muted mr-8"}`}
+                    className={`p-4 rounded-lg ${
+                      msg.remetente_id === userId ? "bg-primary/10 ml-8" : "bg-muted mr-8"
+                    }`}
                   >
                     <p className="text-sm font-medium mb-1">
                       {msg.remetente_id === userId ? "Você (Discipulador)" : discipuloNome}
