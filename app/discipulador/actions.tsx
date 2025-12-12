@@ -346,6 +346,16 @@ export async function aprovarPerguntaReflexiva(data: {
       await adminClient.from("notificacoes").delete().eq("id", perguntasReflexivas.notificacao_id)
       console.log("[v0] Notificação removida - todas as perguntas aprovadas")
 
+      console.log("[v0] 🚀 CHAMANDO verificarLiberacaoProximoPasso agora...")
+      console.log(
+        "[v0] Parâmetros: discipuloId =",
+        data.discipuloId,
+        "passoAtual =",
+        data.passoAtual,
+        "xpTotal =",
+        xpTotal,
+      )
+
       // Verificar e liberar próximo passo automaticamente
       await verificarLiberacaoProximoPasso(adminClient, data.discipuloId, data.passoAtual, xpTotal)
 
