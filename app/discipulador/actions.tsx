@@ -181,18 +181,29 @@ export async function aprovarReflexao(data: {
         // Transferir XP para o discípulo
         const { data: disc } = await adminClient
           .from("discipulos")
-          .select("xp_total, passo_atual")
+          .select("xp_total, passo_atual, fase_atual")
           .eq("id", data.discipuloId)
           .single()
 
+        console.log(
+          "[v0] Discípulo atual - XP:",
+          disc?.xp_total,
+          "Fase:",
+          disc?.fase_atual,
+          "Passo:",
+          disc?.passo_atual,
+        )
+
         if (disc) {
           const proximoPasso = data.passoAtual + 1
+          const proximaFase = Math.ceil(proximoPasso / 10)
 
           const { error: updateDiscipuloError } = await adminClient
             .from("discipulos")
             .update({
-              xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
+              fase_atual: proximaFase,
               passo_atual: proximoPasso <= 10 ? proximoPasso : disc.passo_atual,
+              xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
             })
             .eq("id", data.discipuloId)
 
@@ -504,7 +515,7 @@ async function verificarLiberacaoProximoPasso(
   // Marcar passo como completado e liberar próximo
   const { data: progresso } = await adminClient
     .from("progresso_fases")
-    .select("id, pontuacao_passo_atual, celebracao_vista")
+    .select("id, pontuacao_passo_atual, celebracao_vista, fase_atual, passo_atual")
     .eq("discipulo_id", discipuloId)
     .single()
 
@@ -513,47 +524,55 @@ async function verificarLiberacaoProximoPasso(
     progresso?.pontuacao_passo_atual,
     "Celebração vista:",
     progresso?.celebracao_vista,
+    "Fase:",
+    progresso?.fase_atual,
+    "Passo:",
+    progresso?.passo_atual,
   )
 
   if (progresso) {
     const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
+    const proximoPasso = passoAtual + 1
+    const proximaFase = Math.ceil(proximoPasso / 10)
 
     const { error: updateProgressoError } = await adminClient
       .from("progresso_fases")
       .update({
+        fase_atual: proximaFase,
+        passo_atual: proximoPasso,
         pontuacao_passo_atual: 0,
         reflexoes_concluidas: 0,
         videos_assistidos: [],
         artigos_lidos: [],
-        celebracao_vista: false, // Reset para mostrar celebração do próximo passo
-        pontuacao_passo_anterior: pontosDoPassoCompleto, // Salvar XP do passo completado
+        celebracao_vista: false,
+        pontuacao_passo_anterior: pontosDoPassoCompleto,
       })
       .eq("id", progresso.id)
 
     if (updateProgressoError) {
       console.error("[v0] ERRO ao atualizar progresso_fases:", updateProgressoError)
     } else {
-      console.log("[v0] ✅ progresso_fases atualizado - celebracao_vista agora é FALSE")
+      console.log("[v0] ✅ progresso_fases atualizado - Fase:", proximaFase, "Passo:", proximoPasso)
+      console.log("[v0] ✅ celebracao_vista agora é FALSE")
       console.log("[v0] ✅ pontuacao_passo_anterior salva:", pontosDoPassoCompleto)
     }
 
     // Transferir XP para o discípulo
     const { data: disc } = await adminClient
       .from("discipulos")
-      .select("xp_total, passo_atual")
+      .select("xp_total, passo_atual, fase_atual")
       .eq("id", discipuloId)
       .single()
 
-    console.log("[v0] Discípulo atual - XP:", disc?.xp_total, "Passo:", disc?.passo_atual)
+    console.log("[v0] Discípulo atual - XP:", disc?.xp_total, "Fase:", disc?.fase_atual, "Passo:", disc?.passo_atual)
 
     if (disc) {
-      const proximoPasso = passoAtual + 1
-
       const { error: updateDiscipuloError } = await adminClient
         .from("discipulos")
         .update({
-          xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
+          fase_atual: proximaFase,
           passo_atual: proximoPasso <= 10 ? proximoPasso : disc.passo_atual,
+          xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
         })
         .eq("id", discipuloId)
 
@@ -561,7 +580,9 @@ async function verificarLiberacaoProximoPasso(
         console.error("[v0] ERRO ao atualizar discípulo:", updateDiscipuloError)
       } else {
         console.log(
-          "[v0] ✅ Discípulo atualizado - Novo passo:",
+          "[v0] ✅ Discípulo atualizado - Fase:",
+          proximaFase,
+          "Passo:",
           proximoPasso,
           "XP total:",
           (disc.xp_total || 0) + pontosDoPassoCompleto,
