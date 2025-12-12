@@ -564,3 +564,28 @@ export async function enviarPerguntasReflexivas(
     return { success: false, error: error.message }
   }
 }
+
+export async function marcarCelebracaoVista(discipuloId: string, faseNumero: number, passoNumero: number) {
+  const adminClient = createAdminClient()
+
+  try {
+    const { error } = await adminClient
+      .from("progresso_passos")
+      .update({ celebracao_vista: true })
+      .eq("discipulo_id", discipuloId)
+      .eq("fase_numero", faseNumero)
+      .eq("passo_numero", passoNumero)
+
+    if (error) {
+      console.error("[v0] Erro ao marcar celebração como vista:", error)
+      throw error
+    }
+
+    console.log("[v0] Celebração marcada como vista com sucesso")
+    revalidatePath("/dashboard")
+    return { success: true }
+  } catch (error) {
+    console.error("[v0] Erro em marcarCelebracaoVista:", error)
+    return { success: false, error: error.message }
+  }
+}

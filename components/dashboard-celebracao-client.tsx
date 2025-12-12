@@ -10,7 +10,11 @@ interface DashboardCelebracaoClientProps {
   discipuloId: string
 }
 
-export function DashboardCelebracaoClient({ passoNumero, faseNumero, discipuloId }: DashboardCelebracaoClientProps) {
+export default function DashboardCelebracaoClient({
+  passoNumero,
+  faseNumero,
+  discipuloId,
+}: DashboardCelebracaoClientProps) {
   const [showCelebracao, setShowCelebracao] = useState(true)
 
   console.log("[v0] DashboardCelebracaoClient - Passo:", passoNumero, "Fase:", faseNumero)
