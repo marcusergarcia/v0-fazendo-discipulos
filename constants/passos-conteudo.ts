@@ -526,4 +526,6 @@ export const PASSOS_CONTEUDO = {
   },
 }
 
+export const passosConteudo = PASSOS_CONTEUDO
+
 export type PassoNumero = keyof typeof PASSOS_CONTEUDO

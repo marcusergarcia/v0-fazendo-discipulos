@@ -3,6 +3,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
+import { passosConteudo } from "@/constants/passos-conteudo"
 
 export async function aprovarReflexao(data: {
   reflexaoId: string
@@ -187,7 +188,7 @@ export async function aprovarReflexao(data: {
         if (disc) {
           const proximoPasso = data.passoAtual + 1
 
-          await adminClient
+          const { error: updateDiscipuloError } = await adminClient
             .from("discipulos")
             .update({
               xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
@@ -195,7 +196,58 @@ export async function aprovarReflexao(data: {
             })
             .eq("id", data.discipuloId)
 
-          console.log("[v0] XP transferido e próximo passo liberado!")
+          if (updateDiscipuloError) {
+            console.error("[v0] ERRO ao atualizar discípulo:", updateDiscipuloError)
+          } else {
+            console.log(
+              "[v0] ✅ Discípulo atualizado - Novo passo:",
+              proximoPasso,
+              "XP total:",
+              (disc.xp_total || 0) + pontosDoPassoCompleto,
+            )
+          }
+
+          const passoData = passosConteudo[data.passoAtual as keyof typeof passosConteudo]
+          if (passoData && passoData.recompensa) {
+            console.log("[v0] Adicionando insígnia do passo", data.passoAtual, ":", passoData.recompensa)
+
+            // Buscar recompensas atuais
+            const { data: recompensasAtuais } = await adminClient
+              .from("recompensas")
+              .select("insignias, medalhas")
+              .eq("discipulo_id", data.discipuloId)
+              .single()
+
+            if (recompensasAtuais) {
+              const insigniasAtuais = recompensasAtuais.insignias || []
+
+              // Criar string da insígnia no formato "Passo X Concluído"
+              const novaInsignia = `Passo ${data.passoAtual} Concluído`
+
+              // Adicionar apenas se ainda não existe
+              const jaExiste = insigniasAtuais.includes(novaInsignia)
+
+              if (!jaExiste) {
+                const { error: updateRecompensasError } = await adminClient
+                  .from("recompensas")
+                  .update({
+                    insignias: [...insigniasAtuais, novaInsignia],
+                  })
+                  .eq("discipulo_id", data.discipuloId)
+
+                if (updateRecompensasError) {
+                  console.error("[v0] ERRO ao atualizar recompensas:", updateRecompensasError)
+                } else {
+                  console.log("[v0] ✅ Insígnia adicionada:", novaInsignia)
+                }
+              } else {
+                console.log("[v0] ⚠️ Insígnia já existe, pulando")
+              }
+            }
+          }
+
+          console.log("[v0] ===== PASSO", data.passoAtual, "CONCLUÍDO! PASSO", proximoPasso, "LIBERADO! =====")
+          console.log("[v0] 🎉 Modal de celebração aparecerá no próximo login do discípulo")
 
           return {
             success: true,
@@ -476,7 +528,7 @@ async function verificarLiberacaoProximoPasso(
         celebracao_vista: false, // Reset para mostrar celebração do próximo passo
         pontuacao_passo_anterior: pontosDoPassoCompleto, // Salvar XP do passo completado
       })
-      .eq("discipulo_id", discipuloId)
+      .eq("id", progresso.id)
 
     if (updateProgressoError) {
       console.error("[v0] ERRO ao atualizar progresso_fases:", updateProgressoError)
@@ -514,6 +566,45 @@ async function verificarLiberacaoProximoPasso(
           "XP total:",
           (disc.xp_total || 0) + pontosDoPassoCompleto,
         )
+      }
+
+      const passoData = passosConteudo[passoAtual as keyof typeof passosConteudo]
+      if (passoData && passoData.recompensa) {
+        console.log("[v0] Adicionando insígnia do passo", passoAtual, ":", passoData.recompensa)
+
+        // Buscar recompensas atuais
+        const { data: recompensasAtuais } = await adminClient
+          .from("recompensas")
+          .select("insignias, medalhas")
+          .eq("discipulo_id", discipuloId)
+          .single()
+
+        if (recompensasAtuais) {
+          const insigniasAtuais = recompensasAtuais.insignias || []
+
+          // Criar string da insígnia no formato "Passo X Concluído"
+          const novaInsignia = `Passo ${passoAtual} Concluído`
+
+          // Adicionar apenas se ainda não existe
+          const jaExiste = insigniasAtuais.includes(novaInsignia)
+
+          if (!jaExiste) {
+            const { error: updateRecompensasError } = await adminClient
+              .from("recompensas")
+              .update({
+                insignias: [...insigniasAtuais, novaInsignia],
+              })
+              .eq("discipulo_id", discipuloId)
+
+            if (updateRecompensasError) {
+              console.error("[v0] ERRO ao atualizar recompensas:", updateRecompensasError)
+            } else {
+              console.log("[v0] ✅ Insígnia adicionada:", novaInsignia)
+            }
+          } else {
+            console.log("[v0] ⚠️ Insígnia já existe, pulando")
+          }
+        }
       }
 
       console.log("[v0] ===== PASSO", passoAtual, "CONCLUÍDO! PASSO", proximoPasso, "LIBERADO! =====")

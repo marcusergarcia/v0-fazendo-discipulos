@@ -92,6 +92,14 @@ export default async function DashboardPage() {
 
   const totalInsignias = recompensas?.[0]?.insignias?.length || 0
 
+  const { data: discipuladorData } = await supabase
+    .from("profiles")
+    .select("nome_completo")
+    .eq("id", discipulo.discipulador_id)
+    .single()
+
+  const nomeDiscipulador = discipuladorData?.nome_completo || "Aguardando"
+
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
@@ -444,7 +452,7 @@ export default async function DashboardPage() {
                   label="Passos Completos"
                   value={`${passosCompletados}/${userData.totalSteps}`}
                 />
-                <StatItem icon={<Users />} label="Discipulador" value="Aguardando" />
+                <StatItem icon={<Users />} label="Discipulador" value={nomeDiscipulador} />
               </CardContent>
             </Card>
 
