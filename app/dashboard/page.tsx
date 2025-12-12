@@ -183,22 +183,19 @@ export default async function DashboardPage() {
     .eq("discipulo_id", discipulo.id)
     .maybeSingle()
 
-  const { data: passoParaCelebrar } = await supabase
-    .from("progresso_passos")
-    .select("*")
-    .eq("discipulo_id", discipulo.id)
-    .eq("status", "validado")
-    .eq("celebracao_vista", false)
-    .order("passo_numero", { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const passoAnterior = (discipulo.passo_atual || 1) - 1
+  const deveMostrarCelebracao = passoAnterior > 0 && progressoFases?.celebracao_vista === false
 
   console.log(
-    "[v0] Passo para celebrar:",
-    passoParaCelebrar?.passo_numero,
+    "[v0] Verificando celebração - Passo anterior:",
+    passoAnterior,
     "Celebracao vista:",
-    passoParaCelebrar?.celebracao_vista,
+    progressoFases?.celebracao_vista,
+    "Deve mostrar:",
+    deveMostrarCelebracao,
   )
+
+  const xpGanhoPassoAnterior = progressoFases?.pontuacao_passo_anterior || 90 // XP padrão se não encontrar
 
   return (
     <div className="min-h-screen bg-background">
@@ -345,11 +342,12 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {passoParaCelebrar && (
+      {deveMostrarCelebracao && progressoFases && (
         <DashboardCelebracaoClient
-          passoNumero={passoParaCelebrar.passo_numero}
-          faseNumero={passoParaCelebrar.fase_numero}
+          passoNumero={passoAnterior}
+          faseNumero={discipulo.fase_atual || 1}
           discipuloId={discipulo.id}
+          xpGanho={xpGanhoPassoAnterior}
         />
       )}
 

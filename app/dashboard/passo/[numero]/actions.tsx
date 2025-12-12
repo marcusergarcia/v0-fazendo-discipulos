@@ -570,11 +570,9 @@ export async function marcarCelebracaoVista(discipuloId: string, faseNumero: num
 
   try {
     const { error } = await adminClient
-      .from("progresso_passos")
+      .from("progresso_fases")
       .update({ celebracao_vista: true })
       .eq("discipulo_id", discipuloId)
-      .eq("fase_numero", faseNumero)
-      .eq("passo_numero", passoNumero)
 
     if (error) {
       console.error("[v0] Erro ao marcar celebração como vista:", error)

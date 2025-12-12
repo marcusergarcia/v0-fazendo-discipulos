@@ -376,12 +376,18 @@ async function verificarLiberacaoProximoPasso(
   passoAtual: number,
   xpPerguntasReflexivas: number,
 ) {
+  console.log("[v0] ===== VERIFICANDO LIBERAÇÃO DO PRÓXIMO PASSO =====")
+  console.log("[v0] Discípulo ID:", discipuloId)
+  console.log("[v0] Passo Atual:", passoAtual)
+
   // Verificar reflexoes_passo (videos e artigos)
   const { data: reflexoesPasso } = await adminClient
     .from("reflexoes_passo")
     .select("tipo, feedbacks, conteudos_ids")
     .eq("discipulo_id", discipuloId)
     .eq("passo_numero", passoAtual)
+
+  console.log("[v0] Reflexões encontradas:", reflexoesPasso?.length)
 
   if (!reflexoesPasso || reflexoesPasso.length === 0) {
     console.log("[v0] Reflexões de conteúdo ainda pendentes")
@@ -395,6 +401,8 @@ async function verificarLiberacaoProximoPasso(
     return conteudos.every((conteudoId: string) => feedbacks.some((f: any) => f.conteudo_id === conteudoId))
   })
 
+  console.log("[v0] Todas reflexões aprovadas?", todasReflexoesAprovadas)
+
   if (!todasReflexoesAprovadas) {
     console.log("[v0] Reflexões de conteúdo ainda pendentes")
     return null
@@ -407,6 +415,8 @@ async function verificarLiberacaoProximoPasso(
     .eq("semana", passoAtual)
     .single()
 
+  console.log("[v0] Plano da semana:", planoSemana?.capitulos_semana?.length, "capítulos")
+
   let leituraConcluida = false
   if (planoSemana) {
     const { data: leituras } = await adminClient
@@ -417,6 +427,9 @@ async function verificarLiberacaoProximoPasso(
 
     const capitulosLidos = new Set(leituras?.capitulos_lidos || [])
     leituraConcluida = planoSemana.capitulos_semana.every((cap: string) => capitulosLidos.has(Number.parseInt(cap)))
+
+    console.log("[v0] Leitura concluída?", leituraConcluida)
+    console.log("[v0] Capítulos lidos:", capitulosLidos.size, "/ Esperados:", planoSemana.capitulos_semana.length)
   }
 
   if (!leituraConcluida) {
@@ -424,17 +437,26 @@ async function verificarLiberacaoProximoPasso(
     return null
   }
 
+  console.log("[v0] ===== TODAS AS CONDIÇÕES ATENDIDAS! LIBERANDO PRÓXIMO PASSO =====")
+
   // Marcar passo como completado e liberar próximo
   const { data: progresso } = await adminClient
     .from("progresso_fases")
-    .select("id, pontuacao_passo_atual")
+    .select("id, pontuacao_passo_atual, celebracao_vista")
     .eq("discipulo_id", discipuloId)
     .single()
+
+  console.log(
+    "[v0] Progresso atual - Pontos:",
+    progresso?.pontuacao_passo_atual,
+    "Celebração vista:",
+    progresso?.celebracao_vista,
+  )
 
   if (progresso) {
     const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
 
-    await adminClient
+    const { error: updateProgressoError } = await adminClient
       .from("progresso_fases")
       .update({
         pontuacao_passo_atual: 0,
@@ -442,8 +464,16 @@ async function verificarLiberacaoProximoPasso(
         videos_assistidos: [],
         artigos_lidos: [],
         celebracao_vista: false, // Reset para mostrar celebração do próximo passo
+        pontuacao_passo_anterior: pontosDoPassoCompleto, // Salvar XP do passo completado
       })
       .eq("discipulo_id", discipuloId)
+
+    if (updateProgressoError) {
+      console.error("[v0] ERRO ao atualizar progresso_fases:", updateProgressoError)
+    } else {
+      console.log("[v0] ✅ progresso_fases atualizado - celebracao_vista agora é FALSE")
+      console.log("[v0] ✅ pontuacao_passo_anterior salva:", pontosDoPassoCompleto)
+    }
 
     // Transferir XP para o discípulo
     const { data: disc } = await adminClient
@@ -452,10 +482,12 @@ async function verificarLiberacaoProximoPasso(
       .eq("id", discipuloId)
       .single()
 
+    console.log("[v0] Discípulo atual - XP:", disc?.xp_total, "Passo:", disc?.passo_atual)
+
     if (disc) {
       const proximoPasso = passoAtual + 1
 
-      await adminClient
+      const { error: updateDiscipuloError } = await adminClient
         .from("discipulos")
         .update({
           xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
@@ -463,8 +495,19 @@ async function verificarLiberacaoProximoPasso(
         })
         .eq("id", discipuloId)
 
-      console.log("[v0] Passo", passoAtual, "concluído! Passo", proximoPasso, "liberado!")
-      console.log("[v0] celebracao_vista resetada - modal aparecerá no próximo login")
+      if (updateDiscipuloError) {
+        console.error("[v0] ERRO ao atualizar discípulo:", updateDiscipuloError)
+      } else {
+        console.log(
+          "[v0] ✅ Discípulo atualizado - Novo passo:",
+          proximoPasso,
+          "XP total:",
+          (disc.xp_total || 0) + pontosDoPassoCompleto,
+        )
+      }
+
+      console.log("[v0] ===== PASSO", passoAtual, "CONCLUÍDO! PASSO", proximoPasso, "LIBERADO! =====")
+      console.log("[v0] 🎉 Modal de celebração aparecerá no próximo login do discípulo")
 
       return null
     }
