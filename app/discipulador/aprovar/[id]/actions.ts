@@ -125,8 +125,13 @@ export async function aprovarDiscipulo(discipuloId: string) {
       .from("notificacoes")
       .delete()
       .eq("user_id", discipulo.discipulador_id)
-      .eq("tipo", "novo_discipulo")
-      .eq("discipulo_id", discipuloId)
+      .or(`tipo.eq.novo_discipulo,tipo.eq.mensagem`)
+
+    await supabaseAdmin
+      .from("notificacoes")
+      .delete()
+      .eq("user_id", discipulo.discipulador_id)
+      .eq("link", `/discipulador/aprovar/${discipuloId}`)
 
     await supabaseAdmin.from("notificacoes").insert({
       user_id: userId,
@@ -175,14 +180,13 @@ export async function rejeitarDiscipulo(discipuloId: string, motivo?: string) {
     await supabaseAdmin
       .from("notificacoes")
       .delete()
-      .eq("user_id", discipulo.discipulador_id)
-      .eq("tipo", "novo_discipulo")
-      .eq("discipulo_id", discipuloId)
+      .eq("user_id", discipulo.user_id)
+      .or(`tipo.eq.novo_discipulo,tipo.eq.mensagem`)
 
     await supabaseAdmin
       .from("notificacoes")
       .delete()
-      .eq("user_id", discipulo.discipulador_id)
+      .eq("user_id", discipulo.user_id)
       .eq("link", `/discipulador/aprovar/${discipuloId}`)
 
     const { error: deleteError } = await supabaseAdmin.from("discipulos").delete().eq("id", discipuloId)

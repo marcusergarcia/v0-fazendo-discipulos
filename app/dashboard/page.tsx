@@ -146,6 +146,7 @@ export default async function DashboardPage() {
     .select("*", { count: "exact", head: true })
     .eq("user_id", discipuladorProfile?.id || user.id)
     .eq("lida", false)
+    .eq("tipo", "mensagem")
 
   // Buscar discípulos do discipulador se ele for um discipulador
   const { data: meusDiscipulos } = await supabase
@@ -453,6 +454,7 @@ export default async function DashboardPage() {
                   value={`${passosCompletados}/${userData.totalSteps}`}
                 />
                 <StatItem icon={<Users />} label="Discipulador" value={nomeDiscipulador} />
+                <StatItem icon={<Shield />} label="Mensagens Não Lidas" value={notificationCount?.toString() || "0"} />
               </CardContent>
             </Card>
 

@@ -52,7 +52,7 @@ export default async function DiscipuladorPage() {
   const reflexoesPendentes = todasReflexoes?.filter((r) => r.situacao === "enviado").length || 0
   const perguntasPendentes = perguntasReflexivas?.filter((p) => p.situacao === "enviado").length || 0
 
-  const totalAguardandoAprovacao = reflexoesPendentes + perguntasPendentes + (discipulosPendentesAprovacao?.length || 0)
+  const totalAguardandoAprovacao = discipulosPendentesAprovacao?.length || 0
 
   console.log("[v0] Contador de Aprovações:", {
     reflexoesPendentes,
@@ -275,22 +275,6 @@ export default async function DiscipuladorPage() {
               <SinoNotificacoesDiscipulador
                 totalNotificacoes={totalAguardandoAprovacao}
                 notificacoes={[
-                  ...todasReflexoes
-                    .filter((r) => r.situacao === "enviado")
-                    .map((r) => ({
-                      tipo: "reflexao_enviada",
-                      discipulo_nome:
-                        discipulos.find((d) => d.id === r.discipulo_id)?.nome_completo_temp || "Discípulo",
-                      passo: r.passo_numero,
-                    })),
-                  ...perguntasReflexivas
-                    .filter((p) => p.situacao === "enviado")
-                    .map((p) => ({
-                      tipo: "pergunta_enviada",
-                      discipulo_nome:
-                        discipulos.find((d) => d.id === p.discipulo_id)?.nome_completo_temp || "Discípulo",
-                      passo: p.passo_numero,
-                    })),
                   ...discipulosPendentesAprovacao.map((d) => ({
                     tipo: "novo_discipulo",
                     discipulo_nome: d.nome_completo_temp || "Novo Discípulo",
