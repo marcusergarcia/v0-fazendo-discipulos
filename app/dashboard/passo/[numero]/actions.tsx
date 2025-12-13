@@ -346,21 +346,15 @@ export async function enviarParaValidacao(passoNumero: number, formData: FormDat
   redirect(`/dashboard/passo/${passoNumero}?submitted=true`)
 }
 
-export async function resetarProgresso(passoNumero: number, reflexoesIds: string[], perguntasIds: string[]) {
+export async function resetarProgresso(
+  passoNumero: number,
+  reflexoesIds: string[],
+  perguntasIds: string[],
+  discipuloId: string,
+) {
   const adminClient = createAdminClient()
 
   try {
-    const userId = await adminClient
-      .from("discipulos")
-      .select("user_id")
-      .eq("id", reflexoesIds[0])
-      .single()
-      .then((res) => res.data.user_id)
-    if (!userId) throw new Error("Não autenticado")
-
-    const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
-    if (!discipulo) throw new Error("Discípulo não encontrado")
-
     if (reflexoesIds.length > 0) {
       const { error: deleteReflexoesError } = await adminClient.from("reflexoes_passo").delete().in("id", reflexoesIds)
 
@@ -390,7 +384,7 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
         reflexoes_concluidas: 0,
         pontuacao_passo_atual: 0,
       })
-      .eq("discipulo_id", discipulo.id)
+      .eq("discipulo_id", discipuloId)
 
     if (updateError) {
       console.error("Erro ao atualizar progresso:", updateError)
@@ -405,32 +399,20 @@ export async function resetarProgresso(passoNumero: number, reflexoesIds: string
   }
 }
 
-export async function buscarReflexoesParaReset(passoNumero: number) {
+export async function buscarReflexoesParaReset(passoNumero: number, discipuloId: string) {
   const adminClient = createAdminClient()
-
-  const userId = await adminClient
-    .from("discipulos")
-    .select("user_id")
-    .eq("id", passoNumero)
-    .single()
-    .then((res) => res.data.user_id)
-  if (!userId) throw new Error("Não autenticado")
-
-  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
-  if (!discipulo) throw new Error("Discípulo não encontrado")
 
   const { data: reflexoes } = await adminClient
     .from("reflexoes_passo")
     .select("*")
-    .eq("discipulo_id", discipulo.id)
+    .eq("discipulo_id", discipuloId)
     .eq("passo_numero", passoNumero)
 
   const reflexoesExpandidas = (reflexoes || []).flatMap((reflexao) => {
     const reflexoesArray = (reflexao.reflexoes as any[]) || []
 
-    // Return each reflexao object from the array
     return reflexoesArray.map((reflexaoObj: any) => ({
-      id: reflexao.id, // ID do registro original (para deletar)
+      id: reflexao.id,
       conteudo_id: reflexaoObj.conteudo_id,
       tipo: reflexao.tipo,
       titulo: reflexaoObj.titulo,
@@ -442,7 +424,7 @@ export async function buscarReflexoesParaReset(passoNumero: number) {
   const { data: perguntasReflexivas } = await adminClient
     .from("perguntas_reflexivas")
     .select("*")
-    .eq("discipulo_id", discipulo.id)
+    .eq("discipulo_id", discipuloId)
     .eq("passo_numero", passoNumero)
 
   return {

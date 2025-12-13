@@ -365,20 +365,18 @@ export default function PassoClient({
     setErroSenha(null)
 
     try {
-      const resultado = await buscarReflexoesParaReset(numero)
+      const resultado = await buscarReflexoesParaReset(numero, discipulo.id)
       setReflexoesParaExcluir(resultado.reflexoes)
       const perguntasExpandidas = resultado.perguntasReflexivas.flatMap((pr) => {
-        // Se respostas é um array, criar uma entrada para cada resposta
         if (Array.isArray(pr.respostas)) {
           return pr.respostas.map((resposta, index) => ({
             ...pr,
-            id: pr.id, // Explicitly preserve the id field
+            id: pr.id,
             perguntaIndex: index + 1,
             respostaIndividual: resposta,
             situacaoIndividual: resposta.situacao || "pendente",
           }))
         }
-        // Caso contrário, retornar o objeto original
         return [pr]
       })
       setPerguntasReflexivasParaExcluir(perguntasExpandidas)
@@ -403,7 +401,7 @@ export default function PassoClient({
         ...new Set(perguntasReflexivasParaExcluir.map((p) => p.id).filter((id) => id !== undefined)),
       ]
 
-      const resultado = await resetarProgresso(numero, reflexoesIds, perguntasIdsUnicos)
+      const resultado = await resetarProgresso(numero, reflexoesIds, perguntasIdsUnicos, discipulo.id)
       if (resultado.success) {
         setModalResetAberto(false)
         window.location.href = `/dashboard/passo/${numero}?reset=true`
