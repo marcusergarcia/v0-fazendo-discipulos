@@ -262,6 +262,38 @@ export default async function DiscipuladorPage() {
 
   const totalPendentes = dadosPorDiscipulo.reduce((sum, d) => sum + d.tarefasPendentes, 0)
 
+  const todasNotificacoesSino = [
+    // Novos discípulos aguardando aprovação
+    ...discipulosPendentesAprovacao.map((d) => ({
+      tipo: "novo_discipulo",
+      discipulo_nome: d.nome_completo_temp || "Novo Discípulo",
+    })),
+    // Reflexões enviadas aguardando aprovação
+    ...(todasReflexoes || [])
+      .filter((r) => r.situacao === "enviado")
+      .map((r) => {
+        const disc = discipulos?.find((d) => d.id === r.discipulo_id)
+        return {
+          tipo: "reflexao_enviada",
+          discipulo_nome: disc?.profile?.nome_completo || "Discípulo",
+          passo: r.passo_numero,
+        }
+      }),
+    // Perguntas reflexivas enviadas aguardando aprovação
+    ...(perguntasReflexivas || [])
+      .filter((p) => p.situacao === "enviado")
+      .map((p) => {
+        const disc = discipulos?.find((d) => d.id === p.discipulo_id)
+        return {
+          tipo: "pergunta_enviada",
+          discipulo_nome: disc?.profile?.nome_completo || "Discípulo",
+          passo: p.passo_numero,
+        }
+      }),
+  ]
+
+  const totalNotificacoesSino = todasNotificacoesSino.length
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -273,13 +305,8 @@ export default async function DiscipuladorPage() {
             </div>
             <div className="flex items-center gap-3">
               <SinoNotificacoesDiscipulador
-                totalNotificacoes={totalAguardandoAprovacao}
-                notificacoes={[
-                  ...discipulosPendentesAprovacao.map((d) => ({
-                    tipo: "novo_discipulo",
-                    discipulo_nome: d.nome_completo_temp || "Novo Discípulo",
-                  })),
-                ]}
+                totalNotificacoes={totalNotificacoesSino}
+                notificacoes={todasNotificacoesSino}
               />
               <Link href="/dashboard">
                 <Button variant="outline" className="gap-2 bg-transparent">
