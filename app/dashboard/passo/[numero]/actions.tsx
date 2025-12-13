@@ -346,17 +346,19 @@ export async function enviarParaValidacao(passoNumero: number, formData: FormDat
   redirect(`/dashboard/passo/${passoNumero}?submitted=true`)
 }
 
-export async function resetarProgresso(
-  passoNumero: number,
-  reflexoesIds: string[],
-  perguntasIds: string[],
-  discipuloId: string,
-) {
+export async function resetarProgresso(passoNumero: number, reflexoesIds: string[], perguntasIds: string[]) {
   const adminClient = createAdminClient()
 
   try {
-    const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("id", discipuloId).single()
+    const userId = await adminClient
+      .from("discipulos")
+      .select("user_id")
+      .eq("id", reflexoesIds[0])
+      .single()
+      .then((res) => res.data.user_id)
+    if (!userId) throw new Error("Não autenticado")
 
+    const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
     if (!discipulo) throw new Error("Discípulo não encontrado")
 
     if (reflexoesIds.length > 0) {
@@ -403,27 +405,39 @@ export async function resetarProgresso(
   }
 }
 
-export async function buscarReflexoesParaReset(passoNumero: number, discipuloId: string) {
+export async function buscarReflexoesParaReset(passoNumero: number) {
   const adminClient = createAdminClient()
 
-  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("id", discipuloId).single()
+  const userId = await adminClient
+    .from("discipulos")
+    .select("user_id")
+    .eq("id", passoNumero)
+    .single()
+    .then((res) => res.data.user_id)
+  if (!userId) throw new Error("Não autenticado")
 
+  const { data: discipulo } = await adminClient.from("discipulos").select("id").eq("user_id", userId).single()
   if (!discipulo) throw new Error("Discípulo não encontrado")
 
-  // Buscar reflexões (vídeos e artigos)
   const { data: reflexoes } = await adminClient
     .from("reflexoes_passo")
     .select("*")
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoNumero)
 
-  const videosReflexoes = reflexoes?.filter((r) => r.tipo === "video") || []
-  const artigosReflexoes = reflexoes?.filter((r) => r.tipo === "artigo") || []
+  const reflexoesExpandidas = (reflexoes || []).flatMap((reflexao) => {
+    const reflexoesArray = (reflexao.reflexoes as any[]) || []
 
-  // Verificar se algum vídeo tem status "aprovado"
-  const temVideoAprovado = videosReflexoes.some((r) => r.situacao === "aprovado")
-  // Verificar se algum artigo tem status "aprovado"
-  const temArtigoAprovado = artigosReflexoes.some((r) => r.situacao === "aprovado")
+    // Return each reflexao object from the array
+    return reflexoesArray.map((reflexaoObj: any) => ({
+      id: reflexao.id, // ID do registro original (para deletar)
+      conteudo_id: reflexaoObj.conteudo_id,
+      tipo: reflexao.tipo,
+      titulo: reflexaoObj.titulo,
+      reflexao: reflexaoObj.reflexao,
+      notificacao_id: reflexao.notificacao_id,
+    }))
+  })
 
   const { data: perguntasReflexivas } = await adminClient
     .from("perguntas_reflexivas")
@@ -431,92 +445,9 @@ export async function buscarReflexoesParaReset(passoNumero: number, discipuloId:
     .eq("discipulo_id", discipulo.id)
     .eq("passo_numero", passoNumero)
 
-  // Verificar se alguma pergunta reflexiva tem status "aprovado"
-  const temPerguntaAprovada =
-    perguntasReflexivas?.some((pr) => {
-      if (Array.isArray(pr.respostas)) {
-        return pr.respostas.some((r: any) => r.situacao === "aprovado")
-      }
-      return pr.situacao === "aprovado"
-    }) || false
-
-  const reflexoesResetaveis: any[] = []
-
-  // Adicionar vídeos apenas se não houver vídeo aprovado
-  if (!temVideoAprovado && videosReflexoes.length > 0) {
-    videosReflexoes.forEach((reflexao) => {
-      const reflexoesArray = (reflexao.reflexoes as any[]) || []
-      reflexoesArray.forEach((reflexaoObj: any) => {
-        reflexoesResetaveis.push({
-          id: reflexao.id,
-          conteudo_id: reflexaoObj.conteudo_id,
-          tipo: reflexao.tipo,
-          titulo: reflexaoObj.titulo,
-          reflexao: reflexaoObj.reflexao,
-          notificacao_id: reflexao.notificacao_id,
-          situacao: reflexao.situacao,
-        })
-      })
-    })
-  }
-
-  // Adicionar artigos apenas se não houver artigo aprovado
-  if (!temArtigoAprovado && artigosReflexoes.length > 0) {
-    artigosReflexoes.forEach((reflexao) => {
-      const reflexoesArray = (reflexao.reflexoes as any[]) || []
-      reflexoesArray.forEach((reflexaoObj: any) => {
-        reflexoesResetaveis.push({
-          id: reflexao.id,
-          conteudo_id: reflexaoObj.conteudo_id,
-          tipo: reflexao.tipo,
-          titulo: reflexaoObj.titulo,
-          reflexao: reflexaoObj.reflexao,
-          notificacao_id: reflexao.notificacao_id,
-          situacao: reflexao.situacao,
-        })
-      })
-    })
-  }
-
-  const perguntasResetaveis: any[] = []
-
-  if (!temPerguntaAprovada && perguntasReflexivas && perguntasReflexivas.length > 0) {
-    perguntasReflexivas.forEach((pr) => {
-      if (Array.isArray(pr.respostas)) {
-        pr.respostas.forEach((resposta: any, index: number) => {
-          perguntasResetaveis.push({
-            ...pr,
-            id: pr.id,
-            perguntaIndex: index + 1,
-            respostaIndividual: resposta,
-            situacaoIndividual: resposta.situacao || "pendente",
-          })
-        })
-      } else {
-        perguntasResetaveis.push(pr)
-      }
-    })
-  }
-
-  console.log(
-    "[v0] Grupos resetáveis - Vídeos:",
-    !temVideoAprovado,
-    "Artigos:",
-    !temArtigoAprovado,
-    "Perguntas:",
-    !temPerguntaAprovada,
-  )
-  console.log("[v0] Reflexões resetáveis:", reflexoesResetaveis.length)
-  console.log("[v0] Perguntas resetáveis:", perguntasResetaveis.length)
-
   return {
-    reflexoes: reflexoesResetaveis,
-    perguntasReflexivas: perguntasResetaveis,
-    gruposResetaveis: {
-      videos: !temVideoAprovado && videosReflexoes.length > 0,
-      artigos: !temArtigoAprovado && artigosReflexoes.length > 0,
-      perguntas: !temPerguntaAprovada && perguntasReflexivas && perguntasReflexivas.length > 0,
-    },
+    reflexoes: reflexoesExpandidas,
+    perguntasReflexivas: perguntasReflexivas || [],
   }
 }
 
