@@ -694,21 +694,21 @@ export const PASSOS_CONTEUDO = {
     artigos: [
       {
         id: "artigo-p8-1",
-        titulo: "Jesus e Sua Compaixão pelos Perdidos",
-        fonte: "Got Questions",
-        url: "https://www.gotquestions.org/Portugues/Jesus-compassivo.html",
+        titulo: "Compaixão pelos Perdidos",
+        fonte: "Sermons by logos",
+        url: "https://sermons.logos.com/sermons/1468600-compaixao-pelos-perdidos",
       },
       {
         id: "artigo-p8-2",
-        titulo: "A Parábola do Filho Pródigo: Compreendendo o Amor do Pai",
-        fonte: "Ministério Fiel",
-        url: "https://ministeriofiel.com.br/artigos/a-parabola-do-filho-prodigo/",
+        titulo: "O filho pródigo conheça o amor do pai",
+        fonte: "Oitava Igreja Presbiteriana",
+        url: "https://oitavaigreja.com.br/artigo/o-filho-prodigo-conheca-o-amor-do-pai",
       },
       {
         id: "artigo-p8-3",
-        titulo: "Lucas: O Evangelho da Compaixão",
-        fonte: "Biblia.com",
-        url: "https://www.biblia.com/bible/nvi/luke/1",
+        titulo: "Lucas: O Evangelho da Misericórdia",
+        fonte: "ABIB",
+        url: "https://revista.abib.org.br/EB/article/view/130",
       },
     ],
     leituraSemanal: {
