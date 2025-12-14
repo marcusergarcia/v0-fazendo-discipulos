@@ -129,6 +129,91 @@ export const RESUMOS_GERAIS_PASSOS = {
       },
     ],
   },
+  7: {
+    titulo: "Graça e Fé",
+    topicos: [
+      {
+        titulo: "Conversão: A Transformação Radical",
+        descricao:
+          "Conversão é muito mais do que mudar de religião ou melhorar de vida — é uma transformação completa operada por Deus no coração humano. É o momento em que passamos das trevas para a luz, da morte para a vida, do reino de Satanás para o Reino de Deus. Atos 3:19 nos chama: 'Arrependam-se e voltem-se para Deus'. Essa mudança de direção envolve reconhecer nosso pecado, abandonar nossos caminhos e abraçar Cristo como Senhor e Salvador.",
+      },
+      {
+        titulo: "Regeneração: Nascidos de Novo",
+        descricao:
+          "Jesus declarou a Nicodemos: 'É necessário nascer de novo' (João 3:7). A regeneração é a obra sobrenatural do Espírito Santo que nos dá uma nova natureza espiritual. Não é algo que fazemos por esforço próprio, mas uma criação divina. 2 Coríntios 5:17 proclama: 'Se alguém está em Cristo, é nova criação; as coisas antigas já passaram; eis que surgiram coisas novas!' O velho homem morre e um novo ser nasce, com novos desejos, nova visão e novo propósito.",
+      },
+      {
+        titulo: "Embaixadores de Cristo: Nossa Missão",
+        descricao:
+          "Como reconciliados com Deus, não apenas recebemos salvação — recebemos também uma missão! 2 Coríntios 5:20 declara: 'Somos embaixadores de Cristo'. Um embaixador representa seu rei em terra estrangeira, carregando sua mensagem e autoridade. Nós representamos o Reino dos Céus aqui na Terra, levando a mensagem da reconciliação a todos. Não guardamos essa boa notícia para nós — compartilhamos com alegria e urgência!",
+      },
+      {
+        titulo: "Propiciação: A Ira de Deus Satisfeita",
+        descricao:
+          "Propiciação significa satisfazer completamente a justa ira de Deus contra o pecado. Romanos 3:25 revela que Deus apresentou Cristo como 'propiciação pelo Seu sangue'. A santidade de Deus exige justiça, e Seu amor providenciou o sacrifício perfeito. Jesus não apenas pagou nossa dívida — Ele apaziguou a ira divina, tornando-nos objetos do amor de Deus ao invés de Sua condenação. 1 João 4:10 resume: 'Nisto consiste o amor: não em que nós tenhamos amado a Deus, mas em que Ele nos amou e enviou Seu Filho como propiciação pelos nossos pecados'.",
+      },
+    ],
+  },
+  8: {
+    titulo: "Justificação e Santificação",
+    topicos: [
+      {
+        titulo: "Justificação: Declarados Justos",
+        descricao:
+          "Justificação é o ato judicial de Deus onde Ele declara o pecador completamente justo com base na fé em Cristo. Não é um processo gradual, mas uma declaração instantânea no momento da conversão. Romanos 5:1 proclama: 'Justificados pela fé, temos paz com Deus por meio de nosso Senhor Jesus Cristo'. A justiça de Cristo é creditada a nós, e nossa culpa é removida para sempre.",
+      },
+      {
+        titulo: "Santificação: Crescendo em Santidade",
+        descricao:
+          "Enquanto a justificação é instantânea, a santificação é progressiva — o processo contínuo de nos tornarmos mais semelhantes a Cristo. O Espírito Santo trabalha em nós, transformando nosso caráter, renovando nossa mente e produzindo frutos espirituais. Filipenses 2:12-13 nos exorta: 'Desenvolvam sua salvação com temor e tremor, pois é Deus quem efetua em vocês tanto o querer quanto o realizar'.",
+      },
+      {
+        titulo: "Cooperação com o Espírito Santo",
+        descricao:
+          "A santificação não é passiva — cooperamos ativamente com o Espírito Santo através da oração, estudo da Palavra, comunhão com outros crentes e obediência aos mandamentos de Deus. Romanos 8:13 declara: 'Se pelo Espírito vocês mortificarem os atos do corpo, viverão'. É uma parceria divino-humana onde Deus capacita e nós respondemos em fé e obediência.",
+      },
+    ],
+  },
+  9: {
+    titulo: "Adoção e Herança",
+    topicos: [
+      {
+        titulo: "Adoção: Filhos do Pai Celestial",
+        descricao:
+          "Deus não apenas nos perdoa — Ele nos adota como Seus filhos! Gálatas 4:5 proclama que Deus enviou Cristo 'a fim de redimir os que estavam sob a lei, para que recebêssemos a adoção de filhos'. Não somos servos distantes, mas filhos amados com pleno acesso ao Pai. Romanos 8:15 nos assegura: 'Vocês receberam o Espírito de adoção, pelo qual clamamos: Aba, Pai!'",
+      },
+      {
+        titulo: "Co-Herdeiros com Cristo",
+        descricao:
+          "Como filhos adotados, somos também herdeiros! Romanos 8:17 declara: 'Se somos filhos, então somos herdeiros; herdeiros de Deus e co-herdeiros com Cristo'. Tudo o que pertence a Cristo — Sua glória, Seu reino, Sua autoridade — será compartilhado conosco. Efésios 1:11 confirma que 'fomos predestinados... para sermos herança, tendo sido designados de acordo com o propósito daquele que faz todas as coisas'.",
+      },
+      {
+        titulo: "Privilégios da Filiação",
+        descricao:
+          "Como filhos de Deus, temos privilégios extraordinários: acesso direto ao trono da graça, a habitação do Espírito Santo, orientação divina, proteção paternal, provisão constante e a certeza de que 'todas as coisas cooperam para o bem daqueles que amam a Deus' (Romanos 8:28). Somos família real, cidadãos do céu, e nada pode nos separar do amor do Pai!",
+      },
+    ],
+  },
+  10: {
+    titulo: "Glorificação e Esperança Futura",
+    topicos: [
+      {
+        titulo: "Glorificação: A Transformação Final",
+        descricao:
+          "A glorificação é a etapa final da salvação, quando seremos completamente transformados à imagem de Cristo. Filipenses 3:21 promete que Cristo 'transformará nosso corpo de humilhação, tornando-o semelhante ao Seu corpo glorioso'. Não haverá mais pecado, dor, morte ou lágrimas — seremos perfeitos em santidade e felicidade, refletindo plenamente a glória de Deus para sempre.",
+      },
+      {
+        titulo: "A Segunda Vinda de Cristo",
+        descricao:
+          "Jesus prometeu voltar! Atos 1:11 declara: 'Esse mesmo Jesus, que foi elevado ao céu, voltará da mesma forma como o viram subir'. Sua segunda vinda não será como bebê em Belém, mas como Rei conquistador, Juiz supremo e Senhor glorioso. Para os crentes, será o dia da redenção final; para os incrédulos, o dia do julgamento. A pergunta crucial é: você está preparado?",
+      },
+      {
+        titulo: "O Novo Céu e a Nova Terra",
+        descricao:
+          "Apocalipse 21:1-5 descreve a promessa gloriosa: 'Vi novos céus e nova terra... Deus habitará com eles. Ele enxugará dos olhos toda lágrima. Não haverá mais morte, nem tristeza, nem choro, nem dor'. Esta é nossa esperança viva — não apenas um céu espiritual distante, mas uma criação física renovada onde viveremos eternamente com Cristo, cumprindo nosso propósito original de governar e glorificar a Deus para sempre!",
+      },
+    ],
+  },
 } as const
 
 export type ResumoGeralPasso = {

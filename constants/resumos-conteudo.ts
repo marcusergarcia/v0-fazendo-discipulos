@@ -151,7 +151,124 @@ export const RESUMOS_CONTEUDO = {
       },
     },
   },
-  // Outros passos podem ser adicionados posteriormente
+  5: {
+    artigos: {
+      "artigo-p5-1": {
+        titulo: "O que é expiação substitutiva?",
+        resumo:
+          "Jesus não apenas morreu por nós — Ele morreu EM NOSSO LUGAR! A substituição vicária significa que Cristo assumiu voluntariamente a punição que deveríamos receber. 2 Coríntios 5:21 diz: 'Àquele que não conheceu pecado, Deus o fez pecado por nós'. Cristo trocou Sua justiça perfeita pela nossa culpa, para que pudéssemos ser justificados diante de Deus. Imagine um juiz justo que condena um criminoso à morte, mas então desce do tribunal e morre no lugar dele. É exatamente isso que Jesus fez! Sem essa troca, não haveria salvação.",
+      },
+      "artigo-p5-2": {
+        titulo: "O Evangelho da Ressurreição de Jesus: A Vitória sobre a Morte",
+        resumo:
+          "A ressurreição não é apenas um 'final feliz' — é a PROVA DEFINITIVA de que Jesus é quem Ele diz ser! Se Cristo não ressuscitou, nossa fé é inútil (1 Coríntios 15:14). Mas Ele ressuscitou! E isso muda TUDO. A ressurreição garante que o poder do pecado e da morte foi quebrado. Efésios 2:5 declara que Deus 'nos deu vida juntamente com Cristo'. Não é apenas sobre ir para o céu um dia — é sobre viver uma NOVA VIDA agora, cheia do poder do Espírito Santo que ressuscitou Jesus dos mortos!",
+      },
+      "artigo-p5-3": {
+        titulo: "Reconciliação: De Inimigos a Filhos",
+        resumo:
+          "Reconciliação significa restaurar um relacionamento quebrado. E nosso relacionamento com Deus estava DEVASTADO pelo pecado. Romanos 5:10 diz que 'éramos inimigos' de Deus! Mas através da cruz, Jesus demoliu o muro de separação. Colossenses 1:21-22 proclama: 'Vocês, que antes eram estranhos e inimigos... agora foram reconciliados pelo corpo físico de Cristo'. Não somos mais escravos fugitivos — somos FILHOS adotados! A reconciliação nos dá acesso total à presença de Deus, não por nosso mérito, mas pelo sangue de Cristo.",
+      },
+      "artigo-p5-4": {
+        titulo: "Redenção: Comprados com Sangue",
+        resumo:
+          "Redenção vem de uma palavra que significa 'comprar de volta' — como pagar um resgate para libertar um escravo. E é exatamente isso que Jesus fez! Colossenses 1:13-14 declara: 'Ele nos libertou do domínio das trevas e nos transportou para o Reino do Filho amado, em quem temos a redenção, a saber, o perdão dos pecados'. O preço? O precioso sangue de Cristo (1 Pedro 1:18-19). Não fomos redimidos com ouro ou prata, mas com a própria vida de Jesus. Que amor incomparável!",
+      },
+    },
+    videos: {
+      "video-p5-1": {
+        titulo: "Como Jesus promoveu uma substituição",
+        resumo:
+          "Este vídeo explica o conceito de substituição vicária, mostrando como Jesus assumiu voluntariamente nosso lugar na cruz, levando sobre Si a punição que merecíamos. Cristo se tornou pecado por nós para que pudéssemos ser feitos justiça de Deus Nele.",
+      },
+      "video-p5-2": {
+        titulo: "Como morreu Jesus segundo a ciência?",
+        resumo:
+          "Uma análise científica e médica do processo de crucificação, revelando o sofrimento físico extremo que Jesus suportou. O vídeo demonstra a brutalidade da cruz e a profundidade do amor de Cristo ao entregar voluntariamente Sua vida por nós.",
+      },
+      "video-p5-3": {
+        titulo: "O que Jesus passou no Calvário?",
+        resumo:
+          "O Pr. Rodrigo Silva detalha os eventos do Calvário, explorando não apenas o sofrimento físico de Jesus, mas também o peso espiritual de carregar os pecados de toda a humanidade. Um relato comovente do maior ato de amor da história.",
+      },
+    },
+  },
+  6: {
+    artigos: {
+      "artigo-p6-1": {
+        titulo: "Como Jesus morreu?",
+        resumo:
+          "A morte de Jesus na cruz não foi apenas um martírio nobre — foi o cumprimento do plano eterno de Deus para a salvação da humanidade. A crucificação era a forma mais humilhante e dolorosa de execução no Império Romano, reservada para os piores criminosos. Jesus sofreu traição, abandono, açoitamento brutal, zombaria, e finalmente foi pregado numa cruz. Mas o sofrimento físico não foi a parte mais difícil — foi o peso espiritual de carregar os pecados de toda a humanidade e experimentar a separação momentânea do Pai. Sua morte pagou a dívida que não podíamos pagar e abriu o caminho para nossa reconciliação com Deus.",
+      },
+      "artigo-p6-2": {
+        titulo: "Por que a ressurreição de Jesus Cristo é tão importante?",
+        resumo:
+          "A ressurreição é o evento mais importante da história cristã! Sem ela, nossa fé seria vazia e ainda estaríamos mortos em nossos pecados (1 Coríntios 15:17). A ressurreição prova quatro verdades fundamentais: 1) Jesus é verdadeiramente Deus; 2) Sua morte foi aceita como pagamento suficiente pelos nossos pecados; 3) Ele tem poder sobre a morte; 4) Nós também ressuscitaremos. A ressurreição transforma o cristianismo de uma filosofia em um relacionamento com um Salvador VIVO. Ela garante nossa justificação, nossa esperança futura e nosso poder presente para viver em santidade. Cristo vive, e porque Ele vive, nós também viveremos!",
+      },
+      "artigo-p6-3": {
+        titulo: "Qual é o significado da expiação?",
+        resumo:
+          "Expiação significa 'cobrir' ou 'remover' o pecado através de um sacrifício. No Antigo Testamento, animais eram sacrificados para cobrir temporariamente os pecados do povo. Mas esses sacrifícios eram apenas sombras do sacrifício perfeito que estava por vir — Jesus Cristo. Hebreus 10:4 declara que 'é impossível que o sangue de touros e bodes remova pecados'. Apenas o sangue precioso de Cristo, o Cordeiro de Deus sem defeito, poderia verdadeiramente expiar nossos pecados. A expiação de Cristo é completa, final e eternamente eficaz. Não precisamos de mais sacrifícios — Jesus disse 'Está consumado!' na cruz. Nossa dívida foi paga integralmente!",
+      },
+    },
+    videos: {
+      "video-p6-1": {
+        titulo: "Como Jesus morreu? Uma jornada pela cruz",
+        resumo:
+          "Este vídeo conduz o espectador através dos eventos finais da vida de Jesus, desde o Jardim do Getsêmani até a crucificação. Explora o significado espiritual de cada etapa do sofrimento de Cristo e como Sua morte cumpriu as profecias do Antigo Testamento.",
+      },
+      "video-p6-2": {
+        titulo: "A morte de Jesus e seu significado para nós",
+        resumo:
+          "Uma explicação profunda de como a morte de Jesus não foi apenas um exemplo de amor sacrificial, mas o pagamento legal e substitutivo pelos nossos pecados. O vídeo mostra como a cruz satisfez a justiça de Deus enquanto demonstrava Seu amor ilimitado.",
+      },
+      "video-p6-3": {
+        titulo: "O que Jesus fez no Calvário: Rodrigo Silva",
+        resumo:
+          "O teólogo Rodrigo Silva analisa os eventos do Calvário, explicando o significado teológico da cruz. Aborda temas como substituição penal, propiciação, reconciliação e redenção, mostrando como a morte de Cristo transformou a história da humanidade.",
+      },
+    },
+  },
+  7: {
+    artigos: {
+      "artigo-p7-1": {
+        titulo: "Conversão: Voltando-se para Deus",
+        resumo:
+          "Conversão não é apenas mudar de religião ou 'virar crente'. É uma transformação radical do coração! Lucas 15:17-19 mostra o filho pródigo 'caindo em si' e decidindo voltar para o pai. Marcos 1:15 resume o chamado de Jesus: 'Arrependei-vos e crede no evangelho'. A conversão envolve duas partes inseparáveis: arrepender-se (reconhecer e abandonar o pecado) e crer (confiar totalmente em Cristo). João 3:7 declara: 'Importa-vos nascer de novo'. Não é reforma, é RENASCIMENTO! A conversão marca o início da jornada cristã — o momento em que deixamos as trevas e entramos na luz.",
+      },
+      "artigo-p7-2": {
+        titulo: "Regeneração: O Novo Nascimento",
+        resumo:
+          "Regeneração é a obra sobrenatural do Espírito Santo que nos dá NOVA VIDA espiritual. Tito 3:5 explica: 'Ele nos salvou mediante o lavar regenerador e renovador do Espírito Santo'. Não é você tentando ser melhor — é Deus fazendo você NOVO! Efésios 2:4-5 proclama: 'Deus... estando nós mortos em nossos delitos, nos deu vida juntamente com Cristo'. Antes da regeneração, estávamos espiritualmente mortos; agora, temos a vida de Cristo em nós. João 3:6 contrasta: 'O que nasce da carne é carne, mas o que nasce do Espírito é espírito'. A regeneração não é opcional — é ESSENCIAL para a salvação!",
+      },
+      "artigo-p7-3": {
+        titulo: "Embaixadores de Cristo: Nossa Missão",
+        resumo:
+          "Ser embaixador de Cristo significa representá-Lo oficialmente no mundo! 2 Coríntios 5:20 declara: 'Somos embaixadores de Cristo, como se Deus estivesse fazendo o seu apelo por nosso intermédio'. Um embaixador não fala por si mesmo — ele representa seu rei. Nossa mensagem não é nossa opinião, mas a PALAVRA DE DEUS. Efésios 6:20 mostra Paulo se identificando como 'embaixador em cadeias'. Mesmo preso, ele continuava cumprindo sua missão! Como embaixadores, não escolhemos a mensagem (o evangelho), mas devemos proclamá-la com fidelidade. O mundo precisa ouvir a verdade através de nós!",
+      },
+      "artigo-p7-4": {
+        titulo: "Propiciação: Jesus Satisfaz a Ira de Deus",
+        resumo:
+          "Propiciação é um conceito PODEROSO mas pouco compreendido. Significa 'satisfazer a ira' ou 'apaziguar'. Romanos 3:25 declara que Deus apresentou Cristo como 'propiciação, mediante a fé, pelo seu sangue'. O pecado merece punição justa — e alguém precisa pagar! Jesus se tornou o sacrifício perfeito que satisfez completamente a justiça de Deus. 1 João 4:10 resume: 'Nisto consiste o amor: não em que nós tenhamos amado a Deus, mas em que ele nos amou e enviou o seu Filho como propiciação pelos nossos pecados'. Hebreus 9:14 enfatiza que foi através do 'sangue eterno' que Cristo nos purificou. Propiciação significa que a ira de Deus foi totalmente apaziguada pela cruz!",
+      },
+    },
+    videos: {
+      "video-p7-1": {
+        titulo: "O que é a Graça de Deus?",
+        resumo:
+          "Este vídeo explora o conceito bíblico de graça como o favor imerecido de Deus. Mostra que a salvação não pode ser conquistada por mérito próprio, mas é um presente gratuito oferecido a todos que colocam sua fé em Jesus Cristo como único Salvador.",
+      },
+      "video-p7-2": {
+        titulo: "Fé em Cristo: O Caminho para a Salvação",
+        resumo:
+          "Uma explicação detalhada sobre o que significa ter fé salvadora em Cristo. O vídeo diferencia entre fé intelectual (apenas conhecer sobre Jesus) e fé verdadeira (confiar totalmente Nele para salvação). Mostra que a fé genuína sempre produz transformação e obras como evidência.",
+      },
+      "video-p7-3": {
+        titulo: "A Transformação pela Regeneração Espiritual",
+        resumo:
+          "Este vídeo aborda o milagre da regeneração — o novo nascimento espiritual que ocorre quando alguém se converte a Cristo. Explica como o Espírito Santo traz vida nova ao que estava espiritualmente morto, criando uma nova criatura em Cristo com novos desejos, nova natureza e novo propósito.",
+      },
+    },
+  },
 } as const
 
 export type ResumoConteudo = {

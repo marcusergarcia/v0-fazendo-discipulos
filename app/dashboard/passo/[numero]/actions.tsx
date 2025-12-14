@@ -50,7 +50,7 @@ export async function concluirVideoComReflexao(
           .select("id")
           .eq("user_id", discipulo.discipulador_id)
           .eq("discipulo_id", discipulo.id)
-          .eq("tipo", "reflexao_video")
+          .eq("tipo", "reflexao")
           .eq("link", `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`)
           .maybeSingle()
 
@@ -62,7 +62,7 @@ export async function concluirVideoComReflexao(
             .insert({
               user_id: discipulo.discipulador_id,
               discipulo_id: discipulo.id,
-              tipo: "reflexao_video",
+              tipo: "reflexao",
               titulo: "Nova reflexão de vídeo",
               mensagem: `Reflexões de vídeo no Passo ${passoNumero}`,
               link: `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`,
@@ -199,7 +199,7 @@ export async function concluirArtigoComReflexao(
           .select("id")
           .eq("user_id", discipulo.discipulador_id)
           .eq("discipulo_id", discipulo.id)
-          .eq("tipo", "reflexao_artigo")
+          .eq("tipo", "reflexao")
           .eq("link", `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`)
           .maybeSingle()
 
@@ -211,7 +211,7 @@ export async function concluirArtigoComReflexao(
             .insert({
               user_id: discipulo.discipulador_id,
               discipulo_id: discipulo.id,
-              tipo: "reflexao_artigo",
+              tipo: "reflexao",
               titulo: "Nova reflexão de artigo",
               mensagem: `Reflexões de artigo no Passo ${passoNumero}`,
               link: `/discipulador?discipulo=${discipulo.id}&passo=${passoNumero}`,

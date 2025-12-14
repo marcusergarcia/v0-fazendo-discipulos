@@ -31,6 +31,12 @@ export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
     "1 Coríntios 15:14 declara: 'Se Cristo não ressuscitou, é vã a nossa pregação, e vã também a vossa fé'. A ressurreição é a prova definitiva de que Jesus é Deus e de que Ele venceu a morte. Como essa certeza fortalece sua fé nos momentos de dúvida? O que muda na sua vida sabendo que o mesmo poder que ressuscitou Jesus dos mortos está disponível para você hoje?",
     "A morte de Cristo nos traz perdão, e a ressurreição nos dá vida nova e esperança eterna. Romanos 6:4 nos convida a 'viver uma vida nova' pelo poder da ressurreição. Que áreas da sua vida refletem essa 'vida nova' em Cristo? Quais hábitos, pensamentos ou relacionamentos ainda precisam experimentar o poder transformador da ressurreição? Como você pode morrer para o velho homem e ressuscitar para uma nova maneira de viver?",
   ],
+  7: [
+    "Conversão não é apenas 'virar crente', mas uma transformação radical do coração. Lucas 15 mostra o filho pródigo 'caindo em si' e voltando para o pai. Você já experimentou esse momento de 'cair em si' em relação à sua necessidade de Deus? Quais sinais de verdadeira conversão você vê em sua vida hoje? Em quais áreas você ainda precisa 'voltar para o Pai'?",
+    "Regeneração significa nascer de novo - não é reforma, é RENASCIMENTO! João 3:7 declara: 'Importa-vos nascer de novo'. Você consegue identificar evidências de 'nova vida' espiritual em você desde que conheceu Cristo? Que diferenças práticas esse novo nascimento trouxe para seus pensamentos, relacionamentos e prioridades?",
+    "Como embaixadores de Cristo (2 Coríntios 5:20), representamos oficialmente o Reino de Deus no mundo. Como você tem cumprido essa missão no seu ambiente de trabalho, família e círculo social? Que barreiras (medo, vergonha, comodismo) impedem você de ser um embaixador mais fiel? Como pode superá-las?",
+    "Propiciação significa que Jesus satisfez completamente a ira de Deus contra o pecado. Romanos 3:25 diz que Deus apresentou Cristo como 'propiciação pelo seu sangue'. Como entender que a justiça de Deus foi plenamente satisfeita muda sua percepção sobre segurança eterna? Você vive com medo de que Deus ainda esteja irado com você, ou descansa na certeza de que Cristo já pagou TUDO?",
+  ],
 }
 
 // Mantendo compatibilidade com código existente

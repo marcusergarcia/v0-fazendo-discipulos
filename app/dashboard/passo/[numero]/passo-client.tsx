@@ -32,8 +32,7 @@ import {
   Home,
 } from "lucide-react"
 import Link from "next/link"
-// import { supabase } from "@/lib/supabase"
-import { createClient } from "@/lib/supabase/client"
+import { useSupabase } from "@/components/supabase-provider"
 import { toast } from "@/components/ui/use-toast"
 import {
   salvarRascunho,
@@ -101,7 +100,7 @@ export default function PassoClient({
   capitulosLidos = [], // Inicializar com array vazio
   discipuloId, // Destructure discipuloId
 }: PassoClientProps) {
-  const supabase = createClient()
+  const { supabase } = useSupabase() // Use useSupabase hook
 
   const [mostrarCelebracao, setMostrarCelebracao] = useState(false)
   const [xpGanhoTotal, setXpGanhoTotal] = useState(0)
@@ -172,8 +171,6 @@ export default function PassoClient({
       }
 
       try {
-        const supabase = createClient()
-
         const { data, error } = await supabase
           .from("perguntas_reflexivas")
           .select("respostas, situacao, xp_ganho") // Adicionar xp_ganho
@@ -198,15 +195,10 @@ export default function PassoClient({
     }
 
     buscarSubmissaoPerguntasReflexivas()
-  }, [perguntasReflexivasList, discipuloId, numero])
+  }, [perguntasReflexivasList, discipuloId, numero, supabase])
 
   useEffect(() => {
     const verificarCelebracao = async () => {
-      const supabase = createClient()
-
-      console.log("[v0] Verificando celebração - status:", status, "discipuloId:", discipuloId, "numero:", numero)
-
-      // Verifica se o passo atual foi validado e celebração ainda não foi vista
       if (status === "validado") {
         const { data: progressoData, error } = await supabase
           .from("progresso_fases")
@@ -215,30 +207,19 @@ export default function PassoClient({
           .eq("passo_atual", numero)
           .single()
 
-        console.log("[v0] Dados do progresso:", progressoData)
-        console.log("[v0] Erro ao buscar progresso:", error)
-
         // Se a celebração ainda não foi vista, mostra o modal
         if (progressoData && !progressoData.celebracao_vista) {
           const xp = progressoData.pontuacao_passo_atual || 0
-          console.log("[v0] Mostrando celebração! XP:", xp)
           setXpGanhoTotal(xp)
           setMostrarCelebracao(true)
-        } else {
-          console.log("[v0] Celebração já foi vista ou dados não encontrados")
         }
-      } else {
-        console.log("[v0] Status não é 'validado', é:", status)
       }
     }
 
     verificarCelebracao()
-  }, [status, discipuloId, numero])
+  }, [status, discipuloId, numero, supabase])
 
   const handleFecharCelebracao = async () => {
-    const supabase = createClient()
-
-    // Atualiza a flag no banco de dados
     await supabase
       .from("progresso_fases")
       .update({ celebracao_vista: true })
@@ -322,17 +303,7 @@ export default function PassoClient({
 
   const jaAvancou = discipulo.passo_atual > numero
 
-  console.log("[v0] ===== PODE RECEBER RECOMPENSAS? =====")
-  console.log("[v0] Passo:", numero)
-  console.log("[v0] todasReflexoesAprovadas:", todasReflexoesAprovadas())
-  console.log("[v0] perguntasReflexivas:", perguntasReflexivas)
-  console.log("[v0] perguntasReflexivasAprovadas:", perguntasReflexivasAprovadas)
-  console.log("[v0] todasTarefasAprovadas:", todasTarefasAprovadas)
-  console.log("[v0] leituraBiblicaConcluida:", leituraBiblicaConcluida)
-  console.log("[v0] status:", status)
-  console.log("[v0] jaAvancou:", jaAvancou)
-  console.log("[v0] discipulo.passo_atual:", discipulo.passo_atual)
-  console.log("[v0] isPrMarcus:", isPrMarcus)
+  // These logs were executing on every render, causing the component to re-render infinitely
 
   const podeReceberRecompensas = useMemo(() => {
     if (isPrMarcus) return false // Pr. Marcus has a different flow
@@ -467,7 +438,7 @@ export default function PassoClient({
       setModalAberto(false)
       setReflexao("")
 
-      window.location.reload()
+      setTimeout(() => window.location.reload(), 1500)
     } catch (error) {
       console.error("Erro ao enviar reflexão:", error)
       toast({ title: "Erro", description: "Erro ao enviar reflexão. Tente novamente.", variant: "destructive" })

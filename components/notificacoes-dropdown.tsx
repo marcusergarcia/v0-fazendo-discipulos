@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useSupabase } from "@/components/supabase-provider"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -27,18 +27,17 @@ type Notificacao = {
   tipo: string
 }
 
-export function NotificacoesDropdown({ userId }: { userId: string }) {
+export function NotificacoesDropdown({ discipuloId }: { discipuloId: string }) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useSupabase()
 
   const naoLidas = notificacoes.filter((n) => !n.lida).length
 
   useEffect(() => {
     carregarNotificacoes()
 
-    // Atualizar notificações em tempo real
     const channel = supabase
       .channel("notificacoes-changes")
       .on(
@@ -47,7 +46,7 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
           event: "*",
           schema: "public",
           table: "notificacoes",
-          filter: `user_id=eq.${userId}`,
+          filter: `discipulo_id=eq.${discipuloId}`,
         },
         () => {
           carregarNotificacoes()
@@ -58,14 +57,14 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId])
+  }, [discipuloId])
 
   async function carregarNotificacoes() {
     const { data, error } = await supabase
       .from("notificacoes")
       .select("*")
-      .eq("user_id", userId)
-      .eq("lida", false) // Apenas notificações não lidas
+      .eq("discipulo_id", discipuloId)
+      .eq("lida", false)
       .order("created_at", { ascending: false })
       .limit(10)
 
@@ -76,10 +75,8 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
   }
 
   async function marcarComoLida(notificacao: Notificacao) {
-    // Excluir a notificação do banco
     await supabase.from("notificacoes").delete().eq("id", notificacao.id)
 
-    // Atualizar a lista localmente
     setNotificacoes((prev) => prev.filter((n) => n.id !== notificacao.id))
 
     if (notificacao.link) {
@@ -88,12 +85,12 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
   }
 
   async function marcarTodasComoLidas() {
-    console.log("[v0] Iniciando limpeza de todas as notificações para userId:", userId)
+    console.log("[v0] Iniciando limpeza de todas as notificações para discipuloId:", discipuloId)
 
     const { data: notificacoesDoUsuario, error: notifError } = await supabase
       .from("notificacoes")
       .select("id")
-      .eq("user_id", userId)
+      .eq("discipulo_id", discipuloId)
 
     if (notifError) {
       console.error("[v0] Erro ao buscar notificações:", notifError)
@@ -121,7 +118,11 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
       console.log("[v0] Referências de perguntas_reflexivas limpas com sucesso")
     }
 
-    const { error: deleteError, count } = await supabase.from("notificacoes").delete().eq("user_id", userId).select()
+    const { error: deleteError, count } = await supabase
+      .from("notificacoes")
+      .delete()
+      .eq("discipulo_id", discipuloId)
+      .select()
 
     if (deleteError) {
       console.error("[v0] Erro ao deletar notificações:", deleteError)
@@ -131,7 +132,6 @@ export function NotificacoesDropdown({ userId }: { userId: string }) {
 
     setNotificacoes([])
 
-    // Reload to ensure sync with database
     carregarNotificacoes()
   }
 

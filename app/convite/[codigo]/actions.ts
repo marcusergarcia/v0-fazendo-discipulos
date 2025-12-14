@@ -93,7 +93,8 @@ export async function cadastrarDiscipuloPorConvite(dados: {
       .from("notificacoes")
       .insert({
         user_id: dados.discipuladorId,
-        tipo: "novo_discipulo",
+        discipulo_id: discipuloData.id,
+        tipo: "mensagem", // Changed tipo from "novo_discipulo" to "mensagem"
         titulo: "Novo Discípulo Aguardando Aprovação",
         mensagem: `${dados.nomeCompleto} completou o cadastro e aguarda sua aprovação para iniciar o discipulado.`,
         link: `/discipulador/aprovar/${discipuloData.id}`,
