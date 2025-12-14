@@ -161,7 +161,7 @@ export const RESUMOS_CONTEUDO = {
       "artigo-p5-2": {
         titulo: "O Evangelho da Ressurreição de Jesus: A Vitória sobre a Morte",
         resumo:
-          "A ressurreição não é apenas um 'final feliz' — é a PROVA DEFINITIVA de que Jesus é quem Ele diz ser! Se Cristo não ressuscitou, nossa fé é inútil (1 Coríntios 15:14). Mas Ele ressuscitou! E isso muda TUDO. A ressurreição garante que o poder do pecado e da morte foi quebrado. Efésios 2:5 declara que Deus 'nos deu vida juntamente com Cristo'. Não é apenas sobre ir para o céu um dia — é sobre viver uma NOVA VIDA agora, cheia do poder do Espírito Santo que ressuscitou Jesus dos mortos!",
+          "A ressurreição não é apenas um 'final feliz' — é a PROVA DEFINITIVA de que Jesus é quem Ele diz ser! Se Cristo não ressuscitou, nossa fé é inútil (1 Coríntios 15:14). Mas Ele ressuscitou! E isso muda TUDO. A ressurreição garante que o poder do pecado e da morte foi quebrado. Efésios 2:5 declara que Deus 'nos deu vida juntamente com Cristo'. Não é apenas sobre ir para o céu um dia — é sobre viver uma NOVA VIDA agora, cheia do poder do Espírito Santo que ressuscitou Jesus!",
       },
       "artigo-p5-3": {
         titulo: "Reconciliação: De Inimigos a Filhos",

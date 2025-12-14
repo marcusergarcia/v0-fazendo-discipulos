@@ -45,3 +45,5 @@ export const perguntasPorPasso = PERGUNTAS_POR_PASSO
 export function getPerguntasPasso(numero: number): string[] {
   return PERGUNTAS_POR_PASSO[numero] || []
 }
+
+// Additional updates can be added here if needed
