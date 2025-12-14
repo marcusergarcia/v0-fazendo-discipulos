@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
 import { ChapterCheckboxList } from "@/components/chapter-checkbox-list"
 import { BibleReaderWithAutoCheck } from "@/components/bible-reader-with-auto-check"
 import { LIVROS_MAP } from "@/lib/livros-map"
-import { useSupabase } from "@/components/supabase-provider"
+import { createClient } from "@/lib/supabase/client"
 
 interface LeituraSemanal {
   semana: number
@@ -44,7 +44,7 @@ export default function LeituraBiblicaClient({
   const [livroAtual, setLivroAtual] = useState(leituraAtual.livro)
   const [livroIdAtual, setLivroIdAtual] = useState(LIVROS_MAP[leituraAtual.livro] || 1)
 
-  const supabase = useSupabase()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     if (capitulosLidosInicial && capitulosLidosInicial.length > 0) {

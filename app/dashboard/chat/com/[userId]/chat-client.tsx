@@ -2,14 +2,14 @@
 
 import type React from "react"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card } from "@/components/ui/card"
 import { Send, ArrowLeft, Check, CheckCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { RealtimeChannel } from "@supabase/supabase-js"
-import { useSupabase } from "@/components/supabase-provider"
+import { createClient } from "@/lib/supabase/client"
 
 interface Mensagem {
   id: string
@@ -38,7 +38,7 @@ export default function ChatClient({
   const [novaMensagem, setNovaMensagem] = useState("")
   const [enviando, setEnviando] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const supabase = useSupabase()
+  const supabase = useMemo(() => createClient(), [])
   const router = useRouter()
 
   const scrollToBottom = () => {

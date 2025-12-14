@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { useEffect, useState } from "react"
-import { useSupabase } from "@/components/supabase-provider"
+import { useEffect, useState, useMemo } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -31,7 +31,7 @@ export function NotificacoesDropdown({ discipuloId }: { discipuloId: string }) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = useSupabase()
+  const supabase = useMemo(() => createClient(), [])
 
   const naoLidas = notificacoes.filter((n) => !n.lida).length
 
