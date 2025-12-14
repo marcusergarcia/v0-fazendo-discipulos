@@ -588,21 +588,21 @@ export const PASSOS_CONTEUDO = {
     artigos: [
       {
         id: "artigo-p7-1",
-        titulo: "Conversão: Voltando-se para Deus",
-        fonte: "Got Questions",       
-        url: "https://www.gotquestions.org/Portugues/conversao-Crista.html",
+        titulo: "Conversão envolve todo nosso ser se voltando para Deus",
+        fonte: "Ministério Fiel",       
+        url: "https://ministeriofiel.com.br/artigos/conversao-envolve-todo-nosso-ser-se-voltando-para-deus/",
       },
       {
         id: "artigo-p7-2",
-        titulo: "Regeneração: O Novo Nascimento",
-        fonte: "Voltemos ao Evangelho",       
-        url: "https://voltemosaoevangelho.com/blog/2015/02/o-que-e-regeneracao/",
+        titulo: "Compreendendo o Novo Nascimento: Regeneração Espiritual e sua Importância ",
+        fonte: "Ideal Way Church",       
+        url: "https://www.idealwaychurch.com/sete-areas-da-vida/espiritual/compreendendo-o-novo-nascimento-regeneracao-espiritual-e-sua-importancia/",
       },
       {
         id: "artigo-p7-3",
-        titulo: "Embaixadores de Cristo: Nossa Missão",
-        fonte: "Respostas Bíblicas",       
-        url: "https://www.respostas.com.br/o-que-significa-ser-um-embaixador-de-cristo/",
+        titulo: "Ser Embaixador: Por Cristo como Cristo",
+        fonte: "Embaixadores do Rei",       
+        url: "https://www.embaixadoresdorei.org/estudos/ser-embaixador-por-cristo-e-como-cristo",
       },
       {
         id: "artigo-p7-4",
