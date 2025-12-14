@@ -259,8 +259,7 @@ export default function PassoClient({
       })
       setRespostasPerguntasReflexivas([])
 
-      // Recarregar página para atualizar status
-      setTimeout(() => window.location.reload(), 1500)
+      setTimeout(() => window.location.reload(), 1000)
     } catch (error) {
       console.error("[v0] Erro ao enviar perguntas reflexivas:", error)
       toast({
@@ -438,7 +437,7 @@ export default function PassoClient({
       setModalAberto(false)
       setReflexao("")
 
-      setTimeout(() => window.location.reload(), 1500)
+      setTimeout(() => window.location.reload(), 1000)
     } catch (error) {
       console.error("Erro ao enviar reflexão:", error)
       toast({ title: "Erro", description: "Erro ao enviar reflexão. Tente novamente.", variant: "destructive" })
@@ -606,7 +605,13 @@ export default function PassoClient({
         </Card>
 
         {/* Leitura Bíblica Semanal */}
-        {(numero === 1 || numero === 2 || numero === 3 || numero === 4 || numero === 5 || numero === 6) && (
+        {(numero === 1 ||
+          numero === 2 ||
+          numero === 3 ||
+          numero === 4 ||
+          numero === 5 ||
+          numero === 6 ||
+          numero === 7) && (
           <Card className="mb-6 border-2 border-primary/20">
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -866,6 +871,51 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 6"
                             : "Iniciar Leitura da Semana 6"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {/* Step 7 weekly reading section */}
+                {numero === 7 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">
+                        {temaSemana || "Jesus, o Messias prometido - Parte 2"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Continue descobrindo Jesus como o Rei prometido, Sua morte, ressurreição e a Grande Comissão."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          Mateus 15-28
+                        </Badge>
+                        <span className="text-muted-foreground">14 capítulos</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Parabéns! Você completou o Evangelho de Mateus! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Você conheceu Jesus como o Messias prometido, viu Sua cruz, ressurreição e recebeu a
+                              Grande Comissão. Continue firme!
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=7">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 7"
+                            : "Iniciar Leitura da Semana 7"}
                         </Button>
                       </Link>
                     )}
