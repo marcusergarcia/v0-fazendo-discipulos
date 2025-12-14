@@ -269,6 +269,42 @@ export const RESUMOS_CONTEUDO = {
       },
     },
   },
+  8: {
+    artigos: {
+      "artigo-p8-1": {
+        titulo: "Jesus e Sua Compaixão pelos Perdidos",
+        resumo:
+          "Jesus demonstrou compaixão radical pelos marginalizados da sociedade. Enquanto os líderes religiosos desprezavam pecadores, Jesus os acolhia! Lucas 15 apresenta três parábolas que revelam o coração de Deus: a ovelha perdida, a moeda perdida e o filho pródigo. Cada uma mostra que Deus busca ativamente os perdidos. Lucas 19:10 resume: 'O Filho do Homem veio buscar e salvar o que estava perdido'. A compaixão de Jesus não era passiva — Ele cruzou barreiras culturais, tocou intocáveis e comeu com pecadores. Seu amor transforma vidas! Ninguém está longe demais do alcance da compaixão divina.",
+      },
+      "artigo-p8-2": {
+        titulo: "A Parábola do Filho Pródigo: O Amor do Pai",
+        resumo:
+          "A parábola do filho pródigo (Lucas 15:11-32) é uma das histórias mais poderosas sobre o amor de Deus. O filho mais novo desperdiça sua herança em vida dissoluta e volta envergonhado. Mas o pai não o rejeita — ele CORRE ao seu encontro! Este pai representa Deus, que não apenas perdoa, mas CELEBRA o retorno do pecador arrependido. A festa, o anel, as sandálias e o bezerro gordo mostram restauração completa. O filho mais velho representa aqueles que se consideram justos mas não compreendem a graça. A mensagem é clara: não importa quão longe você foi — o Pai espera ansiosamente seu retorno!",
+      },
+      "artigo-p8-3": {
+        titulo: "Lucas: O Evangelho da Compaixão",
+        resumo:
+          "O Evangelho de Lucas apresenta Jesus como o Salvador compassivo que veio para TODOS — judeus e gentios, ricos e pobres, homens e mulheres, justos e pecadores. Lucas registra mais parábolas sobre misericórdia do que qualquer outro evangelista. Ele mostra Jesus tocando leprosos (Lucas 5:13), ressuscitando o filho de uma viúva (Lucas 7:11-17), curando no sábado (Lucas 6:6-11) e defendendo uma mulher pecadora (Lucas 7:36-50). Lucas 4:18 cita Jesus: 'O Espírito do Senhor está sobre mim... para proclamar boas-novas aos pobres... liberdade aos cativos'. Este é o Jesus que busca ativamente os quebrantados e rejeitados!",
+      },
+    },
+    videos: {
+      "video-p8-1": {
+        titulo: "A Parábola do Filho Pródigo",
+        resumo:
+          "Este vídeo apresenta uma análise profunda da parábola do filho pródigo, explorando o significado do amor incondicional do Pai celestial. Mostra como Deus não apenas perdoa, mas restaura completamente aqueles que se arrependem e voltam para Ele, independentemente de quão longe tenham ido.",
+      },
+      "video-p8-2": {
+        titulo: "Jesus e os Excluídos da Sociedade",
+        resumo:
+          "Uma exploração de como Jesus quebrou todas as barreiras sociais ao se aproximar de leprosos, cobradores de impostos, prostitutas e outros marginalizados. O vídeo mostra que a compaixão de Cristo não conhece limites e que Ele valoriza cada pessoa, não importa seu passado ou posição social.",
+      },
+      "video-p8-3": {
+        titulo: "O Coração Compassivo de Jesus",
+        resumo:
+          "Este vídeo examina várias passagens onde Jesus demonstrou profunda compaixão — curando enfermos, alimentando multidões, perdoando pecadores e chorando com os que sofrem. Mostra que a compaixão não é apenas um sentimento, mas uma ação transformadora que deve caracterizar todos os seguidores de Cristo.",
+      },
+    },
+  },
 } as const
 
 export type ResumoConteudo = {

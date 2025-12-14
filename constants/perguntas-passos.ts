@@ -37,6 +37,11 @@ export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
     "Como embaixadores de Cristo (2 Coríntios 5:20), representamos oficialmente o Reino de Deus no mundo. Como você tem cumprido essa missão no seu ambiente de trabalho, família e círculo social? Que barreiras (medo, vergonha, comodismo) impedem você de ser um embaixador mais fiel? Como pode superá-las?",
     "Propiciação significa que Jesus satisfez completamente a ira de Deus contra o pecado. Romanos 3:25 diz que Deus apresentou Cristo como 'propiciação pelo seu sangue'. Como entender que a justiça de Deus foi plenamente satisfeita muda sua percepção sobre segurança eterna? Você vive com medo de que Deus ainda esteja irado com você, ou descansa na certeza de que Cristo já pagou TUDO?",
   ],
+  8: [
+    "Jesus demonstrou compaixão radical pelos marginalizados — leprosos, cobradores de impostos, prostitutas, pecadores desprezados. Lucas 15 revela três parábolas sobre buscar os perdidos: a ovelha, a moeda e o filho pródigo. Como a compaixão de Jesus por VOCÊ (quando você estava perdido) deve transformar a maneira como você trata os 'perdidos' ao seu redor? Quem são os 'intocáveis' ou 'desprezados' em sua comunidade que precisam experimentar a compaixão de Cristo através de você?",
+    "A parábola do filho pródigo (Lucas 15:11-32) mostra um pai que não apenas perdoa, mas CORRE ao encontro do filho rebelde e celebra seu retorno. Você consegue enxergar Deus assim — como um Pai que espera ansiosamente por você, pronto para restaurá-lo completamente? Ou você ainda vê Deus como um juiz severo esperando para puni-lo? Como essa visão do coração compassivo de Deus transforma sua liberdade para se aproximar Dele, especialmente quando você falha?",
+    "Lucas 19:10 declara: 'O Filho do Homem veio buscar e salvar o que estava perdido'. Jesus buscou ATIVAMENTE os perdidos — Ele foi à casa de Zaqueu, tocou o leproso, defendeu a mulher pecadora. Como você pode seguir o exemplo de Jesus e buscar ativamente aqueles que estão longe de Deus? Que passos práticos você precisa dar esta semana para demonstrar compaixão compassiva a alguém quebrantado, rejeitado ou necessitado?",
+  ],
 }
 
 // Mantendo compatibilidade com código existente

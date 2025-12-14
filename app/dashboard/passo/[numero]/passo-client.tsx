@@ -611,7 +611,8 @@ export default function PassoClient({
           numero === 4 ||
           numero === 5 ||
           numero === 6 ||
-          numero === 7) && (
+          numero === 7 ||
+          numero === 8) && (
           <Card className="mb-6 border-2 border-primary/20">
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -916,6 +917,48 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 7"
                             : "Iniciar Leitura da Semana 7"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {/* Step 8 weekly reading section */}
+                {numero === 8 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "O Espírito Santo e a Igreja"}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Descubra o papel do Espírito Santo na vida do crente e a fundação da Igreja através dos Atos dos Apóstolos."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          Atos 1-12
+                        </Badge>
+                        <span className="text-muted-foreground">12 capítulos</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Que avanço! Você está conhecendo a obra do Espírito Santo e a Igreja! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Continue aprofundando seu conhecimento sobre o poder de Deus em ação.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=8">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 8"
+                            : "Iniciar Leitura da Semana 8"}
                         </Button>
                       </Link>
                     )}
