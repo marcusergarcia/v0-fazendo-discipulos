@@ -17,6 +17,7 @@ export function ProgressoAnualClient({ capitulosLidos }: ProgressoAnualClientPro
   const [livroId, setLivroId] = useState(1)
   const [livroNome, setLivroNome] = useState("Gênesis")
   const [capituloInicial, setCapituloInicial] = useState(1)
+  const [capitulosLidosAtualizados, setCapitulosLidosAtualizados] = useState<Set<number>>(new Set(capitulosLidos))
 
   const handleNavigateToChapter = (novoLivroId: number, novoLivroNome: string, novoCapitulo: number) => {
     setLivroId(novoLivroId)
@@ -26,11 +27,9 @@ export function ProgressoAnualClient({ capitulosLidos }: ProgressoAnualClientPro
     setLeitorAberto(true)
   }
 
-  const handleChapterRead = () => {
-    setLeitorAberto(false)
-    setTimeout(() => {
-      window.location.href = window.location.href
-    }, 1000)
+  const handleChapterRead = (capituloId: number) => {
+    setCapitulosLidosAtualizados((prev) => new Set([...prev, capituloId]))
+    // Não fecha mais o modal automaticamente
   }
 
   return (
@@ -61,7 +60,7 @@ export function ProgressoAnualClient({ capitulosLidos }: ProgressoAnualClientPro
             livroId={livroId}
             startChapter={capituloInicial}
             endChapter={capituloInicial}
-            capitulosLidos={new Set(capitulosLidos)}
+            capitulosLidos={capitulosLidosAtualizados}
             onChapterRead={handleChapterRead}
             capituloInicialJaLido={false}
             capitulosSemana={[]}
