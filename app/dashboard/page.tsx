@@ -16,8 +16,6 @@ import {
   BookOpen,
   Shield,
   Award,
-  Lock,
-  CheckCircle2,
   Clock,
   Sparkles,
   LogOut,
@@ -599,17 +597,6 @@ function StepCard({
   status,
   href,
 }: { number: number; title: string; status: "completed" | "current" | "locked"; href?: string }) {
-  const getIcon = () => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle2 className="w-6 h-6 text-accent" />
-      case "current":
-        return <Target className="w-6 h-6 text-primary" />
-      case "locked":
-        return <Lock className="w-6 h-6 text-muted-foreground" />
-    }
-  }
-
   const getStyles = () => {
     switch (status) {
       case "completed":
@@ -626,7 +613,6 @@ function StepCard({
       <div className="flex justify-center mb-3">
         <StepBadge stepNumber={number} status={status} size="md" />
       </div>
-      <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>
     </div>
