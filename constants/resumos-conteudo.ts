@@ -308,36 +308,36 @@ export const RESUMOS_CONTEUDO = {
   9: {
     artigos: {
       "artigo-p9-1": {
-        titulo: "O Senhorio de Cristo: Submissão Total",
+        titulo: "O Senhorio de Cristo na Vida do Cristão",
         resumo:
-          "Confessar Jesus como Senhor vai além de repetir palavras — é reconhecer que Ele tem autoridade absoluta sobre toda a sua vida. O senhorio de Cristo significa que Suas prioridades se tornam suas prioridades, Sua vontade governa suas decisões e você deixa de ser o centro para que Cristo reine. É uma entrega consciente de todas as áreas: relacionamentos, carreira, finanças, tempo e futuro. Filipenses 2:9-11 declara que 'todo joelho se dobrará' — confessar Jesus como Senhor hoje é graça, amanhã será juízo. Esta decisão radical transforma discípulos nominais em seguidores comprometidos que vivem sob o governo amoroso do Rei dos reis!",
+          "Após a conversão, surge uma decisão determinante: entregar-se completamente a Cristo em um vínculo de total rendição ou viver segundo as próprias vontades. Filipenses 3:7-10 mostra Paulo abandonando tudo para conhecer Cristo profundamente. O senhorio em um mundo egoísta é desafiador, mas é impossível viver Cristo sem submissão — Ele é o cabeça da Igreja (Colossenses 1:18). Quanto maior a tolerância com a carne, maior o afastamento de Cristo. A regeneração pelo Espírito Santo capacita a vencer desejos carnais (Romanos 8:9-10). Ensinos errados de falsos mestres (2 Timóteo 4:3-4), indisposição em aprender, e falta de revelação sobre Jesus impedem a submissão. Com relacionamento íntimo através do novo nascimento, é possível viver a vontade de Deus. Isaías 45:23 declara que todo joelho se dobrará — servir a Cristo hoje não é obrigação, mas deleite naquilo que Ele preparou!",
       },
       "artigo-p9-2": {
-        titulo: "Confissão de Fé: Crer no Coração, Confessar com a Boca",
+        titulo: "Confissão de Fé: Unidade e Clareza Doutrinária",
         resumo:
-          "Romanos 10:9-10 une dois elementos inseparáveis da salvação: crer no coração e confessar com a boca. A fé genuína no coração não pode permanecer oculta — ela naturalmente se manifesta em confissão pública. Confessar Jesus não é apenas uma formalidade religiosa, mas um ato de coragem que declara publicamente sua lealdade a Cristo. Esta confissão fortalece sua própria fé, testemunha aos outros sobre o poder transformador do Evangelho e estabelece um compromisso público com o reino de Deus. Mateus 10:32 promete que aqueles que confessam Jesus diante dos homens serão confessados por Ele diante do Pai!",
+          "Uma confissão de fé é uma declaração sistematizada das doutrinas fundamentais da Bíblia que serve como guia para interpretação coerente da Palavra de Deus. A Confissão de Westminster (1643-1648) foi escrita durante a Guerra Civil Inglesa para unificar a fé reformada e estabelecer padrão doutrinário sólido. Desde o Antigo Testamento (Shemá Israel em Deuteronômio 6:4) até o Novo Testamento (Pedro em Mateus 16:16), o povo de Deus sempre expressou sua fé através de declarações claras. As confissões defendem contra falsos ensinos (como o Credo de Niceia contra o Arianismo), ajudam na interpretação correta da Bíblia, preservam a verdade para próximas gerações (2 Timóteo 2:2) e garantem unidade doutrinária. Os presbiterianos utilizam Westminster pois ela reflete fielmente a teologia reformada: soberania de Deus, centralidade das Escrituras, salvação pela graça mediante fé. A Confissão não substitui a Bíblia, mas é um resumo fiel subordinado à autoridade suprema das Escrituras!",
       },
       "artigo-p9-3": {
-        titulo: "Entrega Total a Cristo: Negando a Si Mesmo",
+        titulo: "Romanos 10: Confessar Jesus com a Boca",
         resumo:
-          "Lucas 9:23 apresenta a condição para seguir Jesus: 'Negue-se a si mesmo, tome sua cruz e siga-me'. Negar a si mesmo não significa autoflagelação ou baixa autoestima, mas destronizar o 'eu' para que Cristo reine. É reconhecer que sua vida não te pertence mais — você foi comprado por alto preço (1 Coríntios 6:20). Tomar a cruz significa morrer diariamente para seus desejos egoístas e viver para Cristo. Esta entrega radical não é perda, mas ganho! Jesus promete: 'Quem perder sua vida por minha causa, a encontrará' (Mateus 16:25). Entregar tudo a Cristo é descobrir a verdadeira liberdade e propósito!",
+          "Romanos 10 é um dos textos mais claros sobre o caminho da salvação. Paulo fala com coração apertado sobre Israel que, apesar do zelo por Deus, rejeitou o Messias por falta de conhecimento verdadeiro. Eles tentavam estabelecer justiça própria, ignorando que Cristo é o 'telos' (alvo e término) da lei (Romanos 10:4). A lei nunca salvou, apenas conduziu o pecador a Cristo. Paulo contrasta justiça da lei (obediência perfeita impossível) com justiça da fé (Cristo já veio, morreu e ressuscitou). A salvação está ao alcance: não é preciso subir ao céu nem descer ao abismo. Romanos 10:9-10 resume tudo: 'Se você confessar com sua boca que Jesus é Senhor e crer em seu coração que Deus o ressuscitou dentre os mortos, será salvo'. Com o coração se crê (fé interna gerando justiça), com a boca se confessa (declaração pública trazendo salvação). Joel 2:32 promete: 'Todo aquele que invocar o nome do Senhor será salvo'. A fé vem pelo ouvir a Palavra de Cristo (Romanos 10:17)!",
       },
     },
     videos: {
       "video-p9-1": {
         titulo: "O que Significa Jesus Ser Senhor?",
         resumo:
-          "Este vídeo explora o significado profundo de confessar Jesus como Senhor, não apenas como Salvador. Mostra que o senhorio de Cristo envolve submissão total de todas as áreas da vida — não apenas frequentar igreja, mas viver sob o governo amoroso de Cristo em cada decisão, relacionamento e prioridade.",
+          "Este vídeo explora o significado profundo de confessar Jesus como Senhor, não apenas como Salvador. Mostra que o senhorio de Cristo envolve submissão total de todas as áreas da vida — não apenas frequentar igreja, mas viver sob o governo amoroso de Cristo em cada decisão, relacionamento e prioridade. Destaca que Jesus como Senhor significa autoridade absoluta, onde Suas prioridades se tornam nossas prioridades e Sua vontade governa todas as escolhas. Filipenses 2:9-11 declara que todo joelho se dobrará — confessar hoje é graça, amanhã será juízo!",
       },
       "video-p9-2": {
         titulo: "Crer no Coração e Confessar com a Boca",
         resumo:
-          "Uma exposição bíblica de Romanos 10:9-10 que revela como a fé verdadeira sempre resulta em confissão pública. O vídeo destaca que confessar Jesus não é opcional, mas a expressão natural de uma fé genuína que transforma e testemunha aos outros sobre o poder do Evangelho.",
+          "Uma exposição bíblica de Romanos 10:9-10 que revela como a fé verdadeira sempre resulta em confissão pública. O vídeo destaca que confessar Jesus não é opcional, mas a expressão natural de uma fé genuína. Mostra os dois movimentos inseparáveis: crer no coração (fé interna que gera justiça) e confessar com a boca (declaração pública que traz salvação). Mateus 10:32 promete que aqueles que confessam Jesus diante dos homens serão confessados por Ele diante do Pai. A confissão fortalece a própria fé e testemunha aos outros sobre o poder transformador do Evangelho!",
       },
       "video-p9-3": {
         titulo: "Entrega Total: O Chamado Radical de Cristo",
         resumo:
-          "Um chamado desafiador sobre o que significa negar a si mesmo e seguir Jesus. O vídeo mostra que o cristianismo não é adicionar Jesus à sua vida atual, mas render sua vida inteira ao Seu senhorio. Apresenta exemplos práticos de como viver essa entrega total no dia a dia.",
+          "Um chamado desafiador sobre o que significa negar a si mesmo e seguir Jesus. O vídeo mostra que o cristianismo não é adicionar Jesus à sua vida atual, mas render sua vida inteira ao Seu senhorio. Lucas 9:23 apresenta a condição: 'Negue-se a si mesmo, tome sua cruz e siga-me'. Negar a si mesmo não é autoflagelação, mas destronizar o 'eu' para que Cristo reine. Tomar a cruz significa morrer diariamente para desejos egoístas. Esta entrega radical não é perda, mas ganho! Jesus promete: 'Quem perder sua vida por minha causa, a encontrará' (Mateus 16:25). Apresenta exemplos práticos de submissão ao senhorio em relacionamentos, carreira, finanças e uso do tempo!",
       },
     },
   },

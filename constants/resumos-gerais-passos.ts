@@ -155,42 +155,42 @@ export const RESUMOS_GERAIS_PASSOS = {
     ],
   },
   8: {
-    titulo: "Justificação e Santificação",
+    titulo: "A Compaixão de Jesus",
     topicos: [
       {
-        titulo: "Justificação: Declarados Justos",
+        titulo: "Compaixão pelos Marginalizados",
         descricao:
-          "Justificação é o ato judicial de Deus onde Ele declara o pecador completamente justo com base na fé em Cristo. Não é um processo gradual, mas uma declaração instantânea no momento da conversão. Romanos 5:1 proclama: 'Justificados pela fé, temos paz com Deus por meio de nosso Senhor Jesus Cristo'. A justiça de Cristo é creditada a nós, e nossa culpa é removida para sempre.",
+          "Jesus demonstrou compaixão radical pelos desprezados da sociedade — leprosos, cobradores de impostos, prostitutas, pecadores. Lucas 15 revela três parábolas sobre buscar os perdidos: a ovelha, a moeda e o filho pródigo, mostrando o coração de Deus que busca ativamente aqueles que se desviaram.",
       },
       {
-        titulo: "Santificação: Crescendo em Santidade",
+        titulo: "O Coração do Pai que Espera",
         descricao:
-          "Enquanto a justificação é instantânea, a santificação é progressiva — o processo contínuo de nos tornarmos mais semelhantes a Cristo. O Espírito Santo trabalha em nós, transformando nosso caráter, renovando nossa mente e produzindo frutos espirituais. Filipenses 2:12-13 nos exorta: 'Desenvolvam sua salvação com temor e tremor, pois é Deus quem efetua em vocês tanto o querer quanto o realizar'.",
+          "A parábola do filho pródigo (Lucas 15:11-32) revela um pai que não apenas perdoa, mas CORRE ao encontro do filho rebelde e celebra seu retorno. Esta é a imagem perfeita de como Deus nos recebe — não com condenação, mas com abraço restaurador e festa de celebração!",
       },
       {
-        titulo: "Cooperação com o Espírito Santo",
+        titulo: "Buscar e Salvar os Perdidos",
         descricao:
-          "A santificação não é passiva — cooperamos ativamente com o Espírito Santo através da oração, estudo da Palavra, comunhão com outros crentes e obediência aos mandamentos de Deus. Romanos 8:13 declara: 'Se pelo Espírito vocês mortificarem os atos do corpo, viverão'. É uma parceria divino-humana onde Deus capacita e nós respondemos em fé e obediência.",
+          "Lucas 19:10 declara a missão de Jesus: 'O Filho do Homem veio buscar e salvar o que estava perdido'. Ele foi à casa de Zaqueu, tocou o leproso, defendeu a mulher pecadora. Como seguidores de Cristo, somos chamados a demonstrar essa mesma compaixão ativa aos quebrantados e necessitados.",
       },
     ],
   },
   9: {
-    titulo: "Adoção e Herança",
+    titulo: "Confessar Jesus como Senhor",
     topicos: [
       {
-        titulo: "Adoção: Filhos do Pai Celestial",
+        titulo: "Fé no Coração e Confissão com a Boca",
         descricao:
-          "Deus não apenas nos perdoa — Ele nos adota como Seus filhos! Gálatas 4:5 proclama que Deus enviou Cristo 'a fim de redimir os que estavam sob a lei, para que recebêssemos a adoção de filhos'. Não somos servos distantes, mas filhos amados com pleno acesso ao Pai. Romanos 8:15 nos assegura: 'Vocês receberam o Espírito de adoção, pelo qual clamamos: Aba, Pai!'",
+          "Romanos 10:9-10 une dois elementos inseparáveis da salvação: crer no coração que Deus ressuscitou Jesus dentre os mortos e confessar com a boca que Jesus é Senhor. O coração crê para justiça e a boca confessa para salvação. A confissão não é opcional, mas a expressão natural e necessária de uma fé genuína. Mateus 10:32 promete que aqueles que confessam Jesus diante dos homens serão confessados por Ele diante do Pai celestial. A fé verdadeira sempre se torna declaração pública!",
       },
       {
-        titulo: "Co-Herdeiros com Cristo",
+        titulo: "O Senhorio Total de Cristo",
         descricao:
-          "Como filhos adotados, somos também herdeiros! Romanos 8:17 declara: 'Se somos filhos, então somos herdeiros; herdeiros de Deus e co-herdeiros com Cristo'. Tudo o que pertence a Cristo — Sua glória, Seu reino, Sua autoridade — será compartilhado conosco. Efésios 1:11 confirma que 'fomos predestinados... para sermos herança, tendo sido designados de acordo com o propósito daquele que faz todas as coisas'.",
+          "Confessar Jesus como Senhor significa reconhecer Sua autoridade absoluta sobre TODAS as áreas da vida — não apenas aceitar salvação, mas entregar o controle total. Filipenses 3:7-11 mostra Paulo abandonando tudo para conhecer Cristo profundamente. O senhorio envolve submissão de planos, relacionamentos, finanças, carreira e tempo. Quanto maior a tolerância com desejos carnais, maior o afastamento de Cristo. Colossenses 1:18 declara que Cristo é o cabeça da Igreja. Todo joelho se dobrará — confessar hoje é graça, depois será juízo!",
       },
       {
-        titulo: "Privilégios da Filiação",
+        titulo: "Negar a Si Mesmo e Seguir Jesus",
         descricao:
-          "Como filhos de Deus, temos privilégios extraordinários: acesso direto ao trono da graça, a habitação do Espírito Santo, orientação divina, proteção paternal, provisão constante e a certeza de que 'todas as coisas cooperam para o bem daqueles que amam a Deus' (Romanos 8:28). Somos família real, cidadãos do céu, e nada pode nos separar do amor do Pai!",
+          "Lucas 9:23 estabelece a condição radical: 'Negue-se a si mesmo, tome sua cruz e siga-me'. Negar a si mesmo não é autoflagelação, mas destronizar o 'eu' para que Cristo reine — Ele no trono, nós como servos. Tomar a cruz significa morrer diariamente para desejos egoístas e viver para Cristo. A regeneração pelo Espírito Santo capacita a vencer a carne (Romanos 8:9-10). Esta entrega não é perda, mas ganho! Jesus promete: 'Quem perder sua vida por minha causa, a encontrará' (Mateus 16:25). Servir a Cristo não é obrigação pesada, mas deleite naquilo que Ele preparou!",
       },
     ],
   },
