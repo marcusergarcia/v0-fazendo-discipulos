@@ -50,6 +50,7 @@ import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
 import { RESUMOS_GERAIS_PASSOS } from "@/constants/resumos-gerais-passos"
 import { ModalCelebracaoPasso } from "@/components/modal-celebracao-passo"
+import { StepBadge } from "@/components/step-badge"
 
 // Removed: let supabaseInstance: ReturnType<typeof createClient> | null = null
 // Removed: const getSupabaseClient = () => {
@@ -559,12 +560,26 @@ export default function PassoClient({
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8 text-center">
-          <div className="text-6xl mb-4">{passo.icone}</div>
+          <div className="flex justify-center mb-6">
+            <StepBadge
+              stepNumber={numero}
+              status={
+                progresso?.passo_atual === numero
+                  ? "current"
+                  : progresso?.passo_atual && progresso.passo_atual > numero
+                    ? "completed"
+                    : "locked"
+              }
+              size="xl"
+            />
+          </div>
           <h2 className="text-4xl font-bold mb-2">
             PASSO {numero} – {passo.titulo}
           </h2>
+          <p className="text-muted-foreground text-lg">{passo.fase}</p>
         </div>
 
+        {/* Objetivo do Passo */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-3 text-xl font-bold">
