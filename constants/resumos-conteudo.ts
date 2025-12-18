@@ -305,6 +305,42 @@ export const RESUMOS_CONTEUDO = {
       },
     },
   },
+  9: {
+    artigos: {
+      "artigo-p9-1": {
+        titulo: "O Senhorio de Cristo: Submissão Total",
+        resumo:
+          "Confessar Jesus como Senhor vai além de repetir palavras — é reconhecer que Ele tem autoridade absoluta sobre toda a sua vida. O senhorio de Cristo significa que Suas prioridades se tornam suas prioridades, Sua vontade governa suas decisões e você deixa de ser o centro para que Cristo reine. É uma entrega consciente de todas as áreas: relacionamentos, carreira, finanças, tempo e futuro. Filipenses 2:9-11 declara que 'todo joelho se dobrará' — confessar Jesus como Senhor hoje é graça, amanhã será juízo. Esta decisão radical transforma discípulos nominais em seguidores comprometidos que vivem sob o governo amoroso do Rei dos reis!",
+      },
+      "artigo-p9-2": {
+        titulo: "Confissão de Fé: Crer no Coração, Confessar com a Boca",
+        resumo:
+          "Romanos 10:9-10 une dois elementos inseparáveis da salvação: crer no coração e confessar com a boca. A fé genuína no coração não pode permanecer oculta — ela naturalmente se manifesta em confissão pública. Confessar Jesus não é apenas uma formalidade religiosa, mas um ato de coragem que declara publicamente sua lealdade a Cristo. Esta confissão fortalece sua própria fé, testemunha aos outros sobre o poder transformador do Evangelho e estabelece um compromisso público com o reino de Deus. Mateus 10:32 promete que aqueles que confessam Jesus diante dos homens serão confessados por Ele diante do Pai!",
+      },
+      "artigo-p9-3": {
+        titulo: "Entrega Total a Cristo: Negando a Si Mesmo",
+        resumo:
+          "Lucas 9:23 apresenta a condição para seguir Jesus: 'Negue-se a si mesmo, tome sua cruz e siga-me'. Negar a si mesmo não significa autoflagelação ou baixa autoestima, mas destronizar o 'eu' para que Cristo reine. É reconhecer que sua vida não te pertence mais — você foi comprado por alto preço (1 Coríntios 6:20). Tomar a cruz significa morrer diariamente para seus desejos egoístas e viver para Cristo. Esta entrega radical não é perda, mas ganho! Jesus promete: 'Quem perder sua vida por minha causa, a encontrará' (Mateus 16:25). Entregar tudo a Cristo é descobrir a verdadeira liberdade e propósito!",
+      },
+    },
+    videos: {
+      "video-p9-1": {
+        titulo: "O que Significa Jesus Ser Senhor?",
+        resumo:
+          "Este vídeo explora o significado profundo de confessar Jesus como Senhor, não apenas como Salvador. Mostra que o senhorio de Cristo envolve submissão total de todas as áreas da vida — não apenas frequentar igreja, mas viver sob o governo amoroso de Cristo em cada decisão, relacionamento e prioridade.",
+      },
+      "video-p9-2": {
+        titulo: "Crer no Coração e Confessar com a Boca",
+        resumo:
+          "Uma exposição bíblica de Romanos 10:9-10 que revela como a fé verdadeira sempre resulta em confissão pública. O vídeo destaca que confessar Jesus não é opcional, mas a expressão natural de uma fé genuína que transforma e testemunha aos outros sobre o poder do Evangelho.",
+      },
+      "video-p9-3": {
+        titulo: "Entrega Total: O Chamado Radical de Cristo",
+        resumo:
+          "Um chamado desafiador sobre o que significa negar a si mesmo e seguir Jesus. O vídeo mostra que o cristianismo não é adicionar Jesus à sua vida atual, mas render sua vida inteira ao Seu senhorio. Apresenta exemplos práticos de como viver essa entrega total no dia a dia.",
+      },
+    },
+  },
 } as const
 
 export type ResumoConteudo = {

@@ -42,6 +42,11 @@ export const PERGUNTAS_POR_PASSO: Record<number, string[]> = {
     "A parábola do filho pródigo (Lucas 15:11-32) mostra um pai que não apenas perdoa, mas CORRE ao encontro do filho rebelde e celebra seu retorno. Você consegue enxergar Deus assim — como um Pai que espera ansiosamente por você, pronto para restaurá-lo completamente? Ou você ainda vê Deus como um juiz severo esperando para puni-lo? Como essa visão do coração compassivo de Deus transforma sua liberdade para se aproximar Dele, especialmente quando você falha?",
     "Lucas 19:10 declara: 'O Filho do Homem veio buscar e salvar o que estava perdido'. Jesus buscou ATIVAMENTE os perdidos — Ele foi à casa de Zaqueu, tocou o leproso, defendeu a mulher pecadora. Como você pode seguir o exemplo de Jesus e buscar ativamente aqueles que estão longe de Deus? Que passos práticos você precisa dar esta semana para demonstrar compaixão compassiva a alguém quebrantado, rejeitado ou necessitado?",
   ],
+  9: [
+    "Romanos 10:9 diz: 'Se você confessar com sua boca que Jesus é Senhor... será salvo'. Confessar Jesus como Senhor não é apenas aceitar Sua salvação, mas entregar o CONTROLE da sua vida a Ele. Quais áreas da sua vida você ainda mantém sob seu próprio controle ao invés de submeter ao senhorio de Cristo? (Exemplos: carreira, relacionamentos, finanças, uso do tempo, entretenimento, decisões importantes). O que impede você de entregar totalmente essas áreas a Jesus?",
+    "Lucas 9:23 declara: 'Se alguém quer vir após mim, negue-se a si mesmo, tome sua cruz e siga-me'. Negar a si mesmo significa destronizar o 'eu' para que Cristo reine. Em quais situações práticas do dia a dia você precisa 'negar a si mesmo'? Como seria sua vida se você realmente colocasse os interesses de Cristo acima dos seus próprios desejos e planos? Que mudanças concretas você precisaria fazer esta semana?",
+    "Mateus 10:32 promete: 'Todo aquele que me confessar diante dos homens, eu também o confessarei diante de meu Pai'. A confissão pública de Jesus não é opcional — é a expressão natural de uma fé genuína. Você tem vergonha de declarar publicamente que Jesus é seu Senhor? Em quais ambientes (trabalho, escola, família, redes sociais) você esconde sua fé? Como você pode começar a confessar Jesus de forma mais corajosa e autêntica nesta semana?",
+  ],
 }
 
 // Mantendo compatibilidade com código existente
@@ -50,5 +55,3 @@ export const perguntasPorPasso = PERGUNTAS_POR_PASSO
 export function getPerguntasPasso(numero: number): string[] {
   return PERGUNTAS_POR_PASSO[numero] || []
 }
-
-// Additional updates can be added here if needed

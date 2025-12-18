@@ -105,7 +105,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     numero === 5 ||
     numero === 6 ||
     numero === 7 ||
-    numero === 8
+    numero === 8 ||
+    numero === 9
   ) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")

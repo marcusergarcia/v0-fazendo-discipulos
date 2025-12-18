@@ -627,7 +627,8 @@ export default function PassoClient({
           numero === 5 ||
           numero === 6 ||
           numero === 7 ||
-          numero === 8) && (
+          numero === 8 ||
+          numero === 9) && (
           <Card className="mb-6 border-2 border-primary/20">
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -974,6 +975,49 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 8"
                             : "Iniciar Leitura da Semana 8"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {/* Step 9 weekly reading section */}
+                {numero === 9 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">{temaSemana || "Aprofundando na Palavra"}</h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Explore as epístolas de Paulo e descubra verdades profundas sobre a graça, a fé e a vida cristã."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          Romanos 1-8
+                        </Badge>
+                        <span className="text-muted-foreground">8 capítulos</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Fantástico! Você está mergulhando nas profundezas da Palavra! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Continue sua jornada de descoberta nas cartas de Paulo e no poder transformador do
+                              Evangelho.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=9">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 9"
+                            : "Iniciar Leitura da Semana 9"}
                         </Button>
                       </Link>
                     )}
