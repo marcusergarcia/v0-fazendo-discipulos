@@ -11,15 +11,15 @@ Este guia explica como importar automaticamente todos os textos da Bíblia ACF (
 
 Abra o terminal e execute:
 
-\`\`\`bash
+```bash
 pip install supabase requests
-\`\`\`
+```
 
 Ou se você usa Python 3:
 
-\`\`\`bash
+```bash
 pip3 install supabase requests
-\`\`\`
+```
 
 ## Passo 2: Configurar Variáveis de Ambiente
 
@@ -28,34 +28,34 @@ pip3 install supabase requests
 Se você estiver executando localmente fora do v0, configure:
 
 ### Windows (PowerShell):
-\`\`\`powershell
+```powershell
 $env:SUPABASE_URL="sua-url-do-supabase"
 $env:SUPABASE_SERVICE_ROLE_KEY="sua-service-role-key"
-\`\`\`
+```
 
 ### Windows (CMD):
-\`\`\`cmd
+```cmd
 set SUPABASE_URL=sua-url-do-supabase
 set SUPABASE_SERVICE_ROLE_KEY=sua-service-role-key
-\`\`\`
+```
 
 ### Mac/Linux:
-\`\`\`bash
+```bash
 export SUPABASE_URL="sua-url-do-supabase"
 export SUPABASE_SERVICE_ROLE_KEY="sua-service-role-key"
-\`\`\`
+```
 
 ## Passo 3: Executar o Script
 
-\`\`\`bash
+```bash
 python scripts/importar-biblia-acf.py
-\`\`\`
+```
 
 Ou:
 
-\`\`\`bash
+```bash
 python3 scripts/importar-biblia-acf.py
-\`\`\`
+```
 
 ## O que o Script Faz
 
@@ -75,23 +75,23 @@ python3 scripts/importar-biblia-acf.py
 
 Durante a execução, você verá mensagens como:
 
-\`\`\`
+```
 📖 [1/66] Importando Gênesis (50 capítulos)...
    Capítulo 1/50... ✅
    Capítulo 2/50... ✅
    ...
-\`\`\`
+```
 
 ## Verificar no Banco
 
 Após a execução, você pode verificar no Supabase:
 
-\`\`\`sql
+```sql
 -- Verificar total de capítulos preenchidos
 SELECT COUNT(*) FROM capitulos_biblia WHERE texto IS NOT NULL;
 
 -- Deve retornar 1189
-\`\`\`
+```
 
 ## Problemas Comuns
 

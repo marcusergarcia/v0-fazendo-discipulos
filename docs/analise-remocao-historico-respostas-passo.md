@@ -23,13 +23,13 @@
 ## Ações Necessárias Antes de Remover
 
 ### 1. Verificar se actions.ts ainda usa para reflexões antigas
-\`\`\`typescript
+```typescript
 // Verificar se estas funções ainda são usadas:
 - app/dashboard/passo/[numero]/actions.ts:80
 - app/dashboard/passo/[numero]/actions.ts:97
 - app/dashboard/passo/[numero]/actions.ts:320
 - app/dashboard/passo/[numero]/actions.ts:794
-\`\`\`
+```
 
 ### 2. Atualizar components
 - `avaliar-respostas-modal.tsx` - Verificar se ainda recebe dados de historico_respostas_passo
@@ -49,6 +49,6 @@
 4. Só então dropar a tabela
 
 ## Script para Remoção Futura (NÃO EXECUTAR AGORA)
-\`\`\`sql
+```sql
 -- ATENÇÃO: Só executar após limpar todas as referências no código
 DROP TABLE IF EXISTS historico_respostas_passo CASCADE;

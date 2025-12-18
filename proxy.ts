@@ -30,9 +30,28 @@ export async function proxy(request: NextRequest) {
     },
   })
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch (error) {
+    // Token inválido ou expirado - limpar cookies e redirecionar para login
+    console.log("[v0] Auth error in proxy, clearing session:", error instanceof Error ? error.message : "Unknown error")
+
+    // Limpar todos os cookies do Supabase
+    const response = NextResponse.redirect(new URL("/auth/login", request.url))
+    response.cookies.delete("sb-access-token")
+    response.cookies.delete("sb-refresh-token")
+
+    // Tentar limpar cookies com prefixo do projeto
+    request.cookies.getAll().forEach((cookie) => {
+      if (cookie.name.includes("supabase") || cookie.name.includes("sb-")) {
+        response.cookies.delete(cookie.name)
+      }
+    })
+
+    return response
+  }
 
   // Se não está autenticado e não é rota pública, redireciona para login
   if (

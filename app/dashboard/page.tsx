@@ -28,6 +28,7 @@ import {
 } from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
+import { StepBadge } from "@/components/step-badge"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -464,8 +465,8 @@ export default async function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-center p-4">
-                  <div className="w-16 h-16 bg-secondary/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Shield className="w-8 h-8 text-secondary" />
+                  <div className="flex justify-center mb-3">
+                    <StepBadge stepNumber={userData.currentStep} status="current" size="lg" />
                   </div>
                   <p className="font-medium">Insígnia: {getRecompensaNome(userData.currentStep)}</p>
                   <p className="text-sm text-muted-foreground mt-1">Complete o Passo {userData.currentStep}</p>
@@ -622,6 +623,9 @@ function StepCard({
 
   const content = (
     <div className={`p-4 text-center transition-all hover:shadow-md ${getStyles()} ${href ? "cursor-pointer" : ""}`}>
+      <div className="flex justify-center mb-3">
+        <StepBadge stepNumber={number} status={status} size="md" />
+      </div>
       <div className="flex justify-center mb-2">{getIcon()}</div>
       <div className="text-lg font-bold mb-1">{number}</div>
       <div className="text-sm font-medium">{title}</div>
