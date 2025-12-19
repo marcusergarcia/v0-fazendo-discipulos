@@ -17,6 +17,15 @@ export function ModalCelebracaoPasso({ open, onClose, passoCompletado, xpGanho }
   const passoAtual = PASSOS_CONTEUDO[passoCompletado as keyof typeof PASSOS_CONTEUDO]
   const proximoPasso = PASSOS_CONTEUDO[(passoCompletado + 1) as keyof typeof PASSOS_CONTEUDO]
 
+  console.log("[v0] Modal Celebração Debug:", {
+    passoCompletado,
+    proximoNumero: passoCompletado + 1,
+    passoAtualExiste: !!passoAtual,
+    proximoPassoExiste: !!proximoPasso,
+    proximoPassoTitulo: proximoPasso?.titulo,
+    todasChavesPassos: Object.keys(PASSOS_CONTEUDO),
+  })
+
   if (!passoAtual) return null
 
   return (

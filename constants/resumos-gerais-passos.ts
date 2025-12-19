@@ -195,22 +195,27 @@ export const RESUMOS_GERAIS_PASSOS = {
     ],
   },
   10: {
-    titulo: "Glorificação e Esperança Futura",
+    titulo: "Novo Nascimento e Vida com Deus",
     topicos: [
       {
-        titulo: "Glorificação: A Transformação Final",
+        titulo: "Justificação: Declarado Justo",
         descricao:
-          "A glorificação é a etapa final da salvação, quando seremos completamente transformados à imagem de Cristo. Filipenses 3:21 promete que Cristo 'transformará nosso corpo de humilhação, tornando-o semelhante ao Seu corpo glorioso'. Não haverá mais pecado, dor, morte ou lágrimas — seremos perfeitos em santidade e felicidade, refletindo plenamente a glória de Deus para sempre.",
+          "A justificação é o ato judicial de Deus pelo qual Ele declara justo o pecador que crê em Cristo. Romanos 5:1 proclama: 'Justificados pela fé, temos paz com Deus'. Não é mudança interna (isso é santificação), mas mudança de STATUS legal. A culpa é removida, a dívida é paga, a condenação é cancelada. Romanos 8:1 garante: 'Nenhuma condenação há para os que estão em Cristo Jesus'. É instantânea, completa e irrevogável — você está JUSTO diante do Juiz supremo!",
       },
       {
-        titulo: "A Segunda Vinda de Cristo",
+        titulo: "Vida Eterna: Relacionamento Eterno",
         descricao:
-          "Jesus prometeu voltar! Atos 1:11 declara: 'Esse mesmo Jesus, que foi elevado ao céu, voltará da mesma forma como o viram subir'. Sua segunda vinda não será como bebê em Belém, mas como Rei conquistador, Juiz supremo e Senhor glorioso. Para os crentes, será o dia da redenção final; para os incrédulos, o dia do julgamento. A pergunta crucial é: você está preparado?",
+          "Vida eterna não é apenas duração infinita — é QUALIDADE de vida iniciada agora! João 17:3 define: 'A vida eterna é conhecer a ti, o único Deus verdadeiro, e a Jesus Cristo'. É relacionamento contínuo com Deus. João 5:24 promete: 'Quem crê tem a vida eterna... já passou da morte para a vida'. Note o tempo presente: TEM e JÁ PASSOU! A vida eterna começa na conversão e nunca termina. É conhecer, amar e desfrutar de Deus para sempre!",
       },
       {
-        titulo: "O Novo Céu e a Nova Terra",
+        titulo: "Adoção: Filho de Deus",
         descricao:
-          "Apocalipse 21:1-5 descreve a promessa gloriosa: 'Vi novos céus e nova terra... Deus habitará com eles. Ele enxugará dos olhos toda lágrima. Não haverá mais morte, nem tristeza, nem choro, nem dor'. Esta é nossa esperança viva — não apenas um céu espiritual distante, mas uma criação física renovada onde viveremos eternamente com Cristo, cumprindo nosso propósito original de governar e glorificar a Deus para sempre!",
+          "Deus não apenas perdoa — Ele ADOTA! Gálatas 4:5 declara que fomos adotados como filhos. Adoção nos dá identidade nova (filhos amados), herança garantida (co-herdeiros com Cristo), acesso total (podemos chamar Deus de Pai), e intimidade profunda (relacionamento de filho). Romanos 8:15 revela: 'Recebestes o Espírito de adoção, pelo qual clamamos: Aba, Pai!' A adoção custou sangue, mas é permanente e irrevogável — você NUNCA deixará de ser filho!",
+      },
+      {
+        titulo: "Redenção: Vida Transformada",
+        descricao:
+          "Sua vida foi RESGATADA do domínio do pecado para viver para Deus! 1 Pedro 1:18-19 proclama: 'Fostes resgatados... não com coisas perecíveis, mas com o precioso sangue de Cristo'. Redenção significa que você foi comprado por alto preço, sua vida pertence a Deus, você caminha em transformação contínua. É libertação com PROPÓSITO! 2 Coríntios 3:18 promete: 'Somos transformados de glória em glória'. O novo nascimento é CRIAÇÃO NOVA — as coisas velhas passaram, tudo se fez novo!",
       },
     ],
   },

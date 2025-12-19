@@ -628,7 +628,8 @@ export default function PassoClient({
           numero === 6 ||
           numero === 7 ||
           numero === 8 ||
-          numero === 9) && (
+          numero === 9 ||
+          numero === 10) && (
           <Card className="mb-6 border-2 border-primary/20">
             <CardHeader>
               <div className="flex items-start gap-3">
@@ -1018,6 +1019,51 @@ export default function PassoClient({
                           {statusLeituraSemana === "pendente"
                             ? "Continuar Leitura da Semana 9"
                             : "Iniciar Leitura da Semana 9"}
+                        </Button>
+                      </Link>
+                    )}
+                  </>
+                )}
+                {/* Step 10 weekly reading section */}
+                {numero === 10 && (
+                  <>
+                    <div className="rounded-lg bg-card border p-4">
+                      <h4 className="font-semibold text-lg mb-2">
+                        {temaSemana || "Fechando o Ciclo e Olhando para o Futuro"}
+                      </h4>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {descricaoSemana ||
+                          "Revise o aprendizado dos últimos passos, consolide sua fé e prepare-se para os próximos desafios com Deus."}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          Revisão Geral e Preparação
+                        </Badge>
+                        <span className="text-muted-foreground">Foco na aplicação</span>
+                      </div>
+                    </div>
+                    {statusLeituraSemana === "concluida" ? (
+                      <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                              Incrível! Você concluiu todas as leituras semanais! 🎉
+                            </p>
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Você está preparado para aplicar o que aprendeu e continuar crescendo na sua jornada com
+                              Deus.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href="/dashboard/leitura-biblica?semana=10">
+                        <Button className="w-full" variant="default">
+                          <BookOpen className="w-4 h-4 mr-2" />
+                          {statusLeituraSemana === "pendente"
+                            ? "Continuar Leitura da Semana 10"
+                            : "Iniciar Leitura da Semana 10"}
                         </Button>
                       </Link>
                     )}

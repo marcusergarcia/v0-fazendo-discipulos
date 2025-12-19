@@ -317,8 +317,13 @@ export async function aprovarPerguntaReflexiva(data: {
       .maybeSingle()
 
     if (selectError || !perguntasReflexivas) {
-      console.error("[v0] ERRO: Perguntas reflexivas não encontradas!", selectError)
-      return { success: false, error: "Perguntas reflexivas não encontradas" }
+      const errorMessage = selectError
+        ? typeof selectError === "string"
+          ? selectError
+          : selectError.message || "Erro desconhecido"
+        : "Perguntas reflexivas não encontradas"
+      console.error("[v0] ERRO: Perguntas reflexivas não encontradas!", errorMessage)
+      return { success: false, error: errorMessage }
     }
 
     const respostasArray = (perguntasReflexivas.respostas as any[]) || []

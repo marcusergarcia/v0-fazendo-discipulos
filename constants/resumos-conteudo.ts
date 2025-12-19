@@ -341,6 +341,42 @@ export const RESUMOS_CONTEUDO = {
       },
     },
   },
+  10: {
+    videos: {
+      video1: {
+        titulo: "O que é o novo nascimento? - John Piper",
+        resumo:
+          "John Piper explica que o novo nascimento (regeneração) não é uma mudança superficial de comportamento, mas uma CRIAÇÃO COMPLETAMENTE NOVA operada por Deus no coração. João 3:3 declara: 'Se alguém não nascer de novo, não pode ver o Reino de Deus'. Essa transformação radical é obra exclusiva do Espírito Santo, não resultado de esforço humano. O novo nascimento nos dá novos desejos, nova natureza e nova capacidade de ver e amar a Cristo. Piper enfatiza que ninguém se regenera a si mesmo — é Deus quem age soberanamente para nos dar vida espiritual!",
+      },
+      video2: {
+        titulo: "Justificação: O que Deus fez por você - R.C. Sproul",
+        resumo:
+          "R.C. Sproul desdobra a doutrina da justificação pela fé: Deus declara JUSTO o pecador que crê em Cristo, não por mérito próprio, mas pela justiça imputada de Cristo. Romanos 3:24 revela que somos 'justificados gratuitamente por sua graça'. A justificação não é progressiva (como santificação), mas instantânea e completa no momento da fé. Sproul explica que na cruz houve uma GRANDE TROCA: Cristo levou nossa culpa e nos creditou Sua justiça perfeita. Resultado? Romanos 8:1 proclama: 'Nenhuma condenação há para os que estão em Cristo Jesus' — você está completamente perdoado!",
+      },
+      video3: {
+        titulo: "Adotados por Deus - Paul Washer",
+        resumo:
+          "Paul Washer apresenta a maravilhosa verdade da adoção divina: não somos apenas perdoados — somos ADOTADOS NA FAMÍLIA DE DEUS! Gálatas 4:5 declara que Deus nos redimiu 'para que recebêssemos a adoção de filhos'. Adoção significa identidade nova (somos filhos amados), herança garantida (co-herdeiros com Cristo), acesso total (podemos chamar Deus de Pai) e intimidade profunda (relacionamento, não apenas religião). Washer enfatiza: a adoção é permanente, irrevogável e custou o sangue de Cristo — você nunca mais será órfão espiritual!",
+      },
+    },
+    artigos: {
+      artigo1: {
+        titulo: "Justificação pela Fé",
+        resumo:
+          "A justificação é o ato judicial de Deus pelo qual Ele declara justo o pecador que crê em Cristo, imputando-lhe a justiça perfeita de Jesus. Romanos 5:1 proclama: 'Justificados pela fé, temos paz com Deus'. Não é uma mudança interna (isso é santificação), mas uma mudança de STATUS legal diante de Deus. A base é o sacrifício de Cristo na cruz; o meio é a fé; o resultado é paz e reconciliação. Justificação não depende de nossas obras (Romanos 3:28), mas exclusivamente da obra completa de Cristo. É instantânea, completa e irrevogável — você está JUSTO diante do Juiz supremo!",
+      },
+      artigo2: {
+        titulo: "Adoção: Filhos de Deus",
+        resumo:
+          "A adoção divina é uma das bênçãos mais surpreendentes da salvação: Deus não apenas nos perdoa, mas nos ACOLHE como filhos legítimos! Efésios 1:5 revela que fomos 'predestinados para a adoção de filhos, por meio de Jesus Cristo'. Adoção nos dá direitos legais (herança), relacionamento íntimo (podemos clamar 'Abba, Pai' - Romanos 8:15), identidade transformada (não mais escravos, mas filhos - Gálatas 4:7), e esperança gloriosa (seremos plenamente conformados à imagem de Cristo). A adoção custou sangue, mas é permanente e irrevogável — você NUNCA deixará de ser filho de Deus!",
+      },
+      artigo3: {
+        titulo: "Vida Eterna: O que a Bíblia ensina",
+        resumo:
+          "Vida eterna não é apenas duração infinita após a morte — é QUALIDADE DE VIDA iniciada agora! João 17:3 define: 'A vida eterna é esta: que conheçam a ti, o único Deus verdadeiro, e a Jesus Cristo, a quem enviaste'. É RELACIONAMENTO contínuo e crescente com Deus. João 5:24 promete: 'Quem ouve a minha palavra e crê naquele que me enviou tem a vida eterna, não entra em juízo, mas já passou da morte para a vida'. Note: 'TEM' e 'JÁ PASSOU' — tempo presente! A vida eterna começa no momento da conversão e nunca termina. É imortalidade, sim, mas muito mais: é conhecer, amar e desfrutar de Deus para sempre!",
+      },
+    },
+  },
 } as const
 
 export type ResumoConteudo = {
