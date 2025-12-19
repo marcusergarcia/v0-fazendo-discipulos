@@ -358,6 +358,11 @@ export const RESUMOS_CONTEUDO = {
         resumo:
           "Paul Washer apresenta a maravilhosa verdade da adoção divina: não somos apenas perdoados — somos ADOTADOS NA FAMÍLIA DE DEUS! Gálatas 4:5 declara que Deus nos redimiu 'para que recebêssemos a adoção de filhos'. Adoção significa identidade nova (somos filhos amados), herança garantida (co-herdeiros com Cristo), acesso total (podemos chamar Deus de Pai) e intimidade profunda (relacionamento, não apenas religião). Washer enfatiza: a adoção é permanente, irrevogável e custou o sangue de Cristo — você nunca mais será órfão espiritual!",
       },
+      video4: {
+        titulo: "A Glorificação dos Santos - Augustus Nicodemus",
+        resumo:
+          "Augustus Nicodemus ensina sobre a glorificação como a etapa final e gloriosa da salvação. Filipenses 3:20-21 promete que Cristo 'transformará o nosso corpo de humilhação, para ser igual ao corpo da sua glória'. A glorificação é quando receberemos corpos RESSURRETOS, IMORTAIS e INCORRUPTÍVEIS — exatamente como o corpo glorioso de Cristo após Sua ressurreição. 1 Coríntios 15:42-44 descreve: 'Semeia-se corpo corruptível, ressuscita corpo incorruptível'. Nicodemus explica que a glorificação completa a obra de salvação: não teremos apenas almas redimidas, mas corpos perfeitos para a eternidade. Romanos 8:23 revela que aguardamos 'a redenção do nosso corpo' — a salvação é COMPLETA: espírito, alma E corpo glorificados para sempre com Deus!",
+      },
     },
     artigos: {
       artigo1: {
@@ -374,6 +379,11 @@ export const RESUMOS_CONTEUDO = {
         titulo: "Vida Eterna: O que a Bíblia ensina",
         resumo:
           "Vida eterna não é apenas duração infinita após a morte — é QUALIDADE DE VIDA iniciada agora! João 17:3 define: 'A vida eterna é esta: que conheçam a ti, o único Deus verdadeiro, e a Jesus Cristo, a quem enviaste'. É RELACIONAMENTO contínuo e crescente com Deus. João 5:24 promete: 'Quem ouve a minha palavra e crê naquele que me enviou tem a vida eterna, não entra em juízo, mas já passou da morte para a vida'. Note: 'TEM' e 'JÁ PASSOU' — tempo presente! A vida eterna começa no momento da conversão e nunca termina. É imortalidade, sim, mas muito mais: é conhecer, amar e desfrutar de Deus para sempre!",
+      },
+      artigo4: {
+        titulo: "Glorificação: A Consumação da Salvação",
+        resumo:
+          "A glorificação é a etapa final e majestosa do plano de salvação: a transformação completa do nosso corpo mortal em corpo imortal e glorioso! Filipenses 3:20-21 promete que Jesus 'transformará nosso corpo de humilhação para ser conforme o seu corpo glorioso'. 1 Coríntios 15:42-44 descreve quatro mudanças: corruptível torna-se INCORRUPTÍVEL, desonroso torna-se GLORIOSO, fraco torna-se PODEROSO, natural torna-se ESPIRITUAL. A glorificação não é apenas imortalidade da alma — é a RESSURREIÇÃO CORPORAL! Romanos 8:23 revela que aguardamos 'a redenção do nosso corpo'. 1 João 3:2 assegura: 'Seremos semelhantes a Ele'. A glorificação completa a obra de Deus: justificação (passado), santificação (presente), glorificação (futuro) — salvação TOTAL e ETERNA!",
       },
     },
   },
