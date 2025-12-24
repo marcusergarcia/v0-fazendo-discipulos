@@ -978,27 +978,27 @@ export const PASSOS_CONTEUDO = {
     artigos: [
       {
         id: "artigo-p10-1",
-        titulo: "Justificação pela Fé",
-        fonte: "Ministério Fiel",
-        url: "https://ministerio-fiel.com.br",
+        titulo: "Carta aos Romanos: Justificação pela fé",
+        fonte: "Scalabrinianos",
+        url: "https://scalabrinianos.com/blog/carta-aos-romanos-justificacao-pela-fe/#",
       },
       {
         id: "artigo-p10-2",
         titulo: "Adoção: Filhos de Deus",
-        fonte: "Voltemos ao Evangelho",
-        url: "https://voltemosaoevangelho.com",
+        fonte: "TMJ by Timga",
+        url: "https://www.tmjbytinga.com.br/post/a-igreja-como-fam%C3%ADlia-dos-filhos-de-deus",
       },
       {
         id: "artigo-p10-3",
         titulo: "Vida Eterna: O que a Bíblia ensina",
-        fonte: "Bereianos",
-        url: "https://bereianos.blogspot.com",
+        fonte: "Got Questions",
+        url: "https://www.gotquestions.org/Portugues/o-que-e-vida-eterna.html",
       },
       {
         id: "artigo-p10-4",
         titulo: "Glorificação: A Consumação da Salvação",
-        fonte: "Voltemos ao Evangelho",
-        url: "https://voltemosaoevangelho.com",
+        fonte: "Igreja Prebiteriana de Joinville",
+        url: "https://ipj.org.br/a-glorificacao-seremos-salvos/",
       },
     ],
     leituraSemanal: {
