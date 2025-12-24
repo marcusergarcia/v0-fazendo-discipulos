@@ -265,7 +265,7 @@ export async function aprovarReflexao(data: {
             message: `Reflexão aprovada! Passo ${data.passoAtual} concluído. Passo ${proximoPasso} liberado!`,
             xpConcedido: data.xpConcedido,
             celebracao: {
-              passoCompletado: data.passoAtual,
+              passoCompletado: data.passoAtual, // Fixed to show correct completed step in celebration modal
               xpGanho: pontosDoPassoCompleto,
               proximoPasso: proximoPasso,
             },

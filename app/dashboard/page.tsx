@@ -182,7 +182,7 @@ export default async function DashboardPage() {
 
   // Se há pontuacao_passo_anterior e celebracao_vista = false, significa que acabou de completar um passo
   const passoRecemCompletado = progressoCheck?.pontuacao_passo_anterior && !progressoCheck?.celebracao_vista
-  const passosCompletados = passoRecemCompletado ? passoAtual : passoAtual - 1
+  const passosCompletados = passoRecemCompletado ? passoAtual : Math.max(0, passoAtual - 1)
 
   console.log("[v0] Passos completados:", passosCompletados, "Recém completado?", passoRecemCompletado)
 
