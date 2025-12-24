@@ -27,6 +27,7 @@ import {
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
 import { StepBadge } from "@/components/step-badge"
+import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -199,6 +200,20 @@ export default async function DashboardPage() {
     deveMostrarCelebracao,
   )
 
+  const deveMostrarDecisaoCristo =
+    passoAtual === 11 && discipulo.fase_atual === 1 && !discipulo.decisao_por_cristo && !discipulo.confissao_fe_assinada
+
+  console.log(
+    "[v0] Verificando decisão por Cristo - Passo:",
+    passoAtual,
+    "Fase:",
+    discipulo.fase_atual,
+    "Decisão:",
+    discipulo.decisao_por_cristo,
+    "Deve mostrar modal:",
+    deveMostrarDecisaoCristo,
+  )
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -350,6 +365,14 @@ export default async function DashboardPage() {
           faseNumero={discipulo.fase_atual || 1}
           discipuloId={discipulo.id}
           xpGanho={xpGanhoPassoAnterior}
+        />
+      )}
+
+      {deveMostrarDecisaoCristo && (
+        <ModalDecisaoPorCristo
+          open={true}
+          discipuloId={discipulo.id}
+          nomeCompleto={profile?.nome_completo || "Discípulo"}
         />
       )}
 

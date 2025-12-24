@@ -196,7 +196,7 @@ export async function aprovarReflexao(data: {
 
         if (disc) {
           const proximoPasso = data.passoAtual + 1
-          const proximaFase = Math.ceil(proximoPasso / 10)
+          const proximaFase = data.passoAtual === 10 ? 1 : Math.ceil(proximoPasso / 10)
 
           const { error: updateDiscipuloError } = await adminClient
             .from("discipulos")
@@ -538,7 +538,7 @@ async function verificarLiberacaoProximoPasso(
   if (progresso) {
     const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
     const proximoPasso = passoAtual + 1
-    const proximaFase = Math.ceil(proximoPasso / 10)
+    const proximaFase = passoAtual === 10 ? 1 : Math.ceil(proximoPasso / 10)
 
     const { error: updateProgressoError } = await adminClient
       .from("progresso_fases")
@@ -573,7 +573,7 @@ async function verificarLiberacaoProximoPasso(
 
     if (disc) {
       const proximoPasso = passoAtual + 1
-      const proximaFase = Math.ceil(proximoPasso / 10)
+      const proximaFase = passoAtual === 10 ? 1 : Math.ceil(proximoPasso / 10)
 
       const { error: updateDiscipuloError } = await adminClient
         .from("discipulos")
