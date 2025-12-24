@@ -202,7 +202,7 @@ export async function aprovarReflexao(data: {
             .from("discipulos")
             .update({
               fase_atual: proximaFase,
-              passo_atual: proximoPasso <= 10 ? proximoPasso : disc.passo_atual,
+              passo_atual: proximoPasso, // Allow to advance past 10
               xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
             })
             .eq("id", data.discipuloId)
@@ -572,11 +572,14 @@ async function verificarLiberacaoProximoPasso(
     console.log("[v0] Discípulo atual - XP:", disc?.xp_total, "Fase:", disc?.fase_atual, "Passo:", disc?.passo_atual)
 
     if (disc) {
+      const proximoPasso = passoAtual + 1
+      const proximaFase = Math.ceil(proximoPasso / 10)
+
       const { error: updateDiscipuloError } = await adminClient
         .from("discipulos")
         .update({
           fase_atual: proximaFase,
-          passo_atual: proximoPasso <= 10 ? proximoPasso : disc.passo_atual,
+          passo_atual: proximoPasso, // Allow to advance past 10
           xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
         })
         .eq("id", discipuloId)

@@ -75,17 +75,6 @@ export default async function DashboardPage() {
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
   // Se está no passo 2, significa que completou o passo 1
-  const passosCompletados = (discipulo.passo_atual || 1) - 1
-  const xpAtual = discipulo.xp_total || 0
-  const xpProximoNivel = 1000
-
-  // Nome do nível
-  const nivelNome = discipulo.nivel_atual || "Explorador"
-
-  // Fase atual
-  const faseNome = `FASE ${discipulo.fase_atual || 1}: ${getFaseNome(discipulo.fase_atual || 1)}`
-
-  // Passo atual (primeiro não completado)
   const passoAtual = discipulo.passo_atual || 1
   const totalPassos = 10
 
@@ -102,11 +91,11 @@ export default async function DashboardPage() {
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
-    level: getLevelNumber(nivelNome),
-    levelName: nivelNome,
-    xp: xpAtual,
-    xpToNext: xpProximoNivel,
-    currentPhase: faseNome,
+    level: getLevelNumber(getFaseNome(discipulo.fase_atual || 1)),
+    levelName: getFaseNome(discipulo.fase_atual || 1),
+    xp: discipulo.xp_total || 0,
+    xpToNext: 1000,
+    currentPhase: `FASE ${discipulo.fase_atual || 1}: ${getFaseNome(discipulo.fase_atual || 1)}`,
     currentStep: passoAtual,
     totalSteps: totalPassos,
   }
@@ -185,25 +174,30 @@ export default async function DashboardPage() {
       (reflexoesPendentes?.length || 0) + (perguntasPendentes?.length || 0) + (discipulosPendentes?.length || 0)
   }
 
-  const { data: progressoAtualData } = await supabase
+  const { data: progressoCheck } = await supabase
     .from("progresso_fases")
-    .select("pontuacao_passo_atual")
+    .select("celebracao_vista, pontuacao_passo_anterior")
     .eq("discipulo_id", discipulo.id)
-    .maybeSingle()
+    .single()
 
-  const passoAnterior = (discipulo.passo_atual || 1) - 1
-  const deveMostrarCelebracao = passoAnterior > 0 && progressoFases?.celebracao_vista === false
+  // Se há pontuacao_passo_anterior e celebracao_vista = false, significa que acabou de completar um passo
+  const passoRecemCompletado = progressoCheck?.pontuacao_passo_anterior && !progressoCheck?.celebracao_vista
+  const passosCompletados = passoRecemCompletado ? passoAtual : passoAtual - 1
+
+  console.log("[v0] Passos completados:", passosCompletados, "Recém completado?", passoRecemCompletado)
+
+  const xpGanhoPassoAnterior = progressoFases?.pontuacao_passo_anterior || 90 // XP padrão se não encontrar
+
+  const deveMostrarCelebracao = passoAtual > 1 && progressoFases?.celebracao_vista === false
 
   console.log(
-    "[v0] Verificando celebração - Passo anterior:",
-    passoAnterior,
+    "[v0] Verificando celebração - Passo atual:",
+    passoAtual,
     "Celebracao vista:",
     progressoFases?.celebracao_vista,
     "Deve mostrar:",
     deveMostrarCelebracao,
   )
-
-  const xpGanhoPassoAnterior = progressoFases?.pontuacao_passo_anterior || 90 // XP padrão se não encontrar
 
   return (
     <div className="min-h-screen bg-background">
@@ -352,7 +346,7 @@ export default async function DashboardPage() {
 
       {deveMostrarCelebracao && progressoFases && (
         <DashboardCelebracaoClient
-          passoNumero={passoAnterior}
+          passoNumero={passoAtual - 1}
           faseNumero={discipulo.fase_atual || 1}
           discipuloId={discipulo.id}
           xpGanho={xpGanhoPassoAnterior}
@@ -381,14 +375,12 @@ export default async function DashboardPage() {
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="font-medium">Experiência</span>
                 {/* Usar pontuacao_passo_atual ao invés de pontuacao_total */}
-                <span className="text-muted-foreground">
-                  {userData.xp + (progressoAtualData?.pontuacao_passo_atual || 0)} XP Total
-                </span>
+                <span className="text-muted-foreground">{userData.xp} XP Total</span>
               </div>
               <Progress value={(userData.xp / userData.xpToNext) * 100} className="h-2 sm:h-3" />
               <div className="flex justify-between text-xs text-muted-foreground">
                 {/* Usar pontuacao_passo_atual ao invés de pontuacao_total */}
-                <span>Passo Atual: +{progressoAtualData?.pontuacao_passo_atual || 0} XP</span>
+                <span>Passos Completados: {passosCompletados}</span>
                 <span>
                   {userData.xp} / {userData.xpToNext} XP para próximo nível
                 </span>

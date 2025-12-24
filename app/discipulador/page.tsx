@@ -80,6 +80,20 @@ export default async function DiscipuladorPage() {
 
       const perguntasDiscipulo = perguntasReflexivas?.filter((p) => p.discipulo_id === discipulo.id) || []
 
+      console.log("[v0] Perguntas Debug ALL:", {
+        discipuloNome: discipulo.profile?.nome_completo,
+        discipuloId: discipulo.id,
+        passoAtual: discipulo.passo_atual,
+        faseAtual: discipulo.fase_atual,
+        totalPerguntasDiscipulo: perguntasDiscipulo.length,
+        perguntasDetalhes: perguntasDiscipulo.map((p) => ({
+          id: p.id,
+          fase: p.fase_numero,
+          passo: p.passo_numero,
+          situacao: p.situacao,
+        })),
+      })
+
       const perguntasResposta = perguntasDiscipulo.find(
         (pr) =>
           pr.discipulo_id === discipulo.id &&
