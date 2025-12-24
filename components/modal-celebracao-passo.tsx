@@ -22,6 +22,7 @@ export function ModalCelebracaoPasso({ open, onClose, passoCompletado, xpGanho }
     proximoNumero: passoCompletado + 1,
     passoAtualExiste: !!passoAtual,
     proximoPassoExiste: !!proximoPasso,
+    passoAtualTitulo: passoAtual?.titulo,
     proximoPassoTitulo: proximoPasso?.titulo,
     todasChavesPassos: Object.keys(PASSOS_CONTEUDO),
   })

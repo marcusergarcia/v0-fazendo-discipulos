@@ -203,6 +203,9 @@ export default async function DiscipuladorPage() {
           passoAtual: passoAtualDiscipulo,
           totalPerguntasNoArray: perguntasPassoAtual.length,
           perguntas: perguntasPassoAtual,
+          perguntasRespostaId: perguntasResposta?.id,
+          perguntasRespostaPasso: perguntasResposta?.passo_numero,
+          respostasArray: perguntasResposta?.respostas,
         })
 
         perguntasPassoAtual.forEach((pergunta, index) => {
