@@ -537,109 +537,109 @@ async function verificarLiberacaoProximoPasso(
 
   if (progresso) {
     const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
-    const proximoPasso = passoAtual + 1
-    const proximaFase = passoAtual === 10 ? 1 : Math.ceil(proximoPasso / 10)
 
-    const { error: updateProgressoError } = await adminClient
-      .from("progresso_fases")
-      .update({
-        fase_atual: proximaFase,
-        passo_atual: proximoPasso,
-        pontuacao_passo_atual: 0,
-        reflexoes_concluidas: 0,
-        videos_assistidos: [],
-        artigos_lidos: [],
-        celebracao_vista: false,
-        pontuacao_passo_anterior: pontosDoPassoCompleto,
-      })
-      .eq("id", progresso.id)
+    // Se completou o passo 10, marcar fase_1_completa ao invés de avançar passo
+    if (passoAtual === 10) {
+      console.log("[v0] PASSO 10 COMPLETADO! Marcando fase_1_completa = true")
 
-    if (updateProgressoError) {
-      console.error("[v0] ERRO ao atualizar progresso_fases:", updateProgressoError)
-    } else {
-      console.log("[v0] ✅ progresso_fases atualizado - Fase:", proximaFase, "Passo:", proximoPasso)
-      console.log("[v0] ✅ celebracao_vista agora é FALSE")
-      console.log("[v0] ✅ pontuacao_passo_anterior salva:", pontosDoPassoCompleto)
-    }
+      const { error: updateProgressoError } = await adminClient
+        .from("progresso_fases")
+        .update({
+          pontuacao_passo_anterior: pontosDoPassoCompleto,
+          pontuacao_passo_atual: 0,
+          celebracao_vista: false,
+          fase_1_completa: true, // Marcar que completou a fase 1
+        })
+        .eq("discipulo_id", discipuloId)
 
-    // Transferir XP para o discípulo
-    const { data: disc } = await adminClient
-      .from("discipulos")
-      .select("xp_total, passo_atual, fase_atual")
-      .eq("id", discipuloId)
-      .single()
+      if (updateProgressoError) {
+        console.error("[v0] Erro ao atualizar progresso:", updateProgressoError)
+        throw new Error("Erro ao atualizar progresso")
+      }
 
-    console.log("[v0] Discípulo atual - XP:", disc?.xp_total, "Fase:", disc?.fase_atual, "Passo:", disc?.passo_atual)
+      // Atualizar tabela discipulos com XP total
+      const { data: disc } = await adminClient.from("discipulos").select("xp_total").eq("id", discipuloId).single()
 
-    if (disc) {
-      const proximoPasso = passoAtual + 1
-      const proximaFase = passoAtual === 10 ? 1 : Math.ceil(proximoPasso / 10)
+      const novoXpTotal = (disc?.xp_total || 0) + xpPerguntasReflexivas
 
       const { error: updateDiscipuloError } = await adminClient
         .from("discipulos")
         .update({
-          fase_atual: proximaFase,
-          passo_atual: proximoPasso, // Allow to advance past 10
-          xp_total: (disc.xp_total || 0) + pontosDoPassoCompleto,
+          xp_total: novoXpTotal,
         })
         .eq("id", discipuloId)
 
       if (updateDiscipuloError) {
-        console.error("[v0] ERRO ao atualizar discípulo:", updateDiscipuloError)
-      } else {
-        console.log(
-          "[v0] ✅ Discípulo atualizado - Fase:",
-          proximaFase,
-          "Passo:",
-          proximoPasso,
-          "XP total:",
-          (disc.xp_total || 0) + pontosDoPassoCompleto,
-        )
+        console.error("[v0] Erro ao atualizar XP do discípulo:", updateDiscipuloError)
+        throw new Error("Erro ao atualizar XP")
       }
 
-      const passoData = passosConteudo[passoAtual as keyof typeof passosConteudo]
-      if (passoData && passoData.recompensa) {
-        console.log("[v0] Adicionando insígnia do passo", passoAtual, ":", passoData.recompensa)
+      console.log("[v0] ✅ Fase 1 completa! Aguardando decisão por Cristo")
 
-        // Buscar recompensas atuais
-        const { data: recompensasAtuais } = await adminClient
-          .from("recompensas")
-          .select("insignias, medalhas")
-          .eq("discipulo_id", discipuloId)
-          .single()
-
-        if (recompensasAtuais) {
-          const insigniasAtuais = recompensasAtuais.insignias || []
-
-          // Criar string da insígnia no formato "Passo X Concluído"
-          const novaInsignia = `Passo ${passoAtual} Concluído`
-
-          // Adicionar apenas se ainda não existe
-          const jaExiste = insigniasAtuais.includes(novaInsignia)
-
-          if (!jaExiste) {
-            const { error: updateRecompensasError } = await adminClient
-              .from("recompensas")
-              .update({
-                insignias: [...insigniasAtuais, novaInsignia],
-              })
-              .eq("discipulo_id", discipuloId)
-
-            if (updateRecompensasError) {
-              console.error("[v0] ERRO ao atualizar recompensas:", updateRecompensasError)
-            } else {
-              console.log("[v0] ✅ Insígnia adicionada:", novaInsignia)
-            }
-          } else {
-            console.log("[v0] ⚠️ Insígnia já existe, pulando")
-          }
-        }
+      return {
+        passoCompletado: 10,
+        proximoPasso: null, // Não há próximo passo até a decisão por Cristo
+        xpGanho: pontosDoPassoCompleto + xpPerguntasReflexivas,
+        fase1Completa: true,
       }
+    }
 
-      console.log("[v0] ===== PASSO", passoAtual, "CONCLUÍDO! PASSO", proximoPasso, "LIBERADO! =====")
-      console.log("[v0] 🎉 Modal de celebração aparecerá no próximo login do discípulo")
+    // Para outros passos, avançar normalmente
+    const proximoPasso = passoAtual + 1
+    const proximaFase = Math.ceil(proximoPasso / 10)
 
-      return null
+    console.log("[v0] Atualizando progresso_fases:")
+    console.log("[v0] - Próximo passo:", proximoPasso)
+    console.log("[v0] - Próxima fase:", proximaFase)
+    console.log("[v0] - Pontos do passo completo:", pontosDoPassoCompleto)
+    console.log("[v0] - XP das perguntas:", xpPerguntasReflexivas)
+
+    const { error: updateProgressoError } = await adminClient
+      .from("progresso_fases")
+      .update({
+        passo_atual: proximoPasso,
+        fase_atual: proximaFase,
+        pontuacao_passo_anterior: pontosDoPassoCompleto,
+        pontuacao_passo_atual: 0,
+        celebracao_vista: false,
+      })
+      .eq("discipulo_id", discipuloId)
+
+    if (updateProgressoError) {
+      console.error("[v0] Erro ao atualizar progresso:", updateProgressoError)
+      throw new Error("Erro ao atualizar progresso")
+    }
+
+    // Atualizar tabela discipulos
+    const { data: disc } = await adminClient
+      .from("discipulos")
+      .select("xp_total, passo_atual")
+      .eq("id", discipuloId)
+      .single()
+
+    const novoXpTotal = (disc?.xp_total || 0) + xpPerguntasReflexivas
+
+    const { error: updateDiscipuloError } = await adminClient
+      .from("discipulos")
+      .update({
+        passo_atual: proximoPasso,
+        xp_total: novoXpTotal,
+      })
+      .eq("id", discipuloId)
+
+    if (updateDiscipuloError) {
+      console.error("[v0] Erro ao atualizar discípulo:", updateDiscipuloError)
+      throw new Error("Erro ao atualizar discípulo")
+    }
+
+    console.log("[v0] ✅ Progresso atualizado com sucesso!")
+    console.log("[v0] - Novo XP total:", novoXpTotal)
+    console.log("[v0] - Próximo passo:", proximoPasso)
+
+    return {
+      passoCompletado: passoAtual,
+      proximoPasso,
+      xpGanho: pontosDoPassoCompleto + xpPerguntasReflexivas,
     }
   }
 

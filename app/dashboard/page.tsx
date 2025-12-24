@@ -177,42 +177,43 @@ export default async function DashboardPage() {
 
   const { data: progressoCheck } = await supabase
     .from("progresso_fases")
-    .select("celebracao_vista, pontuacao_passo_anterior")
+    .select("celebracao_vista, pontuacao_passo_anterior, passo_atual, fase_1_completa")
     .eq("discipulo_id", discipulo.id)
     .single()
 
-  // Se há pontuacao_passo_anterior e celebracao_vista = false, significa que acabou de completar um passo
-  const passoRecemCompletado = progressoCheck?.pontuacao_passo_anterior && !progressoCheck?.celebracao_vista
-  const passosCompletados = passoRecemCompletado ? passoAtual : Math.max(0, passoAtual - 1)
+  // Verificar se completou fase 1 para mostrar modal de decisão
+  const fase1Completa = progressoCheck?.fase_1_completa === true
+  const deveMostrarDecisaoCristo = fase1Completa && !discipulo.decisao_por_cristo
 
-  console.log("[v0] Passos completados:", passosCompletados, "Recém completado?", passoRecemCompletado)
+  // Modal de celebração padrão para passos 1-9
+  const deveMostrarCelebracao =
+    passoAtual > 1 &&
+    progressoCheck?.celebracao_vista === false &&
+    !fase1Completa &&
+    progressoCheck?.pontuacao_passo_anterior
 
-  const xpGanhoPassoAnterior = progressoFases?.pontuacao_passo_anterior || 90 // XP padrão se não encontrar
-
-  const deveMostrarCelebracao = passoAtual > 1 && progressoFases?.celebracao_vista === false && passosCompletados !== 10
+  console.log(
+    "[v0] Verificando modais - Fase 1 completa:",
+    fase1Completa,
+    "Decisão por Cristo:",
+    discipulo.decisao_por_cristo,
+    "Deve mostrar decisão:",
+    deveMostrarDecisaoCristo,
+  )
 
   console.log(
     "[v0] Verificando celebração - Passo atual:",
     passoAtual,
-    "Celebracao vista:",
-    progressoFases?.celebracao_vista,
+    "Celebração vista:",
+    progressoCheck?.celebracao_vista,
     "Deve mostrar:",
     deveMostrarCelebracao,
   )
 
-  const deveMostrarDecisaoCristo =
-    passosCompletados === 10 && progressoFases?.celebracao_vista === false && !discipulo.decisao_por_cristo
+  // Calcular progresso corretamente
+  const passosCompletados = fase1Completa ? 10 : Math.max(0, passoAtual - 1)
 
-  console.log(
-    "[v0] Verificando decisão por Cristo - Passos completados:",
-    passosCompletados,
-    "Celebração vista:",
-    progressoFases?.celebracao_vista,
-    "Decisão por Cristo:",
-    discipulo.decisao_por_cristo,
-    "Deve mostrar:",
-    deveMostrarDecisaoCristo,
-  )
+  console.log("[v0] Passos completados calculados:", passosCompletados)
 
   return (
     <div className="min-h-screen bg-background">
@@ -364,12 +365,12 @@ export default async function DashboardPage() {
       )}
 
       {/* Modal de celebração padrão para outros passos */}
-      {deveMostrarCelebracao && progressoFases && (
+      {deveMostrarCelebracao && progressoCheck && (
         <DashboardCelebracaoClient
           passoNumero={passoAtual - 1}
           faseNumero={discipulo.fase_atual || 1}
           discipuloId={discipulo.id}
-          xpGanho={xpGanhoPassoAnterior}
+          xpGanho={progressoCheck.pontuacao_passo_anterior}
         />
       )}
 
