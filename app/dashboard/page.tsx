@@ -189,7 +189,7 @@ export default async function DashboardPage() {
 
   const xpGanhoPassoAnterior = progressoFases?.pontuacao_passo_anterior || 90 // XP padrão se não encontrar
 
-  const deveMostrarCelebracao = passoAtual > 1 && progressoFases?.celebracao_vista === false
+  const deveMostrarCelebracao = passoAtual > 1 && progressoFases?.celebracao_vista === false && passosCompletados !== 10
 
   console.log(
     "[v0] Verificando celebração - Passo atual:",
@@ -201,16 +201,16 @@ export default async function DashboardPage() {
   )
 
   const deveMostrarDecisaoCristo =
-    passoAtual === 11 && discipulo.fase_atual === 1 && !discipulo.decisao_por_cristo && !discipulo.confissao_fe_assinada
+    passosCompletados === 10 && progressoFases?.celebracao_vista === false && !discipulo.decisao_por_cristo
 
   console.log(
-    "[v0] Verificando decisão por Cristo - Passo:",
-    passoAtual,
-    "Fase:",
-    discipulo.fase_atual,
-    "Decisão:",
+    "[v0] Verificando decisão por Cristo - Passos completados:",
+    passosCompletados,
+    "Celebração vista:",
+    progressoFases?.celebracao_vista,
+    "Decisão por Cristo:",
     discipulo.decisao_por_cristo,
-    "Deve mostrar modal:",
+    "Deve mostrar:",
     deveMostrarDecisaoCristo,
   )
 
@@ -359,20 +359,17 @@ export default async function DashboardPage() {
         </div>
       </header>
 
+      {deveMostrarDecisaoCristo && (
+        <ModalDecisaoPorCristo open={true} discipuloId={discipulo.id} nomeCompleto={profile?.nome_completo || ""} />
+      )}
+
+      {/* Modal de celebração padrão para outros passos */}
       {deveMostrarCelebracao && progressoFases && (
         <DashboardCelebracaoClient
           passoNumero={passoAtual - 1}
           faseNumero={discipulo.fase_atual || 1}
           discipuloId={discipulo.id}
           xpGanho={xpGanhoPassoAnterior}
-        />
-      )}
-
-      {deveMostrarDecisaoCristo && (
-        <ModalDecisaoPorCristo
-          open={true}
-          discipuloId={discipulo.id}
-          nomeCompleto={profile?.nome_completo || "Discípulo"}
         />
       )}
 

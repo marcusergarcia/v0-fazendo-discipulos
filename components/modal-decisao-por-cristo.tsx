@@ -68,6 +68,25 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
   return (
     <Dialog open={open} modal>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Adicionando celebração do passo 10 no início do modal de decisão */}
+        <DialogHeader>
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center animate-bounce">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          <DialogTitle className="text-3xl text-center font-bold">Parabéns! Você completou o Passo 10!</DialogTitle>
+          <DialogDescription className="text-center text-lg mt-2">
+            <span className="text-green-600 dark:text-green-400 font-semibold">+360 XP</span> - Novo Nascimento e Vida
+            com Deus
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="my-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 rounded-lg border-2 border-blue-200 dark:border-blue-800">
+          <p className="text-center font-medium">Você concluiu toda a Fase 1 - O Evangelho!</p>
+          <p className="text-center text-sm text-muted-foreground mt-2">Agora é hora de um momento muito especial...</p>
+        </div>
+
         {etapa === "decisao" && (
           <>
             <DialogHeader>
