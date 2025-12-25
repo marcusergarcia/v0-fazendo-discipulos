@@ -76,7 +76,8 @@ export default async function DashboardPage() {
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
   // Se está no passo 2, significa que completou o passo 1
-  const passoAtual = discipulo.passo_atual || 1
+  const faseAtualReal = progressoFases?.fase_atual || discipulo.fase_atual || 1
+  const passoAtual = progressoFases?.passo_atual || discipulo.passo_atual || 1
   const totalPassos = 10
 
   const totalInsignias = recompensas?.[0]?.insignias?.length || 0
@@ -92,11 +93,11 @@ export default async function DashboardPage() {
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
-    level: getLevelNumber(getFaseNome(discipulo.fase_atual || 1)),
-    levelName: getFaseNome(discipulo.fase_atual || 1),
+    level: getLevelNumber(getFaseNome(faseAtualReal)),
+    levelName: getFaseNome(faseAtualReal),
     xp: discipulo.xp_total || 0,
     xpToNext: 1000,
-    currentPhase: `FASE ${discipulo.fase_atual || 1}: ${getFaseNome(discipulo.fase_atual || 1)}`,
+    currentPhase: `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
     currentStep: passoAtual,
     totalSteps: totalPassos,
   }
@@ -368,7 +369,7 @@ export default async function DashboardPage() {
       {deveMostrarCelebracao && progressoCheck && (
         <DashboardCelebracaoClient
           passoNumero={passoAtual - 1}
-          faseNumero={discipulo.fase_atual || 1}
+          faseNumero={faseAtualReal}
           discipuloId={discipulo.id}
           xpGanho={progressoCheck.pontuacao_passo_anterior}
         />
