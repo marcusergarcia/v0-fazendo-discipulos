@@ -15,7 +15,6 @@ export default async function PassoPage({
   const { numero: numeroParam } = await params
   const { fase: faseParam } = await searchParams
   const numero = Number.parseInt(numeroParam)
-  const faseNumero = faseParam ? Number.parseInt(faseParam) : null
 
   if (isNaN(numero) || numero < 1) {
     notFound()
@@ -41,16 +40,14 @@ export default async function PassoPage({
     redirect("/dashboard")
   }
 
-  const faseAtual = faseNumero || discipulo.fase_atual || 1
-  const isFaseIntermediaria = faseAtual === 2
-
-  const passo = isFaseIntermediaria ? PASSOS_BATISMO[numero] : PASSOS_CONTEUDO[numero]
+  const estaEmFaseBatismo = (faseParam === "batismo" || discipulo.necessita_fase_batismo) && discipulo.fase_atual === 1
+  const passo = estaEmFaseBatismo ? PASSOS_BATISMO[numero] : PASSOS_CONTEUDO[numero]
 
   if (!passo) {
     notFound()
   }
 
-  const maxSteps = isFaseIntermediaria ? 12 : 10
+  const maxSteps = estaEmFaseBatismo ? 12 : 10
   if (numero > maxSteps) {
     notFound()
   }
@@ -71,7 +68,7 @@ export default async function PassoPage({
       .from("progresso_fases")
       .insert({
         discipulo_id: discipulo.id,
-        fase_atual: faseAtual,
+        fase_atual: discipulo.fase_atual,
         passo_atual: numero,
         videos_assistidos: [],
         artigos_lidos: [],
@@ -125,7 +122,7 @@ export default async function PassoPage({
     numero === 8 ||
     numero === 9 ||
     numero === 10 ||
-    (isFaseIntermediaria && numero >= 1 && numero <= 12)
+    (estaEmFaseBatismo && numero >= 1 && numero <= 12)
   ) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")

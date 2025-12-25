@@ -9,16 +9,15 @@ export const FASES_INFO = {
     passos: 10,
   },
   2: {
-    nome: "Batismo Cristão",
-    descricao: "Preparação para o batismo bíblico",
-    cor: "#06B6D4",
-    passos: 12, // Changed from 10 to 12
-    intermediaria: true,
-  },
-  3: {
     nome: "Armadura de Deus",
     descricao: "Guerra espiritual e proteção",
     cor: "#8B5CF6",
+    passos: 10,
+  },
+  3: {
+    nome: "Vida em Comunidade",
+    descricao: "Relacionamentos e igreja",
+    cor: "#10B981",
     passos: 10,
   },
 } as const
@@ -34,7 +33,7 @@ export function getFaseInfo(fase: number) {
 }
 
 export function isFaseIntermediaria(fase: number): boolean {
-  return FASES_INFO[fase as FaseNumero]?.intermediaria || false
+  return false
 }
 
 export function getPassoNome(passo: number): string {

@@ -24,11 +24,13 @@ export async function registrarDecisaoPorCristo(data: {
         decisao_por_cristo: data.decisaoPorCristo,
         data_decisao_por_cristo: dataAtual,
         confissao_fe_assinada: data.confissaoFeAssinada,
-        data_assinatura_confissao: data.dataAssinatura, // Usando a data fornecida pelo usuário
+        data_assinatura_confissao: data.dataAssinatura,
         nome_assinatura_confissao: data.nomeAssinatura,
         ja_batizado: data.jaBatizado,
         data_resposta_batismo: dataAtual,
         necessita_fase_batismo: !data.jaBatizado,
+        fase_atual: 1,
+        passo_atual: 1,
       })
       .eq("id", data.discipuloId)
 
@@ -45,7 +47,7 @@ export async function registrarDecisaoPorCristo(data: {
       const { error: progressoError } = await supabase
         .from("progresso_fases")
         .update({
-          fase_atual: 2, // Fase 2: Batismo Cristão (intermediária)
+          fase_atual: 1, // Permanece na fase 1, mas com flag de batismo
           passo_atual: 1,
           pontuacao_passo_atual: 0,
           celebracao_vista: true,
@@ -58,8 +60,6 @@ export async function registrarDecisaoPorCristo(data: {
         console.error("[v0] Erro ao atualizar progresso:", progressoError)
       }
 
-      await supabase.from("discipulos").update({ fase_atual: 2, passo_atual: 1 }).eq("id", data.discipuloId)
-
       revalidatePath("/dashboard")
       return {
         success: true,
@@ -67,12 +67,12 @@ export async function registrarDecisaoPorCristo(data: {
       }
     }
 
-    console.log("[v0] Discípulo já batizado, seguindo para Fase 3 - Armadura de Deus")
+    console.log("[v0] Discípulo já batizado, seguindo para Fase 2 - Armadura de Deus")
 
     const { error: progressoError } = await supabase
       .from("progresso_fases")
       .update({
-        fase_atual: 3, // Fase 3 - Armadura de Deus
+        fase_atual: 2, // Fase 2 - Armadura de Deus
         passo_atual: 1,
         pontuacao_passo_atual: 0,
         celebracao_vista: true,
@@ -85,12 +85,12 @@ export async function registrarDecisaoPorCristo(data: {
       console.error("[v0] Erro ao atualizar progresso:", progressoError)
     }
 
-    await supabase.from("discipulos").update({ fase_atual: 3, passo_atual: 1 }).eq("id", data.discipuloId)
+    await supabase.from("discipulos").update({ fase_atual: 2, passo_atual: 1 }).eq("id", data.discipuloId)
 
     revalidatePath("/dashboard")
     return {
       success: true,
-      message: "Parabéns! Você será direcionado para a Fase 3 - Armadura de Deus.",
+      message: "Parabéns! Você será direcionado para a Fase 2 - Armadura de Deus.",
     }
   } catch (error) {
     console.error("[v0] Erro ao registrar decisão:", error)

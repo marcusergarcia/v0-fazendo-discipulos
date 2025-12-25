@@ -31,7 +31,6 @@ import { StepBadge } from "@/components/step-badge"
 import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
 import {
   getFaseNome,
-  isFaseIntermediaria,
   getRecompensaNome,
   getRecompensaBatismoNome,
   getPassoNome,
@@ -95,15 +94,17 @@ export default async function DashboardPage() {
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
+  const estaEmFaseBatismo = discipulo.necessita_fase_batismo && discipulo.fase_atual === 1
   const faseAtualReal = discipulo.fase_atual || progressoFases?.fase_atual || 1
   const passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
-  const totalPassos = isFaseIntermediaria(faseAtualReal) ? 12 : 10
+  const totalPassos = estaEmFaseBatismo ? 12 : 10
 
   console.log("[v0] Fase calculada:", {
     faseAtualReal,
+    estaEmFaseBatismo,
+    necessita_fase_batismo: discipulo.necessita_fase_batismo,
     passoAtual,
     totalPassos,
-    currentPhase: `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
   })
 
   const totalInsignias = recompensas?.[0]?.insignias?.length || 0
@@ -128,16 +129,17 @@ export default async function DashboardPage() {
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
-    level: getLevelNumber(getFaseNome(faseAtualReal)),
-    levelName: getFaseNome(faseAtualReal),
+    level: getLevelNumber(estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal)),
+    levelName: estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
     xp: discipulo.xp_total || 0,
     xpToNext: 1000,
-    currentPhase: isFaseIntermediaria(faseAtualReal)
-      ? `FASE INTERMEDIÁRIA: ${getFaseNome(faseAtualReal)}`
+    currentPhase: estaEmFaseBatismo
+      ? `FASE INTERMEDIÁRIA: Batismo Cristão`
       : `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
     currentStep: passoAtual,
     totalSteps: totalPassos,
     faseNumero: faseAtualReal,
+    estaEmFaseBatismo,
   }
 
   console.log("[v0] UserData preparado:", userData)
@@ -253,18 +255,37 @@ export default async function DashboardPage() {
   const passosCompletados =
     fase1Completa && faseAtualReal === 1
       ? 10
-      : isFaseIntermediaria(faseAtualReal)
+      : estaEmFaseBatismo
         ? Math.max(0, passoAtual - 1)
         : Math.max(0, passoAtual - 1)
 
   console.log("[v0] Passos completados calculados:", passosCompletados)
 
-  const currentStepTitle = isFaseIntermediaria(faseAtualReal)
-    ? getPassoBatismoNome(passoAtual)
-    : getPassoNome(passoAtual)
-  const currentStepDescription = isFaseIntermediaria(faseAtualReal)
-    ? getPassoBatismoDescricao(passoAtual)
-    : getPassoDescricao(passoAtual)
+  const currentPhaseData = {
+    nome: estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
+    passoAtual: passoAtual,
+    totalPassos: totalPassos,
+    descricaoFase: estaEmFaseBatismo
+      ? "Complete todos os 12 passos para aprender sobre o Batismo Cristão e se preparar para ser batizado"
+      : `Complete todos os ${totalPassos} passos para aprender sobre ${getFaseNome(faseAtualReal)}`,
+    passoTitulo: estaEmFaseBatismo ? getPassoBatismoNome(passoAtual) : getPassoNome(passoAtual),
+    passoDescricao: estaEmFaseBatismo ? getPassoBatismoDescricao(passoAtual) : getPassoDescricao(passoAtual),
+  }
+
+  const jornada = Array.from({ length: totalPassos }, (_, i) => {
+    const stepNumber = i + 1
+    const isCompleted = stepNumber < passoAtual
+    const isCurrent = stepNumber === passoAtual
+
+    return {
+      step: stepNumber,
+      title: estaEmFaseBatismo ? getPassoBatismoNome(stepNumber) : getPassoNome(stepNumber),
+      isCompleted,
+      isCurrent,
+      href: `/dashboard/passo/${stepNumber}${estaEmFaseBatismo ? "?fase=batismo" : ""}`,
+      recompensa: estaEmFaseBatismo ? getRecompensaBatismoNome(stepNumber) : getRecompensaNome(stepNumber),
+    }
+  })
 
   return (
     <div className="min-h-screen bg-background">
@@ -484,9 +505,9 @@ export default async function DashboardPage() {
 
               <div className="pt-2 sm:pt-4 space-y-2 sm:space-y-3">
                 <h4 className="font-semibold text-base sm:text-lg break-words">
-                  Passo {userData.currentStep}: {currentStepTitle}
+                  Passo {userData.currentStep}: {currentPhaseData.passoTitulo}
                 </h4>
-                <p className="text-xs sm:text-sm text-muted-foreground">{currentStepDescription}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{currentPhaseData.passoDescricao}</p>
 
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Clock className="w-4 h-4 flex-shrink-0" />
@@ -530,12 +551,7 @@ export default async function DashboardPage() {
                   <div className="flex justify-center mb-3">
                     <StepBadge stepNumber={userData.currentStep} status="current" size="lg" />
                   </div>
-                  <p className="font-medium">
-                    Insígnia:{" "}
-                    {isFaseIntermediaria(userData.faseNumero)
-                      ? getRecompensaBatismoNome(userData.currentStep)
-                      : getRecompensaNome(userData.currentStep)}
-                  </p>
+                  <p className="font-medium">Insígnia: {jornada[userData.currentStep - 1].recompensa}</p>
                   <p className="text-sm text-muted-foreground mt-1">Complete o Passo {userData.currentStep}</p>
                 </div>
               </CardContent>
@@ -547,54 +563,40 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sua Jornada - {userData.currentPhase}</CardTitle>
-            <CardDescription>
-              {isFaseIntermediaria(userData.faseNumero)
-                ? "Complete todos os 12 passos para aprender sobre o Batismo Cristão e se preparar para ser batizado"
-                : 'Complete todos os 10 passos para receber a Medalha "Novo Nascimento"'}
-            </CardDescription>
+            <CardDescription>{currentPhaseData.descricaoFase}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-5 gap-4">
-              {Array.from({ length: userData.totalSteps }, (_, i) => {
-                const stepNumber = i + 1
-                const isCompleted = progressoFases?.passos_completos?.includes(stepNumber)
-                const isCurrent = stepNumber === userData.currentStep
-
-                const stepName = isFaseIntermediaria(userData.faseNumero)
-                  ? getPassoBatismoNome(stepNumber)
-                  : getPassoNome(stepNumber)
-
-                return (
-                  <Link
-                    key={stepNumber}
-                    href={`/dashboard/passo/${stepNumber}?fase=${userData.faseNumero}`}
-                    className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
-                      isCompleted
-                        ? "bg-primary/10 border-primary"
-                        : isCurrent
-                          ? "bg-primary/5 border-primary/50"
-                          : "bg-muted border-muted-foreground/20"
+              {jornada.map((step) => (
+                <Link
+                  key={step.step}
+                  href={step.href}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                    step.isCompleted
+                      ? "bg-primary/10 border-primary"
+                      : step.isCurrent
+                        ? "bg-primary/5 border-primary/50"
+                        : "bg-muted border-muted-foreground/20"
+                  }`}
+                >
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                      step.isCompleted
+                        ? "bg-primary text-primary-foreground"
+                        : step.isCurrent
+                          ? "bg-primary/20 text-primary"
+                          : "bg-muted-foreground/20 text-muted-foreground"
                     }`}
                   >
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                        isCompleted
-                          ? "bg-primary text-primary-foreground"
-                          : isCurrent
-                            ? "bg-primary/20 text-primary"
-                            : "bg-muted-foreground/20 text-muted-foreground"
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="w-6 h-6" />
-                      ) : (
-                        <span className="text-lg font-bold">{stepNumber}</span>
-                      )}
-                    </div>
-                    <span className="text-xs text-center font-medium text-foreground">{stepName}</span>
-                  </Link>
-                )
-              })}
+                    {step.isCompleted ? (
+                      <Check className="w-6 h-6" />
+                    ) : (
+                      <span className="text-lg font-bold">{step.step}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-center font-medium text-foreground">{step.title}</span>
+                </Link>
+              ))}
             </div>
           </CardContent>
         </Card>
