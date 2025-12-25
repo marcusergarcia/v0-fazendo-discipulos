@@ -567,7 +567,7 @@ export default async function DashboardPage() {
                 return (
                   <Link
                     key={stepNumber}
-                    href={`/dashboard/passo/${stepNumber}`}
+                    href={`/dashboard/passo/${stepNumber}?fase=${userData.faseNumero}`}
                     className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
                       isCompleted
                         ? "bg-primary/10 border-primary"

@@ -3,18 +3,21 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
+import { PASSOS_BATISMO } from "@/constants/passos-batismo"
 
-export default async function PassoPage({ params }: { params: Promise<{ numero: string }> }) {
+export default async function PassoPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ numero: string }>
+  searchParams: Promise<{ fase?: string }>
+}) {
   const { numero: numeroParam } = await params
+  const { fase: faseParam } = await searchParams
   const numero = Number.parseInt(numeroParam)
+  const faseNumero = faseParam ? Number.parseInt(faseParam) : null
 
-  if (isNaN(numero) || numero < 1 || numero > 10) {
-    notFound()
-  }
-
-  const passo = PASSOS_CONTEUDO[numero]
-
-  if (!passo) {
+  if (isNaN(numero) || numero < 1) {
     notFound()
   }
 
@@ -38,6 +41,20 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     redirect("/dashboard")
   }
 
+  const faseAtual = faseNumero || discipulo.fase_atual || 1
+  const isFaseIntermediaria = faseAtual === 2
+
+  const passo = isFaseIntermediaria ? PASSOS_BATISMO[numero] : PASSOS_CONTEUDO[numero]
+
+  if (!passo) {
+    notFound()
+  }
+
+  const maxSteps = isFaseIntermediaria ? 12 : 10
+  if (numero > maxSteps) {
+    notFound()
+  }
+
   const { data: profile } = await supabase.from("profiles").select("nome_completo").eq("id", user.id).single()
 
   const nomeDiscipulo = profile?.nome_completo || "Sem nome"
@@ -54,7 +71,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       .from("progresso_fases")
       .insert({
         discipulo_id: discipulo.id,
-        fase_atual: 1,
+        fase_atual: faseAtual,
         passo_atual: numero,
         videos_assistidos: [],
         artigos_lidos: [],
@@ -107,7 +124,8 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
     numero === 7 ||
     numero === 8 ||
     numero === 9 ||
-    numero === 10
+    numero === 10 ||
+    (isFaseIntermediaria && numero >= 1 && numero <= 12)
   ) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")
@@ -164,18 +182,16 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       let xp = null
 
       if (reflexao && reflexao.reflexoes && Array.isArray(reflexao.reflexoes)) {
-        // Buscar a reflexão individual no array
         const reflexaoIndividual = reflexao.reflexoes.find((r: any) => r.conteudo_id === video.id)
 
         if (reflexaoIndividual) {
-          // Reflexão existe, agora verificar se tem feedback
           if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
             const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
             if (feedback) {
-              situacao = "aprovado" // Usar "aprovado" não "aprovada"
+              situacao = "aprovado"
               xp = feedback.xp_ganho
             } else {
-              situacao = "enviado" // Usar "enviado" para aguardando aprovação
+              situacao = "enviado"
             }
           } else {
             situacao = "enviado"
@@ -195,18 +211,16 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       let xp = null
 
       if (reflexao && reflexao.reflexoes && Array.isArray(reflexao.reflexoes)) {
-        // Buscar a reflexão individual no array
         const reflexaoIndividual = reflexao.reflexoes.find((r: any) => r.conteudo_id === artigo.id)
 
         if (reflexaoIndividual) {
-          // Reflexão existe, agora verificar se tem feedback
           if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
             const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
             if (feedback) {
-              situacao = "aprovado" // Usar "aprovado" não "aprovada"
+              situacao = "aprovado"
               xp = feedback.xp_ganho
             } else {
-              situacao = "enviado" // Usar "enviado" para aguardando aprovação
+              situacao = "enviado"
             }
           } else {
             situacao = "enviado"
@@ -239,7 +253,7 @@ export default async function PassoPage({ params }: { params: Promise<{ numero: 
       perguntasReflexivas={perguntasReflexivas}
       leiturasSemana={leiturasSemana}
       capitulosLidos={capitulosLidos}
-      discipuloId={discipulo.id} // Added discipuloId prop to pass to client
+      discipuloId={discipulo.id}
     />
   )
 }
