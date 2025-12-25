@@ -629,6 +629,132 @@ export const PASSOS_BATISMO = {
     xp: 200,
     fase: "intermediaria",
   },
+  11: {
+    numero: 11,
+    titulo: "Meu Testemunho de Fé",
+    objetivo: "Preparar seu testemunho pessoal para compartilhar no dia do batismo",
+    versiculo: "1 Pedro 3:15",
+    textoVersiculo:
+      "Estejam sempre preparados para responder a qualquer pessoa que lhes pedir a razão da esperança que há em vós",
+    introducao: "Prepare seu testemunho de fé para compartilhar com a igreja no dia do seu batismo.",
+    topicos: ["Compartilhando sua história", "A obra de Deus em você", "Razão da sua fé", "Testemunho pessoal"],
+    videos: [
+      {
+        id: "video-b11-1",
+        titulo: "Como Dar Seu Testemunho",
+        url: "https://www.youtube.com/watch?v=exemplo",
+        duracao: "16:00",
+        canal: "Augustus Nicodemus",
+      },
+      {
+        id: "video-b11-2",
+        titulo: "Preparando Seu Testemunho",
+        url: "https://www.youtube.com/watch?v=exemplo",
+        duracao: "14:20",
+        canal: "Voltemos ao Evangelho",
+      },
+      {
+        id: "video-b11-3",
+        titulo: "A Razão da Esperança",
+        url: "https://www.youtube.com/watch?v=exemplo",
+        duracao: "12:50",
+        canal: "Bereianos",
+      },
+    ],
+    artigos: [
+      { id: "artigo-b11-1", titulo: "Seu Testemunho Pessoal", fonte: "Monergismo", url: "https://monergismo.com" },
+      {
+        id: "artigo-b11-2",
+        titulo: "Compartilhando Sua Fé",
+        fonte: "Bereianos",
+        url: "https://bereianos.blogspot.com",
+      },
+      {
+        id: "artigo-b11-3",
+        titulo: "O Poder do Testemunho",
+        fonte: "Voltemos ao Evangelho",
+        url: "https://voltemosaoevangelho.com",
+      },
+    ],
+    leituraSemanal: {
+      semana: 11,
+      tema: "Testemunho Pessoal",
+      referencias: [
+        { livro: "Atos", capitulo: 22, versiculos: "1-21" },
+        { livro: "Atos", capitulo: 26, versiculos: "1-23" },
+      ],
+      descricao: "Leia os testemunhos de Paulo como exemplo",
+    },
+    perguntaChave: "Qual é a história da minha conversão?",
+    missao: "Escreva seu testemunho de fé em 3 partes: antes, encontro com Cristo, depois",
+    recompensa: "Preparado para Testemunhar",
+    icone: "✍️",
+    xp: 150,
+    fase: "intermediaria",
+  },
+  12: {
+    numero: 12,
+    titulo: "Compromisso Final e Agendamento",
+    objetivo: "Confirmar seu compromisso com Cristo e agendar seu batismo",
+    versiculo: "Josué 24:15",
+    textoVersiculo: "Escolham hoje a quem irão servir... Mas eu e a minha família serviremos ao Senhor",
+    introducao:
+      "É hora de tomar a decisão final e agendar seu batismo, declarando publicamente seu compromisso com Cristo.",
+    topicos: ["Decisão final", "Agendamento do batismo", "Compromisso público", "Próxima fase"],
+    videos: [
+      {
+        id: "video-b12-1",
+        titulo: "O Dia do Batismo",
+        url: "https://www.youtube.com/watch?v=exemplo",
+        duracao: "18:00",
+        canal: "Augustus Nicodemus",
+      },
+      {
+        id: "video-b12-2",
+        titulo: "Compromisso com Cristo",
+        url: "https://www.youtube.com/watch?v=exemplo",
+        duracao: "15:30",
+        canal: "Pr. Hernandes Dias Lopes",
+      },
+      {
+        id: "video-b12-3",
+        titulo: "Celebrando o Batismo",
+        url: "https://www.youtube.com/watch?v=exemplo",
+        duracao: "13:40",
+        canal: "Voltemos ao Evangelho",
+      },
+    ],
+    artigos: [
+      {
+        id: "artigo-b12-1",
+        titulo: "O Compromisso do Batismo",
+        fonte: "Monergismo",
+        url: "https://monergismo.com",
+      },
+      { id: "artigo-b12-2", titulo: "Após o Batismo", fonte: "Bereianos", url: "https://bereianos.blogspot.com" },
+      {
+        id: "artigo-b12-3",
+        titulo: "Nova Jornada",
+        fonte: "Voltemos ao Evangelho",
+        url: "https://voltemosaoevangelho.com",
+      },
+    ],
+    leituraSemanal: {
+      semana: 12,
+      tema: "Compromisso Total",
+      referencias: [
+        { livro: "Josué", capitulo: 24, versiculos: "14-28" },
+        { livro: "Romanos", capitulo: 12, versiculos: "1-2" },
+      ],
+      descricao: "Reflita sobre entregar sua vida totalmente a Cristo",
+    },
+    perguntaChave: "Estou pronto para me comprometer publicamente com Cristo?",
+    missao: "Agende seu batismo com seu discipulador e confirme a data",
+    recompensa: "Aliança nas Águas",
+    icone: "🎖️",
+    xp: 200,
+    fase: "intermediaria",
+  },
 }
 
 export type PassoBatismoNumero = keyof typeof PASSOS_BATISMO

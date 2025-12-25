@@ -30,9 +30,9 @@ import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
 import { StepBadge } from "@/components/step-badge"
 import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
 import { getFaseNome, getPassoNome, getPassoDescricao, getRecompensaNome } from "@/constants/fases-passos"
-import { PASSOS_BATISMO } from "@/constants/passos-batismo"
 import { isFaseIntermediaria } from "@/constants/fases-passos"
 import { getPassoBatismoNome, getPassoBatismoDescricao } from "@/constants/passos-batismo"
+import { getRecompensaBatismoNome } from "@/constants/recompensas-batismo"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
 
   const faseAtualReal = discipulo.fase_atual || progressoFases?.fase_atual || 1
   const passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
-  const totalPassos = isFaseIntermediaria(faseAtualReal) ? PASSOS_BATISMO.length : 10
+  const totalPassos = isFaseIntermediaria(faseAtualReal) ? 12 : 10
 
   console.log("[v0] Fase calculada:", {
     faseAtualReal,
@@ -236,7 +236,12 @@ export default async function DashboardPage() {
   )
 
   // Calcular progresso corretamente
-  const passosCompletados = fase1Completa ? 10 : Math.max(0, passoAtual - 1)
+  const passosCompletados =
+    fase1Completa && faseAtualReal === 1
+      ? 10
+      : isFaseIntermediaria(faseAtualReal)
+        ? progressoFases?.passos_completos?.filter((p) => p >= 1 && p <= 12).length || 0
+        : Math.max(0, passoAtual - 1)
 
   console.log("[v0] Passos completados calculados:", passosCompletados)
 
@@ -511,7 +516,12 @@ export default async function DashboardPage() {
                   <div className="flex justify-center mb-3">
                     <StepBadge stepNumber={userData.currentStep} status="current" size="lg" />
                   </div>
-                  <p className="font-medium">Insígnia: {getRecompensaNome(userData.currentStep)}</p>
+                  <p className="font-medium">
+                    Insígnia:{" "}
+                    {isFaseIntermediaria(userData.faseNumero)
+                      ? getRecompensaBatismoNome(userData.currentStep)
+                      : getRecompensaNome(userData.currentStep)}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">Complete o Passo {userData.currentStep}</p>
                 </div>
               </CardContent>
@@ -524,8 +534,8 @@ export default async function DashboardPage() {
           <CardHeader>
             <CardTitle>Sua Jornada - {userData.currentPhase}</CardTitle>
             <CardDescription>
-              {userData.faseNumero === 2
-                ? "Complete todos os 10 passos para aprender sobre o Batismo Cristão"
+              {isFaseIntermediaria(userData.faseNumero)
+                ? "Complete todos os 12 passos para aprender sobre o Batismo Cristão e se preparar para ser batizado"
                 : 'Complete todos os 10 passos para receber a Medalha "Novo Nascimento"'}
             </CardDescription>
           </CardHeader>

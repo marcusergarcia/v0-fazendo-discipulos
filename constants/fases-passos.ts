@@ -12,7 +12,7 @@ export const FASES_INFO = {
     nome: "Batismo Cristão",
     descricao: "Preparação para o batismo bíblico",
     cor: "#06B6D4",
-    passos: 10,
+    passos: 12, // Changed from 10 to 12
     intermediaria: true,
   },
   3: {
@@ -69,6 +69,24 @@ export function getRecompensaNome(passo: number): string {
     8: "Arrependimento",
     9: "Cristo é Meu Senhor",
     10: "Novo Nascimento",
+  }
+  return nomes[passo] || `Insígnia ${passo}`
+}
+
+export function getRecompensaBatismoNome(passo: number): string {
+  const nomes: Record<number, string> = {
+    1: "Estudante do Batismo",
+    2: "Defensor da Graça",
+    3: "Estudioso da Fé",
+    4: "Compreensor dos Símbolos",
+    5: "Praticante da Verdade",
+    6: "Conhecedor da Trindade",
+    7: "Membro Comprometido",
+    8: "Testemunha Corajosa",
+    9: "Obediente Pronto",
+    10: "Pronto para o Batismo",
+    11: "Preparado para Testemunhar",
+    12: "Aliança nas Águas",
   }
   return nomes[passo] || `Insígnia ${passo}`
 }
