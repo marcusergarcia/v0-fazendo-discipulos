@@ -28,6 +28,7 @@ import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
 import { StepBadge } from "@/components/step-badge"
 import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
+import { getFaseNome, getPassoNome, getPassoDescricao, getRecompensaNome } from "@/constants"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -536,77 +537,19 @@ export default async function DashboardPage() {
   )
 }
 
-function getFaseNome(fase: number): string {
-  const fases: Record<number, string> = {
-    1: "O Evangelho",
-    2: "Armadura de Deus",
-    3: "Sermão da Montanha",
-    4: "Pão Diário",
-    5: "Oração",
-    6: "Igreja Local",
-    7: "Testemunho",
-    8: "Treinamento Final",
-  }
-  return fases[fase] || "O Evangelho"
-}
-
-function getPassoNome(passo: number): string {
-  const passos: Record<number, string> = {
-    1: "Deus nos Criou",
-    2: "Deus nos Ama",
-    3: "O Pecado Entrou",
-    4: "Consequência",
-    5: "A Provisão Divina",
-    6: "Morte e Ressurreição",
-    7: "Graça e Fé",
-    8: "Arrependimento",
-    9: "Confessar Jesus",
-    10: "Novo Nascimento",
-  }
-  return passos[passo] || "Desconhecido"
-}
-
-function getPassoDescricao(passo: number): string {
-  const descricoes: Record<number, string> = {
-    1: "Entenda como Deus criou o mundo e a humanidade com propósito.",
-    2: "Descubra o amor incondicional de Deus pela humanidade.",
-    3: "Compreenda como o pecado rompeu o relacionamento com Deus.",
-    4: "Conheça as consequências do pecado para a humanidade.",
-    5: "Aprenda as quatro provisões que Jesus realizou na cruz.",
-    6: "Entenda o sacrifício e a vitória de Cristo na cruz.",
-    7: "Descubra como somos salvos pela graça através da fé.",
-    8: "Aprenda sobre o arrependimento genuíno.",
-    9: "Compreenda a importância de confessar Jesus como Senhor.",
-    10: "Celebre o novo nascimento e a vida em Cristo.",
-  }
-  return descricoes[passo] || "Passo da jornada de fé."
-}
-
-function getRecompensaNome(passo: number): string {
-  const recompensas: Record<number, string> = {
-    1: "Criação",
-    2: "Amor Divino",
-    3: "Reconhecimento da Verdade",
-    4: "Consciência",
-    5: "Cristo é o Caminho",
-    6: "Cruz e Ressurreição",
-    7: "Graça",
-    8: "Coração Quebrantado",
-    9: "Confissão",
-    10: "Novo Nascimento",
-  }
-  return recompensas[passo] || "Recompensa Especial"
-}
-
 function getLevelNumber(levelName: string): number {
-  const levels: Record<string, number> = {
-    Explorador: 1,
-    Discípulo: 2,
-    Guerreiro: 3,
-    "Servo Mestre": 4,
-    Multiplicador: 5,
+  const fases: Record<string, number> = {
+    "O Evangelho": 1,
+    "Batismo Cristão": 2,
+    "Armadura de Deus": 3,
+    "Sermão da Montanha": 4,
+    "Pão Diário": 5,
+    Oração: 6,
+    "Igreja Local": 7,
+    Testemunho: 8,
+    "Treinamento Final": 9,
   }
-  return levels[levelName] || 1
+  return fases[levelName] || 1
 }
 
 function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
