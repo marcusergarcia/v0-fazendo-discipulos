@@ -108,6 +108,15 @@ export default async function DashboardPage() {
 
   const totalInsignias = recompensas?.[0]?.insignias?.length || 0
 
+  console.log("[v0] Insignias debug:", {
+    recompensasCount: recompensas?.length,
+    primeiraRecompensa: recompensas?.[0],
+    insigniasArray: recompensas?.[0]?.insignias,
+    totalInsignias,
+    passoAtualDiscipulo: discipulo.passo_atual,
+    faseAtualDiscipulo: discipulo.fase_atual,
+  })
+
   const { data: discipuladorData } = await supabase
     .from("profiles")
     .select("nome_completo")
