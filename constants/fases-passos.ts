@@ -47,6 +47,11 @@ export function getPassoBatismoNome(passo: number): string {
   return passoInfo?.titulo || `Passo ${passo}`
 }
 
+export function getPassoBatismoDescricao(passo: number): string {
+  const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
+  return passoInfo?.objetivo || "Descrição do passo"
+}
+
 export function getPassoDescricao(passo: number): string {
   const passoInfo = PASSOS_CONTEUDO[passo as keyof typeof PASSOS_CONTEUDO]
   return passoInfo?.objetivo || "Descrição do passo"

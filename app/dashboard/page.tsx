@@ -23,6 +23,7 @@ import {
   UserPlus,
   UsersRound,
   Book,
+  Check,
 } from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
@@ -31,6 +32,7 @@ import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
 import { getFaseNome, getPassoNome, getPassoDescricao, getRecompensaNome } from "@/constants/fases-passos"
 import { PASSOS_BATISMO } from "@/constants/passos-batismo"
 import { isFaseIntermediaria } from "@/constants/fases-passos"
+import { getPassoBatismoNome, getPassoBatismoDescricao } from "@/constants/passos-batismo"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -200,7 +202,7 @@ export default async function DashboardPage() {
 
   const { data: progressoCheck } = await supabase
     .from("progresso_fases")
-    .select("celebracao_vista, pontuacao_passo_anterior, passo_atual, fase_1_completa")
+    .select("celebracao_vista, pontuacao_passo_anterior, passo_atual, fase_1_completa, passos_completos")
     .eq("discipulo_id", discipulo.id)
     .single()
 
@@ -237,6 +239,13 @@ export default async function DashboardPage() {
   const passosCompletados = fase1Completa ? 10 : Math.max(0, passoAtual - 1)
 
   console.log("[v0] Passos completados calculados:", passosCompletados)
+
+  const currentStepTitle = isFaseIntermediaria(faseAtualReal)
+    ? getPassoBatismoNome(passoAtual)
+    : getPassoNome(passoAtual)
+  const currentStepDescription = isFaseIntermediaria(faseAtualReal)
+    ? getPassoBatismoDescricao(passoAtual)
+    : getPassoDescricao(passoAtual)
 
   return (
     <div className="min-h-screen bg-background">
@@ -456,9 +465,9 @@ export default async function DashboardPage() {
 
               <div className="pt-2 sm:pt-4 space-y-2 sm:space-y-3">
                 <h4 className="font-semibold text-base sm:text-lg break-words">
-                  Passo {userData.currentStep}: {getPassoNome(userData.currentStep)}
+                  Passo {userData.currentStep}: {currentStepTitle}
                 </h4>
-                <p className="text-xs sm:text-sm text-muted-foreground">{getPassoDescricao(userData.currentStep)}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{currentStepDescription}</p>
 
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Clock className="w-4 h-4 flex-shrink-0" />
@@ -521,26 +530,45 @@ export default async function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {Array.from({ length: 10 }, (_, i) => {
+            <div className="grid grid-cols-5 gap-4">
+              {Array.from({ length: userData.totalSteps }, (_, i) => {
                 const stepNumber = i + 1
-                const isCompleted = stepNumber < userData.currentStep
+                const isCompleted = progressoFases?.passos_completos?.includes(stepNumber)
                 const isCurrent = stepNumber === userData.currentStep
-                const status = isCompleted ? "completed" : isCurrent ? "current" : "locked"
 
-                const stepTitle =
-                  userData.faseNumero === 2
-                    ? PASSOS_BATISMO[stepNumber as keyof typeof PASSOS_BATISMO]?.titulo || `Passo ${stepNumber}`
-                    : getPassoNome(stepNumber)
+                const stepName = isFaseIntermediaria(userData.faseNumero)
+                  ? getPassoBatismoNome(stepNumber)
+                  : getPassoNome(stepNumber)
 
                 return (
-                  <StepCard
+                  <Link
                     key={stepNumber}
-                    number={stepNumber}
-                    title={stepTitle}
-                    status={status as "completed" | "current" | "locked"}
-                    href={status === "locked" ? undefined : `/dashboard/passo/${stepNumber}`}
-                  />
+                    href={`/dashboard/passo/${stepNumber}`}
+                    className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                      isCompleted
+                        ? "bg-primary/10 border-primary"
+                        : isCurrent
+                          ? "bg-primary/5 border-primary/50"
+                          : "bg-muted border-muted-foreground/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                        isCompleted
+                          ? "bg-primary text-primary-foreground"
+                          : isCurrent
+                            ? "bg-primary/20 text-primary"
+                            : "bg-muted-foreground/20 text-muted-foreground"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-6 h-6" />
+                      ) : (
+                        <span className="text-lg font-bold">{stepNumber}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-center font-medium text-foreground">{stepName}</span>
+                  </Link>
                 )
               })}
             </div>
