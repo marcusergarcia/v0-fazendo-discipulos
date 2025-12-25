@@ -28,7 +28,7 @@ import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
 import { StepBadge } from "@/components/step-badge"
 import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
-import { getFaseNome, getPassoNome, getPassoDescricao, getRecompensaNome } from "@/constants"
+import { getFaseNome, getPassoNome, getPassoDescricao, getRecompensaNome } from "@/constants/fases-passos"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
