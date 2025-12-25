@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Heart, Sparkles, ScrollText, ArrowDown } from "lucide-react"
+import { Heart, Sparkles, ScrollText, ArrowDown, Calendar } from "lucide-react"
 import { registrarDecisaoPorCristo } from "@/app/dashboard/actions"
 import { toast } from "sonner"
 import { CONFISSAO_FE_TEXTO } from "@/constants/confissao-fe"
@@ -23,6 +23,7 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
   const [loading, setLoading] = useState(false)
   const [concordo, setConcordo] = useState(false)
   const [nomeAssinatura, setNomeAssinatura] = useState(nomeCompleto)
+  const [dataAssinatura, setDataAssinatura] = useState(new Date().toISOString().split("T")[0])
   const [jaBatizado, setJaBatizado] = useState<boolean | null>(null)
   const [scrolledToBottom, setScrolledToBottom] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -50,7 +51,7 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
   }
 
   const handleConfissaoFe = async () => {
-    if (!concordo || !nomeAssinatura.trim()) {
+    if (!concordo || !nomeAssinatura.trim() || !dataAssinatura) {
       toast.error("Por favor, preencha todos os campos e marque que concorda")
       return
     }
@@ -66,6 +67,7 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
         decisaoPorCristo: true,
         confissaoFeAssinada: true,
         nomeAssinatura,
+        dataAssinatura,
         jaBatizado: resposta,
       })
 
@@ -185,19 +187,26 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
 
                       // Subtítulos
                       if (linha.startsWith("## ")) {
+                        const texto = linha.replace("## ", "")
                         return (
-                          <h2 key={index} className="text-xl font-semibold mt-6 mb-3 text-primary">
-                            {linha.replace("## ", "")}
+                          <h2 key={index} className="text-lg font-semibold mt-6 mb-3 text-primary">
+                            <TextWithBibleLinks text={texto} />
                           </h2>
                         )
                       }
 
-                      // Itens numerados
-                      if (/^\d+\./.test(linha)) {
+                      // Linha horizontal
+                      if (linha === "---") {
+                        return <hr key={index} className="my-6 border-border" />
+                      }
+
+                      // Parágrafos com negrito (declaração pessoal)
+                      if (linha.startsWith("**") && linha.endsWith("**")) {
+                        const texto = linha.replace(/\*\*/g, "")
                         return (
-                          <div key={index} className="mb-4">
-                            <TextWithBibleLinks text={linha} className="text-base leading-relaxed" />
-                          </div>
+                          <p key={index} className="text-base font-semibold leading-relaxed mb-4">
+                            <TextWithBibleLinks text={texto} />
+                          </p>
                         )
                       }
 
@@ -222,19 +231,44 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
                 )}
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 pt-4 border-t-2 border-border">
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-lg">
+                  <h3 className="font-semibold text-center mb-1">Minha Assinatura</h3>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Preencha os dados abaixo para registrar sua confissão de fé
+                  </p>
+                </div>
+
                 <div>
-                  <Label htmlFor="nome-assinatura">Nome completo</Label>
+                  <Label htmlFor="nome-assinatura" className="text-sm font-medium">
+                    Nome completo *
+                  </Label>
                   <Input
                     id="nome-assinatura"
                     value={nomeAssinatura}
                     onChange={(e) => setNomeAssinatura(e.target.value)}
                     placeholder="Digite seu nome completo"
                     disabled={!scrolledToBottom}
+                    className="mt-1"
                   />
                 </div>
 
-                <div className="flex items-start space-x-2">
+                <div>
+                  <Label htmlFor="data-assinatura" className="text-sm font-medium flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    Data *
+                  </Label>
+                  <Input
+                    id="data-assinatura"
+                    type="date"
+                    value={dataAssinatura}
+                    onChange={(e) => setDataAssinatura(e.target.value)}
+                    disabled={!scrolledToBottom}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="flex items-start space-x-2 pt-2">
                   <Checkbox
                     id="concordo"
                     checked={concordo}
@@ -267,7 +301,7 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
               <Button
                 className="flex-1"
                 onClick={handleConfissaoFe}
-                disabled={!scrolledToBottom || !concordo || !nomeAssinatura.trim()}
+                disabled={!scrolledToBottom || !concordo || !nomeAssinatura.trim() || !dataAssinatura}
               >
                 Assinar Confissão de Fé
               </Button>
