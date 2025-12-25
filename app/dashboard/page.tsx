@@ -65,6 +65,16 @@ export default async function DashboardPage() {
     .maybeSingle()
 
   console.log("[v0] Progresso check - Data:", !!progressoFases, "Error:", progressoError)
+  console.log("[v0] Discipulo data:", {
+    fase_atual: discipulo.fase_atual,
+    passo_atual: discipulo.passo_atual,
+    id: discipulo.id,
+  })
+  console.log("[v0] ProgressoFases data:", {
+    fase_atual: progressoFases?.fase_atual,
+    passo_atual: progressoFases?.passo_atual,
+    fase_1_completa: progressoFases?.fase_1_completa,
+  })
 
   // Buscar recompensas
   const { data: recompensas, error: recompensasError } = await supabase
@@ -75,10 +85,16 @@ export default async function DashboardPage() {
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
-  // Se está no passo 2, significa que completou o passo 1
-  const faseAtualReal = progressoFases?.fase_atual || discipulo.fase_atual || 1
-  const passoAtual = progressoFases?.passo_atual || discipulo.passo_atual || 1
+  const faseAtualReal = discipulo.fase_atual || progressoFases?.fase_atual || 1
+  const passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
   const totalPassos = 10
+
+  console.log("[v0] Fase calculada:", {
+    faseAtualReal,
+    passoAtual,
+    totalPassos,
+    currentPhase: `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
+  })
 
   const totalInsignias = recompensas?.[0]?.insignias?.length || 0
 
