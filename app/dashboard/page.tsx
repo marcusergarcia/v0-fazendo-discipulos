@@ -94,8 +94,8 @@ export default async function DashboardPage() {
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
-  const estaEmFaseBatismo = discipulo.necessita_fase_batismo && discipulo.fase_atual === 1
-  const faseAtualReal = discipulo.fase_atual || progressoFases?.fase_atual || 1
+  const estaEmFaseBatismo = discipulo.necessita_fase_batismo === true && discipulo.ja_batizado === false
+  const faseAtualReal = estaEmFaseBatismo ? 1 : discipulo.fase_atual || progressoFases?.fase_atual || 1
   const passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
   const totalPassos = estaEmFaseBatismo ? 12 : 10
 
@@ -103,6 +103,8 @@ export default async function DashboardPage() {
     faseAtualReal,
     estaEmFaseBatismo,
     necessita_fase_batismo: discipulo.necessita_fase_batismo,
+    ja_batizado: discipulo.ja_batizado,
+    fase_atual_banco: discipulo.fase_atual,
     passoAtual,
     totalPassos,
   })
@@ -129,7 +131,7 @@ export default async function DashboardPage() {
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
-    level: getLevelNumber(estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal)),
+    level: estaEmFaseBatismo ? 2 : getLevelNumber(getFaseNome(faseAtualReal)),
     levelName: estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
     xp: discipulo.xp_total || 0,
     xpToNext: 1000,
@@ -605,19 +607,15 @@ export default async function DashboardPage() {
   )
 }
 
-function getLevelNumber(levelName: string): number {
-  const fases: Record<string, number> = {
+function getLevelNumber(nomeFase: string): number {
+  const mapping: Record<string, number> = {
     "O Evangelho": 1,
-    "Batismo Cristão": 2,
-    "Armadura de Deus": 3,
-    "Sermão da Montanha": 4,
-    "Pão Diário": 5,
-    Oração: 6,
-    "Igreja Local": 7,
-    Testemunho: 8,
-    "Treinamento Final": 9,
+    "Armadura de Deus": 2,
+    "Mensagens Não Lidas": 3,
+    "Guerra Espiritual": 4,
+    "Batismo Cristão": 2, // Fase intermediária usa nível 2
   }
-  return fases[levelName] || 1
+  return mapping[nomeFase] || 1
 }
 
 function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
