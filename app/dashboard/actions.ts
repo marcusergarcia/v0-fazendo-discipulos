@@ -8,21 +8,24 @@ export async function registrarDecisaoPorCristo(data: {
   decisaoPorCristo: boolean
   confissaoFeAssinada: boolean
   nomeAssinatura: string
+  dataAssinatura: string
   jaBatizado: boolean
 }) {
   const supabase = await createServerClient()
 
   try {
+    console.log("[v0] Registrando decisão por Cristo:", data)
+
     const dataAtual = new Date().toISOString()
 
-    // Atualizar discípulo com decisão e batismo
     const { error: updateError } = await supabase
       .from("discipulos")
       .update({
         decisao_por_cristo: data.decisaoPorCristo,
         data_decisao_por_cristo: dataAtual,
         confissao_fe_assinada: data.confissaoFeAssinada,
-        data_assinatura_confissao: dataAtual,
+        data_assinatura_confissao: data.dataAssinatura, // Usando a data fornecida pelo usuário
+        nome_assinatura_confissao: data.nomeAssinatura,
         ja_batizado: data.jaBatizado,
         data_resposta_batismo: dataAtual,
         necessita_fase_batismo: !data.jaBatizado,
@@ -34,17 +37,28 @@ export async function registrarDecisaoPorCristo(data: {
       return { success: false, error: updateError.message }
     }
 
-    // Se não foi batizado, ajustar fase para batismo (fase 1.5)
+    console.log("[v0] Discípulo atualizado com sucesso")
+
     if (!data.jaBatizado) {
-      await supabase
+      console.log("[v0] Discípulo não batizado, direcionando para fase intermediária")
+
+      const { error: progressoError } = await supabase
         .from("progresso_fases")
         .update({
-          fase_atual: 2, // Fase intermediária de batismo (será 1.5 na UI)
+          fase_atual: 2, // Fase intermediária de batismo
           passo_atual: 1,
           pontuacao_passo_atual: 0,
-          celebracao_vista: true, // Já viu a celebração da fase 1
+          celebracao_vista: true,
+          videos_assistidos: [],
+          artigos_lidos: [],
         })
         .eq("discipulo_id", data.discipuloId)
+
+      if (progressoError) {
+        console.error("[v0] Erro ao atualizar progresso:", progressoError)
+      }
+
+      await supabase.from("discipulos").update({ fase_atual: 2, passo_atual: 1 }).eq("id", data.discipuloId)
 
       revalidatePath("/dashboard")
       return {
@@ -53,7 +67,26 @@ export async function registrarDecisaoPorCristo(data: {
       }
     }
 
-    // Se já foi batizado, seguir para fase 2 normal
+    console.log("[v0] Discípulo já batizado, seguindo para Fase 2")
+
+    const { error: progressoError } = await supabase
+      .from("progresso_fases")
+      .update({
+        fase_atual: 2, // Fase 2 - Armadura de Deus (será atualizada quando criar essa fase)
+        passo_atual: 1,
+        pontuacao_passo_atual: 0,
+        celebracao_vista: true,
+        videos_assistidos: [],
+        artigos_lidos: [],
+      })
+      .eq("discipulo_id", data.discipuloId)
+
+    if (progressoError) {
+      console.error("[v0] Erro ao atualizar progresso:", progressoError)
+    }
+
+    await supabase.from("discipulos").update({ fase_atual: 2, passo_atual: 1 }).eq("id", data.discipuloId)
+
     revalidatePath("/dashboard")
     return {
       success: true,
