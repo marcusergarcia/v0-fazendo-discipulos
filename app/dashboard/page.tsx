@@ -29,6 +29,8 @@ import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
 import { StepBadge } from "@/components/step-badge"
 import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
 import { getFaseNome, getPassoNome, getPassoDescricao, getRecompensaNome } from "@/constants/fases-passos"
+import { PASSOS_BATISMO } from "@/constants/passos-batismo"
+import { isFaseIntermediaria } from "@/constants/fases-passos"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -88,7 +90,7 @@ export default async function DashboardPage() {
 
   const faseAtualReal = discipulo.fase_atual || progressoFases?.fase_atual || 1
   const passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
-  const totalPassos = 10
+  const totalPassos = isFaseIntermediaria(faseAtualReal) ? PASSOS_BATISMO.length : 10
 
   console.log("[v0] Fase calculada:", {
     faseAtualReal,
@@ -114,9 +116,12 @@ export default async function DashboardPage() {
     levelName: getFaseNome(faseAtualReal),
     xp: discipulo.xp_total || 0,
     xpToNext: 1000,
-    currentPhase: `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
+    currentPhase: isFaseIntermediaria(faseAtualReal)
+      ? `FASE INTERMEDIÁRIA: ${getFaseNome(faseAtualReal)}`
+      : `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
     currentStep: passoAtual,
     totalSteps: totalPassos,
+    faseNumero: faseAtualReal,
   }
 
   console.log("[v0] UserData preparado:", userData)
@@ -386,7 +391,7 @@ export default async function DashboardPage() {
       {deveMostrarCelebracao && progressoCheck && (
         <DashboardCelebracaoClient
           passoNumero={passoAtual - 1}
-          faseNumero={faseAtualReal}
+          faseNumero={userData.faseNumero}
           discipuloId={discipulo.id}
           xpGanho={progressoCheck.pontuacao_passo_anterior}
         />
@@ -509,7 +514,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sua Jornada - {userData.currentPhase}</CardTitle>
-            <CardDescription>Complete todos os 10 passos para receber a Medalha "Novo Nascimento"</CardDescription>
+            <CardDescription>
+              {userData.faseNumero === 2
+                ? "Complete todos os 10 passos para aprender sobre o Batismo Cristão"
+                : 'Complete todos os 10 passos para receber a Medalha "Novo Nascimento"'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -519,11 +528,16 @@ export default async function DashboardPage() {
                 const isCurrent = stepNumber === userData.currentStep
                 const status = isCompleted ? "completed" : isCurrent ? "current" : "locked"
 
+                const stepTitle =
+                  userData.faseNumero === 2
+                    ? PASSOS_BATISMO[stepNumber as keyof typeof PASSOS_BATISMO]?.titulo || `Passo ${stepNumber}`
+                    : getPassoNome(stepNumber)
+
                 return (
                   <StepCard
                     key={stepNumber}
                     number={stepNumber}
-                    title={getPassoNome(stepNumber)}
+                    title={stepTitle}
                     status={status as "completed" | "current" | "locked"}
                     href={status === "locked" ? undefined : `/dashboard/passo/${stepNumber}`}
                   />

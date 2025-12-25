@@ -1,4 +1,5 @@
 import { PASSOS_CONTEUDO } from "./passos-conteudo"
+import { PASSOS_BATISMO } from "./passos-batismo"
 
 export const FASES_INFO = {
   1: {
@@ -38,6 +39,11 @@ export function isFaseIntermediaria(fase: number): boolean {
 
 export function getPassoNome(passo: number): string {
   const passoInfo = PASSOS_CONTEUDO[passo as keyof typeof PASSOS_CONTEUDO]
+  return passoInfo?.titulo || `Passo ${passo}`
+}
+
+export function getPassoBatismoNome(passo: number): string {
+  const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
   return passoInfo?.titulo || `Passo ${passo}`
 }
 
