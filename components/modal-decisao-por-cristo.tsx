@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Heart, Sparkles } from "lucide-react"
+import { Heart, Sparkles, ScrollText, ArrowDown } from "lucide-react"
 import { registrarDecisaoPorCristo } from "@/app/dashboard/actions"
 import { toast } from "sonner"
 
@@ -22,6 +22,22 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
   const [concordo, setConcordo] = useState(false)
   const [nomeAssinatura, setNomeAssinatura] = useState(nomeCompleto)
   const [jaBatizado, setJaBatizado] = useState<boolean | null>(null)
+  const [scrolledToBottom, setScrolledToBottom] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+      const isBottom = scrollTop + clientHeight >= scrollHeight - 10 // 10px tolerance
+      setScrolledToBottom(isBottom)
+    }
+  }
+
+  useEffect(() => {
+    if (etapa === "confissao") {
+      setScrolledToBottom(false)
+    }
+  }, [etapa])
 
   const handleDecisao = async (decisao: boolean) => {
     if (!decisao) {
@@ -53,7 +69,6 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
 
       if (resultado.success) {
         toast.success(resultado.message)
-        // Recarregar página para mostrar próxima fase
         window.location.reload()
       } else {
         toast.error(resultado.error || "Erro ao registrar decisão")
@@ -68,7 +83,6 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
   return (
     <Dialog open={open} modal>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Adicionando celebração do passo 10 no início do modal de decisão */}
         <DialogHeader>
           <div className="flex items-center justify-center mb-4">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center animate-bounce">
@@ -138,30 +152,105 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
             <DialogHeader>
               <div className="flex items-center justify-center mb-4">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-white" />
+                  <ScrollText className="w-8 h-8 text-white" />
                 </div>
               </div>
               <DialogTitle className="text-2xl text-center">Confissão de Fé</DialogTitle>
               <DialogDescription className="text-center text-base mt-2">
-                Leia e assine sua confissão de fé
+                Leia toda a confissão de fé antes de assinar
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 my-6">
-              <div className="p-6 bg-muted rounded-lg space-y-3">
-                <p className="text-sm leading-relaxed font-medium">
-                  Eu reconheço que sou pecador e que preciso da graça de Deus.
-                </p>
-                <p className="text-sm leading-relaxed font-medium">
-                  Creio que Jesus Cristo é o Filho de Deus, que morreu por meus pecados e ressuscitou para me dar nova
-                  vida.
-                </p>
-                <p className="text-sm leading-relaxed font-medium">
-                  Hoje, eu O recebo como meu único e suficiente Salvador e declaro que Ele é o Senhor da minha vida.
-                </p>
-                <p className="text-sm leading-relaxed font-medium">
-                  Decido viver segundo os ensinamentos de Cristo e caminhar no discipulado.
-                </p>
+              <div className="relative">
+                <div
+                  ref={scrollContainerRef}
+                  onScroll={handleScroll}
+                  className="h-80 overflow-y-auto p-6 bg-muted rounded-lg border-2 border-border space-y-4"
+                >
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <h2 className="text-xl font-bold text-center mb-4">Confissão de Fé Cristã</h2>
+
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="font-semibold text-base mb-2">1. Sobre Deus</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Existe um único Deus verdadeiro, eterno, criador de todas as coisas</li>
+                          <li>Deus é Pai, Filho e Espírito Santo - Trindade Santa</li>
+                          <li>Deus é santo, justo, amoroso e misericordioso</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold text-base mb-2">2. Sobre Jesus Cristo</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Jesus Cristo é o Filho de Deus, totalmente Deus e totalmente homem</li>
+                          <li>Jesus nasceu da virgem Maria, viveu sem pecado</li>
+                          <li>Jesus morreu na cruz pelos meus pecados</li>
+                          <li>Jesus ressuscitou ao terceiro dia</li>
+                          <li>Jesus subiu aos céus e voltará para julgar vivos e mortos</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold text-base mb-2">3. Sobre a Salvação</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Todos pecaram e estão destituídos da glória de Deus</li>
+                          <li>A salvação é pela graça mediante a fé em Jesus Cristo</li>
+                          <li>Não há salvação pelas obras, mas pelas obras demonstramos nossa fé</li>
+                          <li>Quem crê em Jesus tem vida eterna</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold text-base mb-2">4. Sobre o Espírito Santo</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>O Espírito Santo habita em cada crente</li>
+                          <li>O Espírito Santo nos convence do pecado, nos guia e nos capacita</li>
+                          <li>O Espírito Santo produz frutos em nossa vida</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold text-base mb-2">5. Sobre a Igreja</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>A Igreja é o corpo de Cristo na terra</li>
+                          <li>Somos chamados a viver em comunhão com outros cristãos</li>
+                          <li>Somos chamados a fazer discípulos de todas as nações</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <h3 className="font-semibold text-base mb-2">6. Sobre a Vida Eterna</h3>
+                        <ul className="list-disc pl-5 space-y-1 text-sm">
+                          <li>Há vida após a morte</li>
+                          <li>Os que creem em Jesus terão vida eterna com Deus</li>
+                          <li>Os que rejeitam Jesus estarão eternamente separados de Deus</li>
+                        </ul>
+                      </div>
+
+                      <div className="border-t pt-4 mt-6">
+                        <p className="text-sm font-medium text-center">
+                          Declaro que li, entendi e aceito esta confissão de fé.
+                        </p>
+                        <p className="text-sm font-medium text-center mt-2">
+                          Comprometo-me a seguir Jesus Cristo como meu Senhor e Salvador, e a fazer discípulos conforme
+                          Ele ordenou.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {!scrolledToBottom && (
+                  <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background to-transparent pointer-events-none flex items-end justify-center pb-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground animate-bounce">
+                      <ArrowDown className="w-4 h-4" />
+                      <span>Role para ler toda a confissão</span>
+                      <ArrowDown className="w-4 h-4" />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -172,6 +261,7 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
                     value={nomeAssinatura}
                     onChange={(e) => setNomeAssinatura(e.target.value)}
                     placeholder="Digite seu nome completo"
+                    disabled={!scrolledToBottom}
                   />
                 </div>
 
@@ -180,12 +270,24 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
                     id="concordo"
                     checked={concordo}
                     onCheckedChange={(checked) => setConcordo(checked as boolean)}
+                    disabled={!scrolledToBottom}
                   />
-                  <Label htmlFor="concordo" className="text-sm leading-relaxed cursor-pointer">
+                  <Label
+                    htmlFor="concordo"
+                    className={`text-sm leading-relaxed ${scrolledToBottom ? "cursor-pointer" : "cursor-not-allowed opacity-50"}`}
+                  >
                     Declaro que faço esta confissão de fé de forma livre e consciente, reconhecendo Jesus Cristo como
                     meu Senhor e Salvador.
                   </Label>
                 </div>
+
+                {!scrolledToBottom && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <p className="text-xs text-amber-800 dark:text-amber-200 text-center">
+                      Por favor, leia toda a confissão de fé rolando até o final antes de assinar
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -193,7 +295,11 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
               <Button variant="outline" onClick={() => setEtapa("decisao")}>
                 Voltar
               </Button>
-              <Button className="flex-1" onClick={handleConfissaoFe} disabled={!concordo || !nomeAssinatura.trim()}>
+              <Button
+                className="flex-1"
+                onClick={handleConfissaoFe}
+                disabled={!scrolledToBottom || !concordo || !nomeAssinatura.trim()}
+              >
                 Assinar Confissão de Fé
               </Button>
             </div>
