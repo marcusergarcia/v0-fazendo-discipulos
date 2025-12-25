@@ -216,7 +216,7 @@ export default async function DashboardPage() {
 
   const { data: progressoCheck } = await supabase
     .from("progresso_fases")
-    .select("celebracao_vista, pontuacao_passo_anterior, passo_atual, fase_1_completa, passos_completos")
+    .select("celebracao_vista, pontuacao_passo_anterior, passo_atual, fase_1_completa")
     .eq("discipulo_id", discipulo.id)
     .single()
 
@@ -254,7 +254,7 @@ export default async function DashboardPage() {
     fase1Completa && faseAtualReal === 1
       ? 10
       : isFaseIntermediaria(faseAtualReal)
-        ? progressoFases?.passos_completos?.filter((p) => p >= 1 && p <= 12).length || 0
+        ? Math.max(0, passoAtual - 1)
         : Math.max(0, passoAtual - 1)
 
   console.log("[v0] Passos completados calculados:", passosCompletados)
