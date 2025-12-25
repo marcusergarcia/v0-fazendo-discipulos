@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Heart, Sparkles, ScrollText, ArrowDown } from "lucide-react"
 import { registrarDecisaoPorCristo } from "@/app/dashboard/actions"
 import { toast } from "sonner"
+import { CONFISSAO_FE_TEXTO } from "@/constants/confissao-fe"
+import ReactMarkdown from "react-markdown"
 
 interface ModalDecisaoPorCristoProps {
   open: boolean
@@ -169,76 +171,20 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
                   className="h-80 overflow-y-auto p-6 bg-muted rounded-lg border-2 border-border space-y-4"
                 >
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <h2 className="text-xl font-bold text-center mb-4">Confissão de Fé Cristã</h2>
-
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="font-semibold text-base mb-2">1. Sobre Deus</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          <li>Existe um único Deus verdadeiro, eterno, criador de todas as coisas</li>
-                          <li>Deus é Pai, Filho e Espírito Santo - Trindade Santa</li>
-                          <li>Deus é santo, justo, amoroso e misericordioso</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-base mb-2">2. Sobre Jesus Cristo</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          <li>Jesus Cristo é o Filho de Deus, totalmente Deus e totalmente homem</li>
-                          <li>Jesus nasceu da virgem Maria, viveu sem pecado</li>
-                          <li>Jesus morreu na cruz pelos meus pecados</li>
-                          <li>Jesus ressuscitou ao terceiro dia</li>
-                          <li>Jesus subiu aos céus e voltará para julgar vivos e mortos</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-base mb-2">3. Sobre a Salvação</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          <li>Todos pecaram e estão destituídos da glória de Deus</li>
-                          <li>A salvação é pela graça mediante a fé em Jesus Cristo</li>
-                          <li>Não há salvação pelas obras, mas pelas obras demonstramos nossa fé</li>
-                          <li>Quem crê em Jesus tem vida eterna</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-base mb-2">4. Sobre o Espírito Santo</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          <li>O Espírito Santo habita em cada crente</li>
-                          <li>O Espírito Santo nos convence do pecado, nos guia e nos capacita</li>
-                          <li>O Espírito Santo produz frutos em nossa vida</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-base mb-2">5. Sobre a Igreja</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          <li>A Igreja é o corpo de Cristo na terra</li>
-                          <li>Somos chamados a viver em comunhão com outros cristãos</li>
-                          <li>Somos chamados a fazer discípulos de todas as nações</li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold text-base mb-2">6. Sobre a Vida Eterna</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          <li>Há vida após a morte</li>
-                          <li>Os que creem em Jesus terão vida eterna com Deus</li>
-                          <li>Os que rejeitam Jesus estarão eternamente separados de Deus</li>
-                        </ul>
-                      </div>
-
-                      <div className="border-t pt-4 mt-6">
-                        <p className="text-sm font-medium text-center">
-                          Declaro que li, entendi e aceito esta confissão de fé.
-                        </p>
-                        <p className="text-sm font-medium text-center mt-2">
-                          Comprometo-me a seguir Jesus Cristo como meu Senhor e Salvador, e a fazer discípulos conforme
-                          Ele ordenou.
-                        </p>
-                      </div>
-                    </div>
+                    <ReactMarkdown
+                      components={{
+                        a: ({ node, ...props }) => (
+                          <a
+                            {...props}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 dark:text-blue-400 hover:underline"
+                          />
+                        ),
+                      }}
+                    >
+                      {CONFISSAO_FE_TEXTO}
+                    </ReactMarkdown>
                   </div>
                 </div>
 
