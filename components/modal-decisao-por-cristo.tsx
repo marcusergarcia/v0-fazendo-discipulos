@@ -10,7 +10,7 @@ import { Heart, Sparkles, ScrollText, ArrowDown } from "lucide-react"
 import { registrarDecisaoPorCristo } from "@/app/dashboard/actions"
 import { toast } from "sonner"
 import { CONFISSAO_FE_TEXTO } from "@/constants/confissao-fe"
-import ReactMarkdown from "react-markdown"
+import { TextWithBibleLinks } from "@/components/text-with-bible-links"
 
 interface ModalDecisaoPorCristoProps {
   open: boolean
@@ -171,20 +171,43 @@ export function ModalDecisaoPorCristo({ open, discipuloId, nomeCompleto }: Modal
                   className="h-80 overflow-y-auto p-6 bg-muted rounded-lg border-2 border-border space-y-4"
                 >
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown
-                      components={{
-                        a: ({ node, ...props }) => (
-                          <a
-                            {...props}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 dark:text-blue-400 hover:underline"
-                          />
-                        ),
-                      }}
-                    >
-                      {CONFISSAO_FE_TEXTO}
-                    </ReactMarkdown>
+                    {CONFISSAO_FE_TEXTO.split("\n").map((linha, index) => {
+                      if (!linha.trim()) return <div key={index} className="h-4" />
+
+                      // Títulos principais
+                      if (linha.startsWith("# ")) {
+                        return (
+                          <h1 key={index} className="text-2xl font-bold text-center mb-6">
+                            {linha.replace("# ", "")}
+                          </h1>
+                        )
+                      }
+
+                      // Subtítulos
+                      if (linha.startsWith("## ")) {
+                        return (
+                          <h2 key={index} className="text-xl font-semibold mt-6 mb-3 text-primary">
+                            {linha.replace("## ", "")}
+                          </h2>
+                        )
+                      }
+
+                      // Itens numerados
+                      if (/^\d+\./.test(linha)) {
+                        return (
+                          <div key={index} className="mb-4">
+                            <TextWithBibleLinks text={linha} className="text-base leading-relaxed" />
+                          </div>
+                        )
+                      }
+
+                      // Parágrafos normais
+                      return (
+                        <p key={index} className="text-sm leading-relaxed mb-3">
+                          <TextWithBibleLinks text={linha} />
+                        </p>
+                      )
+                    })}
                   </div>
                 </div>
 
