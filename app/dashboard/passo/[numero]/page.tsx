@@ -4,16 +4,14 @@ import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { PASSOS_BATISMO } from "@/constants/passos-batismo"
+import { isPassoBatismo, getPassoBatismoIndex, getTotalPassosFase } from "@/constants/fases-passos"
 
 export default async function PassoPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ numero: string }>
-  searchParams: Promise<{ fase?: string }>
 }) {
   const { numero: numeroParam } = await params
-  const { fase: faseParam } = await searchParams
   const numero = Number.parseInt(numeroParam)
 
   if (isNaN(numero) || numero < 1) {
@@ -40,28 +38,31 @@ export default async function PassoPage({
     redirect("/dashboard")
   }
 
-  const estaEmFaseBatismo =
-    faseParam === "batismo" || (discipulo.necessita_fase_batismo === true && discipulo.ja_batizado === false)
+  const ePassoBatismo = isPassoBatismo(numero)
+  const estaEmFaseBatismo = discipulo.necessita_fase_batismo === true && discipulo.ja_batizado === false
 
   console.log("[v0] Passo Page - numero:", numero)
+  console.log("[v0] Passo Page - ePassoBatismo:", ePassoBatismo)
   console.log("[v0] Passo Page - estaEmFaseBatismo:", estaEmFaseBatismo)
-  console.log("[v0] Passo Page - faseParam:", faseParam)
-  console.log("[v0] Passo Page - discipulo.necessita_fase_batismo:", discipulo.necessita_fase_batismo)
-  console.log("[v0] Passo Page - discipulo.ja_batizado:", discipulo.ja_batizado)
-  console.log("[v0] Passo Page - PASSOS_BATISMO keys:", Object.keys(PASSOS_BATISMO))
-  console.log("[v0] Passo Page - PASSOS_CONTEUDO keys:", Object.keys(PASSOS_CONTEUDO))
 
-  const passo = estaEmFaseBatismo ? PASSOS_BATISMO[numero] : PASSOS_CONTEUDO[numero]
+  const numeroExibido = ePassoBatismo && estaEmFaseBatismo ? numero - 10 : numero
 
-  console.log("[v0] Passo Page - passo encontrado:", !!passo)
-  console.log("[v0] Passo Page - passo:", passo)
+  let passo
+  if (ePassoBatismo && estaEmFaseBatismo) {
+    const indexBatismo = getPassoBatismoIndex(numero)
+    passo = PASSOS_BATISMO[indexBatismo]
+    console.log("[v0] Buscando passo de batismo:", indexBatismo, "encontrado:", !!passo)
+  } else if (numero <= 10) {
+    passo = PASSOS_CONTEUDO[numero]
+    console.log("[v0] Buscando passo de evangelho:", numero, "encontrado:", !!passo)
+  }
 
   if (!passo) {
     console.log("[v0] Passo Page - Passo não encontrado, redirecionando para notFound")
     notFound()
   }
 
-  const maxSteps = estaEmFaseBatismo ? 12 : 10
+  const maxSteps = getTotalPassosFase(discipulo.fase_atual, estaEmFaseBatismo)
   if (numero > maxSteps) {
     notFound()
   }
@@ -94,7 +95,13 @@ export default async function PassoPage({
     progressoAtual = novoProgresso
   }
 
-  const passosCompletados = (discipulo.passo_atual || 1) - 1
+  let passosCompletados
+  if (estaEmFaseBatismo) {
+    // Na fase de batismo, contar os passos de batismo completados (11-22)
+    passosCompletados = Math.max(0, numero - 11)
+  } else {
+    passosCompletados = (discipulo.passo_atual || 1) - 1
+  }
 
   const { data: discipuladorData } = await supabase
     .from("discipulos")
@@ -250,6 +257,7 @@ export default async function PassoPage({
   return (
     <PassoClient
       numero={numero}
+      numeroExibido={numeroExibido}
       passo={passoComReflexoes}
       discipulo={{ ...discipulo, nome_completo: nomeDiscipulo }}
       progresso={progressoAtual}
@@ -265,6 +273,7 @@ export default async function PassoPage({
       leiturasSemana={leiturasSemana}
       capitulosLidos={capitulosLidos}
       discipuloId={discipulo.id}
+      estaEmFaseBatismo={ePassoBatismo}
     />
   )
 }

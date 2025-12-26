@@ -311,14 +311,24 @@ export default function CadastroConviteClient({ convite }: ConviteClientProps) {
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-lg mb-1">🛡️ Fase 2: Armadura de Deus (6 passos)</h4>
+                    <h4 className="font-semibold text-lg mb-1">💧 Fase Intermediária: Batismo Cristão (12 passos)</h4>
                     <p className="text-blue-100">
-                      Aprenda sobre cada peça da armadura espiritual através de missões práticas
+                      Fase opcional para quem não foi batizado - entenda o significado bíblico do batismo
                     </p>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-lg mb-1">⛰️ Fase 3: Sermão da Montanha</h4>
+                    <h4 className="font-semibold text-lg mb-1">👥 Fase 3: Vida em Comunidade (10 passos)</h4>
+                    <p className="text-blue-100">Relacionamentos, igreja e vida cristã em comunidade</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">⛰️ Fase 4: Sermão da Montanha (10 passos)</h4>
                     <p className="text-blue-100">Treinamento completo em Mateus 5-7 para se tornar discipulador</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg mb-1">🛡️ Fase 2: Armadura de Deus (10 passos)</h4>
+                    <p className="text-blue-100">
+                      Aprenda sobre cada peça da armadura espiritual através de missões práticas
+                    </p>
                   </div>
                 </div>
               </div>

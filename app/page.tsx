@@ -4,7 +4,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Trophy, Book, Calendar, CheckCircle } from 'lucide-react'
+import { Sparkles, Target, Users, Award, Shield, Sword, BookOpen, Book, Calendar, CheckCircle } from "lucide-react"
 
 export default function LandingPage() {
   return (
@@ -69,37 +69,37 @@ export default function LandingPage() {
             icon={<BookOpen className="w-8 h-8" />}
             title="Fase 1: O Evangelho"
             description="10 passos para compreender o Evangelho e tornar-se discípulo de Cristo"
-            color="text-primary"
+            color="text-blue-500"
           />
           <FeatureCard
             icon={<Shield className="w-8 h-8" />}
             title="Fase 2: Armadura de Deus"
-            description="Adquira cada peça da armadura espiritual através de missões práticas"
-            color="text-accent"
-          />
-          <FeatureCard
-            icon={<Sword className="w-8 h-8" />}
-            title="Sermão da Montanha"
-            description="Treinamento completo em Mateus 5-7 para formar discipuladores"
-            color="text-secondary"
+            description="10 passos para adquirir cada peça da armadura espiritual através de missões práticas"
+            color="text-purple-500"
           />
           <FeatureCard
             icon={<Users className="w-8 h-8" />}
-            title="Conexão Real"
-            description="Interação obrigatória entre discipulador e discípulo em cada passo"
-            color="text-chart-2"
+            title="Fase 3: Vida em Comunidade"
+            description="10 passos para aprender sobre relacionamentos e igreja"
+            color="text-green-500"
+          />
+          <FeatureCard
+            icon={<Sword className="w-8 h-8" />}
+            title="Fase 4: Sermão da Montanha"
+            description="10 passos de treinamento em Mateus 5-7 para se tornar discipulador"
+            color="text-amber-500"
+          />
+          <FeatureCard
+            icon={<Sparkles className="w-8 h-8" />}
+            title="Fase Intermediária: Batismo Cristão"
+            description="12 passos opcionais para entender o batismo bíblico e se preparar para ser batizado"
+            color="text-cyan-500"
           />
           <FeatureCard
             icon={<Award className="w-8 h-8" />}
-            title="Recompensas"
-            description="Ganhe insígnias digitais e medalhas físicas ao completar cada fase"
-            color="text-secondary"
-          />
-          <FeatureCard
-            icon={<Trophy className="w-8 h-8" />}
-            title="Multiplicação"
-            description="Torne-se discipulador e ajude outros a crescer na fé"
-            color="text-chart-4"
+            title="Recompensas e Multiplicação"
+            description="Ganhe insígnias, cresça na fé e torne-se discipulador para multiplicar o Reino"
+            color="text-rose-500"
           />
         </div>
       </section>
@@ -111,9 +111,7 @@ export default function LandingPage() {
               <Book className="w-4 h-4 mr-2 inline" />
               Novidade
             </Badge>
-            <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-balance">
-              Leia a Bíblia Inteira em Um Ano
-            </h2>
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-balance">Leia a Bíblia Inteira em Um Ano</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
               Uma jornada transformadora através das Escrituras, sincronizada com seu crescimento espiritual
             </p>
@@ -128,8 +126,9 @@ export default function LandingPage() {
                 <div>
                   <h3 className="text-xl font-semibold mb-2">52 Semanas Estruturadas</h3>
                   <p className="text-muted-foreground">
-                    Cada semana corresponde a um passo da sua jornada. Comece pelos Evangelhos, explore a vida cristã prática, 
-                    aprofunde-se na doutrina e descubra o Antigo Testamento em uma ordem que faz sentido para seu crescimento.
+                    Cada semana corresponde a um passo da sua jornada. Comece pelos Evangelhos, explore a vida cristã
+                    prática, aprofunde-se na doutrina e descubra o Antigo Testamento em uma ordem que faz sentido para
+                    seu crescimento.
                   </p>
                 </div>
               </div>
@@ -143,8 +142,8 @@ export default function LandingPage() {
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Acompanhamento com Recompensas</h3>
                   <p className="text-muted-foreground">
-                    Confirme sua leitura semanal e ganhe XP! Acompanhe seu progresso anual com um indicador visual motivador. 
-                    A Palavra de Deus se torna parte natural da sua rotina de discipulado.
+                    Confirme sua leitura semanal e ganhe XP! Acompanhe seu progresso anual com um indicador visual
+                    motivador. A Palavra de Deus se torna parte natural da sua rotina de discipulado.
                   </p>
                 </div>
               </div>
@@ -156,8 +155,8 @@ export default function LandingPage() {
               <Book className="w-12 h-12 text-primary" />
               <h3 className="text-2xl font-bold">Versão ACF</h3>
               <p className="text-muted-foreground max-w-xl text-balance">
-                Todas as leituras utilizam a Almeida Corrigida Fiel (ACF), versão tradicional e fiel aos textos originais,
-                tornando a Palavra acessível para todos os níveis de discípulos.
+                Todas as leituras utilizam a Almeida Corrigida Fiel (ACF), versão tradicional e fiel aos textos
+                originais, tornando a Palavra acessível para todos os níveis de discípulos.
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
                 <Sparkles className="w-4 h-4 text-primary" />

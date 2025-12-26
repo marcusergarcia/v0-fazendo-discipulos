@@ -31,12 +31,12 @@ import { StepBadge } from "@/components/step-badge"
 import { ModalDecisaoPorCristo } from "@/components/modal-decisao-por-cristo"
 import {
   getFaseNome,
-  getRecompensaNome,
-  getRecompensaBatismoNome,
+  getTotalPassosFase,
+  isPassoBatismo,
   getPassoNome,
   getPassoDescricao,
+  getRecompensaNome,
 } from "@/constants/fases-passos"
-import { getPassoBatismoNome, getPassoBatismoDescricao } from "@/constants/passos-batismo"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -94,10 +94,21 @@ export default async function DashboardPage() {
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
 
-  const estaEmFaseBatismo = discipulo.necessita_fase_batismo === true && discipulo.ja_batizado === false
-  const faseAtualReal = estaEmFaseBatismo ? 1 : discipulo.fase_atual || progressoFases?.fase_atual || 1
-  const passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
-  const totalPassos = estaEmFaseBatismo ? 12 : 10
+  const estaEmFaseBatismo =
+    discipulo.necessita_fase_batismo === true &&
+    discipulo.ja_batizado === false &&
+    discipulo.fase_atual === 1 &&
+    discipulo.passo_atual >= 1
+
+  const faseAtualReal = discipulo.fase_atual || progressoFases?.fase_atual || 1
+  let passoAtual = discipulo.passo_atual || progressoFases?.passo_atual || 1
+
+  // Se está na fase de batismo mas o passo está < 11, corrigir para 11
+  if (estaEmFaseBatismo && progressoFases?.fase_1_completa && passoAtual < 11) {
+    passoAtual = 11
+  }
+
+  const totalPassos = getTotalPassosFase(faseAtualReal, estaEmFaseBatismo)
 
   console.log("[v0] Fase calculada:", {
     faseAtualReal,
@@ -131,13 +142,14 @@ export default async function DashboardPage() {
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
-    level: estaEmFaseBatismo ? 2 : getLevelNumber(getFaseNome(faseAtualReal)),
-    levelName: estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
+    level: isPassoBatismo(passoAtual) && estaEmFaseBatismo ? 1.5 : getLevelNumber(getFaseNome(faseAtualReal)),
+    levelName: isPassoBatismo(passoAtual) && estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
     xp: discipulo.xp_total || 0,
     xpToNext: 1000,
-    currentPhase: estaEmFaseBatismo
-      ? `FASE INTERMEDIÁRIA: Batismo Cristão`
-      : `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
+    currentPhase:
+      isPassoBatismo(passoAtual) && estaEmFaseBatismo
+        ? `FASE 1 (INTERMEDIÁRIA): Batismo Cristão`
+        : `FASE ${faseAtualReal}: ${getFaseNome(faseAtualReal)}`,
     currentStep: passoAtual,
     totalSteps: totalPassos,
     faseNumero: faseAtualReal,
@@ -253,39 +265,42 @@ export default async function DashboardPage() {
     deveMostrarCelebracao,
   )
 
-  // Calcular progresso corretamente
-  const passosCompletados =
-    fase1Completa && faseAtualReal === 1
-      ? 10
-      : estaEmFaseBatismo
-        ? Math.max(0, passoAtual - 1)
-        : Math.max(0, passoAtual - 1)
+  let passosCompletados: number
+  if (estaEmFaseBatismo) {
+    // Fase de batismo: 10 passos completos do Evangelho + passos de batismo completados
+    const passosBatismoCompletados = Math.max(0, passoAtual - 11)
+    passosCompletados = 10 + passosBatismoCompletados
+  } else {
+    // Outras fases: usar insígnias ou cálculo padrão
+    passosCompletados = totalInsignias > 0 ? totalInsignias : Math.max(0, passoAtual - 1)
+  }
 
   console.log("[v0] Passos completados calculados:", passosCompletados)
 
   const currentPhaseData = {
     nome: estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
-    passoAtual: passoAtual,
-    totalPassos: totalPassos,
+    passoAtual: estaEmFaseBatismo ? passoAtual - 10 : passoAtual, // Converte 11-22 para 1-12
+    totalPassos: estaEmFaseBatismo ? 12 : totalPassos,
     descricaoFase: estaEmFaseBatismo
-      ? "Complete todos os 12 passos para aprender sobre o Batismo Cristão e se preparar para ser batizado"
+      ? `Complete os 12 passos sobre Batismo Cristão para se preparar para ser batizado`
       : `Complete todos os ${totalPassos} passos para aprender sobre ${getFaseNome(faseAtualReal)}`,
-    passoTitulo: estaEmFaseBatismo ? getPassoBatismoNome(passoAtual) : getPassoNome(passoAtual),
-    passoDescricao: estaEmFaseBatismo ? getPassoBatismoDescricao(passoAtual) : getPassoDescricao(passoAtual),
+    passoTitulo: getPassoNome(passoAtual),
+    passoDescricao: getPassoDescricao(passoAtual),
   }
 
-  const jornada = Array.from({ length: totalPassos }, (_, i) => {
-    const stepNumber = i + 1
+  const jornada = Array.from({ length: estaEmFaseBatismo ? 12 : totalPassos }, (_, i) => {
+    const displayNumber = i + 1 // Número exibido: 1-12
+    const stepNumber = estaEmFaseBatismo ? i + 11 : i + 1 // Número real: 11-22 para batismo
     const isCompleted = stepNumber < passoAtual
     const isCurrent = stepNumber === passoAtual
 
     return {
-      step: stepNumber,
-      title: estaEmFaseBatismo ? getPassoBatismoNome(stepNumber) : getPassoNome(stepNumber),
+      step: displayNumber, // Exibir 1-12
+      title: getPassoNome(stepNumber), // Buscar nome com número real 11-22
       isCompleted,
       isCurrent,
-      href: `/dashboard/passo/${stepNumber}${estaEmFaseBatismo ? "?fase=batismo" : ""}`,
-      recompensa: estaEmFaseBatismo ? getRecompensaBatismoNome(stepNumber) : getRecompensaNome(stepNumber),
+      href: `/dashboard/passo/${stepNumber}`, // URL usa número real 11-22
+      recompensa: getRecompensaNome(stepNumber),
     }
   })
 
@@ -497,17 +512,17 @@ export default async function DashboardPage() {
             <CardContent className="space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs sm:text-sm font-medium">
-                  Passo {userData.currentStep} de {userData.totalSteps}
+                  Passo {currentPhaseData.passoAtual} de {currentPhaseData.totalPassos}
                 </span>
                 <span className="text-xs sm:text-sm text-muted-foreground">
-                  {Math.round((passosCompletados / userData.totalSteps) * 100)}% completo
+                  {Math.round((passosCompletados / currentPhaseData.totalPassos) * 100)}% completo
                 </span>
               </div>
-              <Progress value={(passosCompletados / userData.totalSteps) * 100} className="h-2" />
+              <Progress value={(passosCompletados / currentPhaseData.totalPassos) * 100} className="h-2" />
 
               <div className="pt-2 sm:pt-4 space-y-2 sm:space-y-3">
                 <h4 className="font-semibold text-base sm:text-lg break-words">
-                  Passo {userData.currentStep}: {currentPhaseData.passoTitulo}
+                  Passo {currentPhaseData.passoAtual}: {currentPhaseData.passoTitulo}
                 </h4>
                 <p className="text-xs sm:text-sm text-muted-foreground">{currentPhaseData.passoDescricao}</p>
 
@@ -607,15 +622,15 @@ export default async function DashboardPage() {
   )
 }
 
-function getLevelNumber(nomeFase: string): number {
-  const mapping: Record<string, number> = {
+function getLevelNumber(levelName: string): number {
+  const levels: Record<string, number> = {
     "O Evangelho": 1,
+    "Batismo Cristão": 1.5,
     "Armadura de Deus": 2,
-    "Mensagens Não Lidas": 3,
-    "Guerra Espiritual": 4,
-    "Batismo Cristão": 2, // Fase intermediária usa nível 2
+    "Vida em Comunidade": 3,
+    "Sermão da Montanha": 4,
   }
-  return mapping[nomeFase] || 1
+  return levels[levelName] || 1
 }
 
 function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {

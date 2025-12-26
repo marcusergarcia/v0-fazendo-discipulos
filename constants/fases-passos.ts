@@ -4,9 +4,9 @@ import { PASSOS_BATISMO } from "./passos-batismo"
 export const FASES_INFO = {
   1: {
     nome: "O Evangelho",
-    descricao: "Fundamentos da fé cristã",
+    descricao: "Fundamentos da fé cristã e preparação para o batismo",
     cor: "#3B82F6",
-    passos: 10,
+    passos: 10, // Passos básicos, pode estender para 22 se necessita batismo
   },
   2: {
     nome: "Armadura de Deus",
@@ -18,6 +18,12 @@ export const FASES_INFO = {
     nome: "Vida em Comunidade",
     descricao: "Relacionamentos e igreja",
     cor: "#10B981",
+    passos: 10,
+  },
+  4: {
+    nome: "Sermão da Montanha",
+    descricao: "Treinamento para discipuladores",
+    cor: "#F59E0B",
     passos: 10,
   },
 } as const
@@ -32,31 +38,47 @@ export function getFaseInfo(fase: number) {
   return FASES_INFO[fase as FaseNumero]
 }
 
-export function isFaseIntermediaria(fase: number): boolean {
-  return false
+export function getTotalPassosFase(fase: number, necessitaBatismo = false): number {
+  if (fase === 1 && necessitaBatismo) {
+    return 22 // 10 passos do Evangelho + 12 passos de Batismo
+  }
+  return FASES_INFO[fase as FaseNumero]?.passos || 10
+}
+
+export function isPassoBatismo(passo: number): boolean {
+  return passo >= 11 && passo <= 22
+}
+
+export function getPassoBatismoIndex(passo: number): number {
+  return passo - 10 // passo 11 = índice 1, passo 22 = índice 12
 }
 
 export function getPassoNome(passo: number): string {
+  if (isPassoBatismo(passo)) {
+    const index = getPassoBatismoIndex(passo)
+    const passoInfo = PASSOS_BATISMO[index as keyof typeof PASSOS_BATISMO]
+    return passoInfo?.titulo || `Passo ${passo}`
+  }
   const passoInfo = PASSOS_CONTEUDO[passo as keyof typeof PASSOS_CONTEUDO]
   return passoInfo?.titulo || `Passo ${passo}`
 }
 
-export function getPassoBatismoNome(passo: number): string {
-  const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
-  return passoInfo?.titulo || `Passo ${passo}`
-}
-
-export function getPassoBatismoDescricao(passo: number): string {
-  const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
-  return passoInfo?.objetivo || "Descrição do passo"
-}
-
 export function getPassoDescricao(passo: number): string {
+  if (isPassoBatismo(passo)) {
+    const index = getPassoBatismoIndex(passo)
+    const passoInfo = PASSOS_BATISMO[index as keyof typeof PASSOS_BATISMO]
+    return passoInfo?.objetivo || "Descrição do passo"
+  }
   const passoInfo = PASSOS_CONTEUDO[passo as keyof typeof PASSOS_CONTEUDO]
   return passoInfo?.objetivo || "Descrição do passo"
 }
 
 export function getRecompensaNome(passo: number): string {
+  if (isPassoBatismo(passo)) {
+    const index = getPassoBatismoIndex(passo)
+    return getRecompensaBatismoNome(index)
+  }
+
   const nomes: Record<number, string> = {
     1: "Criação",
     2: "Amor de Deus",

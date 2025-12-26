@@ -42,13 +42,13 @@ export async function registrarDecisaoPorCristo(data: {
     console.log("[v0] Discípulo atualizado com sucesso")
 
     if (!data.jaBatizado) {
-      console.log("[v0] Discípulo não batizado, direcionando para fase intermediária de batismo")
+      console.log("[v0] Discípulo não batizado, direcionando para passos 11-22 (fase intermediária)")
 
       const { error: progressoError } = await supabase
         .from("progresso_fases")
         .update({
-          fase_atual: 1, // Permanece na fase 1, mas com flag de batismo
-          passo_atual: 1,
+          fase_atual: 1, // Permanece na fase 1
+          passo_atual: 11, // Começa no passo 11 (primeiro passo de batismo)
           pontuacao_passo_atual: 0,
           celebracao_vista: true,
           videos_assistidos: [],
@@ -60,10 +60,18 @@ export async function registrarDecisaoPorCristo(data: {
         console.error("[v0] Erro ao atualizar progresso:", progressoError)
       }
 
+      await supabase
+        .from("discipulos")
+        .update({
+          fase_atual: 1,
+          passo_atual: 11,
+        })
+        .eq("id", data.discipuloId)
+
       revalidatePath("/dashboard")
       return {
         success: true,
-        message: "Parabéns! Você será direcionado para a fase de preparação para o batismo.",
+        message: "Parabéns! Continue na Fase 1 com os passos sobre Batismo Cristão (passos 11-22).",
       }
     }
 
@@ -72,7 +80,7 @@ export async function registrarDecisaoPorCristo(data: {
     const { error: progressoError } = await supabase
       .from("progresso_fases")
       .update({
-        fase_atual: 2, // Fase 2 - Armadura de Deus
+        fase_atual: 2, // Pula para Fase 2
         passo_atual: 1,
         pontuacao_passo_atual: 0,
         celebracao_vista: true,

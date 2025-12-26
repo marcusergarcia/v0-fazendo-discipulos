@@ -49,6 +49,7 @@ import { TextWithBibleLinks } from "@/components/text-with-bible-links"
 import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
 import { getPerguntasPasso } from "@/constants/perguntas-passos"
 import { RESUMOS_GERAIS_PASSOS } from "@/constants/resumos-gerais-passos"
+import { RESUMOS_BATISMO } from "@/constants/resumos-batismo"
 import { ModalCelebracaoPasso } from "@/components/modal-celebracao-passo"
 import { StepBadge } from "@/components/step-badge"
 
@@ -62,6 +63,7 @@ import { StepBadge } from "@/components/step-badge"
 
 type PassoClientProps = {
   numero: number
+  numeroExibido: number // Adicionar número para exibição (1-12 para batismo)
   passo: any
   discipulo: any
   progresso: any
@@ -79,10 +81,12 @@ type PassoClientProps = {
   leiturasSemana?: any // Adicionar leiturasSemana
   capitulosLidos?: string[] // Adicionar capitulosLidos
   discipuloId: string // Added discipuloId prop
+  estaEmFaseBatismo: boolean
 }
 
 export default function PassoClient({
   numero,
+  numeroExibido, // Receber número exibido
   passo,
   discipulo,
   progresso,
@@ -100,6 +104,7 @@ export default function PassoClient({
   leiturasSemana = [], // Inicializar com array vazio
   capitulosLidos = [], // Inicializar com array vazio
   discipuloId, // Destructure discipuloId
+  estaEmFaseBatismo,
 }: PassoClientProps) {
   const supabase = useMemo(() => createClient(), [])
 
@@ -148,6 +153,8 @@ export default function PassoClient({
 
   // Store the fetched reflexoes in state
   const [reflexoes, setReflexoes] = useState<any[]>([])
+
+  const numeroParaResumo = estaEmFaseBatismo ? numeroExibido : numero
 
   useEffect(() => {
     const carregarReflexoes = async () => {
@@ -526,6 +533,11 @@ export default function PassoClient({
     return todasCompletadas && todosConteudos.length === totalEsperado
   }, [passo.videos, passo.artigos])
 
+  // Determine if the current phase is the baptism phase
+  // const estaEmFaseBatismo = useMemo(() => {
+  //   return [2, 3, 4].includes(numero) // Assuming steps 2, 3, 4 are part of the baptism phase
+  // }, [numero])
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
@@ -540,7 +552,7 @@ export default function PassoClient({
               <div className="flex-1">
                 <h1 className="text-lg sm:text-xl font-bold">{passo.fase}</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Passo {numero} de 10 • Nível: {discipulo.nivel_atual}
+                  Passo {numeroExibido} de {estaEmFaseBatismo ? 12 : 10} • Nível: {discipulo.nivel_atual}
                 </p>
               </div>
             </div>
@@ -562,7 +574,7 @@ export default function PassoClient({
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-6">
             <StepBadge
-              stepNumber={numero}
+              stepNumber={numeroExibido}
               status={
                 progresso?.passo_atual === numero
                   ? "current"
@@ -574,7 +586,7 @@ export default function PassoClient({
             />
           </div>
           <h2 className="text-4xl font-bold mb-2">
-            PASSO {numero} – {passo.titulo}
+            PASSO {numeroExibido} – {passo.titulo}
           </h2>
           <p className="text-muted-foreground text-lg">{passo.fase}</p>
         </div>
@@ -1232,7 +1244,33 @@ export default function PassoClient({
 
         {todasReflexoesCompletadas() && (
           <>
-            {RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS] && (
+            {estaEmFaseBatismo && RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO] && (
+              <Card className="mb-6 border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                    {RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO].titulo}
+                  </CardTitle>
+                  <CardDescription>
+                    Parabéns! Você completou todas as reflexões. Aqui está um resumo do que aprendemos:
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO].topicos.map((topico, index) => (
+                      <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
+                        <h4 className="font-semibold mb-2 flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-primary" />
+                          {topico.titulo}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">{topico.descricao}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            {!estaEmFaseBatismo && RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS] && (
               <Card className="mb-6 border-primary/50 bg-primary/5">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1641,7 +1679,9 @@ export default function PassoClient({
 
             {/* Indicador do passo atual */}
             <div className="text-center hidden sm:block">
-              <p className="text-sm font-medium">Passo {numero} de 10</p>
+              <p className="text-sm font-medium">
+                Passo {numeroExibido} de {estaEmFaseBatismo ? 12 : 10}
+              </p>
               <p className="text-xs text-muted-foreground">{passo.fase}</p>
             </div>
 
