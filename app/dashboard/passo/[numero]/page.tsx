@@ -40,7 +40,8 @@ export default async function PassoPage({
     redirect("/dashboard")
   }
 
-  const estaEmFaseBatismo = (faseParam === "batismo" || discipulo.necessita_fase_batismo) && discipulo.fase_atual === 1
+  const estaEmFaseBatismo =
+    faseParam === "batismo" || (discipulo.necessita_fase_batismo === true && discipulo.ja_batizado === false)
   const passo = estaEmFaseBatismo ? PASSOS_BATISMO[numero] : PASSOS_CONTEUDO[numero]
 
   if (!passo) {
