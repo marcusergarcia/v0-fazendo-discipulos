@@ -608,14 +608,23 @@ export default function PassoClient({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {passo.versiculos.map((v: any, i: number) => (
-              <div key={i} className="space-y-2">
-                <p className="text-xl italic leading-relaxed font-medium">"{v.texto}"</p>
+            {passo.versiculos && Array.isArray(passo.versiculos) ? (
+              passo.versiculos.map((v: any, i: number) => (
+                <div key={i} className="space-y-2">
+                  <p className="text-xl italic leading-relaxed font-medium">"{v.texto}"</p>
+                  <p className="text-sm font-semibold text-primary">
+                    — <TextWithBibleLinks text={v.referencia} />
+                  </p>
+                </div>
+              ))
+            ) : passo.versiculo && passo.textoVersiculo ? (
+              <div className="space-y-2">
+                <p className="text-xl italic leading-relaxed font-medium">"{passo.textoVersiculo}"</p>
                 <p className="text-sm font-semibold text-primary">
-                  — <TextWithBibleLinks text={v.referencia} />
+                  — <TextWithBibleLinks text={passo.versiculo} />
                 </p>
               </div>
-            ))}
+            ) : null}
           </CardContent>
         </Card>
 

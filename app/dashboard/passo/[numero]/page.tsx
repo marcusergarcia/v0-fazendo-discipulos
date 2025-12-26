@@ -42,9 +42,22 @@ export default async function PassoPage({
 
   const estaEmFaseBatismo =
     faseParam === "batismo" || (discipulo.necessita_fase_batismo === true && discipulo.ja_batizado === false)
+
+  console.log("[v0] Passo Page - numero:", numero)
+  console.log("[v0] Passo Page - estaEmFaseBatismo:", estaEmFaseBatismo)
+  console.log("[v0] Passo Page - faseParam:", faseParam)
+  console.log("[v0] Passo Page - discipulo.necessita_fase_batismo:", discipulo.necessita_fase_batismo)
+  console.log("[v0] Passo Page - discipulo.ja_batizado:", discipulo.ja_batizado)
+  console.log("[v0] Passo Page - PASSOS_BATISMO keys:", Object.keys(PASSOS_BATISMO))
+  console.log("[v0] Passo Page - PASSOS_CONTEUDO keys:", Object.keys(PASSOS_CONTEUDO))
+
   const passo = estaEmFaseBatismo ? PASSOS_BATISMO[numero] : PASSOS_CONTEUDO[numero]
 
+  console.log("[v0] Passo Page - passo encontrado:", !!passo)
+  console.log("[v0] Passo Page - passo:", passo)
+
   if (!passo) {
+    console.log("[v0] Passo Page - Passo não encontrado, redirecionando para notFound")
     notFound()
   }
 
