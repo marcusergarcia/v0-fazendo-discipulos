@@ -273,7 +273,7 @@ export default async function PassoPage({
       leiturasSemana={leiturasSemana}
       capitulosLidos={capitulosLidos}
       discipuloId={discipulo.id}
-      estaEmFaseBatismo={ePassoBatismo}
+      estaEmFaseBatismo={estaEmFaseBatismo}
     />
   )
 }

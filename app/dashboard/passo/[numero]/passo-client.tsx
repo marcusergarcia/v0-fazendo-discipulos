@@ -106,6 +106,14 @@ export default function PassoClient({
   discipuloId, // Destructure discipuloId
   estaEmFaseBatismo,
 }: PassoClientProps) {
+  console.log("[v0] PassoClient - numero:", numero)
+  console.log("[v0] PassoClient - numeroExibido:", numeroExibido)
+  console.log("[v0] PassoClient - estaEmFaseBatismo:", estaEmFaseBatismo)
+  console.log("[v0] PassoClient - passo.videos:", passo.videos?.length || 0)
+  console.log("[v0] PassoClient - passo.artigos:", passo.artigos?.length || 0)
+  console.log("[v0] PassoClient - passo.versiculos:", passo.versiculos ? "array" : "undefined")
+  console.log("[v0] PassoClient - passo.versiculo:", passo.versiculo || "undefined")
+
   const supabase = useMemo(() => createClient(), [])
 
   const [mostrarCelebracao, setMostrarCelebracao] = useState(false)
@@ -155,6 +163,10 @@ export default function PassoClient({
   const [reflexoes, setReflexoes] = useState<any[]>([])
 
   const numeroParaResumo = estaEmFaseBatismo ? numeroExibido : numero
+
+  console.log("[v0] PassoClient - numeroParaResumo:", numeroParaResumo)
+  console.log("[v0] PassoClient - RESUMOS_BATISMO keys:", Object.keys(RESUMOS_BATISMO))
+  console.log("[v0] PassoClient - RESUMOS_GERAIS_PASSOS keys:", Object.keys(RESUMOS_GERAIS_PASSOS))
 
   useEffect(() => {
     const carregarReflexoes = async () => {
@@ -1257,15 +1269,17 @@ export default function PassoClient({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    {RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO].topicos.map((topico, index) => (
-                      <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
-                        <h4 className="font-semibold mb-2 flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-primary" />
-                          {topico.titulo}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">{topico.descricao}</p>
-                      </div>
-                    ))}
+                    {(RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO]?.topicos || []).map(
+                      (topico: any, index: number) => (
+                        <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-primary" />
+                            {topico.titulo}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">{topico.descricao}</p>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1283,8 +1297,8 @@ export default function PassoClient({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    {RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS].topicos.map(
-                      (topico, index) => (
+                    {(RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS]?.topicos || []).map(
+                      (topico: any, index: number) => (
                         <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
                           <h4 className="font-semibold mb-2 flex items-center gap-2">
                             <BookOpen className="w-4 h-4 text-primary" />
