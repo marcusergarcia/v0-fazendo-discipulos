@@ -146,7 +146,7 @@ export default async function PassoPage({
     numero === 8 ||
     numero === 9 ||
     numero === 10 ||
-    (estaEmFaseBatismo && numero >= 1 && numero <= 12)
+    (estaEmFaseBatismo && numero >= 11 && numero <= 22)
   ) {
     const { data: leituraCapitulos, error: leituraError } = await supabase
       .from("leituras_capitulos")
@@ -154,10 +154,12 @@ export default async function PassoPage({
       .eq("usuario_id", user.id)
       .single()
 
+    const semanaParaBuscar = estaEmFaseBatismo && numero >= 11 ? numeroExibido : numero
+
     const { data: planoSemana, error: planoError } = await supabase
       .from("plano_leitura_biblica")
       .select("semana, tema, descricao, capitulos_semana")
-      .eq("semana", numero)
+      .eq("semana", semanaParaBuscar)
       .single()
 
     if (leituraCapitulos && planoSemana) {
