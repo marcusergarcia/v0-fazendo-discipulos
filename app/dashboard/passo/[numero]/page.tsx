@@ -44,6 +44,9 @@ export default async function PassoPage({
   console.log("[v0] Passo Page - numero:", numero)
   console.log("[v0] Passo Page - ePassoBatismo:", ePassoBatismo)
   console.log("[v0] Passo Page - estaEmFaseBatismo:", estaEmFaseBatismo)
+  console.log("[v0] Passo Page - discipulo.necessita_fase_batismo:", discipulo.necessita_fase_batismo)
+  console.log("[v0] Passo Page - discipulo.ja_batizado:", discipulo.ja_batizado)
+  console.log("[v0] Passo Page - discipulo.fase_atual:", discipulo.fase_atual)
 
   const numeroExibido = ePassoBatismo && estaEmFaseBatismo ? numero - 10 : numero
 
