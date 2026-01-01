@@ -280,7 +280,7 @@ export default async function DashboardPage() {
   const currentPhaseData = {
     nome: estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
     passoAtual: estaEmFaseBatismo ? passoAtual - 10 : passoAtual, // Converte 11-22 para 1-12
-    totalPassos: estaEmFaseBatismo ? 12 : totalPassos,
+    totalPassos: estaEmFaseBatismo ? 22 : totalPassos, // 10 Evangelho + 12 Batismo
     descricaoFase: estaEmFaseBatismo
       ? `Complete os 12 passos sobre Batismo Cristão para se preparar para ser batizado`
       : `Complete todos os ${totalPassos} passos para aprender sobre ${getFaseNome(faseAtualReal)}`,
@@ -288,16 +288,32 @@ export default async function DashboardPage() {
     passoDescricao: getPassoDescricao(passoAtual),
   }
 
+  const insigniasSet = new Set(
+    recompensas?.[0]?.insignias
+      ?.map((i: string) => {
+        const match = i.match(/Passo (\d+) Concluído/)
+        return match ? Number.parseInt(match[1]) : null
+      })
+      .filter(Boolean) || [],
+  )
+
+  console.log("[v0] Insignias set:", Array.from(insigniasSet))
+
   const jornada = Array.from({ length: currentPhaseData.totalPassos }, (_, i) => {
     const stepNumber = i + 1
-    const numeroRealPasso = estaEmFaseBatismo ? stepNumber + 10 : stepNumber
+    const numeroRealPasso = estaEmFaseBatismo ? stepNumber : stepNumber
 
     let isCompleted = false
     if (estaEmFaseBatismo) {
-      // Fase de batismo: passos 1-10 do evangelho sempre completos, 11-22 verificar
-      isCompleted = stepNumber <= 10 || numeroRealPasso < passoAtual
+      // Fase de batismo: verificar insígnias para passos 1-10, verificar passoAtual para 11-22
+      if (stepNumber <= 10) {
+        isCompleted = insigniasSet.has(stepNumber)
+      } else {
+        isCompleted = stepNumber < passoAtual
+      }
     } else {
-      isCompleted = stepNumber < passoAtual
+      // Outras fases: verificar insígnias ou passoAtual
+      isCompleted = insigniasSet.size > 0 ? insigniasSet.has(stepNumber) : stepNumber < passoAtual
     }
 
     return {
@@ -305,8 +321,8 @@ export default async function DashboardPage() {
       numeroReal: numeroRealPasso,
       title: estaEmFaseBatismo
         ? stepNumber <= 10
-          ? getPassoNome(stepNumber) // Passos 1-10 do Evangelho
-          : getPassoNomeBatismo(stepNumber - 10) // Passos 1-12 de Batismo (exibe 11-22)
+          ? getPassoNome(stepNumber)
+          : getPassoNomeBatismo(stepNumber - 10)
         : getPassoNome(numeroRealPasso),
       recompensa: estaEmFaseBatismo
         ? stepNumber <= 10
