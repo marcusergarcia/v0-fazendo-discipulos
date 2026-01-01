@@ -73,6 +73,11 @@ export function getPassoDescricao(passo: number): string {
   return passoInfo?.objetivo || "Descrição do passo"
 }
 
+export function getPassoNomeBatismo(index: number): string {
+  const passoInfo = PASSOS_BATISMO[index as keyof typeof PASSOS_BATISMO]
+  return passoInfo?.titulo || `Passo ${index}`
+}
+
 export function getRecompensaNome(passo: number): string {
   if (isPassoBatismo(passo)) {
     const index = getPassoBatismoIndex(passo)

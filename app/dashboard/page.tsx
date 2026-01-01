@@ -35,7 +35,7 @@ import {
   isPassoBatismo,
   getPassoNome,
   getPassoDescricao,
-  getRecompensaNome,
+  getPassoNomeBatismo,
 } from "@/constants/fases-passos"
 
 export default async function DashboardPage() {
@@ -288,19 +288,34 @@ export default async function DashboardPage() {
     passoDescricao: getPassoDescricao(passoAtual),
   }
 
-  const jornada = Array.from({ length: estaEmFaseBatismo ? 12 : totalPassos }, (_, i) => {
-    const displayNumber = i + 1 // Número exibido: 1-12
-    const stepNumber = estaEmFaseBatismo ? i + 11 : i + 1 // Número real: 11-22 para batismo
-    const isCompleted = stepNumber < passoAtual
-    const isCurrent = stepNumber === passoAtual
+  const jornada = Array.from({ length: currentPhaseData.totalPassos }, (_, i) => {
+    const stepNumber = i + 1
+    const numeroRealPasso = estaEmFaseBatismo ? stepNumber + 10 : stepNumber
+
+    let isCompleted = false
+    if (estaEmFaseBatismo) {
+      // Fase de batismo: passos 1-10 do evangelho sempre completos, 11-22 verificar
+      isCompleted = stepNumber <= 10 || numeroRealPasso < passoAtual
+    } else {
+      isCompleted = stepNumber < passoAtual
+    }
 
     return {
-      step: displayNumber, // Exibir 1-12
-      title: getPassoNome(stepNumber), // Buscar nome com número real 11-22
+      step: stepNumber,
+      numeroReal: numeroRealPasso,
+      title: estaEmFaseBatismo
+        ? stepNumber <= 10
+          ? getPassoNome(stepNumber) // Passos 1-10 do Evangelho
+          : getPassoNomeBatismo(stepNumber - 10) // Passos 1-12 de Batismo (exibe 11-22)
+        : getPassoNome(numeroRealPasso),
+      recompensa: estaEmFaseBatismo
+        ? stepNumber <= 10
+          ? `Passo ${stepNumber} do Evangelho Concluído`
+          : `Passo ${stepNumber - 10} de Batismo Concluído`
+        : `Passo ${stepNumber} Concluído`,
       isCompleted,
-      isCurrent,
-      href: `/dashboard/passo/${stepNumber}`, // URL usa número real 11-22
-      recompensa: getRecompensaNome(stepNumber),
+      isCurrent: numeroRealPasso === passoAtual,
+      href: `/dashboard/passo/${numeroRealPasso}`,
     }
   })
 
