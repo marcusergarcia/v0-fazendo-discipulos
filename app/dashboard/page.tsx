@@ -23,7 +23,6 @@ import {
   UserPlus,
   UsersRound,
   Book,
-  Check,
 } from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
@@ -93,6 +92,8 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
 
   console.log("[v0] Recompensas check - Count:", recompensas?.length, "Error:", recompensasError)
+  console.log("[v0] Recompensas data:", JSON.stringify(recompensas, null, 2))
+  console.log("[v0] First recompensa insignias:", recompensas?.[0]?.insignias)
 
   const estaEmFaseBatismo =
     discipulo.necessita_fase_batismo === true &&
@@ -297,22 +298,18 @@ export default async function DashboardPage() {
       .filter(Boolean) || [],
   )
 
-  console.log("[v0] Insignias set:", Array.from(insigniasSet))
-
   const jornada = Array.from({ length: currentPhaseData.totalPassos }, (_, i) => {
     const stepNumber = i + 1
     const numeroRealPasso = estaEmFaseBatismo ? stepNumber : stepNumber
 
     let isCompleted = false
     if (estaEmFaseBatismo) {
-      // Fase de batismo: verificar insígnias para passos 1-10, verificar passoAtual para 11-22
       if (stepNumber <= 10) {
         isCompleted = insigniasSet.has(stepNumber)
       } else {
         isCompleted = stepNumber < passoAtual
       }
     } else {
-      // Outras fases: verificar insígnias ou passoAtual
       isCompleted = insigniasSet.size > 0 ? insigniasSet.has(stepNumber) : stepNumber < passoAtual
     }
 
@@ -515,12 +512,10 @@ export default async function DashboardPage() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs sm:text-sm">
                 <span className="font-medium">Experiência</span>
-                {/* Usar pontuacao_passo_atual ao invés de pontuacao_total */}
                 <span className="text-muted-foreground">{userData.xp} XP Total</span>
               </div>
               <Progress value={(userData.xp / userData.xpToNext) * 100} className="h-2 sm:h-3" />
               <div className="flex justify-between text-xs text-muted-foreground">
-                {/* Usar pontuacao_passo_atual ao invés de pontuacao_total */}
                 <span>Passos Completados: {passosCompletados}</span>
                 <span>
                   {userData.xp} / {userData.xpToNext} XP para próximo nível
@@ -627,19 +622,13 @@ export default async function DashboardPage() {
                         : "bg-muted border-muted-foreground/20"
                   }`}
                 >
-                  <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                      step.isCompleted
-                        ? "bg-primary text-primary-foreground"
-                        : step.isCurrent
-                          ? "bg-primary/20 text-primary"
-                          : "bg-muted-foreground/20 text-muted-foreground"
-                    }`}
-                  >
+                  <div className="mb-2">
                     {step.isCompleted ? (
-                      <Check className="w-6 h-6" />
+                      <StepBadge stepNumber={step.step} status="completed" size="md" />
+                    ) : step.isCurrent ? (
+                      <StepBadge stepNumber={step.step} status="current" size="md" />
                     ) : (
-                      <span className="text-lg font-bold">{step.step}</span>
+                      <StepBadge stepNumber={step.step} status="locked" size="md" />
                     )}
                   </div>
                   <span className="text-xs text-center font-medium text-foreground">{step.title}</span>
