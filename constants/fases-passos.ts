@@ -49,14 +49,9 @@ export function isPassoBatismo(passo: number): boolean {
   return passo >= 11 && passo <= 22
 }
 
-export function getPassoBatismoIndex(passo: number): number {
-  return passo - 10 // passo 11 = índice 1, passo 22 = índice 12
-}
-
 export function getPassoNome(passo: number): string {
   if (isPassoBatismo(passo)) {
-    const index = getPassoBatismoIndex(passo)
-    const passoInfo = PASSOS_BATISMO[index as keyof typeof PASSOS_BATISMO]
+    const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
     return passoInfo?.titulo || `Passo ${passo}`
   }
   const passoInfo = PASSOS_CONTEUDO[passo as keyof typeof PASSOS_CONTEUDO]
@@ -65,23 +60,16 @@ export function getPassoNome(passo: number): string {
 
 export function getPassoDescricao(passo: number): string {
   if (isPassoBatismo(passo)) {
-    const index = getPassoBatismoIndex(passo)
-    const passoInfo = PASSOS_BATISMO[index as keyof typeof PASSOS_BATISMO]
+    const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
     return passoInfo?.objetivo || "Descrição do passo"
   }
   const passoInfo = PASSOS_CONTEUDO[passo as keyof typeof PASSOS_CONTEUDO]
   return passoInfo?.objetivo || "Descrição do passo"
 }
 
-export function getPassoNomeBatismo(index: number): string {
-  const passoInfo = PASSOS_BATISMO[index as keyof typeof PASSOS_BATISMO]
-  return passoInfo?.titulo || `Passo ${index}`
-}
-
 export function getRecompensaNome(passo: number): string {
   if (isPassoBatismo(passo)) {
-    const index = getPassoBatismoIndex(passo)
-    return getRecompensaBatismoNome(index)
+    return getRecompensaBatismoNome(passo)
   }
 
   const nomes: Record<number, string> = {
@@ -101,18 +89,23 @@ export function getRecompensaNome(passo: number): string {
 
 export function getRecompensaBatismoNome(passo: number): string {
   const nomes: Record<number, string> = {
-    1: "Estudante do Batismo",
-    2: "Defensor da Graça",
-    3: "Estudioso da Fé",
-    4: "Compreensor dos Símbolos",
-    5: "Praticante da Verdade",
-    6: "Conhecedor da Trindade",
-    7: "Membro Comprometido",
-    8: "Testemunha Corajosa",
-    9: "Obediente Pronto",
-    10: "Pronto para o Batismo",
-    11: "Preparado para Testemunhar",
-    12: "Aliança nas Águas",
+    11: "Estudante do Batismo",
+    12: "Defensor da Graça",
+    13: "Estudioso da Fé",
+    14: "Compreensor dos Símbolos",
+    15: "Praticante da Verdade",
+    16: "Conhecedor da Trindade",
+    17: "Membro Comprometido",
+    18: "Testemunha Corajosa",
+    19: "Obediente Pronto",
+    20: "Pronto para o Batismo",
+    21: "Preparado para Testemunhar",
+    22: "Aliança nas Águas",
   }
   return nomes[passo] || `Insígnia ${passo}`
+}
+
+export function getPassoNomeBatismo(passo: number): string {
+  const passoInfo = PASSOS_BATISMO[passo as keyof typeof PASSOS_BATISMO]
+  return passoInfo?.titulo || `Passo ${passo}`
 }

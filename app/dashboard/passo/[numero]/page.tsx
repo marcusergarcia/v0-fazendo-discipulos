@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { PASSOS_BATISMO } from "@/constants/passos-batismo"
-import { isPassoBatismo, getPassoBatismoIndex, getTotalPassosFase } from "@/constants/fases-passos"
+import { isPassoBatismo, getTotalPassosFase } from "@/constants/fases-passos"
 
 export default async function PassoPage({
   params,
@@ -52,12 +52,24 @@ export default async function PassoPage({
 
   let passo
   if (ePassoBatismo && estaEmFaseBatismo) {
-    const indexBatismo = getPassoBatismoIndex(numero)
-    passo = PASSOS_BATISMO[indexBatismo]
-    console.log("[v0] Buscando passo de batismo:", indexBatismo, "encontrado:", !!passo)
+    passo = PASSOS_BATISMO[numero as keyof typeof PASSOS_BATISMO]
+    console.log("[v0] Buscando passo de batismo - numero URL:", numero, "chave busca:", numero, "encontrado:", !!passo)
+
+    if (passo) {
+      console.log("[v0] Passo batismo encontrado:", passo.titulo)
+    }
   } else if (numero <= 10) {
     passo = PASSOS_CONTEUDO[numero]
     console.log("[v0] Buscando passo de evangelho:", numero, "encontrado:", !!passo)
+  } else {
+    console.log(
+      "[v0] Passo de batismo acessado mas discípulo não está em fase de batismo - numero:",
+      numero,
+      "ePassoBatismo:",
+      ePassoBatismo,
+      "estaEmFaseBatismo:",
+      estaEmFaseBatismo,
+    )
   }
 
   if (!passo) {
