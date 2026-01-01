@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
 import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
 import { PASSOS_BATISMO } from "@/constants/passos-batismo"
-import { isPassoBatismo, getTotalPassosFase } from "@/constants/fases-passos"
+import { isPassoBatismo, getPassoBatismoIndex, getTotalPassosFase } from "@/constants/fases-passos"
 
 export default async function PassoPage({
   params,
@@ -52,8 +52,16 @@ export default async function PassoPage({
 
   let passo
   if (ePassoBatismo && estaEmFaseBatismo) {
-    passo = PASSOS_BATISMO[numero as keyof typeof PASSOS_BATISMO]
-    console.log("[v0] Buscando passo de batismo - numero URL:", numero, "chave busca:", numero, "encontrado:", !!passo)
+    const indexBatismo = getPassoBatismoIndex(numero) // passo 11 → índice 1
+    passo = PASSOS_BATISMO[indexBatismo as keyof typeof PASSOS_BATISMO]
+    console.log(
+      "[v0] Buscando passo de batismo - numero URL:",
+      numero,
+      "chave busca:",
+      indexBatismo,
+      "encontrado:",
+      !!passo,
+    )
 
     if (passo) {
       console.log("[v0] Passo batismo encontrado:", passo.titulo)

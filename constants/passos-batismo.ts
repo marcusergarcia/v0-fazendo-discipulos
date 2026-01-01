@@ -1,9 +1,9 @@
 // Fase Intermediária: Preparação para o Batismo
-// Passos 11-22 sobre Batismo Cristão
+// 12 Passos sobre Batismo Cristão
 
 export const PASSOS_BATISMO = {
-  11: {
-    numero: 11,
+  1: {
+    numero: 1,
     titulo: "O que é Batismo segundo a Bíblia",
     objetivo: "Compreender o significado bíblico do batismo como ordenança de Jesus",
     versiculo: "Mateus 28:19",
@@ -78,8 +78,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  12: {
-    numero: 12,
+  2: {
+    numero: 2,
     titulo: "Batismo NÃO perdoa pecados",
     objetivo: "Entender que o batismo não tem poder salvífico - apenas Jesus salva",
     versiculo: "Efésios 2:8-9",
@@ -149,8 +149,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  13: {
-    numero: 13,
+  3: {
+    numero: 3,
     titulo: "Quem pode ser batizado?",
     objetivo: "Compreender os requisitos bíblicos para o batismo",
     versiculo: "Atos 2:38",
@@ -217,8 +217,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  14: {
-    numero: 14,
+  4: {
+    numero: 4,
     titulo: "O Simbolismo do Batismo",
     objetivo: "Entender o que o batismo representa: morte e ressurreição com Cristo",
     versiculo: "Romanos 6:4",
@@ -275,8 +275,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  15: {
-    numero: 15,
+  5: {
+    numero: 5,
     titulo: "Batismo por Imersão",
     objetivo: "Compreender que o batismo bíblico é por imersão total nas águas",
     versiculo: "Marcos 1:9-10",
@@ -333,8 +333,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  16: {
-    numero: 16,
+  6: {
+    numero: 6,
     titulo: "Batismo em Nome da Trindade",
     objetivo: "Entender que o batismo é realizado em nome do Pai, Filho e Espírito Santo",
     versiculo: "Mateus 28:19",
@@ -391,8 +391,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  17: {
-    numero: 17,
+  7: {
+    numero: 7,
     titulo: "O Batismo e a Igreja",
     objetivo: "Compreender a relação entre batismo e compromisso com a igreja local",
     versiculo: "Atos 2:41",
@@ -449,8 +449,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  18: {
-    numero: 18,
+  8: {
+    numero: 8,
     titulo: "Testemunho Público da Fé",
     objetivo: "Entender o batismo como declaração pública de fé em Cristo",
     versiculo: "Romanos 10:9",
@@ -507,8 +507,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  19: {
-    numero: 19,
+  9: {
+    numero: 9,
     titulo: "A Urgência do Batismo",
     objetivo: "Compreender que o batismo não deve ser adiado após a conversão",
     versiculo: "Atos 22:16",
@@ -566,8 +566,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  20: {
-    numero: 20,
+  10: {
+    numero: 10,
     titulo: "Preparação para o Meu Batismo",
     objetivo: "Refletir sobre seu compromisso e preparar-se para o batismo",
     versiculo: "1 Pedro 3:21",
@@ -629,8 +629,8 @@ export const PASSOS_BATISMO = {
     xp: 200,
     fase: "intermediaria",
   },
-  21: {
-    numero: 21,
+  11: {
+    numero: 11,
     titulo: "Meu Testemunho de Fé",
     objetivo: "Preparar seu testemunho pessoal para compartilhar no dia do batismo",
     versiculo: "1 Pedro 3:15",
@@ -692,8 +692,8 @@ export const PASSOS_BATISMO = {
     xp: 150,
     fase: "intermediaria",
   },
-  22: {
-    numero: 22,
+  12: {
+    numero: 12,
     titulo: "Compromisso Final e Agendamento",
     objetivo: "Confirmar seu compromisso com Cristo e agendar seu batismo",
     versiculo: "Josué 24:15",
@@ -755,9 +755,9 @@ export const PASSOS_BATISMO = {
     xp: 200,
     fase: "intermediaria",
   },
-} as const
+}
 
-export type PassoBatismo = (typeof PASSOS_BATISMO)[keyof typeof PASSOS_BATISMO]
+export type PassoBatismoNumero = keyof typeof PASSOS_BATISMO
 
 export const TOTAL_PASSOS_BATISMO = Object.keys(PASSOS_BATISMO).length
 
