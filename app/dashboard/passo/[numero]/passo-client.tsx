@@ -15,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  ArrowLeft,
   BookOpen,
   Sparkles,
   Award,
@@ -82,6 +81,23 @@ type PassoClientProps = {
   capitulosLidos?: string[] // Adicionar capitulosLidos
   discipuloId: string // Added discipuloId prop
   estaEmFaseBatismo: boolean
+}
+
+// Helper function to get the title of the current phase
+const getFaseTitulo = (fase: string, estaEmFaseBatismo: boolean) => {
+  if (estaEmFaseBatismo) {
+    return `Fase do Batismo - ${fase}`
+  }
+  switch (fase) {
+    case "evangelho":
+      return "Fase do Evangelho"
+    case "discipulado":
+      return "Fase do Discipulado"
+    case "lideranca":
+      return "Fase da Liderança"
+    default:
+      return "Jornada Cristã"
+  }
 }
 
 export default function PassoClient({
@@ -546,22 +562,34 @@ export default function PassoClient({
   //   return [2, 3, 4].includes(numero) // Assuming steps 2, 3, 4 are part of the baptism phase
   // }, [numero])
 
+  const ePassoBatismo = numero >= 11 && numero <= 22
+  // Steps 1-10: Gospel (10 steps total)
+  // Steps 11-22: Baptism (total is 22, showing "Step 11 of 22")
+  const totalPassosFase = numero >= 11 && numero <= 22 ? 22 : 10
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
+      {/* Header do Passo */}
+      <header className="bg-card border-b sticky top-0 z-10 shadow-sm">
+        <div className="container mx-auto px-4 py-4 max-w-4xl">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-4 flex-1">
+              <StepBadge
+                stepNumber={ePassoBatismo ? numeroExibido : numero}
+                status={
+                  progresso?.passo_atual === numero
+                    ? "current"
+                    : progresso?.passo_atual && progresso.passo_atual > numero
+                      ? "completed"
+                      : "locked"
+                }
+              />
               <div className="flex-1">
                 <h1 className="text-lg sm:text-xl font-bold">{passo.fase}</h1>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Passo {numeroExibido} de {estaEmFaseBatismo ? 12 : 10} • Nível: {discipulo.nivel_atual}
+                  Passo {numeroExibido} de {totalPassosFase} • Nível: {discipulo.nivel_atual}
                 </p>
+                {/* </CHANGE> */}
               </div>
             </div>
             <div className="flex gap-2">
@@ -1511,6 +1539,18 @@ export default function PassoClient({
         )}
       </div>
 
+      {/* Fixed bottom navigation */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-t">
+        <div className="container mx-auto py-4">
+          <div className="text-center text-sm text-muted-foreground">
+            Passo {numero} de {totalPassosFase}
+          </div>
+          <div className="text-center text-xs text-muted-foreground">
+            {getFaseTitulo(discipulo.fase_atual, estaEmFaseBatismo)}
+          </div>
+        </div>
+      </div>
+
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -1750,8 +1790,9 @@ export default function PassoClient({
             {/* Indicador do passo atual */}
             <div className="text-center hidden sm:block">
               <p className="text-sm font-medium">
-                Passo {numeroExibido} de {estaEmFaseBatismo ? 12 : 10}
+                Passo {numeroExibido} de {totalPassosFase}
               </p>
+              {/* </CHANGE> */}
               <p className="text-xs text-muted-foreground">{passo.fase}</p>
             </div>
 
