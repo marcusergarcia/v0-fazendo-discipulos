@@ -1105,6 +1105,63 @@ export default function PassoClient({
           </Card>
         )}
 
+        {/* Leitura Bíblica Semanal - Passos de Batismo */}
+        {estaEmFaseBatismo && numero >= 11 && numero <= 22 && (
+          <Card className="mb-6 border-2 border-primary/20">
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <BookOpen className="w-5 h-5 text-primary" />
+                </div>
+                <CardTitle className="flex-1 text-xl">
+                  📖 Leitura Bíblica Semanal <Badge className="ml-2">Semana {numero}</Badge>
+                </CardTitle>
+                <CardDescription>Parte do plano de leitura em 1 ano — complete para avançar!</CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="rounded-lg bg-card border p-4">
+                  <h4 className="font-semibold text-lg mb-2">{temaSemana || `Tema da Semana ${numero}`}</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {descricaoSemana || "Continue seu plano de leitura bíblica anual"}
+                  </p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Badge variant="outline" className="font-mono">
+                      Semana {numero}
+                    </Badge>
+                    <span className="text-muted-foreground">{leiturasSemana.length} capítulos</span>
+                  </div>
+                </div>
+                {statusLeituraSemana === "concluida" ? (
+                  <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                          Parabéns! Leitura concluída 🎉
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          Continue se alimentando da Palavra de Deus diariamente!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link href={`/dashboard/leitura-biblica?semana=${numero}`}>
+                    <Button className="w-full" variant="default">
+                      <BookOpen className="w-4 h-4 mr-2" />
+                      {statusLeituraSemana === "pendente"
+                        ? `Continuar Leitura da Semana ${numero}`
+                        : `Iniciar Leitura da Semana ${numero}`}
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Vídeos Educacionais */}
         {passo.videos && passo.videos.length > 0 && (
           <Card className="mb-6 border-accent/30">
