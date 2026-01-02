@@ -83,23 +83,6 @@ type PassoClientProps = {
   estaEmFaseBatismo: boolean
 }
 
-// Helper function to get the title of the current phase
-const getFaseTitulo = (fase: string, estaEmFaseBatismo: boolean) => {
-  if (estaEmFaseBatismo) {
-    return `Fase do Batismo - ${fase}`
-  }
-  switch (fase) {
-    case "evangelho":
-      return "Fase do Evangelho"
-    case "discipulado":
-      return "Fase do Discipulado"
-    case "lideranca":
-      return "Fase da Liderança"
-    default:
-      return "Jornada Cristã"
-  }
-}
-
 export default function PassoClient({
   numero,
   numeroExibido, // Receber número exibido
@@ -563,9 +546,8 @@ export default function PassoClient({
   // }, [numero])
 
   const ePassoBatismo = numero >= 11 && numero <= 22
-  // Steps 1-10: Gospel (10 steps total)
-  // Steps 11-22: Baptism (total is 22, showing "Step 11 of 22")
-  const totalPassosFase = numero >= 11 && numero <= 22 ? 22 : 10
+  const totalPassosFase = ePassoBatismo ? 12 : 10
+  // </CHANGE>
 
   return (
     <div className="min-h-screen bg-background">
@@ -1537,18 +1519,6 @@ export default function PassoClient({
             </Button>
           </Link>
         )}
-      </div>
-
-      {/* Fixed bottom navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-sm border-t">
-        <div className="container mx-auto py-4">
-          <div className="text-center text-sm text-muted-foreground">
-            Passo {numero} de {totalPassosFase}
-          </div>
-          <div className="text-center text-xs text-muted-foreground">
-            {getFaseTitulo(discipulo.fase_atual, estaEmFaseBatismo)}
-          </div>
-        </div>
       </div>
 
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>

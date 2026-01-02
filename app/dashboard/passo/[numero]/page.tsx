@@ -45,7 +45,7 @@ export default async function PassoPage({
   console.log("[v0] Passo Page - ePassoBatismo:", ePassoBatismo)
   console.log("[v0] Passo Page - estaEmFaseBatismo:", estaEmFaseBatismo)
 
-  const numeroExibido = numero
+  const numeroExibido = ePassoBatismo && estaEmFaseBatismo ? numero - 10 : numero
 
   let passo
   if (ePassoBatismo && estaEmFaseBatismo) {
