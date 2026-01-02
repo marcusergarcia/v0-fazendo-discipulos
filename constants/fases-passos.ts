@@ -105,4 +105,23 @@ export function getRecompensaNome(passo: number): string {
   return nomes[passo] || `Insígnia ${passo}`
 }
 
+export const INSIGNIAS_BATISMO = {
+  11: "Book", // Livro - Estudo bíblico
+  12: "Shield", // Escudo - Defesa da graça
+  13: "Users", // Pessoas - Quem pode ser batizado
+  14: "RefreshCw", // Ciclo - Morte e ressurreição
+  15: "Droplets", // Gotas - Imersão nas águas
+  16: "Flame", // Chama - Trindade (3 pessoas)
+  17: "Church", // Igreja - Comunidade
+  18: "Megaphone", // Megafone - Testemunho público
+  19: "Zap", // Raio - Urgência
+  20: "Target", // Alvo - Preparação
+  21: "PenTool", // Caneta - Testemunho escrito
+  22: "Medal", // Medalha - Compromisso final
+} as const
+
+export function getIconeBatismo(passo: number): string {
+  return INSIGNIAS_BATISMO[passo as keyof typeof INSIGNIAS_BATISMO] || "Sparkles"
+}
+
 export { PASSOS_EVANGELHO as PASSOS_CONTEUDO }

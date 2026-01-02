@@ -5,7 +5,8 @@ export const PASSOS_BATISMO = {
   11: {
     numero: 11,
     titulo: "O que é Batismo segundo a Bíblia",
-    objetivo: "Compreender o significado bíblico do batismo como ordenança de Jesus",
+    objetivo:
+      "Compreender o significado bíblico do batismo como ordenança de Jesus. Você aprenderá que o batismo não é apenas um ritual religioso, mas um mandamento deixado por Cristo para todos os seus discípulos. Este passo estabelece o fundamento bíblico para todo o estudo sobre batismo.",
     versiculo: "Mateus 28:19",
     textoVersiculo:
       "Portanto, ide, fazei discípulos de todas as nações, batizando-os em nome do Pai, e do Filho, e do Espírito Santo",
@@ -81,7 +82,8 @@ export const PASSOS_BATISMO = {
   12: {
     numero: 12,
     titulo: "Batismo NÃO perdoa pecados",
-    objetivo: "Entender que o batismo não tem poder salvífico - apenas Jesus salva",
+    objetivo:
+      "Entender que o batismo não tem poder salvífico - apenas Jesus salva. É fundamental compreender que o batismo é uma resposta de fé, não uma obra que nos salva. A salvação é exclusivamente pela graça de Deus mediante a fé em Cristo, não por rituais ou cerimônias.",
     versiculo: "Efésios 2:8-9",
     textoVersiculo:
       "Porque pela graça sois salvos, mediante a fé; e isto não vem de vós; é dom de Deus; não de obras, para que ninguém se glorie",
@@ -152,7 +154,8 @@ export const PASSOS_BATISMO = {
   13: {
     numero: 13,
     titulo: "Quem pode ser batizado?",
-    objetivo: "Compreender os requisitos bíblicos para o batismo",
+    objetivo:
+      "Compreender os requisitos bíblicos para o batismo. O batismo cristão é para aqueles que já se arrependeram de seus pecados e creram em Jesus Cristo como Senhor e Salvador. Você aprenderá que o batismo requer uma confissão de fé consciente e pessoal.",
     versiculo: "Atos 2:38",
     textoVersiculo:
       "Respondeu Pedro: Arrependei-vos, e cada um de vós seja batizado em nome de Jesus Cristo para remissão dos vossos pecados",
@@ -220,7 +223,8 @@ export const PASSOS_BATISMO = {
   14: {
     numero: 14,
     titulo: "O Simbolismo do Batismo",
-    objetivo: "Entender o que o batismo representa: morte e ressurreição com Cristo",
+    objetivo:
+      "Entender o que o batismo representa: morte e ressurreição com Cristo. O batismo simboliza nossa identificação com Cristo em sua morte, sepultamento e ressurreição. Este passo revela o profundo significado espiritual de ser sepultado nas águas e ressurgir para uma nova vida.",
     versiculo: "Romanos 6:4",
     textoVersiculo:
       "Fomos sepultados com ele na morte por meio do batismo, a fim de que, assim como Cristo foi ressuscitado dos mortos mediante a glória do Pai, também nós vivamos uma vida nova",
@@ -278,7 +282,8 @@ export const PASSOS_BATISMO = {
   15: {
     numero: 15,
     titulo: "Batismo por Imersão",
-    objetivo: "Compreender que o batismo bíblico é por imersão total nas águas",
+    objetivo:
+      "Compreender que o batismo bíblico é por imersão total nas águas. Você descobrirá que a própria palavra grega 'baptizo' significa 'imergir' ou 'mergulhar'. O batismo por imersão completa ilustra melhor o simbolismo de morte e ressurreição, seguindo o exemplo de Jesus.",
     versiculo: "Marcos 1:9-10",
     textoVersiculo:
       "Naqueles dias, veio Jesus de Nazaré da Galileia e por João foi batizado no rio Jordão. Logo ao sair da água, viu os céus rasgarem-se",
@@ -336,7 +341,8 @@ export const PASSOS_BATISMO = {
   16: {
     numero: 16,
     titulo: "Batismo em Nome da Trindade",
-    objetivo: "Entender que o batismo é realizado em nome do Pai, Filho e Espírito Santo",
+    objetivo:
+      "Entender que o batismo é realizado em nome do Pai, Filho e Espírito Santo. Jesus ordenou explicitamente que o batismo seja feito invocando o nome da Trindade. Este passo explora o significado de ser batizado em nome de cada pessoa da divindade.",
     versiculo: "Mateus 28:19",
     textoVersiculo:
       "Portanto, ide, fazei discípulos de todas as nações, batizando-os em nome do Pai, e do Filho, e do Espírito Santo",
@@ -394,7 +400,8 @@ export const PASSOS_BATISMO = {
   17: {
     numero: 17,
     titulo: "O Batismo e a Igreja",
-    objetivo: "Compreender a relação entre batismo e compromisso com a igreja local",
+    objetivo:
+      "Compreender a relação entre batismo e compromisso com a igreja local. O batismo marca a entrada oficial na comunidade da igreja, o corpo de Cristo. Você aprenderá que ser batizado significa se comprometer com uma família espiritual concreta e visível.",
     versiculo: "Atos 2:41",
     textoVersiculo:
       "Então, os que lhe aceitaram a palavra foram batizados, havendo um acréscimo naquele dia de quase três mil pessoas",
@@ -452,7 +459,8 @@ export const PASSOS_BATISMO = {
   18: {
     numero: 18,
     titulo: "Testemunho Público da Fé",
-    objetivo: "Entender o batismo como declaração pública de fé em Cristo",
+    objetivo:
+      "Entender o batismo como declaração pública de fé em Cristo. O batismo é uma forma de confessar publicamente diante do mundo que você pertence a Jesus. Este passo ensina sobre a coragem de não se envergonhar de Cristo e proclamar sua fé abertamente.",
     versiculo: "Romanos 10:9",
     textoVersiculo:
       "Se, com a tua boca, confessares Jesus como Senhor e, em teu coração, creres que Deus o ressuscitou dentre os mortos, serás salvo",
@@ -510,7 +518,8 @@ export const PASSOS_BATISMO = {
   19: {
     numero: 19,
     titulo: "A Urgência do Batismo",
-    objetivo: "Compreender que o batismo não deve ser adiado após a conversão",
+    objetivo:
+      "Compreender que o batismo não deve ser adiado após a conversão. A Bíblia mostra que os novos convertidos eram batizados imediatamente após crer em Cristo. Você aprenderá que adiar o batismo é adiar a obediência a uma ordenança clara do Senhor.",
     versiculo: "Atos 22:16",
     textoVersiculo:
       "Agora, por que te demoras? Levanta-te, recebe o batismo e lava os teus pecados, invocando o nome dele",
@@ -569,7 +578,8 @@ export const PASSOS_BATISMO = {
   20: {
     numero: 20,
     titulo: "Preparação para o Meu Batismo",
-    objetivo: "Refletir sobre seu compromisso e preparar-se para o batismo",
+    objetivo:
+      "Refletir sobre seu compromisso e preparar-se espiritualmente para o batismo. Chegou o momento de examinar seu coração, confirmar sua fé e se preparar para dar este passo de obediência. Este é um tempo de oração, reflexão e fortalecimento de sua decisão.",
     versiculo: "1 Pedro 3:21",
     textoVersiculo:
       "A qual, figuradamente, agora também vos salva, o batismo, não sendo a remoção da imundícia da carne, mas a indagação de uma boa consciência para com Deus, por meio da ressurreição de Jesus Cristo",
@@ -632,7 +642,8 @@ export const PASSOS_BATISMO = {
   21: {
     numero: 21,
     titulo: "Meu Testemunho de Fé",
-    objetivo: "Preparar seu testemunho pessoal para compartilhar no dia do batismo",
+    objetivo:
+      "Preparar seu testemunho pessoal para compartilhar no dia do batismo. Você aprenderá a articular sua história de conversão de forma clara e impactante. Este passo ajuda você a organizar seu pensamento sobre como Deus transformou sua vida.",
     versiculo: "1 Pedro 3:15",
     textoVersiculo:
       "Estejam sempre preparados para responder a qualquer pessoa que lhes pedir a razão da esperança que há em vós",
@@ -695,7 +706,8 @@ export const PASSOS_BATISMO = {
   22: {
     numero: 22,
     titulo: "Compromisso Final e Agendamento",
-    objetivo: "Confirmar seu compromisso com Cristo e agendar seu batismo",
+    objetivo:
+      "Confirmar seu compromisso com Cristo e agendar seu batismo. É hora de tomar a decisão final e marcar a data do seu batismo, declarando publicamente que você escolhe seguir a Jesus. Este é o passo conclusivo antes da celebração do batismo.",
     versiculo: "Josué 24:15",
     textoVersiculo: "Escolham hoje a quem irão servir... Mas eu e a minha família serviremos ao Senhor",
     introducao:
