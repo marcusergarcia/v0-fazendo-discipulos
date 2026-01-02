@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { FileText, CheckCircle, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-passos"
+import { PERGUNTAS_POR_PASSO } from "@/constants/perguntas-evangelho"
 
 interface PerguntaResposta {
   pergunta_id: number

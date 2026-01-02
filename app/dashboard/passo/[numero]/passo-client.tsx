@@ -46,10 +46,10 @@ import {
 } from "./actions"
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { TextWithBibleLinks } from "@/components/text-with-bible-links"
-import { RESUMOS_CONTEUDO } from "@/constants/resumos-conteudo"
-import { getPerguntasPasso } from "@/constants/perguntas-passos"
+import { RESUMOS_CONTEUDO } from "@/constants/resumos-evangelho"
+import { getPerguntasPasso } from "@/constants/perguntas-evangelho"
 import { RESUMOS_GERAIS_PASSOS } from "@/constants/resumos-gerais-passos"
-import { RESUMOS_BATISMO } from "@/constants/resumos-batismo"
+import { RESUMOS_GERAIS_BATISMO } from "@/constants/resumos-gerais-batismo" // Adding import for RESUMOS_GERAIS_BATISMO
 import { ModalCelebracaoPasso } from "@/components/modal-celebracao-passo"
 import { StepBadge } from "@/components/step-badge"
 
@@ -162,11 +162,7 @@ export default function PassoClient({
   // Store the fetched reflexoes in state
   const [reflexoes, setReflexoes] = useState<any[]>([])
 
-  const numeroParaResumo = estaEmFaseBatismo ? numeroExibido : numero
-
-  console.log("[v0] PassoClient - numeroParaResumo:", numeroParaResumo)
-  console.log("[v0] PassoClient - RESUMOS_BATISMO keys:", Object.keys(RESUMOS_BATISMO))
-  console.log("[v0] PassoClient - RESUMOS_GERAIS_PASSOS keys:", Object.keys(RESUMOS_GERAIS_PASSOS))
+  const numeroParaResumo = numero
 
   useEffect(() => {
     const carregarReflexoes = async () => {
@@ -1256,34 +1252,6 @@ export default function PassoClient({
 
         {todasReflexoesCompletadas() && (
           <>
-            {estaEmFaseBatismo && RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO] && (
-              <Card className="mb-6 border-primary/50 bg-primary/5">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary" />
-                    {RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO].titulo}
-                  </CardTitle>
-                  <CardDescription>
-                    Parabéns! Você completou todas as reflexões. Aqui está um resumo do que aprendemos:
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    {(RESUMOS_BATISMO[numeroParaResumo as keyof typeof RESUMOS_BATISMO]?.topicos || []).map(
-                      (topico: any, index: number) => (
-                        <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
-                          <h4 className="font-semibold mb-2 flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-primary" />
-                            {topico.titulo}
-                          </h4>
-                          <p className="text-sm text-muted-foreground">{topico.descricao}</p>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
             {!estaEmFaseBatismo && RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS] && (
               <Card className="mb-6 border-primary/50 bg-primary/5">
                 <CardHeader>
@@ -1298,6 +1266,35 @@ export default function PassoClient({
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     {(RESUMOS_GERAIS_PASSOS[numero as keyof typeof RESUMOS_GERAIS_PASSOS]?.topicos || []).map(
+                      (topico: any, index: number) => (
+                        <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
+                          <h4 className="font-semibold mb-2 flex items-center gap-2">
+                            <BookOpen className="w-4 h-4 text-primary" />
+                            {topico.titulo}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">{topico.descricao}</p>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {estaEmFaseBatismo && RESUMOS_GERAIS_BATISMO[numero as keyof typeof RESUMOS_GERAIS_BATISMO] && (
+              <Card className="mb-6 border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                    {RESUMOS_GERAIS_BATISMO[numero as keyof typeof RESUMOS_GERAIS_BATISMO].titulo}
+                  </CardTitle>
+                  <CardDescription>
+                    Parabéns! Você completou todas as reflexões. Aqui está um resumo do que aprendemos:
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    {(RESUMOS_GERAIS_BATISMO[numero as keyof typeof RESUMOS_GERAIS_BATISMO]?.topicos || []).map(
                       (topico: any, index: number) => (
                         <div key={index} className="p-4 rounded-lg bg-background border border-primary/20">
                           <h4 className="font-semibold mb-2 flex items-center gap-2">

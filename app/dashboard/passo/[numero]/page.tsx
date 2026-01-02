@@ -2,9 +2,9 @@ import { notFound } from "next/navigation"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import PassoClient from "./passo-client"
-import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
+import { PASSOS_CONTEUDO } from "@/constants/passos-evangelho"
 import { PASSOS_BATISMO } from "@/constants/passos-batismo"
-import { isPassoBatismo, getPassoBatismoIndex, getTotalPassosFase } from "@/constants/fases-passos"
+import { isPassoBatismo, getTotalPassosFase } from "@/constants/fases-passos"
 
 export default async function PassoPage({
   params,
@@ -44,44 +44,20 @@ export default async function PassoPage({
   console.log("[v0] Passo Page - numero:", numero)
   console.log("[v0] Passo Page - ePassoBatismo:", ePassoBatismo)
   console.log("[v0] Passo Page - estaEmFaseBatismo:", estaEmFaseBatismo)
-  console.log("[v0] Passo Page - discipulo.necessita_fase_batismo:", discipulo.necessita_fase_batismo)
-  console.log("[v0] Passo Page - discipulo.ja_batizado:", discipulo.ja_batizado)
-  console.log("[v0] Passo Page - discipulo.fase_atual:", discipulo.fase_atual)
 
   const numeroExibido = ePassoBatismo && estaEmFaseBatismo ? numero - 10 : numero
 
   let passo
   if (ePassoBatismo && estaEmFaseBatismo) {
-    const indexBatismo = getPassoBatismoIndex(numero) // passo 11 → índice 1
-    passo = PASSOS_BATISMO[indexBatismo as keyof typeof PASSOS_BATISMO]
-    console.log(
-      "[v0] Buscando passo de batismo - numero URL:",
-      numero,
-      "chave busca:",
-      indexBatismo,
-      "encontrado:",
-      !!passo,
-    )
-
-    if (passo) {
-      console.log("[v0] Passo batismo encontrado:", passo.titulo)
-    }
+    passo = PASSOS_BATISMO[numero as keyof typeof PASSOS_BATISMO]
+    console.log("[v0] Buscando passo de batismo - numero:", numero, "encontrado:", !!passo)
   } else if (numero <= 10) {
     passo = PASSOS_CONTEUDO[numero]
     console.log("[v0] Buscando passo de evangelho:", numero, "encontrado:", !!passo)
-  } else {
-    console.log(
-      "[v0] Passo de batismo acessado mas discípulo não está em fase de batismo - numero:",
-      numero,
-      "ePassoBatismo:",
-      ePassoBatismo,
-      "estaEmFaseBatismo:",
-      estaEmFaseBatismo,
-    )
   }
 
   if (!passo) {
-    console.log("[v0] Passo Page - Passo não encontrado, redirecionando para notFound")
+    console.log("[v0] Passo não encontrado")
     notFound()
   }
 
@@ -120,7 +96,6 @@ export default async function PassoPage({
 
   let passosCompletados
   if (estaEmFaseBatismo) {
-    // Na fase de batismo, contar os passos de batismo completados (11-22)
     passosCompletados = Math.max(0, numero - 11)
   } else {
     passosCompletados = (discipulo.passo_atual || 1) - 1
@@ -174,7 +149,7 @@ export default async function PassoPage({
       .eq("usuario_id", user.id)
       .single()
 
-    const semanaParaBuscar = estaEmFaseBatismo && numero >= 11 ? numeroExibido : numero
+    const semanaParaBuscar = estaEmFaseBatismo && numero >= 11 ? numero : numero
 
     const { data: planoSemana, error: planoError } = await supabase
       .from("plano_leitura_biblica")

@@ -3,7 +3,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Sparkles, ArrowRight, Check } from "lucide-react"
-import { PASSOS_CONTEUDO } from "@/constants/passos-conteudo"
+import { PASSOS_CONTEUDO } from "@/constants/passos-evangelho"
 import { StepBadge } from "@/components/step-badge"
 
 interface ModalCelebracaoPassoProps {

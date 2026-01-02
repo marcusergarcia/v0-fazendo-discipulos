@@ -300,13 +300,17 @@ export default async function DashboardPage() {
 
   const jornada = Array.from({ length: currentPhaseData.totalPassos }, (_, i) => {
     const stepNumber = i + 1
-    const numeroRealPasso = estaEmFaseBatismo ? stepNumber : stepNumber
+    // Para passos de batismo, stepNumber vai de 1-22
+    // Passos 1-10 são do Evangelho, 11-22 são de Batismo
+    const numeroRealPasso = stepNumber // Mantém numeração 1-22 para URLs
 
     let isCompleted = false
     if (estaEmFaseBatismo) {
       if (stepNumber <= 10) {
+        // Passos do Evangelho já completados
         isCompleted = insigniasSet.has(stepNumber)
       } else {
+        // Passos de Batismo (11-22)
         isCompleted = stepNumber < passoAtual
       }
     } else {
@@ -318,8 +322,8 @@ export default async function DashboardPage() {
       numeroReal: numeroRealPasso,
       title: estaEmFaseBatismo
         ? stepNumber <= 10
-          ? getPassoNome(stepNumber)
-          : getPassoNomeBatismo(stepNumber - 10)
+          ? getPassoNome(stepNumber) // Passos 1-10: Evangelho
+          : getPassoNomeBatismo(stepNumber) // Passos 11-22: Batismo (função busca direto por 11-22)
         : getPassoNome(numeroRealPasso),
       recompensa: estaEmFaseBatismo
         ? stepNumber <= 10
@@ -328,7 +332,7 @@ export default async function DashboardPage() {
         : `Passo ${stepNumber} Concluído`,
       isCompleted,
       isCurrent: numeroRealPasso === passoAtual,
-      href: `/dashboard/passo/${numeroRealPasso}`,
+      href: `/dashboard/passo/${numeroRealPasso}`, // URLs mantêm numeração 1-22
     }
   })
 

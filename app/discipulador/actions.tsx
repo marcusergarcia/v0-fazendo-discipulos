@@ -2,8 +2,8 @@
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import { getPerguntasPasso } from "@/constants/perguntas-passos"
-import { passosConteudo } from "@/constants/passos-conteudo"
+import { getPerguntasPasso } from "@/constants/perguntas-evangelho"
+import { passosConteudo } from "@/constants/passos-evangelho"
 
 export async function aprovarReflexao(data: {
   reflexaoId: string
