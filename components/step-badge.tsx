@@ -9,6 +9,17 @@ import {
   MessageCircleHeart,
   UserCheck,
   Baby,
+  BookOpen,
+  Shield,
+  Droplets,
+  Flame,
+  Users,
+  Megaphone,
+  GitBranch,
+  Zap,
+  Calendar,
+  GraduationCap,
+  Award,
 } from "lucide-react"
 
 interface StepBadgeProps {
@@ -29,6 +40,55 @@ export function StepBadge({ stepNumber, status, size = "md" }: StepBadgeProps) {
     8: { icon: MessageCircleHeart, color: "text-teal-700", bgGradient: "from-teal-500 to-teal-700", name: "Compaixão" },
     9: { icon: UserCheck, color: "text-green-700", bgGradient: "from-green-500 to-green-700", name: "Confessar Jesus" },
     10: { icon: Baby, color: "text-amber-700", bgGradient: "from-amber-500 to-amber-700", name: "Novo Nascimento" },
+
+    // Baptism steps (11-22)
+    11: { icon: BookOpen, color: "text-blue-700", bgGradient: "from-blue-500 to-blue-700", name: "Batismo na Bíblia" },
+    12: {
+      icon: Shield,
+      color: "text-emerald-700",
+      bgGradient: "from-emerald-500 to-emerald-700",
+      name: "Graça, Não Obras",
+    },
+    13: {
+      icon: Droplets,
+      color: "text-cyan-700",
+      bgGradient: "from-cyan-500 to-cyan-700",
+      name: "Quem Pode Ser Batizado",
+    },
+    14: { icon: Flame, color: "text-orange-700", bgGradient: "from-orange-500 to-orange-700", name: "Simbolismo" },
+    15: {
+      icon: Users,
+      color: "text-violet-700",
+      bgGradient: "from-violet-500 to-violet-700",
+      name: "Batismo por Imersão",
+    },
+    16: {
+      icon: GitBranch,
+      color: "text-indigo-700",
+      bgGradient: "from-indigo-500 to-indigo-700",
+      name: "Nome da Trindade",
+    },
+    17: {
+      icon: Church,
+      color: "text-purple-700",
+      bgGradient: "from-purple-500 to-purple-700",
+      name: "Batismo e Igreja",
+    },
+    18: {
+      icon: Megaphone,
+      color: "text-rose-700",
+      bgGradient: "from-rose-500 to-rose-700",
+      name: "Testemunho Público",
+    },
+    19: { icon: Zap, color: "text-yellow-700", bgGradient: "from-yellow-500 to-yellow-700", name: "Urgência" },
+    20: { icon: Calendar, color: "text-sky-700", bgGradient: "from-sky-500 to-sky-700", name: "Preparação" },
+    21: {
+      icon: GraduationCap,
+      color: "text-teal-700",
+      bgGradient: "from-teal-500 to-teal-700",
+      name: "Testemunho de Fé",
+    },
+    22: { icon: Award, color: "text-amber-700", bgGradient: "from-amber-500 to-amber-700", name: "Compromisso Final" },
   }
 
   const badge = badges[stepNumber as keyof typeof badges] || badges[1]
