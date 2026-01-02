@@ -610,11 +610,13 @@ export default function PassoClient({
           <CardContent>
             <p className="text-lg font-medium mb-4">{passo.objetivo}</p>
             <div className="space-y-3">
-              {passo.conteudo.map((linha: string, i: number) => (
-                <p key={i} className="leading-relaxed text-base">
-                  <TextWithBibleLinks text={linha} />
-                </p>
-              ))}
+              {passo.conteudo &&
+                Array.isArray(passo.conteudo) &&
+                passo.conteudo.map((linha: string, i: number) => (
+                  <p key={i} className="leading-relaxed text-base">
+                    <TextWithBibleLinks text={linha} />
+                  </p>
+                ))}
             </div>
           </CardContent>
         </Card>
