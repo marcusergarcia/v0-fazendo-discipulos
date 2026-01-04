@@ -293,9 +293,17 @@ export default async function DashboardPage() {
 
   const insigniasSet = new Set(
     recompensas?.[0]?.insignias
-      ?.map((i: string) => {
-        const match = i.match(/Passo (\d+) Concluído/)
-        return match ? Number.parseInt(match[1]) : null
+      ?.map((i: any) => {
+        // Handle new object format: {tipo: "passo_completo", passo: 1}
+        if (typeof i === "object" && i !== null && i.passo) {
+          return i.passo
+        }
+        // Handle old string format: "Passo 1 Concluído"
+        if (typeof i === "string") {
+          const match = i.match(/Passo (\d+) Concluído/)
+          return match ? Number.parseInt(match[1]) : null
+        }
+        return null
       })
       .filter(Boolean) || [],
   )
