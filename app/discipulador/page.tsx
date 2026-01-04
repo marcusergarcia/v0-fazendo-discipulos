@@ -267,7 +267,10 @@ export default async function DiscipuladorPage() {
       }
 
       return {
-        discipulo,
+        discipulo: {
+          ...discipulo,
+          xp_exibido: (discipulo.xp_total || 0) + (progressoAtual?.pontuacao_passo_atual || 0),
+        },
         tarefasPendentes:
           reflexoesDiscipulo.filter((r) => r.situacao === "enviado").length +
           perguntasDiscipulo.filter((p) => p.situacao === "enviado").length,
@@ -468,7 +471,7 @@ export default async function DiscipuladorPage() {
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span>Fase {discipulo.fase_atual}</span>
                               <span>Passo {discipulo.passo_atual}/10</span>
-                              <span>{discipulo.xp_total} XP</span>
+                              <span>{discipulo.xp_exibido || discipulo.xp_total || 0} XP</span>
                             </div>
                           </div>
                         </div>
