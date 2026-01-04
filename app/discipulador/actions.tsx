@@ -548,7 +548,7 @@ async function verificarLiberacaoProximoPasso(
     if (passoAtual === 10) {
       console.log("[v0] PASSO 10 COMPLETADO! Marcando fase_1_completa = true")
 
-      const { error: updateProgressoError } = await adminClient
+      await adminClient
         .from("progresso_fases")
         .update({
           pontuacao_passo_anterior: xpTotalDoPassoCompleto,
@@ -558,28 +558,47 @@ async function verificarLiberacaoProximoPasso(
         })
         .eq("discipulo_id", discipuloId)
 
-      if (updateProgressoError) {
-        console.error("[v0] Erro ao atualizar progresso:", updateProgressoError)
-        throw new Error("Erro ao atualizar progresso")
-      }
-
       const { data: disc } = await adminClient.from("discipulos").select("xp_total").eq("id", discipuloId).single()
 
-      const novoXpTotal = (disc?.xp_total || 0) + xpTotalDoPassoCompleto
-
-      const { error: updateDiscipuloError } = await adminClient
+      await adminClient
         .from("discipulos")
         .update({
-          xp_total: novoXpTotal,
+          xp_total: (disc?.xp_total || 0) + xpTotalDoPassoCompleto,
         })
         .eq("id", discipuloId)
 
-      if (updateDiscipuloError) {
-        console.error("[v0] Erro ao atualizar XP do discípulo:", updateDiscipuloError)
-        throw new Error("Erro ao atualizar XP")
+      // Adicionar insígnia inline
+      const { data: recompensa } = await adminClient
+        .from("recompensas")
+        .select("id, insignias")
+        .eq("discipulo_id", discipuloId)
+        .maybeSingle()
+
+      const novaInsignia = {
+        passo: passoAtual,
+        tipo: "passo_completo",
+        data_conquista: new Date().toISOString(),
       }
 
-      await adicionarInsigniaPassoCompleto(adminClient, discipuloId, passoAtual)
+      if (recompensa) {
+        const insigniasAtuais = (recompensa.insignias as any[]) || []
+        const insigniaExiste = insigniasAtuais.some((i: any) => i.passo === passoAtual && i.tipo === "passo_completo")
+
+        if (!insigniaExiste) {
+          await adminClient
+            .from("recompensas")
+            .update({ insignias: [...insigniasAtuais, novaInsignia] })
+            .eq("id", recompensa.id)
+        }
+      } else {
+        await adminClient.from("recompensas").insert({
+          discipulo_id: discipuloId,
+          insignias: [novaInsignia],
+          medalhas: [],
+          armaduras: [],
+          nivel: 1,
+        })
+      }
 
       console.log("[v0] ✅ Fase 1 completa! Aguardando decisão por Cristo")
 
@@ -600,7 +619,7 @@ async function verificarLiberacaoProximoPasso(
     console.log("[v0] - Próxima fase:", proximaFase)
     console.log("[v0] - TOTAL XP DO PASSO:", xpTotalDoPassoCompleto)
 
-    const { error: updateProgressoError } = await adminClient
+    await adminClient
       .from("progresso_fases")
       .update({
         passo_atual: proximoPasso,
@@ -611,36 +630,55 @@ async function verificarLiberacaoProximoPasso(
       })
       .eq("discipulo_id", discipuloId)
 
-    if (updateProgressoError) {
-      console.error("[v0] Erro ao atualizar progresso:", updateProgressoError)
-      throw new Error("Erro ao atualizar progresso")
-    }
-
     const { data: disc } = await adminClient
       .from("discipulos")
       .select("xp_total, passo_atual")
       .eq("id", discipuloId)
       .single()
 
-    const novoXpTotal = (disc?.xp_total || 0) + xpTotalDoPassoCompleto
-
-    const { error: updateDiscipuloError } = await adminClient
+    await adminClient
       .from("discipulos")
       .update({
         passo_atual: proximoPasso,
-        xp_total: novoXpTotal,
+        xp_total: (disc?.xp_total || 0) + xpTotalDoPassoCompleto,
       })
       .eq("id", discipuloId)
 
-    if (updateDiscipuloError) {
-      console.error("[v0] Erro ao atualizar discípulo:", updateDiscipuloError)
-      throw new Error("Erro ao atualizar discípulo")
+    // Adicionar insígnia inline
+    const { data: recompensa } = await adminClient
+      .from("recompensas")
+      .select("id, insignias")
+      .eq("discipulo_id", discipuloId)
+      .maybeSingle()
+
+    const novaInsignia = {
+      passo: passoAtual,
+      tipo: "passo_completo",
+      data_conquista: new Date().toISOString(),
     }
 
-    await adicionarInsigniaPassoCompleto(adminClient, discipuloId, passoAtual)
+    if (recompensa) {
+      const insigniasAtuais = (recompensa.insignias as any[]) || []
+      const insigniaExiste = insigniasAtuais.some((i: any) => i.passo === passoAtual && i.tipo === "passo_completo")
+
+      if (!insigniaExiste) {
+        await adminClient
+          .from("recompensas")
+          .update({ insignias: [...insigniasAtuais, novaInsignia] })
+          .eq("id", recompensa.id)
+      }
+    } else {
+      await adminClient.from("recompensas").insert({
+        discipulo_id: discipuloId,
+        insignias: [novaInsignia],
+        medalhas: [],
+        armaduras: [],
+        nivel: 1,
+      })
+    }
 
     console.log("[v0] ✅ Progresso atualizado com sucesso!")
-    console.log("[v0] - Novo XP total:", novoXpTotal)
+    console.log("[v0] - Novo XP total:", (disc?.xp_total || 0) + xpTotalDoPassoCompleto)
     console.log("[v0] - Próximo passo:", proximoPasso)
 
     return {
@@ -651,70 +689,6 @@ async function verificarLiberacaoProximoPasso(
   }
 
   return null
-}
-
-async function adicionarInsigniaPassoCompleto(adminClient: any, discipuloId: string, passoNumero: number) {
-  console.log("[v0] Adicionando insígnia para passo completado:", passoNumero)
-
-  // Buscar recompensas do discípulo
-  const { data: recompensa, error: fetchError } = await adminClient
-    .from("recompensas")
-    .select("id, insignias")
-    .eq("discipulo_id", discipuloId)
-    .maybeSingle()
-
-  if (fetchError) {
-    console.error("[v0] Erro ao buscar recompensas:", fetchError)
-    return
-  }
-
-  const novaInsignia = {
-    passo: passoNumero,
-    tipo: "passo_completo",
-    data_conquista: new Date().toISOString(),
-  }
-
-  if (recompensa) {
-    // Atualizar recompensas existentes
-    const insigniasAtuais = (recompensa.insignias as any[]) || []
-
-    // Verificar se já existe essa insígnia
-    const insigniaExiste = insigniasAtuais.some((i: any) => i.passo === passoNumero && i.tipo === "passo_completo")
-
-    if (!insigniaExiste) {
-      insigniasAtuais.push(novaInsignia)
-
-      const { error: updateError } = await adminClient
-        .from("recompensas")
-        .update({ insignias: insigniasAtuais })
-        .eq("id", recompensa.id)
-
-      if (updateError) {
-        console.error("[v0] Erro ao atualizar insígnia:", updateError)
-      } else {
-        console.log("[v0] ✅ Insígnia adicionada! Total:", insigniasAtuais.length)
-      }
-    } else {
-      console.log("[v0] Insígnia já existe para este passo")
-    }
-  } else {
-    // Criar registro de recompensas
-    console.log("[v0] Criando primeiro registro de recompensas")
-
-    const { error: insertError } = await adminClient.from("recompensas").insert({
-      discipulo_id: discipuloId,
-      insignias: [novaInsignia],
-      medalhas: [],
-      armaduras: [],
-      nivel: 1,
-    })
-
-    if (insertError) {
-      console.error("[v0] Erro ao criar recompensas:", insertError)
-    } else {
-      console.log("[v0] ✅ Primeira insígnia criada!")
-    }
-  }
 }
 
 export async function limparTodasNotificacoes() {
