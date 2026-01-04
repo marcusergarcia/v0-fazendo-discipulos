@@ -140,12 +140,14 @@ export default async function DashboardPage() {
 
   const nomeDiscipulador = discipuladorData?.nome_completo || "Aguardando"
 
+  const xpAtualComProgresso = (discipulo.xp_total || 0) + (progressoFases?.pontuacao_passo_atual || 0)
+
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
     level: isPassoBatismo(passoAtual) && estaEmFaseBatismo ? 1.5 : getLevelNumber(getFaseNome(faseAtualReal)),
     levelName: isPassoBatismo(passoAtual) && estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
-    xp: discipulo.xp_total || 0,
+    xp: xpAtualComProgresso,
     xpToNext: 1000,
     currentPhase:
       isPassoBatismo(passoAtual) && estaEmFaseBatismo
