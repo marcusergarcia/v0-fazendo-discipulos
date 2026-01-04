@@ -121,8 +121,6 @@ export default async function DiscipuladorPage() {
           p.passo_atual === discipulo.passo_atual,
       )
 
-      const xpTotal = (discipulo.xp_total || 0) + (progressoAtual?.pontuacao_passo_atual || 0)
-
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
       const tarefas = []
 
@@ -269,22 +267,17 @@ export default async function DiscipuladorPage() {
       }
 
       return {
-        ...discipulo,
-        xpTotal, // Adicionando XP calculado aos dados do discípulo
-        profile: discipulo.profile,
-        tarefas: {
-          total: tarefas.length,
-          pendentes:
-            reflexoesDiscipulo.filter((r) => r.situacao === "enviado").length +
-            perguntasDiscipulo.filter((p) => p.situacao === "enviado").length,
-          lista: tarefas,
-        },
+        discipulo,
+        tarefasPendentes:
+          reflexoesDiscipulo.filter((r) => r.situacao === "enviado").length +
+          perguntasDiscipulo.filter((p) => p.situacao === "enviado").length,
+        tarefas,
         progressoAtual,
       }
     }),
   )
 
-  const totalPendentes = dadosPorDiscipulo.reduce((sum, d) => sum + d.tarefas.pendentes, 0)
+  const totalPendentes = dadosPorDiscipulo.reduce((sum, d) => sum + d.tarefasPendentes, 0)
 
   const todasNotificacoesSino = [
     // Novos discípulos aguardando aprovação
@@ -412,7 +405,7 @@ export default async function DiscipuladorPage() {
               {discipulosComPerfil.map((disc) => {
                 const nome =
                   disc.profile?.nome_completo || disc.nome_completo_temp || disc.profile?.email || disc.email_temporario
-                const pendentes = dadosPorDiscipulo.find((d) => d.discipulo.id === disc.id)?.tarefas.pendentes || 0
+                const pendentes = dadosPorDiscipulo.find((d) => d.discipulo.id === disc.id)?.tarefasPendentes || 0
 
                 return (
                   <TabsTrigger key={disc.id} value={disc.id} className="gap-2">
@@ -475,7 +468,7 @@ export default async function DiscipuladorPage() {
                             <div className="flex items-center gap-4 text-sm text-muted-foreground">
                               <span>Fase {discipulo.fase_atual}</span>
                               <span>Passo {discipulo.passo_atual}/10</span>
-                              <span>{discipulo.xpTotal} XP</span>
+                              <span>{discipulo.xp_total} XP</span>
                             </div>
                           </div>
                         </div>
