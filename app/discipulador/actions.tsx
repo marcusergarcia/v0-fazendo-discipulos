@@ -537,6 +537,12 @@ async function verificarLiberacaoProximoPasso(
 
   if (progresso) {
     const pontosDoPassoCompleto = progresso.pontuacao_passo_atual || 0
+    const xpTotalDoPassoCompleto = pontosDoPassoCompleto + xpPerguntasReflexivas
+
+    console.log("[v0] XP Breakdown:")
+    console.log("[v0] - Vídeos + Artigos + Leitura (pontuacao_passo_atual):", pontosDoPassoCompleto)
+    console.log("[v0] - Perguntas Reflexivas:", xpPerguntasReflexivas)
+    console.log("[v0] - TOTAL XP DO PASSO:", xpTotalDoPassoCompleto)
 
     // Se completou o passo 10, marcar fase_1_completa ao invés de avançar passo
     if (passoAtual === 10) {
@@ -545,7 +551,7 @@ async function verificarLiberacaoProximoPasso(
       const { error: updateProgressoError } = await adminClient
         .from("progresso_fases")
         .update({
-          pontuacao_passo_anterior: pontosDoPassoCompleto,
+          pontuacao_passo_anterior: xpTotalDoPassoCompleto,
           pontuacao_passo_atual: 0,
           celebracao_vista: false,
           fase_1_completa: true, // Marcar que completou a fase 1
@@ -557,10 +563,9 @@ async function verificarLiberacaoProximoPasso(
         throw new Error("Erro ao atualizar progresso")
       }
 
-      // Atualizar tabela discipulos com XP total
       const { data: disc } = await adminClient.from("discipulos").select("xp_total").eq("id", discipuloId).single()
 
-      const novoXpTotal = (disc?.xp_total || 0) + xpPerguntasReflexivas
+      const novoXpTotal = (disc?.xp_total || 0) + xpTotalDoPassoCompleto
 
       const { error: updateDiscipuloError } = await adminClient
         .from("discipulos")
@@ -574,12 +579,14 @@ async function verificarLiberacaoProximoPasso(
         throw new Error("Erro ao atualizar XP")
       }
 
+      await adicionarInsigniaPassoCompleto(adminClient, discipuloId, passoAtual)
+
       console.log("[v0] ✅ Fase 1 completa! Aguardando decisão por Cristo")
 
       return {
         passoCompletado: 10,
         proximoPasso: null, // Não há próximo passo até a decisão por Cristo
-        xpGanho: pontosDoPassoCompleto + xpPerguntasReflexivas,
+        xpGanho: xpTotalDoPassoCompleto,
         fase1Completa: true,
       }
     }
@@ -591,15 +598,14 @@ async function verificarLiberacaoProximoPasso(
     console.log("[v0] Atualizando progresso_fases:")
     console.log("[v0] - Próximo passo:", proximoPasso)
     console.log("[v0] - Próxima fase:", proximaFase)
-    console.log("[v0] - Pontos do passo completo:", pontosDoPassoCompleto)
-    console.log("[v0] - XP das perguntas:", xpPerguntasReflexivas)
+    console.log("[v0] - TOTAL XP DO PASSO:", xpTotalDoPassoCompleto)
 
     const { error: updateProgressoError } = await adminClient
       .from("progresso_fases")
       .update({
         passo_atual: proximoPasso,
         fase_atual: proximaFase,
-        pontuacao_passo_anterior: pontosDoPassoCompleto,
+        pontuacao_passo_anterior: xpTotalDoPassoCompleto,
         pontuacao_passo_atual: 0,
         celebracao_vista: false,
       })
@@ -610,14 +616,13 @@ async function verificarLiberacaoProximoPasso(
       throw new Error("Erro ao atualizar progresso")
     }
 
-    // Atualizar tabela discipulos
     const { data: disc } = await adminClient
       .from("discipulos")
       .select("xp_total, passo_atual")
       .eq("id", discipuloId)
       .single()
 
-    const novoXpTotal = (disc?.xp_total || 0) + xpPerguntasReflexivas
+    const novoXpTotal = (disc?.xp_total || 0) + xpTotalDoPassoCompleto
 
     const { error: updateDiscipuloError } = await adminClient
       .from("discipulos")
@@ -632,6 +637,8 @@ async function verificarLiberacaoProximoPasso(
       throw new Error("Erro ao atualizar discípulo")
     }
 
+    await adicionarInsigniaPassoCompleto(adminClient, discipuloId, passoAtual)
+
     console.log("[v0] ✅ Progresso atualizado com sucesso!")
     console.log("[v0] - Novo XP total:", novoXpTotal)
     console.log("[v0] - Próximo passo:", proximoPasso)
@@ -639,11 +646,75 @@ async function verificarLiberacaoProximoPasso(
     return {
       passoCompletado: passoAtual,
       proximoPasso,
-      xpGanho: pontosDoPassoCompleto + xpPerguntasReflexivas,
+      xpGanho: xpTotalDoPassoCompleto,
     }
   }
 
   return null
+}
+
+async function adicionarInsigniaPassoCompleto(adminClient: any, discipuloId: string, passoNumero: number) {
+  console.log("[v0] Adicionando insígnia para passo completado:", passoNumero)
+
+  // Buscar recompensas do discípulo
+  const { data: recompensa, error: fetchError } = await adminClient
+    .from("recompensas")
+    .select("id, insignias")
+    .eq("discipulo_id", discipuloId)
+    .maybeSingle()
+
+  if (fetchError) {
+    console.error("[v0] Erro ao buscar recompensas:", fetchError)
+    return
+  }
+
+  const novaInsignia = {
+    passo: passoNumero,
+    tipo: "passo_completo",
+    data_conquista: new Date().toISOString(),
+  }
+
+  if (recompensa) {
+    // Atualizar recompensas existentes
+    const insigniasAtuais = (recompensa.insignias as any[]) || []
+
+    // Verificar se já existe essa insígnia
+    const insigniaExiste = insigniasAtuais.some((i: any) => i.passo === passoNumero && i.tipo === "passo_completo")
+
+    if (!insigniaExiste) {
+      insigniasAtuais.push(novaInsignia)
+
+      const { error: updateError } = await adminClient
+        .from("recompensas")
+        .update({ insignias: insigniasAtuais })
+        .eq("id", recompensa.id)
+
+      if (updateError) {
+        console.error("[v0] Erro ao atualizar insígnia:", updateError)
+      } else {
+        console.log("[v0] ✅ Insígnia adicionada! Total:", insigniasAtuais.length)
+      }
+    } else {
+      console.log("[v0] Insígnia já existe para este passo")
+    }
+  } else {
+    // Criar registro de recompensas
+    console.log("[v0] Criando primeiro registro de recompensas")
+
+    const { error: insertError } = await adminClient.from("recompensas").insert({
+      discipulo_id: discipuloId,
+      insignias: [novaInsignia],
+      medalhas: [],
+      armaduras: [],
+      nivel: 1,
+    })
+
+    if (insertError) {
+      console.error("[v0] Erro ao criar recompensas:", insertError)
+    } else {
+      console.log("[v0] ✅ Primeira insígnia criada!")
+    }
+  }
 }
 
 export async function limparTodasNotificacoes() {
