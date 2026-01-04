@@ -71,6 +71,7 @@ type PassoClientProps = {
   artigosLidos: string[]
   status: "pendente" | "aguardando" | "validado"
   discipuladorId: string | null // Adicionar discipuladorId
+  nomeDiscipulador: string | null // Added nomeDiscipulador prop
   statusLeituraSemana?: "nao_iniciada" | "pendente" | "concluida"
   temaSemana?: string
   descricaoSemana?: string
@@ -94,6 +95,7 @@ export default function PassoClient({
   artigosLidos,
   status,
   discipuladorId,
+  nomeDiscipulador, // Destructure nomeDiscipulador
   statusLeituraSemana = "nao_iniciada",
   temaSemana = "",
   descricaoSemana = "",
@@ -188,7 +190,7 @@ export default function PassoClient({
       try {
         const { data, error } = await supabase
           .from("perguntas_reflexivas")
-          .select("respostas, situacao, xp_ganho") // Adicionar xp_ganho
+          .select("respostas, situacao, xp_ganho, feedback_discipulador") // Adicionar feedback_discipulador
           .eq("discipulo_id", discipuloId)
           .eq("passo_numero", numero)
           .maybeSingle()
@@ -547,7 +549,6 @@ export default function PassoClient({
 
   const ePassoBatismo = numero >= 11 && numero <= 22
   const totalPassosFase = ePassoBatismo ? 12 : 10
-  // </CHANGE>
 
   return (
     <div className="min-h-screen bg-background">
@@ -555,6 +556,12 @@ export default function PassoClient({
       <header className="bg-card border-b sticky top-0 z-10 shadow-sm">
         <div className="container mx-auto px-4 py-4 max-w-4xl">
           <div className="flex items-center justify-between gap-4 flex-wrap">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="gap-2">
+                <Home className="w-4 h-4" />
+                Voltar
+              </Button>
+            </Link>
             <div className="flex items-center gap-4 flex-1">
               <StepBadge
                 stepNumber={ePassoBatismo ? numeroExibido : numero}
@@ -571,7 +578,6 @@ export default function PassoClient({
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Passo {numeroExibido} de {totalPassosFase} • Nível: {discipulo.nivel_atual}
                 </p>
-                {/* </CHANGE> */}
               </div>
             </div>
             <div className="flex gap-2">
@@ -608,6 +614,20 @@ export default function PassoClient({
           </h2>
           <p className="text-muted-foreground text-lg">{passo.fase}</p>
         </div>
+
+        {todasTarefasAprovadas && perguntasReflexivas?.feedback_discipulador && (
+          <Card className="mb-6 border-green-200 bg-green-50/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-xl font-bold text-green-800">
+                <MessageCircle className="h-6 w-6" />
+                Feedback do Discipulador
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-green-900 leading-relaxed">{perguntasReflexivas.feedback_discipulador}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Objetivo do Passo */}
         <Card className="mb-6">
@@ -1202,9 +1222,19 @@ export default function PassoClient({
                   >
                     <div className="flex-1 w-full sm:w-auto min-w-0">
                       <h4 className="font-semibold text-sm sm:text-base mb-1 truncate">{video.titulo}</h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
+                      <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 flex-wrap">
                         {video.canal} • {video.duracao}
                       </p>
+                      {video.reflexao_situacao === "aprovado" && video.feedback_discipulador && (
+                        <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-1">
+                            {nomeDiscipulador || "Discipulador"}:
+                          </p>
+                          <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">
+                            {video.feedback_discipulador}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                       <Button
@@ -1275,27 +1305,37 @@ export default function PassoClient({
                     }`}
                   >
                     <div className="flex-1 w-full sm:w-auto">
-                      <h4 className="font-semibold text-sm sm:text-base mb-1">{artigo.titulo}</h4>
-                      <p className="text-xs sm:text-sm text-muted-foreground">{artigo.fonte}</p>
+                      <h4 className="font-semibold text-sm sm:text-base mb-1 truncate">{artigo.titulo}</h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground mb-1 line-clamp-2">{artigo.resumo}</p>
+                      {artigo.reflexao_situacao === "aprovado" && artigo.feedback_discipulador && (
+                        <div className="mt-2 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                          <p className="text-sm font-semibold text-green-900 dark:text-green-100 mb-1">
+                            {nomeDiscipulador || "Discipulador"}:
+                          </p>
+                          <p className="text-sm text-green-800 dark:text-green-200 leading-relaxed">
+                            {artigo.feedback_discipulador}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(artigo.url, "_blank")}
-                        className="w-full sm:w-auto"
+                        onClick={() => window.open(artigo.link, "_blank")}
+                        className="w-full sm:w-auto whitespace-nowrap"
                       >
                         <ExternalLink className="w-4 h-4 mr-1" />
-                        Ler
+                        Ler Artigo
                       </Button>
                       {reflexaoAprovada ? (
-                        <Badge className="bg-green-600 text-white justify-center sm:justify-start">
+                        <Badge className="bg-green-600 text-white justify-center sm:justify-start whitespace-nowrap">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Aprovado {artigo.reflexao_xp}XP
                         </Badge>
                       ) : reflexaoPendente ? (
-                        <Badge className="bg-yellow-600 text-white justify-center sm:justify-start">
+                        <Badge className="bg-yellow-600 text-white justify-center sm:justify-start whitespace-nowrap">
                           <Clock className="w-3 h-3 mr-1" />
                           Aguardando Aprovação
                         </Badge>
@@ -1305,7 +1345,7 @@ export default function PassoClient({
                           size="sm"
                           variant="secondary"
                           onClick={() => abrirModal("artigo", artigo.id)}
-                          className="bg-primary w-full sm:w-auto"
+                          className="bg-primary w-full sm:w-auto whitespace-nowrap"
                         >
                           <CheckCircle className="w-4 h-4 mr-1" />
                           Realizar Missão
@@ -1420,6 +1460,14 @@ export default function PassoClient({
                             <p className="text-sm text-green-700">
                               Suas respostas foram aprovadas pelo discipulador. Continue para o próximo desafio!
                             </p>
+                            {submissaoPerguntasReflexivas.feedback_discipulador && nomeDiscipulador && (
+                              <div className="mt-3 bg-green-50 border border-green-200 rounded-md p-3">
+                                <p className="text-xs font-semibold text-green-800">{nomeDiscipulador}:</p>
+                                <p className="text-sm text-green-700 mt-1">
+                                  {submissaoPerguntasReflexivas.feedback_discipulador}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1762,7 +1810,6 @@ export default function PassoClient({
               <p className="text-sm font-medium">
                 Passo {numeroExibido} de {totalPassosFase}
               </p>
-              {/* </CHANGE> */}
               <p className="text-xs text-muted-foreground">{passo.fase}</p>
             </div>
 

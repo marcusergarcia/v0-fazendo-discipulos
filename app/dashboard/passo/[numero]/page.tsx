@@ -109,6 +109,16 @@ export default async function PassoPage({
 
   const discipuladorId = discipuladorData?.discipulador_id || null
 
+  let nomeDiscipuladorDiscipulador = null
+  if (discipuladorId) {
+    const { data: discipuladorProfile } = await supabase
+      .from("profiles")
+      .select("nome_completo")
+      .eq("id", discipuladorId)
+      .single()
+    nomeDiscipuladorDiscipulador = discipuladorProfile?.nome_completo || "Discipulador"
+  }
+
   const { data: reflexoesPasso, error: reflexoesError } = await supabase
     .from("reflexoes_passo")
     .select("*")
@@ -192,22 +202,34 @@ export default async function PassoPage({
     }
   }
 
+  const reflexaoRecord = reflexoesPasso?.[0]
+  const feedbacksVideos = passo.videos?.map((video: any) => {
+    const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === video.id)
+    return feedback?.feedback_discipulador || null
+  })
+  const feedbacksArtigos = passo.artigos?.map((artigo: any) => {
+    const feedback = reflexaoRecord?.feedbacks?.find((f: any) => f.conteudo_id === artigo.id)
+    return feedback?.feedback_discipulador || null
+  })
+
   const passoComReflexoes = {
     ...passo,
-    videos: (passo.videos || []).map((video: any) => {
+    videos: (passo.videos || []).map((video: any, index: number) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "video" && r.conteudos_ids?.includes(video.id))
       let situacao = null
       let xp = null
+      let feedback = null
 
       if (reflexao && reflexao.reflexoes && Array.isArray(reflexao.reflexoes)) {
         const reflexaoIndividual = reflexao.reflexoes.find((r: any) => r.conteudo_id === video.id)
 
         if (reflexaoIndividual) {
           if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
-            const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
-            if (feedback) {
+            const feedbackObj = reflexao.feedbacks.find((f: any) => f.conteudo_id === video.id)
+            if (feedbackObj) {
               situacao = "aprovado"
-              xp = feedback.xp_ganho
+              xp = feedbackObj.xp_ganho
+              feedback = feedbackObj.feedback_discipulador
             } else {
               situacao = "enviado"
             }
@@ -221,22 +243,25 @@ export default async function PassoPage({
         ...video,
         reflexao_situacao: situacao,
         reflexao_xp: xp,
+        feedback_discipulador: feedback,
       }
     }),
-    artigos: (passo.artigos || []).map((artigo: any) => {
+    artigos: (passo.artigos || []).map((artigo: any, index: number) => {
       const reflexao = reflexoesPasso?.find((r) => r.tipo === "artigo" && r.conteudos_ids?.includes(artigo.id))
       let situacao = null
       let xp = null
+      let feedback = null
 
       if (reflexao && reflexao.reflexoes && Array.isArray(reflexao.reflexoes)) {
         const reflexaoIndividual = reflexao.reflexoes.find((r: any) => r.conteudo_id === artigo.id)
 
         if (reflexaoIndividual) {
           if (reflexao.feedbacks && Array.isArray(reflexao.feedbacks)) {
-            const feedback = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
-            if (feedback) {
+            const feedbackObj = reflexao.feedbacks.find((f: any) => f.conteudo_id === artigo.id)
+            if (feedbackObj) {
               situacao = "aprovado"
-              xp = feedback.xp_ganho
+              xp = feedbackObj.xp_ganho
+              feedback = feedbackObj.feedback_discipulador
             } else {
               situacao = "enviado"
             }
@@ -250,9 +275,12 @@ export default async function PassoPage({
         ...artigo,
         reflexao_situacao: situacao,
         reflexao_xp: xp,
+        feedback_discipulador: feedback,
       }
     }),
   }
+
+  const nomeDiscipulador = nomeDiscipuladorDiscipulador
 
   return (
     <PassoClient
@@ -266,6 +294,7 @@ export default async function PassoPage({
       artigosLidos={artigosLidos}
       status={status}
       discipuladorId={discipuladorId}
+      nomeDiscipulador={nomeDiscipulador}
       statusLeituraSemana={statusLeituraSemana}
       temaSemana={temaSemana}
       descricaoSemana={descricaoSemana}
