@@ -121,6 +121,20 @@ export default async function DiscipuladorPage() {
           p.passo_atual === discipulo.passo_atual,
       )
 
+      console.log("[v0] XP Debug:", {
+        discipuloNome: discipulo.profile?.nome_completo,
+        xp_total: discipulo.xp_total,
+        pontuacao_passo_atual: progressoAtual?.pontuacao_passo_atual,
+        xp_exibido: (discipulo.xp_total || 0) + (progressoAtual?.pontuacao_passo_atual || 0),
+        progressoAtual: progressoAtual
+          ? {
+              fase: progressoAtual.fase_atual,
+              passo: progressoAtual.passo_atual,
+              pontuacao: progressoAtual.pontuacao_passo_atual,
+            }
+          : null,
+      })
+
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
       const tarefas = []
 
