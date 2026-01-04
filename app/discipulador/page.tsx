@@ -36,7 +36,7 @@ export default async function DiscipuladorPage() {
 
   const { data: discipulos } = await supabase
     .from("discipulos")
-    .select("*")
+    .select("*, progresso_fases(*)")
     .eq("discipulador_id", user.id)
     .eq("aprovado_discipulador", true)
 
@@ -76,7 +76,11 @@ export default async function DiscipuladorPage() {
   const dadosPorDiscipulo = await Promise.all(
     discipulosComPerfil.map(async (discipulo) => {
       const reflexoesDiscipulo = todasReflexoes?.filter((r) => r.discipulo_id === discipulo.id) || []
-      const progressosDiscipulo = discipulo.progresso_fases || []
+      const progressosDiscipulo = Array.isArray(discipulo.progresso_fases)
+        ? discipulo.progresso_fases
+        : discipulo.progresso_fases
+          ? [discipulo.progresso_fases]
+          : []
 
       const perguntasDiscipulo = perguntasReflexivas?.filter((p) => p.discipulo_id === discipulo.id) || []
 
@@ -114,25 +118,17 @@ export default async function DiscipuladorPage() {
           : null,
       })
 
-      const progressoAtual = progressosDiscipulo.find(
-        (p) =>
-          p.discipulo_id === discipulo.id &&
-          p.fase_atual === discipulo.fase_atual &&
-          p.passo_atual === discipulo.passo_atual,
-      )
+      const progressoAtual = progressosDiscipulo.find((p) => p.fase_atual === discipulo.fase_atual)
 
       console.log("[v0] XP Debug:", {
-        discipuloNome: discipulo.profile?.nome_completo,
-        xp_total: discipulo.xp_total,
-        pontuacao_passo_atual: progressoAtual?.pontuacao_passo_atual,
+        discipuloNome: discipulo.profile?.nome_completo || discipulo.nome_completo,
+        xp_total: discipulo.xp_total || 0,
+        pontuacao_passo_atual: progressoAtual?.pontuacao_passo_atual || 0,
         xp_exibido: (discipulo.xp_total || 0) + (progressoAtual?.pontuacao_passo_atual || 0),
-        progressoAtual: progressoAtual
-          ? {
-              fase: progressoAtual.fase_atual,
-              passo: progressoAtual.passo_atual,
-              pontuacao: progressoAtual.pontuacao_passo_atual,
-            }
-          : null,
+        progressoAtual,
+        progressosDiscipuloLength: progressosDiscipulo.length,
+        progressosDiscipuloType: typeof progressosDiscipulo,
+        isArray: Array.isArray(progressosDiscipulo),
       })
 
       const conteudoPasso = PASSOS_CONTEUDO[discipulo.passo_atual as keyof typeof PASSOS_CONTEUDO]
@@ -280,14 +276,16 @@ export default async function DiscipuladorPage() {
         })
       }
 
+      const reflexoesSemAvaliacao = reflexoesDiscipulo.filter((r) => r.situacao === "enviado")
+      const perguntasSemAvaliacao = perguntasDiscipulo.filter((p) => p.situacao === "enviado")
+
       return {
         discipulo: {
           ...discipulo,
+          reflexoes: reflexoesDiscipulo,
           xp_exibido: (discipulo.xp_total || 0) + (progressoAtual?.pontuacao_passo_atual || 0),
         },
-        tarefasPendentes:
-          reflexoesDiscipulo.filter((r) => r.situacao === "enviado").length +
-          perguntasDiscipulo.filter((p) => p.situacao === "enviado").length,
+        tarefasPendentes: reflexoesSemAvaliacao.length + perguntasSemAvaliacao.length,
         tarefas,
         progressoAtual,
       }
