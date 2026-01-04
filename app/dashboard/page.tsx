@@ -36,6 +36,7 @@ import {
   getPassoDescricao,
   getPassoNomeBatismo,
 } from "@/constants/fases-passos"
+import { calcularXpFaseCompleta } from "@/lib/calculo-xp-helper"
 
 export default async function DashboardPage() {
   console.log("[v0] DashboardPage iniciada")
@@ -142,13 +143,23 @@ export default async function DashboardPage() {
 
   const xpAtualComProgresso = (discipulo.xp_total || 0) + (progressoFases?.pontuacao_passo_atual || 0)
 
+  const passosCompletadosFase = estaEmFaseBatismo
+    ? passoAtual <= 10
+      ? passoAtual
+      : passoAtual <= 22
+        ? passoAtual - 10
+        : 0
+    : passoAtual
+
+  const xpEstimadoFaseCompleta = calcularXpFaseCompleta(faseAtualReal, estaEmFaseBatismo)
+
   const userData = {
     name: profile?.nome_completo || "Usuário",
     email: user.email || "",
     level: isPassoBatismo(passoAtual) && estaEmFaseBatismo ? 1.5 : getLevelNumber(getFaseNome(faseAtualReal)),
     levelName: isPassoBatismo(passoAtual) && estaEmFaseBatismo ? "Batismo Cristão" : getFaseNome(faseAtualReal),
     xp: xpAtualComProgresso,
-    xpToNext: 1000,
+    xpToNext: xpEstimadoFaseCompleta,
     currentPhase:
       isPassoBatismo(passoAtual) && estaEmFaseBatismo
         ? `FASE 1 (INTERMEDIÁRIA): Batismo Cristão`
