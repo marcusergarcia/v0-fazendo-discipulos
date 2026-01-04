@@ -594,7 +594,7 @@ export const PASSOS_CONTEUDO = {
       },
       {
         id: "artigo-p7-2",
-        titulo: "Compreendendo o Novo Nascimento: Regeneração Espiritual e sua Importância ",
+        titulo: "Regeneração Espiritual e sua Importância ",
         fonte: "Ideal Way Church",
         url: "https://www.idealwaychurch.com/sete-areas-da-vida/espiritual/compreendendo-o-novo-nascimento-regeneracao-espiritual-e-sua-importancia/",
       },
