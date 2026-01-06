@@ -51,8 +51,8 @@
     {
       "name": "Minha Jornada",
       "short_name": "Jornada",
-      "description": "Ver minha jornada de passos",
-      "url": "/dashboard",
+      "description": "Ir direto para meu passo atual",
+      "url": "/dashboard/minha-jornada",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
