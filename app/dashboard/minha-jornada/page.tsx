@@ -16,10 +16,8 @@ export default async function MinhaJornadaPage() {
 
   const { data: discipulo } = await supabase.from("discipulos").select("passo_atual").eq("id", user.id).single()
 
-  if (!discipulo) {
-    redirect("/aguardando-aprovacao")
-  }
+  const passoAtual = discipulo?.passo_atual || 1
 
-  const passoAtual = discipulo.passo_atual || 1
+  // Single redirect at the end
   redirect(`/dashboard/passo/${passoAtual}`)
 }
