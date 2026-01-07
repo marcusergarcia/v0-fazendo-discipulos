@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import MinhaJornadaClient from "./minha-jornada-client"
 
 export default async function MinhaJornadaPage() {
   const cookieStore = await cookies()
@@ -18,6 +19,5 @@ export default async function MinhaJornadaPage() {
 
   const passoAtual = discipulo?.passo_atual || 1
 
-  // Single redirect at the end
-  redirect(`/dashboard/passo/${passoAtual}`)
+  return <MinhaJornadaClient passoAtual={passoAtual} />
 }
