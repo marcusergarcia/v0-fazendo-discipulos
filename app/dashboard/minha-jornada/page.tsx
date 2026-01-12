@@ -1,23 +1,23 @@
-import { createServerClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
+import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import MinhaJornadaClient from "./minha-jornada-client"
 
 export default async function MinhaJornadaPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(cookieStore)
+  const supabase = await createClient()
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/login")
+    redirect("/auth/login")
   }
 
-  const { data: discipulo } = await supabase.from("discipulos").select("passo_atual").eq("id", user.id).single()
+  const { data: discipulo } = await supabase.from("discipulos").select("passo_atual").eq("user_id", user.id).single()
 
-  const passoAtual = discipulo?.passo_atual || 1
+  if (!discipulo) {
+    redirect("/aguardando-aprovacao")
+  }
 
-  return <MinhaJornadaClient passoAtual={passoAtual} />
+  const passoAtual = discipulo.passo_atual || 1
+  redirect(`/dashboard/passo/${passoAtual}`)
 }
