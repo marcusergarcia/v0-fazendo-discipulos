@@ -634,12 +634,12 @@ export default async function DashboardPage() {
             <CardDescription>{currentPhaseData.descricaoFase}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
               {jornada.map((step) => (
                 <Link
                   key={step.step}
                   href={step.href}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                  className={`flex flex-col items-center p-3 sm:p-4 rounded-lg border-2 transition-all ${
                     step.isCompleted
                       ? "bg-primary/10 border-primary"
                       : step.isCurrent
@@ -656,7 +656,9 @@ export default async function DashboardPage() {
                       <StepBadge stepNumber={step.step} status="locked" size="md" />
                     )}
                   </div>
-                  <span className="text-xs text-center font-medium text-foreground">{step.title}</span>
+                  <span className="text-[10px] sm:text-xs text-center font-medium text-foreground leading-tight">
+                    {step.title}
+                  </span>
                 </Link>
               ))}
             </div>
