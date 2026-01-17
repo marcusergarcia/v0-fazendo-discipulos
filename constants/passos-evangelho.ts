@@ -265,10 +265,10 @@ export const PASSOS_CONTEUDO = {
       },
       {
         id: "video-p4-2",
-        titulo: "As consequências do pecado",
-        canal: "Biblia Simples",
-        duracao: "7:05",
-        url: "https://www.youtube.com/watch?v=JDl8b_n3vf4&t=18s",
+        titulo: "Preocupados com as consequências do pecado",
+        canal: "Pr. Lucinho",
+        duracao: "4:26",
+        url: "https://www.youtube.com/watch?v=Hmf-bV21HQA",
       },
       {
         id: "video-p4-3",
