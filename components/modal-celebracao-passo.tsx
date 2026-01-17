@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Sparkles, ArrowRight, Check } from "lucide-react"
 import { PASSOS_CONTEUDO } from "@/constants/passos-evangelho"
 import { StepBadge } from "@/components/step-badge"
-import { ConfettiCelebration } from "@/components/confetti-celebration"
 
 interface ModalCelebracaoPassoProps {
   open: boolean
@@ -32,25 +31,14 @@ export function ModalCelebracaoPasso({ open, onClose, passoCompletado, xpGanho }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {open && <ConfettiCelebration />}
-
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex flex-col items-center text-center space-y-6 py-6">
-          <div className="relative animate-bounce">
-            <StepBadge stepNumber={passoCompletado} status="completed" size="xl" />
-            <Sparkles className="absolute -top-2 -right-2 w-10 h-10 text-yellow-400 animate-spin" />
-            <Sparkles
-              className="absolute -bottom-2 -left-2 w-8 h-8 text-orange-400 animate-spin"
-              style={{ animationDelay: "0.2s" }}
-            />
-            <Sparkles
-              className="absolute top-1/2 -left-4 w-6 h-6 text-yellow-300 animate-bounce"
-              style={{ animationDelay: "0.3s" }}
-            />
-            <Sparkles
-              className="absolute top-1/2 -right-4 w-6 h-6 text-orange-300 animate-bounce"
-              style={{ animationDelay: "0.4s" }}
-            />
+          <div className="relative">
+            <StepBadge stepNumber={passoCompletado} status="completed" size="xxl" className="animate-bounce" />
+            <Sparkles className="absolute -top-2 -right-2 w-10 h-10 text-yellow-400 animate-pulse" />
+            <Sparkles className="absolute -bottom-2 -left-2 w-8 h-8 text-orange-400 animate-pulse" />
+            <Sparkles className="absolute top-1/2 -left-4 w-6 h-6 text-yellow-300 animate-pulse delay-75" />
+            <Sparkles className="absolute top-1/2 -right-4 w-6 h-6 text-orange-300 animate-pulse delay-150" />
           </div>
 
           {/* Título de parabéns */}

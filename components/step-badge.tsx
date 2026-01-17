@@ -115,7 +115,7 @@ export function StepBadge({ stepNumber, status, size = "md" }: StepBadgeProps) {
     if (status === "current") {
       return "ring-4 ring-primary ring-offset-4 ring-offset-background animate-pulse"
     }
-    return "opacity-100 hover:scale-110 hover:rotate-3 transition-transform duration-300"
+    return "opacity-100 hover:scale-105"
   }
 
   return (
@@ -135,12 +135,6 @@ export function StepBadge({ stepNumber, status, size = "md" }: StepBadgeProps) {
       `}
       title={badge.name}
     >
-      {status === "completed" && (
-        <div
-          className={`absolute inset-0 rounded-full bg-gradient-to-br ${badge.bgGradient} opacity-30 blur-lg animate-pulse`}
-        />
-      )}
-
       {/* Outer glow */}
       <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${badge.bgGradient} opacity-20 blur-md`} />
 

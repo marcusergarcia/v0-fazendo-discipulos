@@ -23,7 +23,6 @@ import {
   UserPlus,
   UsersRound,
   Book,
-  Check,
 } from "lucide-react"
 import { generateAvatarUrl } from "@/lib/generate-avatar"
 import DashboardCelebracaoClient from "@/components/dashboard-celebracao-client"
@@ -640,40 +639,26 @@ export default async function DashboardPage() {
                 <Link
                   key={step.step}
                   href={step.href}
-                  className={`
-                    flex flex-col items-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all duration-300
-                    ${
-                      step.isCompleted
-                        ? "bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/50 hover:scale-105"
-                        : step.isCurrent
-                          ? "bg-accent/20 border-accent hover:bg-accent/30 ring-2 ring-accent/50"
-                          : "bg-muted/50 border-border hover:bg-muted"
-                    }
-                    ${!step.isCompleted && !step.isCurrent ? "opacity-60" : ""}
-                  `}
+                  className={`flex flex-col items-center p-3 sm:p-4 rounded-lg border-2 transition-all ${
+                    step.isCompleted
+                      ? "bg-primary/10 border-primary"
+                      : step.isCurrent
+                        ? "bg-primary/5 border-primary/50"
+                        : "bg-muted border-muted-foreground/20"
+                  }`}
                 >
-                  {step.isCurrent && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer rounded-xl" />
-                  )}
-
-                  <StepBadge
-                    stepNumber={step.numeroReal}
-                    status={step.isCompleted ? "completed" : step.isCurrent ? "current" : "locked"}
-                    size="md"
-                  />
-                  <span
-                    className={`
-                      text-[10px] sm:text-xs text-center leading-tight font-medium
-                      ${step.isCompleted || step.isCurrent ? "text-foreground" : "text-muted-foreground"}
-                    `}
-                  >
+                  <div className="mb-2">
+                    {step.isCompleted ? (
+                      <StepBadge stepNumber={step.step} status="completed" size="md" />
+                    ) : step.isCurrent ? (
+                      <StepBadge stepNumber={step.step} status="current" size="md" />
+                    ) : (
+                      <StepBadge stepNumber={step.step} status="locked" size="md" />
+                    )}
+                  </div>
+                  <span className="text-[10px] sm:text-xs text-center font-medium text-foreground leading-tight">
                     {step.title}
                   </span>
-                  {step.isCompleted && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                  )}
                 </Link>
               ))}
             </div>
