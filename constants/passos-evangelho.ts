@@ -948,10 +948,10 @@ export const PASSOS_CONTEUDO = {
     videos: [
       {
         id: "video-p10-1",
-        titulo: "Como Nascemos de Novo? - John Piper",
-        canal: "Voltemos ao Evangelho",
-        duracao: "12:26",
-        url: "https://www.youtube.com/watch?v=684-sNFPtMQ",
+        titulo: "UM NOVO NASCIMENTO - Hernandes Dias Lopes",
+        canal: "Igreja Presbiteriana do Brasil",
+        duracao: "13:35",
+        url: "https://www.youtube.com/watch?v=E11EU8iyWh0",
       },
       {
         id: "video-p10-2",
